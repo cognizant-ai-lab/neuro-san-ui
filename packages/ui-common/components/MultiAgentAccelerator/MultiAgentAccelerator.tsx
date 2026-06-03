@@ -620,15 +620,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Reset Agent Network Designer preview
         setAgentsInNetworkDesigner([])
 
-        // Show info popup only once per session
-        if (!haveShownPopup) {
-            sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
-            setHaveShownPopup(true)
-        }
-
         // Mark that streaming has started
         setIsStreaming(true)
-    }, [haveShownPopup])
+    }, [])
 
     const onStreamingComplete = useCallback(() => {
         console.debug("chat messages:", chatMessages)

@@ -262,6 +262,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Ref for output text area, so we can auto scroll it
     const chatOutputRef = useRef(null)
 
+    const debugRowRefs = useRef<Record<number, HTMLDivElement | null>>({})
+
     // Ref for user input text area, so we can handle shift-enter
     const chatInputRef = useRef(null)
 
@@ -360,6 +362,26 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             container.scrollTop = container.scrollHeight
         }
     }, [autoScrollEnabled, isAwaitingLlm, turns])
+
+    useEffect(() => {
+        if (!debugMessages?.length || debugStep === undefined) return
+
+        // Wait one frame so refs are set after render
+        const rafId = requestAnimationFrame(() => {
+            const activeRow = debugRowRefs.current[debugStep]
+            if (!activeRow) return
+
+            activeRow.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest",
+            })
+        })
+
+        return () => {
+            cancelAnimationFrame(rafId)
+        }
+    }, [debugMessages, debugStep])
 
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
@@ -874,25 +896,31 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             </MenuItem>
         </Menu>
     )
+    const truncateWithEllipsis = (value: string, maxLength: number) => {
+        if (value.length <= maxLength) return value
 
+        const trimmed = value.slice(0, maxLength).trimEnd()
+        // Prefer breaking on the last space so words are not cut awkwardly
+        const lastSpace = trimmed.lastIndexOf(" ")
+        const safe = lastSpace > Math.floor(maxLength * 0.6) ? trimmed.slice(0, lastSpace) : trimmed
+
+        return `${safe}...`
+    }
     const getDebugDisplay = () => (
         <Box sx={{padding: "1rem"}}>
             <Typography
                 sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    px: 1.25,
-                    py: 0.4,
-                    mb: 0.75,
-                    borderRadius: "999px",
-                    fontSize: "0.78rem",
                     fontWeight: 800,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: "secondary.contrastText",
-                    background: "linear-gradient(90deg, #7b1fa2 0%, #512da8 100%)",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.22)",
+                    fontSize: "1.05rem",
+                    letterSpacing: "0.02em",
+                    mb: "1rem",
+                    px: 1,
+                    py: 0.35,
+                    display: "inline-block",
+                    borderRadius: "999px",
+                    background: "linear-gradient(90deg, rgba(25,118,210,0.18), rgba(25,118,210,0.05))",
+                    border: "1px solid rgba(25,118,210,0.35)",
+                    color: "text.primary",
                 }}
             >
                 Message History
@@ -901,53 +929,128 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             {debugMessages.map((message, index) => {
                 const isActiveStep = index === debugStep
 
+                const lines = extractConversations(message, [] as AgentConversation[])
+                    .map((conversation) => {
+                        const agents = [...conversation.agents.values()].filter(Boolean).join(", ")
+                        const text = (conversation.text ?? "").trim()
+                        if (!agents && !text) return null
+                        return `${agents || "Unknown agent"}: ${truncateWithEllipsis(text || "[no text]", 100)}`
+                    })
+                    .filter(Boolean)
+
+                const displayText = lines.length > 0 ? lines.join("\n") : "[No conversation data for this message]"
+
                 return (
                     <Box
                         key={index}
+                        ref={(el: HTMLDivElement | null) => {
+                            debugRowRefs.current[index] = el
+                        }}
                         sx={{
-                            marginBottom: "0.35rem",
-                            marginTop: "0.35rem",
-                            color: isActiveStep ? "text.primary" : "var(--bs-gray)",
-                            backgroundColor: isActiveStep ? "rgba(56, 142, 60, 0.14)" : "transparent",
-                            border: isActiveStep ? "1px solid rgba(56, 142, 60, 0.55)" : "1px solid transparent",
+                            alignItems: "start",
+                            backgroundColor: isActiveStep ? "rgba(76, 175, 80, 0.12)" : "transparent",
+                            border: isActiveStep ? "1px solid rgba(76, 175, 80, 0.45)" : "1px solid transparent",
                             borderRadius: "8px",
+                            color: isActiveStep ? "text.primary" : "var(--bs-gray)",
+                            columnGap: 0.25,
+                            display: "grid",
+                            gridTemplateColumns: "1.0rem 2.6rem 1fr",
+                            mb: 0.2,
+                            mt: 0.2,
                             px: 1,
-                            py: 0.5,
+                            py: 0.45,
                             transition: "all 0.15s ease-in-out",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 0.6,
                         }}
                     >
                         <Typography
                             component="span"
                             sx={{
-                                width: "1.1rem",
-                                fontWeight: 900,
-                                lineHeight: 1.2,
-                                color: isActiveStep ? "success.main" : "transparent",
-                                userSelect: "none",
-                                mt: "1px",
+                                fontSize: "0.8rem",
+                                lineHeight: 1.25,
+                                fontWeight: 700,
+                                color: "success.main",
+                                textAlign: "center",
+                                visibility: isActiveStep ? "visible" : "hidden",
                             }}
                         >
-                            {isActiveStep ? "➜" : "•"}
+                            ➜
                         </Typography>
 
                         <Typography
+                            component="span"
                             sx={{
-                                fontWeight: isActiveStep ? 800 : 400,
-                                lineHeight: 1.2,
-                                whiteSpace: "pre-line",
-                                margin: 0,
+                                fontSize: "0.8rem",
+                                lineHeight: 1.25,
+                                fontWeight: 700,
+                                textAlign: "right",
+                                pr: 0.25,
+                                fontVariantNumeric: "tabular-nums",
                             }}
                         >
-                            {extractConversations(message, [] as AgentConversation[])
-                                .map(
-                                    (conversation) =>
-                                        `${[...conversation.agents.values()]}: ${conversation.text.slice(0, 100)}`
-                                )
-                                .join("\n")}
+                            #{index + 1}
                         </Typography>
+
+                        <Box
+                            sx={{
+                                fontSize: "0.8em",
+                                lineHeight: 1.25,
+                                fontStyle: lines.length === 0 ? "italic" : "normal",
+                                opacity: lines.length === 0 ? 0.8 : 1,
+                            }}
+                        >
+                            {lines.length === 0 ? (
+                                <Typography
+                                    component="div"
+                                    sx={{
+                                        fontSize: "inherit",
+                                        lineHeight: "inherit",
+                                        color: "text.secondary",
+                                    }}
+                                >
+                                    {displayText}
+                                </Typography>
+                            ) : (
+                                lines.map((line, lineIndex) => {
+                                    const separator = ": "
+                                    const sepIndex = line.indexOf(separator)
+                                    const hasSeparator = sepIndex >= 0
+                                    const agentPart = hasSeparator ? line.slice(0, sepIndex) : line
+                                    const messagePart = hasSeparator ? line.slice(sepIndex + separator.length) : ""
+
+                                    return (
+                                        <Typography
+                                            key={lineIndex}
+                                            component="div"
+                                            sx={{
+                                                fontSize: "inherit",
+                                                lineHeight: "inherit",
+                                                fontWeight: isActiveStep ? 600 : 400,
+                                                mb: lineIndex < lines.length - 1 ? 0.15 : 0,
+                                            }}
+                                        >
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "info.main", // subtle accent
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {agentPart}
+                                            </Box>
+                                            {hasSeparator ? ": " : ""}
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    color: "text.primary",
+                                                }}
+                                            >
+                                                {messagePart}
+                                            </Box>
+                                        </Typography>
+                                    )
+                                })
+                            )}
+                        </Box>
                     </Box>
                 )
             })}
