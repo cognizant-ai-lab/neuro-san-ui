@@ -80,7 +80,6 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {usePalette} from "../../Theme/Palettes"
-import {getDarkModeOutlinedButtonSx} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
@@ -1278,7 +1277,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 id={`${id}-keep-applying-button`}
                                 variant="outlined"
                                 onClick={handleKeepApplying}
-                                sx={getDarkModeOutlinedButtonSx(theme)}
                             >
                                 Keep applying
                             </Button>
