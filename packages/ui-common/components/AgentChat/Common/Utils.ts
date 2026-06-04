@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import capitalize from "lodash-es/capitalize.js"
 import startCase from "lodash-es/startCase.js"
 
 import {AgentErrorProps} from "./Types"
@@ -78,5 +77,5 @@ export const removeTrailingUuid = (agentName: string): string => {
  * @returns User-friendly agent name.
  */
 export const cleanUpAgentName = (agentName: string): string => {
-    return startCase(capitalize(agentName))
+    return startCase(agentName)
 }

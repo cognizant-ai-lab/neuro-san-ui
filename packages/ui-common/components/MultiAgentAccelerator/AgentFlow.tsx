@@ -337,7 +337,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [setThoughtBubbleEdges]) // mount/unmount only
 
     // Shadow color for icon
-    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
+    const isDarkMode = theme.palette.mode === "dark"
+    const foregroundColor = isDarkMode ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
 
     const palette = usePalette()
@@ -742,11 +743,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-legend`}
                 sx={{
                     position: "absolute",
-                    top: "5px",
+                    top: "1.5rem",
                     right: "10px",
                     padding: "5px",
                     borderRadius: "5px",
-                    boxShadow: `0 0 5px color-mix(in srgb, ${shadowColor} 30%, transparent)`,
+                    boxShadow: `0 0 5px color-mix(in srgb, ${foregroundColor} 30%, transparent)`,
                     display: "flex",
                     alignItems: "center",
                     zIndex: getZIndex(2, theme),
@@ -841,7 +842,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         if (!isActive) {
             return undefined
         }
-        return theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[200]
+        return isDarkMode ? theme.palette.grey[800] : theme.palette.grey[200]
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
@@ -936,6 +937,80 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
+    const titleBackgroundColor = alpha(theme.palette.background.paper, 0.75)
+
+    const getTitle = () => {
+        return (
+            networkDisplayName && (
+                <Box
+                    id={`${id}-network-title-bar`}
+                    sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        gap: 1,
+                        left: "50%",
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0,
+                        transform: "translateX(-50%)",
+                        zIndex: getZIndex(2, theme),
+                    }}
+                >
+                    <Tooltip
+                        title={networkDisplayName}
+                        placement="top"
+                    >
+                        <Box sx={{pointerEvents: "auto"}}>
+                            <Typography
+                                id={`${id}-network-title`}
+                                variant="subtitle1"
+                                sx={{
+                                    backdropFilter: "blur(6px)",
+                                    backgroundColor: titleBackgroundColor,
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                                    borderRadius: 2,
+                                    boxShadow:
+                                        theme.palette.mode === "dark"
+                                            ? `0 6px 20px ${alpha(theme.palette.common.black, 0.35)}`
+                                            : `0 6px 16px ${alpha(theme.palette.common.black, 0.12)}`,
+                                    color: theme.palette.getContrastText(alpha(titleBackgroundColor, 0.65)),
+                                    fontWeight: 600,
+                                    letterSpacing: "0.01em",
+                                    lineHeight: 1.35,
+                                    maxWidth: 400,
+                                    overflow: "hidden",
+                                    paddingLeft: 2,
+                                    paddingRight: 2,
+                                    paddingBottom: 0.45,
+                                    paddingTop: 0.45,
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {networkDisplayName}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                    {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
+                        <Button
+                            id={`${id}-enter-edit-mode-btn`}
+                            variant="contained"
+                            size="small"
+                            onClick={onEnterEditMode}
+                            startIcon={<EditIcon />}
+                            sx={{
+                                pointerEvents: "auto",
+                                "&:hover": {backgroundColor: theme.palette.primary.main},
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
+                </Box>
+            )
+        )
+    }
+
     return (
         <Box
             id={`${id}-outer-box`}
@@ -969,61 +1044,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-react-flow-wrapper`}
                 sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                {networkDisplayName && (
-                    <Box
-                        id={`${id}-network-title-bar`}
-                        sx={{
-                            position: "absolute",
-                            top: 44,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            zIndex: getZIndex(1, theme),
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            pointerEvents: "none",
-                        }}
-                    >
-                        <Typography
-                            id={`${id}-network-title`}
-                            variant="subtitle1"
-                            sx={{
-                                fontWeight: "bold",
-                                backgroundColor: alpha(theme.palette.background.paper, 0.85),
-                                borderRadius: 1.5,
-                                color:
-                                    theme.palette.mode === "dark"
-                                        ? theme.palette.common.white
-                                        : theme.palette.text.primary,
-                                paddingLeft: 1.5,
-                                paddingRight: 1.5,
-                                paddingTop: 0.25,
-                                paddingBottom: 0.25,
-                                whiteSpace: "nowrap",
-                                maxWidth: 400,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                            }}
-                        >
-                            {networkDisplayName}
-                        </Typography>
-                        {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
-                            <Button
-                                id={`${id}-enter-edit-mode-btn`}
-                                variant="contained"
-                                size="small"
-                                onClick={onEnterEditMode}
-                                startIcon={<EditIcon />}
-                                sx={{
-                                    pointerEvents: "auto",
-                                    "&:hover": {backgroundColor: theme.palette.primary.main},
-                                }}
-                            >
-                                Edit
-                            </Button>
-                        )}
-                    </Box>
-                )}
+                {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
                 <ReactFlow
                     id={`${id}-react-flow`}
                     nodes={nodes}
