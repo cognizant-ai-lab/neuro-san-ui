@@ -48,6 +48,9 @@ export interface AgentNodeProps extends Record<string, unknown> {
     readonly isEditable?: boolean
 }
 
+// A zero-width space character, used to give the browser a hint where to break long names
+const ZERO_WIDTH_SPACE = "\u200B"
+
 // Node dimensions
 export const NODE_HEIGHT = 100
 export const NODE_WIDTH = 100
@@ -211,6 +214,14 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
+    const wrappedAgentName = agentName
+        // Allow wrap after underscore
+        .replaceAll("_", `_${ZERO_WIDTH_SPACE}`)
+        // Allow wrap before capitals in camel/PascalCase (e.g., CustomerSupport -> Customer|Support)
+        .replaceAll(/(?<lower>[\da-z])(?<upper>[A-Z])/gu, `$<lower>${ZERO_WIDTH_SPACE}$<upper>`)
+        // Also split acronym->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
+        .replaceAll(/(?<acronym>[A-Z])(?<word>[A-Z][a-z])/gu, `$<acronym>${ZERO_WIDTH_SPACE}$<word>`)
+
     return (
         <>
             <AnimatedNode
@@ -292,20 +303,32 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 <Typography
                     id={`${agentId}-name`}
                     sx={{
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 4,
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 1,
+                        color: theme.palette.text.primary,
                         display: "-webkit-box",
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        lineHeight: "1.4em",
+                        fontSize: "17px",
+                        fontWeight: 700,
+                        lineHeight: 1.3,
+                        maxHeight: "4.4em",
+                        mx: "auto",
+                        my: "auto",
                         overflow: "hidden",
+                        overflowWrap: "anywhere",
+                        px: 0.75,
+                        py: 0.45,
                         textAlign: "center",
                         textOverflow: "ellipsis",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 2,
+                        whiteSpace: "normal",
                         width: `${NODE_WIDTH}px`,
+                        wordBreak: "break-word",
                         zIndex: 10,
                     }}
                 >
-                    {agentName}
+                    {wrappedAgentName}
                 </Typography>
             </Tooltip>
         </>

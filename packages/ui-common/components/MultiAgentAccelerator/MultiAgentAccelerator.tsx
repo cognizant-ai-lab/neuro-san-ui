@@ -717,7 +717,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={networkDisplayName || undefined}
+                            networkDisplayName={selectedNetwork || undefined}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
                             neuroSanURL={neuroSanURL}
                             onEnterEditMode={() => setIsEditingNetwork(true)}
