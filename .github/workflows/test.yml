@@ -63,8 +63,8 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js environment
-              # v1.0.6
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@e5f749a7ba5de8bb8106cb172e89f21ca581a697
+              # v1.0.7
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
                   # Pinned version. 22.18+ breaks tests due to
                   # https://github.com/nodejs/node/issues/59364
@@ -109,10 +109,10 @@ jobs:
             - name: Lint Dockerfiles (hadolint)
               id: hadolint
               if: success() || failure()
-              # v1.0.6
-              uses: cognizant-ai-lab/build-common/actions/run-hadolint@e5f749a7ba5de8bb8106cb172e89f21ca581a697
+              # v1.0.7
+              uses: cognizant-ai-lab/build-common/actions/run-hadolint@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
-                  dockerfile: apps/main/Dockerfile
+                  recursive: "true"
                   failure-threshold: info
 
             - name: Docker build check
