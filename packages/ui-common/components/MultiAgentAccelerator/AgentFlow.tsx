@@ -1003,7 +1003,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-react-flow-wrapper`}
                 sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box>
+                {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
                 <ReactFlow
                     id={`${id}-react-flow`}
                     nodes={nodes}
