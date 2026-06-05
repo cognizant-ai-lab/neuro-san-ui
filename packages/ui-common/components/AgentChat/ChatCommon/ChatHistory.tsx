@@ -36,7 +36,6 @@ export const ChatHistory: FC<ChatHistoryProps> = ({chatHistoryKey, id, messages}
                     content: (
                         <Conversation
                             id=""
-                            showThinking={false}
                             shouldWrapOutput={true}
                             turns={messages}
                         />

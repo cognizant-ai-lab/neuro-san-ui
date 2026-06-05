@@ -172,9 +172,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
-    // Track whether we've shown the info popup so we don't keep bugging the user with it
-    const [haveShownPopup, setHaveShownPopup] = useState<boolean>(false)
-
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
     // An extra set of quotes is making it in the string in local storage.
@@ -596,15 +593,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Reset Agent Network Designer preview
         setAgentsInNetworkDesigner([])
 
-        // Show info popup only once per session
-        if (!haveShownPopup) {
-            sendNotification(NotificationType.info, "Agents working", "Click the stop button or hit Escape to exit.")
-            setHaveShownPopup(true)
-        }
-
         // Mark that streaming has started
         setIsStreaming(true)
-    }, [haveShownPopup])
+    }, [])
 
     const onStreamingComplete = useCallback(() => {
         // When streaming is complete, clean up any refs and state

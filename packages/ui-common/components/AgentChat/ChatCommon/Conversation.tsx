@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box"
-import {useTheme} from "@mui/material/styles"
-import {FC, ReactNode, Ref, useMemo} from "react"
-import ReactMarkdown from "react-markdown"
+import {styled, useTheme} from "@mui/material/styles"
+import {FC, ReactNode, useMemo} from "react"
 
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {FormattedMarkdown} from "./FormattedMarkdown"
@@ -10,15 +9,33 @@ import {MUIAlert} from "../../Common/MUIAlert"
 
 interface ConversationProps {
     readonly id: string
-    readonly finalAnswerRef?: Ref<HTMLDivElement>
-    readonly showThinking: boolean
     readonly shouldWrapOutput: boolean
     readonly turns: ConversationTurn[]
 }
 
 const {atelierDuneDark, a11yLight} = HLJS_THEMES
 
-export const Conversation: FC<ConversationProps> = ({finalAnswerRef, id, shouldWrapOutput, showThinking, turns}) => {
+/**
+ * Styled component for a user turn bubble.
+ */
+const UserTurnBubble = styled(Box)(({theme}) => ({
+    backgroundColor: theme.palette.background.paper,
+    borderRadius: "1rem",
+    marginBottom: "1rem",
+    marginLeft: "auto",
+    overflowWrap: "anywhere",
+    paddingLeft: "1rem",
+    paddingRight: "1rem",
+    paddingTop: "0.5rem",
+    paddingBottom: "0.5rem",
+    whiteSpace: "pre-wrap",
+    width: "60%",
+}))
+
+/**
+ * Component to render a conversation between the user and the agent.
+ */
+export const Conversation: FC<ConversationProps> = ({id, shouldWrapOutput, turns}) => {
     // MUI theme
     const theme = useTheme()
     const darkMode = theme.palette.mode === "dark"
@@ -32,56 +49,20 @@ export const Conversation: FC<ConversationProps> = ({finalAnswerRef, id, shouldW
                 switch (turn.role) {
                     case MessageRole.User:
                         return [
-                            <Box
+                            <UserTurnBubble
                                 id={turn.id}
                                 key={turn.id}
-                                style={{
-                                    backgroundColor: theme.palette.background.paper,
-                                    borderRadius: "1rem",
-                                    marginBottom: "1rem",
-                                    marginLeft: "auto",
-                                    overflowWrap: "anywhere",
-                                    paddingLeft: "1rem",
-                                    paddingRight: "1rem",
-                                    paddingTop: "0.5rem",
-                                    paddingBottom: "0.5rem",
-                                    whiteSpace: "pre-wrap",
-                                    width: "60%",
-                                }}
                             >
                                 {turn.text}
-                            </Box>,
+                            </UserTurnBubble>,
                         ]
                     case MessageRole.Agent:
-                        return showThinking || turn.alwaysShow
-                            ? [
-                                  <Box
-                                      id={turn.id}
-                                      key={turn.id}
-                                      ref={finalAnswerRef}
-                                      sx={{marginBottom: "1rem"}}
-                                  >
-                                      <ReactMarkdown>{turn.text}</ReactMarkdown>
-                                  </Box>,
-                              ]
-                            : []
-                    case MessageRole.AgentHeader:
+                        // Will be part of "thinking" section, handled elsewhere
                         return []
                     case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.FinalAnswer:
-                        return [
-                            <Box
-                                id={turn.id}
-                                key={turn.id}
-                                ref={finalAnswerRef}
-                                style={{
-                                    marginBottom: "1rem",
-                                }}
-                            >
-                                <ReactMarkdown>{turn.text}</ReactMarkdown>
-                            </Box>,
-                        ]
+                        return [turn.text]
                     case MessageRole.Warning:
                         return [
                             <MUIAlert
@@ -111,7 +92,7 @@ export const Conversation: FC<ConversationProps> = ({finalAnswerRef, id, shouldW
                     }
                 }
             }),
-        [finalAnswerRef, showThinking, theme.palette.background.paper, turns]
+        [turns]
     )
 
     return (

@@ -54,6 +54,7 @@ import {Conversation} from "./Conversation"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
+import {Thinking} from "./Thinking"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
@@ -268,11 +269,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
-    // Track state of "show thinking" toggle
-    const [showThinking, setShowThinking] = useState<boolean>(false)
-
-    // Keeps a copy of the last AI message so we can highlight it as "final answer"
-    const lastAIMessage = useRef<string>("")
+    // Keeps a copy of the last AGENT_FRAMEWORK message so we can highlight it as "final answer"
+    const finalAnswerText = useRef<string>("")
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
@@ -287,9 +285,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
     const resetHistory = useAgentChatHistoryStore((state) => state.resetHistory)
-
-    // Ref to the item we think is the Final Answer from the agent
-    const finalAnswerRef = useRef<HTMLDivElement>(null)
 
     // Microphone state for voice input
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
@@ -343,12 +338,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         const container = chatOutputRef.current
         if (!container) return
 
-        // Scroll the final answer into view
-        if (finalAnswerRef.current && !isAwaitingLlm) {
-            container.scrollTop = finalAnswerRef.current.offsetTop - 50
-            return
-        }
-
         // Live-streaming auto-scroll
         if (autoScrollEnabled) {
             container.scrollTop = container.scrollHeight
@@ -365,41 +354,38 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // We use this to update the same "turn" as chunks come in from legacy agents
     const legacyTurnIdRef = useRef<string | null>(null)
 
-    const handleChunk = useCallback(
-        (chunk: string): void => {
-            // Give container a chance to process the chunk first
-            const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
-            succeeded.current = succeeded.current || onChunkReceivedResult
+    const handleLegacyAgentChunk = useCallback(
+        (chunk: string) => {
+            currentResponse.current += chunk
 
-            // For legacy agents, we either get plain text or Markdown. Just output it as-is.
-            if (isLegacyAgentType(targetAgent)) {
-                currentResponse.current += chunk
-
-                if (!legacyTurnIdRef.current) {
-                    // We don't yet have a turn for this response, so create one. On subsequent chunks, we'll just
-                    // update the text of this turn.
-                    legacyTurnIdRef.current = uuid()
-                    addTurn({
-                        id: legacyTurnIdRef.current,
-                        role: MessageRole.LegacyAgent,
-                        text: currentResponse.current,
-                        alwaysShow: true,
-                    })
-                } else {
-                    // We already have a turn for this response, so just update the text of that turn.
-                    setTurns((prev) =>
-                        prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
-                    )
-                }
-
-                // Check for Final Answer from legacy agent
-                const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
-                if (finalAnswerMatch) {
-                    lastAIMessage.current = finalAnswerMatch
-                }
-                return
+            if (!legacyTurnIdRef.current) {
+                // We don't yet have a turn for this response, so create one. On subsequent chunks, we'll just
+                // update the text of this turn.
+                legacyTurnIdRef.current = uuid()
+                addTurn({
+                    id: legacyTurnIdRef.current,
+                    role: MessageRole.LegacyAgent,
+                    text: currentResponse.current,
+                    alwaysShow: true,
+                })
+            } else {
+                // We already have a turn for this response, so just update the text of that turn.
+                setTurns((prev) =>
+                    prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
+                )
             }
 
+            // Check for Final Answer from legacy agent
+            const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
+            if (finalAnswerMatch) {
+                finalAnswerText.current = finalAnswerMatch
+            }
+        },
+        [addTurn]
+    )
+
+    const handleNeuroSanAgentChunk = useCallback(
+        (chunk: string) => {
             // For Neuro-san agents, we expect a ChatMessage structure in the chunk.
             const chatMessage: ChatMessage | null = chatMessageFromChunk(chunk)
             if (!chatMessage) {
@@ -408,9 +394,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
-            // Keep track of AI messages. The last one is (by definition) the "final answer" from the agents.
-            if (chatMessage.type === ChatMessageType.AI && chatMessage.text) {
-                lastAIMessage.current = chatMessage.text
+            // Keep track of AGENT_FRAMEWORK messages. The last one is (by definition) the "final answer" from
+            // the agents.
+            if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && (chatMessage.text || chatMessage.structure)) {
+                finalAnswerText.current = chatMessage.text || JSON.stringify(chatMessage.structure)
             }
 
             // Shallow merge existing slyData with incoming chatMessage.sly_data
@@ -451,11 +438,31 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     role: MessageRole.Agent,
                     agentName,
                     text: chatMessage.text,
+                    messageType: chatMessage.type,
                 })
                 currentResponse.current += chatMessage.text
             }
         },
-        [onChunkReceived, targetAgent, addTurn, updateSlyData, updateChatContext]
+        [addTurn, targetAgent, updateChatContext, updateSlyData]
+    )
+
+    /**
+     * Handle a chunk of response from the server. Called each time the server streams a chunk.
+     */
+    const handleChunk = useCallback(
+        (chunk: string): void => {
+            // Give container a chance to process the chunk first
+            const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
+            succeeded.current = succeeded.current || onChunkReceivedResult
+
+            if (isLegacyAgentType(targetAgent)) {
+                // For legacy agents, we either get plain text or Markdown. Just output it as-is.
+                handleLegacyAgentChunk(chunk)
+            } else {
+                handleNeuroSanAgentChunk(chunk)
+            }
+        },
+        [onChunkReceived, targetAgent, handleNeuroSanAgentChunk, handleLegacyAgentChunk]
     )
 
     /**
@@ -465,8 +472,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Reset state, whatever happened during request
         setIsAwaitingLlm(false)
         setChatInput("")
-        lastAIMessage.current = ""
-        finalAnswerRef.current = null
+        finalAnswerText.current = ""
 
         setPreviousResponse?.(targetAgent, currentResponse.current)
         currentResponse.current = ""
@@ -581,16 +587,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 alwaysShow: true,
             })
 
-            // Add ID block for agent
-            addTurn({
-                agentDisplayName,
-                agentName: targetAgent,
-                alwaysShow: true,
-                id: uuid(),
-                role: MessageRole.AgentHeader,
-                text: agentDisplayName,
-            })
-
             // Allow clients to do something when streaming starts
             onStreamingStarted?.()
 
@@ -618,17 +614,17 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }
 
                 // Display prominent "Final Answer" message if we have one
-                if (lastAIMessage.current) {
+                if (finalAnswerText.current) {
                     addTurn({
                         alwaysShow: true,
                         id: uuid(),
                         role: MessageRole.FinalAnswer,
-                        text: lastAIMessage.current,
+                        text: finalAnswerText.current,
                     })
 
                     // Record bot answer in history.
                     if (currentResponse?.current?.length > 0) {
-                        updateChatHistory(targetAgent, [new AIMessage({content: lastAIMessage.current, id: uuid()})])
+                        updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerText.current, id: uuid()})])
                     }
                 } else if (isLegacyAgentType(targetAgent) && currentResponse.current.length > 0) {
                     // It's a legacy agent that didn't provide a "Final Answer", so just record the whole response
@@ -681,7 +677,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const shouldEnableRegenerateButton = previousUserQuery && !isAwaitingLlm
 
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
-    const enableClearChatButton = !isAwaitingLlm && turns.length > 0
+    const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
     const getPlaceholder = () =>
         !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
@@ -691,7 +687,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         resetHistory(targetAgent)
         setPreviousUserQuery("")
         currentResponse.current = ""
-        lastAIMessage.current = ""
+        finalAnswerText.current = ""
     }, [resetHistory, targetAgent])
 
     const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
@@ -806,10 +802,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setOptionsMenuOpen(false)
     }
 
-    const handleToggleShowThinking = () => {
-        setShowThinking((prev) => !prev)
-    }
-
     const handleToggleAutoScroll = () => {
         setAutoScrollEnabled((prev) => !prev)
     }
@@ -846,16 +838,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 </ListItemIcon>
                 <ListItemText primary="Auto-scroll output" />
             </MenuItem>
-            <MenuItem onClick={handleToggleShowThinking}>
-                <ListItemIcon>
-                    <Checkbox
-                        checked={showThinking}
-                        tabIndex={-1}
-                        sx={{pointerEvents: "none"}}
-                    />
-                </ListItemIcon>
-                <ListItemText primary="Show thinking" />
-            </MenuItem>
             <MenuItem onClick={handleToggleWrapOutput}>
                 <ListItemIcon>
                     <Checkbox
@@ -889,15 +871,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 ref={chatOutputRef}
                 sx={{
                     backgroundColor: backgroundColor || undefined,
-                    borderWidth: "1px",
                     borderRadius: "0.5rem",
+                    borderWidth: "1px",
                     fontSize: "smaller",
-                    resize: "none",
-                    overflowY: "auto", // Enable vertical scrollbar
+                    overflowY: "auto",
                     paddingBottom: "60px",
-                    paddingTop: "7.5px",
                     paddingLeft: "15px",
                     paddingRight: "15px",
+                    paddingTop: "7.5px",
+                    resize: "none",
+                    scrollbarGutter: "stable",
                     width: "100%",
                 }}
                 tabIndex={-1}
@@ -922,11 +905,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 />
                 <Conversation
                     id={`${id}-conversation-display`}
-                    finalAnswerRef={finalAnswerRef}
-                    showThinking={showThinking}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
+                {!isAwaitingLlm && (
+                    // Only show thinking once streaming is complete
+                    <Thinking
+                        id={`${id}-thinking-display`}
+                        turns={turns}
+                    />
+                )}
                 {isAwaitingLlm && (
                     <Box
                         id="awaitingOutputContainer"
