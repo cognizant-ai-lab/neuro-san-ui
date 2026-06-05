@@ -9,6 +9,7 @@ import {MUIAlert} from "../../Common/MUIAlert"
 
 interface ConversationProps {
     readonly id: string
+    readonly includeAgentMessages?: boolean
     readonly shouldWrapOutput: boolean
     readonly turns: ConversationTurn[]
 }
@@ -35,7 +36,7 @@ const UserTurnBubble = styled(Box)(({theme}) => ({
 /**
  * Component to render a conversation between the user and the agent.
  */
-export const Conversation: FC<ConversationProps> = ({id, shouldWrapOutput, turns}) => {
+export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = false, shouldWrapOutput, turns}) => {
     // MUI theme
     const theme = useTheme()
     const darkMode = theme.palette.mode === "dark"
@@ -57,11 +58,9 @@ export const Conversation: FC<ConversationProps> = ({id, shouldWrapOutput, turns
                             </UserTurnBubble>,
                         ]
                     case MessageRole.Agent:
-                        // Will be part of "thinking" section, handled elsewhere
-                        return []
-                    case MessageRole.LegacyAgent:
-                        return [turn.text]
+                        return includeAgentMessages ? [turn.text] : []
                     case MessageRole.FinalAnswer:
+                    case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.Warning:
                         return [

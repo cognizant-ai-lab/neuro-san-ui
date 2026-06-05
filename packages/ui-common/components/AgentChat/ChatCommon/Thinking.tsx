@@ -41,7 +41,7 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
         return turns
             .slice(lastUserTurnIndex + 1)
             .filter((turn) => turn.messageType && THINKING_MESSAGE_TYPES.has(turn.messageType))
-            .map((turn) => turn.text)
+            .map((turn) => `**${turn.agentName}**: ${turn.text}`)
             .join("\n\n")
     }, [turns])
 
