@@ -36,6 +36,7 @@ import {useSettingsStore} from "../../state/Settings"
 import {usePalette} from "../../Theme/Palettes"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
+
 export interface AgentNodeProps extends Record<string, unknown> {
     readonly agentCounts?: Map<string, number>
     readonly agentName: string
@@ -210,8 +211,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
-    const isClickableNode = isEditable
-
     const [isHovered, setIsHovered] = useState(false)
 
     const wrappedAgentName = agentName
@@ -219,8 +218,11 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         .replaceAll("_", `_${ZERO_WIDTH_SPACE}`)
         // Allow wrap before capitals in camel/PascalCase (e.g., CustomerSupport -> Customer|Support)
         .replaceAll(/(?<lower>[\da-z])(?<upper>[A-Z])/gu, `$<lower>${ZERO_WIDTH_SPACE}$<upper>`)
-        // Also split acronym->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
-        .replaceAll(/(?<acronym>[A-Z])(?<word>[A-Z][a-z])/gu, `$<acronym>${ZERO_WIDTH_SPACE}$<word>`)
+        // Also split abbreviation->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
+        .replaceAll(/(?<abbr>[A-Z])(?<word>[A-Z][a-z])/gu, `$<abbr>${ZERO_WIDTH_SPACE}$<word>`)
+
+    const height = NODE_HEIGHT * (isFrontman ? 1.25 : 1.0)
+    const width = height
 
     return (
         <>
@@ -235,14 +237,14 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                     backgroundColor,
                     color,
                     cursor: isEditable ? "pointer" : "grab",
-                    height: NODE_HEIGHT * (isFrontman ? 1.25 : 1.0),
-                    width: NODE_WIDTH * (isFrontman ? 1.25 : 1.0),
+                    height,
+                    width,
                     zIndex: getZIndex(1, theme),
                 }}
             >
                 {getDisplayAsIcon()}
 
-                {isHovered && isClickableNode && (
+                {isHovered && isEditable && (
                     <Tooltip
                         title="Edit"
                         placement="top"
@@ -303,29 +305,24 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 <Typography
                     id={`${agentId}-name`}
                     sx={{
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 4,
                         backgroundColor: theme.palette.background.paper,
                         border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 1,
                         color: theme.palette.text.primary,
                         display: "-webkit-box",
-                        fontSize: "17px",
-                        fontWeight: 700,
-                        lineHeight: 1.3,
-                        maxHeight: "4.4em",
-                        mx: "auto",
-                        my: "auto",
+                        fontSize: "16px",
+                        fontWeight: "700",
                         overflow: "hidden",
                         overflowWrap: "anywhere",
-                        px: 0.75,
-                        py: 0.45,
+                        paddingLeft: 0.75,
+                        paddingRight: 0.75,
+                        paddingBottom: 0.45,
+                        paddingTop: 0.45,
                         textAlign: "center",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "normal",
-                        width: `${NODE_WIDTH}px`,
-                        wordBreak: "break-word",
-                        zIndex: 10,
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 4,
+                        width,
+                        zIndex: getZIndex(1, theme),
                     }}
                 >
                     {wrappedAgentName}
