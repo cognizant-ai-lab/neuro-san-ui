@@ -1177,9 +1177,7 @@ describe("AgentFlow", () => {
         await user.click(saveButton)
 
         // Popup should close
-        await waitFor(() => {
-            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
-        })
+        await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
 
         // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
         const storedDefinitions = useTempNetworksStore
@@ -1212,9 +1210,7 @@ describe("AgentFlow", () => {
 
         // Cancel closes the popup
         await user.click(cancelButton)
-        await waitFor(() => {
-            expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument()
-        })
+        await waitFor(() => expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument())
     })
 
     it("Should handle conversations with empty text strings", () => {
@@ -1448,10 +1444,7 @@ describe("AgentFlow", () => {
         await user.clear(instructionsField)
         await user.type(instructionsField, "Updated instructions for Network A.")
         await user.click(screen.getByRole("button", {name: "Save"}))
-
-        await waitFor(() => {
-            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
-        })
+        await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
 
         // Network A's instructions should be updated
         const defA = useTempNetworksStore
@@ -1677,10 +1670,7 @@ describe("AgentFlow", () => {
             await user.clear(instructionsField)
             await user.type(instructionsField, EDITED_INSTRUCTIONS)
             await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
+            expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
 
             expect(onSaveAgent).toHaveBeenCalledTimes(1)
             const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
@@ -1718,9 +1708,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             // Popup closes immediately on save; onSaveAgent error is surfaced via notification
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
-            })
+            expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
 
             consoleErrorSpy.mockRestore()
             consoleDebugSpy.mockRestore()
@@ -1744,10 +1732,7 @@ describe("AgentFlow", () => {
             await user.clear(instructionsField)
             await user.type(instructionsField, "Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
-            })
+            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
         })
     })
 
@@ -1866,9 +1851,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             // Wait until the overlay appears (streaming started)
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            })
+            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
 
             // Click the close button while request is in-flight
             await user.click(screen.getByRole("button", {name: /close edit mode/iu}))
@@ -1920,10 +1903,7 @@ describe("AgentFlow", () => {
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             await user.type(promptField, "Add a legal review agent")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(sendChatQuery).toHaveBeenCalledTimes(1)
-            })
+            expect(sendChatQuery).toHaveBeenCalledTimes(1)
             consoleDebugSpy.mockRestore()
         })
 
@@ -1946,10 +1926,7 @@ describe("AgentFlow", () => {
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             await user.type(promptField, "Add a legal review agent")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
-            })
+            expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
         })
 
         it("shows an error toast when dock apply returns no reservations", async () => {
@@ -1968,13 +1945,7 @@ describe("AgentFlow", () => {
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             await user.type(promptField, "Add a node")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(enqueueSnackbar).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.objectContaining({variant: "error"})
-                )
-            })
+            expect(enqueueSnackbar).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({variant: "error"}))
             consoleDebugSpy.mockRestore()
         })
 
@@ -1994,13 +1965,7 @@ describe("AgentFlow", () => {
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             await user.type(promptField, "Add a node")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(enqueueSnackbar).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.objectContaining({variant: "error"})
-                )
-            })
+            expect(enqueueSnackbar).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({variant: "error"}))
             // Button should re-enable after error
             expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
             consoleDebugSpy.mockRestore()
@@ -2091,9 +2056,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             // The higher-expiry reservation should win
-            await waitFor(() => {
-                expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
-            })
+            expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
         })
 
         it("pressing Enter in the prompt field submits the dock apply", async () => {
@@ -2108,10 +2071,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             await user.type(promptField, "Add a node{Enter}")
-
-            await waitFor(() => {
-                expect(sendChatQuery).toHaveBeenCalledTimes(1)
-            })
+            expect(sendChatQuery).toHaveBeenCalledTimes(1)
             consoleDebugSpy.mockRestore()
         })
 
@@ -2147,10 +2107,7 @@ describe("AgentFlow", () => {
 
             await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            })
+            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
 
             // Resolve the in-flight promise and flush all resulting state updates
             await act(async () => {
@@ -2180,10 +2137,7 @@ describe("AgentFlow", () => {
 
             await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(screen.getByText("Applying changes to network")).toBeInTheDocument()
-            })
+            expect(screen.getByText("Applying changes to network")).toBeInTheDocument()
             expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
 
             await act(async () => {
@@ -2212,10 +2166,7 @@ describe("AgentFlow", () => {
 
             await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
-
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            })
+            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
 
             act(() => unblock())
 
@@ -2247,17 +2198,15 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             // Stop button should appear while backdrop is open
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
-            })
+            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
             expect(container.querySelector("#test-flow-id-stop-confirm-card")).not.toBeInTheDocument()
 
-            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            const stopButton = container.querySelector("#test-flow-id-stop-button")
+            expect(stopButton).toBeInTheDocument()
+            await user.click(stopButton)
 
             // Confirm card should appear
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
-            })
+            expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
             expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
             expect(container.querySelector("#test-flow-id-stop-discard-button")).toBeInTheDocument()
 
@@ -2288,22 +2237,20 @@ describe("AgentFlow", () => {
 
             await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
             await user.click(screen.getByRole("button", {name: /apply/iu}))
+            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
 
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
-            })
-            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            const stopButton = container.querySelector("#test-flow-id-stop-button")
+            expect(stopButton).toBeInTheDocument()
+            await user.click(stopButton)
 
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
-            })
-            fireEvent.click(container.querySelector("#test-flow-id-keep-applying-button"))
+            expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
+            const keepApplyingButton = container.querySelector("#test-flow-id-keep-applying-button")
+            expect(keepApplyingButton).toBeInTheDocument()
+            await user.click(keepApplyingButton)
 
             // Progress card (with Stop button) should be back; backdrop still visible
-            await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            })
+            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
+            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
 
             await act(async () => {
                 unblock()
@@ -2344,7 +2291,6 @@ describe("AgentFlow", () => {
             await waitFor(() => {
                 expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
             })
-
             fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
 
             // Backdrop should close
@@ -2436,9 +2382,11 @@ describe("AgentFlow", () => {
                 expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
             })
             fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+
             await waitFor(() => {
                 expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
             })
+
             fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
 
             await waitFor(() => {
