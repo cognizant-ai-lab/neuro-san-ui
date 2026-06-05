@@ -2543,5 +2543,83 @@ describe("AgentFlow", () => {
             consoleDebugSpy.mockRestore()
             consoleErrorSpy.mockRestore()
         })
+
+        it("renders the applied banner with the dark-mode background in dark mode", async () => {
+            // The empty designer result surfaces an expected "no reservation" notification (console.debug);
+            // withStrictMocks restores this spy automatically, so no manual mockRestore is needed.
+            jest.spyOn(console, "debug").mockImplementation()
+            ;(sendChatQuery as jest.Mock).mockResolvedValue(undefined)
+
+            const {container} = renderAgentFlowComponent(
+                {
+                    isEditMode: true,
+                    isSelectedNetworkTemporary: true,
+                    networkId: DOCK_NETWORK_ID,
+                    neuroSanURL: "http://localhost:8080",
+                    currentUser: "test-user",
+                },
+                "dark"
+            )
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+
+            // The user sees a confirmation that their changes were applied...
+            expect(await screen.findByText(/changes applied/iu)).toBeInTheDocument()
+
+            // ...with the dark-mode overlay (light translucent on dark, vs. dark on light). Reading the
+            // banner's computed background mirrors the legend dark-mode test above; a styled Box has no
+            // accessible handle, so it's queried by id.
+            const banner = container.querySelector("#test-flow-id-applied-info")
+            expect(window.getComputedStyle(banner).backgroundColor).toBe("rgba(255, 255, 255, 0.05)")
+        })
+
+        it("renders the cancelled banner with the dark-mode background in dark mode", async () => {
+            ;(sendChatQuery as jest.Mock).mockImplementation(
+                (_url: string, signal: AbortSignal) =>
+                    new Promise<void>((_resolve, reject) => {
+                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                    })
+            )
+
+            const {container} = renderAgentFlowComponent(
+                {
+                    isEditMode: true,
+                    isSelectedNetworkTemporary: true,
+                    networkId: DOCK_NETWORK_ID,
+                    neuroSanURL: "http://localhost:8080",
+                    currentUser: "test-user",
+                },
+                "dark"
+            )
+
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.click(await screen.findByRole("button", {name: /stop/iu}))
+            await user.click(await screen.findByRole("button", {name: /stop & discard/iu}))
+
+            // The user sees the cancellation notice with the dark-mode overlay (see note above).
+            expect(await screen.findByText(/applying cancelled/iu)).toBeInTheDocument()
+            const banner = container.querySelector("#test-flow-id-cancelled-info")
+            expect(window.getComputedStyle(banner).backgroundColor).toBe("rgba(255, 255, 255, 0.05)")
+        })
+
+        it("does nothing when Enter is pressed with an empty prompt", async () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            // Enter bypasses the disabled Apply button, so handleDockApply runs and must early-return.
+            await user.click(screen.getByPlaceholderText(/describe a change/iu))
+            await user.keyboard("{Enter}")
+
+            expect(sendChatQuery).not.toHaveBeenCalled()
+            // The saving backdrop stays closed, so its title is never shown to the user.
+            expect(screen.getByText(/applying changes to network/iu)).not.toBeVisible()
+        })
     })
 })
