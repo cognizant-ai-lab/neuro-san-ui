@@ -10,14 +10,14 @@ import {MUIAccordion} from "../../Common/MUIAccordion"
 interface ChatHistoryProps {
     readonly chatHistoryKey: string
     readonly id: string
-    readonly messages: ConversationTurn[]
+    readonly turns: ConversationTurn[]
 }
 // #endregion: Types
 
 /**
  * Component for displaying chat history from previous interactions with the agent.
  */
-export const ChatHistory: FC<ChatHistoryProps> = ({chatHistoryKey, id, messages}) => {
+export const ChatHistory: FC<ChatHistoryProps> = ({chatHistoryKey, id, turns}) => {
     const theme = useTheme()
     return (
         <MUIAccordion
@@ -35,9 +35,12 @@ export const ChatHistory: FC<ChatHistoryProps> = ({chatHistoryKey, id, messages}
                     title: "Chat History",
                     content: (
                         <Conversation
-                            id=""
+                            id={`${id}-conversation`}
+                            // Pass "true" here to include final answers, which get persisted as agent
+                            // messages in chat history.
+                            includeAgentMessages={true}
                             shouldWrapOutput={true}
-                            turns={messages}
+                            turns={turns}
                         />
                     ),
                 },

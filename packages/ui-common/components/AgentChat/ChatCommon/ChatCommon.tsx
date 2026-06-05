@@ -433,6 +433,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     chatMessage.origin?.length > 0
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
                         : "Agent message"
+                console.debug(
+                    `Received message from agent. Type: ${chatMessage.type}, Text: ${chatMessage.text.slice(0, 50)}`
+                )
                 addTurn({
                     id: uuid(),
                     role: MessageRole.Agent,
@@ -891,7 +894,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     <ChatHistory
                         chatHistoryKey={CHAT_HISTORY_KEY}
                         id={`${id}-chat-history`}
-                        messages={toTurns(agentChatHistory.chatHistory)}
+                        turns={toTurns(agentChatHistory.chatHistory)}
                     />
                 )}
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
