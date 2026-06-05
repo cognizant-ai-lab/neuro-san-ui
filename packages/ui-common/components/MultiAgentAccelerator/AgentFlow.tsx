@@ -581,8 +581,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
     }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
 
-    const dockSubtitle = "Changes apply only to this Temporary network"
-
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
             dockAbortControllerRef.current?.abort()
@@ -1155,13 +1153,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     {/* Dock header */}
                     <Box
                         sx={{
+                            backdropFilter: "blur(6px)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 0.5,
-                            paddingBottom: 0.5,
+                            paddingLeft: 1.25,
+                            paddingRight: 0.25,
                             borderBottom: `1px solid ${theme.palette.divider}`,
                         }}
                     >
@@ -1179,28 +1176,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             <CloseIcon fontSize="small" />
                         </IconButton>
                     </Box>
-                    <Typography
-                        variant="caption"
-                        sx={{
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 0.5,
-                            paddingBottom: 0,
-                            color: theme.palette.text.secondary,
-                            display: "block",
-                        }}
-                    >
-                        {dockSubtitle}
-                    </Typography>
                     {/* Prompt input row */}
                     <Box
                         sx={{
                             display: "flex",
                             gap: 1,
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 1.5,
-                            paddingBottom: 1.5,
+                            paddingLeft: 1,
+                            paddingRight: 1,
+                            paddingTop: 0.5,
+                            paddingBottom: 0.5,
                             alignItems: "center",
                         }}
                     >
@@ -1219,14 +1203,21 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 }
                             }}
                             disabled={isDockStreaming}
-                            slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
+                            slotProps={{htmlInput: {style: {fontSize: "0.75rem"}}}}
                         />
                         <Button
                             id={`${id}-dock-apply-button`}
                             variant="contained"
                             onClick={() => void handleDockApply()}
                             disabled={isDockStreaming || !dockPrompt.trim()}
-                            sx={{whiteSpace: "nowrap", minWidth: 120}}
+                            sx={{
+                                whiteSpace: "nowrap",
+                                minWidth: 120,
+                                paddingTop: 0.3,
+                                paddingBottom: 0.3,
+                                marginBottom: "1px",
+                                marginRight: 0,
+                            }}
                             startIcon={
                                 isDockStreaming ? (
                                     <CircularProgress
@@ -1236,7 +1227,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 ) : undefined
                             }
                         >
-                            {isDockStreaming ? "Applying…" : "Apply"}
+                            {isDockStreaming ? "Applying..." : "Apply"}
                         </Button>
                     </Box>
                 </Box>
@@ -1278,14 +1269,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             variant="body1"
                             sx={{fontWeight: "bold"}}
                         >
-                            Stop applying changes?
+                            Abort changes?
                         </Typography>
                         <Typography
                             id={`${id}-stop-confirm-body`}
                             variant="body2"
                             color="text.secondary"
                         >
-                            The in-progress update will be cancelled and discarded. Your network won’t change.
+                            The in-progress update will be cancelled and discarded. Your network will not be modified.
                         </Typography>
                         <Box
                             sx={{

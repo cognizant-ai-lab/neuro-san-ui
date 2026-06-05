@@ -1792,7 +1792,6 @@ describe("AgentFlow", () => {
 
             expect(container.querySelector("#test-flow-id-topology-editor-dock")).toBeInTheDocument()
             expect(screen.getByText("Network Editor")).toBeInTheDocument()
-            expect(screen.getByText("Changes apply only to this Temporary network")).toBeInTheDocument()
         })
 
         it("does not show the dock when isEditMode is false", () => {
