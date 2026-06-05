@@ -1,7 +1,6 @@
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 export enum MessageRole {
-    "AgentHeader" = "AgentHeader",
     "Agent" = "Agent",
     "Error" = "Error",
     "FinalAnswer" = "FinalAnswer",

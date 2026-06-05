@@ -224,110 +224,121 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
     const height = NODE_HEIGHT * (isFrontman ? 1.25 : 1.0)
     const width = height
 
-    return (
-        <>
-            <AnimatedNode
-                id={agentId}
-                data-testid={agentId}
-                glowColor={glowColor}
-                isActive={isActiveAgent}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
+    const getEditButton = () => (
+        <Tooltip
+            title="Edit"
+            placement="top"
+            disableInteractive
+        >
+            <IconButton
                 sx={{
-                    backgroundColor,
-                    color,
-                    cursor: isEditable ? "pointer" : "grab",
-                    height,
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    backgroundColor: "rgba(0,0,0,0.45)",
+                    borderRadius: "50%",
+                    padding: "3px",
+                    zIndex: 2,
+                    cursor: "pointer",
+                    "&:hover": {backgroundColor: "rgba(0,0,0,0.65)"},
+                }}
+            >
+                <EditIcon
+                    id={`${agentId}-edit-icon`}
+                    sx={{fontSize: "1rem", color: "white"}}
+                />
+            </IconButton>
+        </Tooltip>
+    )
+
+    const getNodeName = () => (
+        <Tooltip
+            id={`${agentId}-tooltip`}
+            title={agentName}
+            placement="top"
+            disableInteractive
+        >
+            <Typography
+                id={`${agentId}-name`}
+                sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1,
+                    color: theme.palette.text.primary,
+                    display: "-webkit-box",
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    marginTop: "0.5rem",
+                    overflow: "hidden",
+                    overflowWrap: "anywhere",
+                    paddingLeft: 0.75,
+                    paddingRight: 0.75,
+                    paddingBottom: 0.45,
+                    paddingTop: 0.45,
+                    textAlign: "center",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: 4,
                     width,
                     zIndex: getZIndex(1, theme),
                 }}
             >
-                {getDisplayAsIcon()}
+                {wrappedAgentName}
+            </Typography>
+        </Tooltip>
+    )
 
-                {isHovered && isEditable && (
-                    <Tooltip
-                        title="Edit"
-                        placement="top"
-                        disableInteractive
-                    >
-                        <IconButton
-                            sx={{
-                                position: "absolute",
-                                top: 0,
-                                right: 0,
-                                backgroundColor: "rgba(0,0,0,0.45)",
-                                borderRadius: "50%",
-                                padding: "3px",
-                                zIndex: 2,
-                                cursor: "pointer",
-                                "&:hover": {backgroundColor: "rgba(0,0,0,0.65)"},
-                            }}
-                        >
-                            <EditIcon
-                                id={`${agentId}-edit-icon`}
-                                sx={{fontSize: "1rem", color: "white"}}
-                            />
-                        </IconButton>
-                    </Tooltip>
-                )}
+    const getNode = () => (
+        <AnimatedNode
+            id={agentId}
+            data-testid={agentId}
+            glowColor={glowColor}
+            isActive={isActiveAgent}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            sx={{
+                backgroundColor,
+                color,
+                cursor: isEditable ? "pointer" : "grab",
+                height,
+                width,
+                zIndex: getZIndex(1, theme),
+            }}
+        >
+            {getDisplayAsIcon()}
 
-                <Handle
-                    id={`${agentId}-left-handle`}
-                    position={Position.Left}
-                    type="source"
-                    style={{visibility: handleVisibility}}
-                />
-                <Handle
-                    id={`${agentId}-right-handle`}
-                    position={Position.Right}
-                    type="source"
-                    style={{visibility: handleVisibility}}
-                />
-                <Handle
-                    id={`${agentId}-top-handle`}
-                    position={Position.Top}
-                    type="source"
-                    style={{visibility: handleVisibility}}
-                />
-                <Handle
-                    id={`${agentId}-bottom-handle`}
-                    position={Position.Bottom}
-                    type="source"
-                    style={{visibility: handleVisibility}}
-                />
-            </AnimatedNode>
-            <Tooltip
-                id={`${agentId}-tooltip`}
-                title={agentName}
-                placement="top"
-                disableInteractive
-            >
-                <Typography
-                    id={`${agentId}-name`}
-                    sx={{
-                        backgroundColor: theme.palette.background.paper,
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 1,
-                        color: theme.palette.text.primary,
-                        display: "-webkit-box",
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        overflow: "hidden",
-                        overflowWrap: "anywhere",
-                        paddingLeft: 0.75,
-                        paddingRight: 0.75,
-                        paddingBottom: 0.45,
-                        paddingTop: 0.45,
-                        textAlign: "center",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 4,
-                        width,
-                        zIndex: getZIndex(1, theme),
-                    }}
-                >
-                    {wrappedAgentName}
-                </Typography>
-            </Tooltip>
+            {isHovered && isEditable && getEditButton()}
+
+            <Handle
+                id={`${agentId}-left-handle`}
+                position={Position.Left}
+                type="source"
+                style={{visibility: handleVisibility}}
+            />
+            <Handle
+                id={`${agentId}-right-handle`}
+                position={Position.Right}
+                type="source"
+                style={{visibility: handleVisibility}}
+            />
+            <Handle
+                id={`${agentId}-top-handle`}
+                position={Position.Top}
+                type="source"
+                style={{visibility: handleVisibility}}
+            />
+            <Handle
+                id={`${agentId}-bottom-handle`}
+                position={Position.Bottom}
+                type="source"
+                style={{visibility: handleVisibility}}
+            />
+        </AnimatedNode>
+    )
+
+    return (
+        <>
+            {getNode()}
+            {getNodeName()}
         </>
     )
 }
