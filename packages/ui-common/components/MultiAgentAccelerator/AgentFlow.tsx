@@ -1085,13 +1085,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <Box
                             id={`${id}-applied-info`}
                             sx={{
+                                backdropFilter: "blur(6px)",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                paddingLeft: 2,
-                                paddingRight: 2,
-                                paddingTop: 0.75,
-                                paddingBottom: 0.75,
+                                paddingLeft: 1.25,
+                                paddingRight: 0.25,
                                 backgroundColor: (t) =>
                                     t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                                 borderBottom: `1px solid ${theme.palette.divider}`,
@@ -1120,13 +1119,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <Box
                             id={`${id}-cancelled-info`}
                             sx={{
+                                backdropFilter: "blur(6px)",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                paddingLeft: 2,
-                                paddingRight: 2,
-                                paddingTop: 0.75,
-                                paddingBottom: 0.75,
+                                paddingLeft: 1.25,
+                                paddingRight: 0.25,
                                 backgroundColor: (t) =>
                                     t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                                 borderBottom: `1px solid ${theme.palette.divider}`,
