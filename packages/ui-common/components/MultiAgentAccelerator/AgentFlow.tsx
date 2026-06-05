@@ -439,7 +439,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Clear the banner timer on unmount
     useEffect(() => {
         return () => {
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+            clearTimeout(bannerTimeoutRef.current)
         }
     }, [])
 
@@ -461,7 +461,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handleDismissBanner = useCallback(() => {
-        if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+        clearTimeout(bannerTimeoutRef.current)
         setStopState(null)
     }, [])
 
@@ -556,7 +556,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )
             applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
             setDockPrompt("")
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+            clearTimeout(bannerTimeoutRef.current)
             setStopState("applied")
             bannerTimeoutRef.current = setTimeout(() => {
                 setStopState(null)
