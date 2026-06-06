@@ -863,8 +863,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 borderRadius: "var(--bs-border-radius)",
                 display: "flex",
                 flexGrow: 1,
-                height: "100%",
-                margin: "10px",
+                marginLeft: "10px",
                 position: "relative",
                 overflowY: "auto",
             }}
@@ -873,16 +872,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 id="llm-responses"
                 ref={chatOutputRef}
                 sx={{
-                    backgroundColor: backgroundColor || undefined,
+                    backgroundColor,
                     borderRadius: "0.5rem",
-                    borderWidth: "1px",
-                    fontSize: "smaller",
+                    fontSize: "16px",
                     overflowY: "auto",
                     paddingBottom: "60px",
                     paddingLeft: "15px",
                     paddingRight: "15px",
                     paddingTop: "7.5px",
-                    resize: "none",
                     scrollbarGutter: "stable",
                     width: "100%",
                 }}
@@ -974,7 +971,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     borderRadius: "var(--bs-border-radius)",
                     display: "flex",
                     flexGrow: 1,
-                    fontSize: "smaller",
+                    fontSize: "17px",
                     marginRight: "0.75rem",
                     paddingBottom: "0.5rem",
                     paddingTop: "0.5rem",
