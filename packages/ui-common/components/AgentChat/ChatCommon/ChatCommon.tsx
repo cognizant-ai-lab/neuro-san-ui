@@ -206,8 +206,8 @@ export type ChatCommonHandle = {
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
-// Maximum number of items to keep in the chat output window
-const MAX_CHAT_OUTPUT_ITEMS = 50
+// Maximum number of turns to save
+const MAX_TURNS = 50
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -352,7 +352,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
             const next = [...current, turn]
-            return next.length > MAX_CHAT_OUTPUT_ITEMS ? next.slice(-MAX_CHAT_OUTPUT_ITEMS) : next
+            return next.length > MAX_TURNS ? next.slice(-MAX_TURNS) : next
         })
     }, [])
 
@@ -639,7 +639,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Check for final answer
         if (idx === -1) {
-            console.debug(`No turn with messageType ${ChatMessageType.AGENT_FRAMEWORK} found in turns:`, currentTurns)
             // No final answer found in the turns. Should never happen for a Neuro-san agent.
             setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
             return
@@ -979,10 +978,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )}
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
-                    <b>{targetAgent}: </b>
-                    {networkDescription}
+                    <strong>{targetAgent}</strong>
+                    {networkDescription ? `: ${networkDescription}` : ""}
                 </Box>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
+                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>{agentGreeting}</Box>
                 <SampleQueries
                     disabled={isAwaitingLlm}
                     handleSend={handleSend}
@@ -994,7 +993,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
-                {!isAwaitingLlm && (
+                {!isAwaitingLlm && turns.length > 0 && (
                     // Only show thinking once streaming is complete
                     <Thinking
                         id={`${id}-thinking-display`}
