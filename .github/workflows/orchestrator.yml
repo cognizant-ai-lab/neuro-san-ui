@@ -50,7 +50,7 @@ jobs:
             should_deploy: ${{ steps.version.outputs.should_deploy }}
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
               with:
                   fetch-depth: 0
 
@@ -88,7 +88,7 @@ jobs:
         if: needs.build.result == 'success' && needs.setup.outputs.should_deploy == 'true'
         steps:
             - name: Trigger deployment to neuro-san-deploy
-              uses: peter-evans/repository-dispatch@v3
+              uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0 # v3
               with:
                   token: ${{ secrets.NEURO_SAN_DEPLOY_DISPATCH_TOKEN }}
                   repository: cognizant-ai-lab/neuro-san-deploy
@@ -116,7 +116,7 @@ jobs:
             cancel-in-progress: false
         steps:
             - name: Checkout main branch
-              uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
               with:
                   ref: main
                   token: ${{ secrets.NEURO_SAN_DEPLOY_DISPATCH_TOKEN }}
