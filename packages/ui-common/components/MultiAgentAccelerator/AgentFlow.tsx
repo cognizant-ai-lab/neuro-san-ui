@@ -130,6 +130,10 @@ type Layout = "radial" | "linear"
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
+// How long the dock's "applied"/"cancelled" status banner stays visible before auto-dismissing.
+// Exported so tests can advance timers by this amount rather than hard-coding the value.
+export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
+
 // #endregion: Constants
 
 const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
@@ -457,7 +461,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setStopState("cancelled")
         bannerTimeoutRef.current = setTimeout(() => {
             setStopState(null)
-        }, 5_000)
+        }, DOCK_BANNER_AUTO_DISMISS_MS)
     }, [])
 
     const handleDismissBanner = useCallback(() => {
@@ -560,7 +564,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setStopState("applied")
             bannerTimeoutRef.current = setTimeout(() => {
                 setStopState(null)
-            }, 5_000)
+            }, DOCK_BANNER_AUTO_DISMISS_MS)
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
