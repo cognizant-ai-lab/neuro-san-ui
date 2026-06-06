@@ -8,7 +8,7 @@ import {
 } from "./const"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {chatMessageFromChunk, removeTrailingUuid} from "../AgentChat/Common/Utils"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -99,7 +99,7 @@ export const isEditableAgent = (displayAs: string | undefined): boolean => displ
  *   takes precedence over whatever the backend echoes in sly_data.
  * @returns A (possibly empty) array of TemporaryNetwork objects ready for the store.
  */
-export const extractTemporaryNetworksFromMessage = (
+export const extractTemporaryNetworks = (
     message: ChatMessage,
     agentNetworkDefinitionOverride?: AgentNetworkDefinitionEntry[]
 ): TemporaryNetwork[] => {
@@ -138,3 +138,30 @@ export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNet
         },
         [...target]
     )
+
+/**
+ * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
+ * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
+ * @param chunk A single streamed chunk from the network designer.
+ * @param updated The user's edited network definition, used as the authoritative value.
+ * @param accumulated The networks accumulated from previous chunks.
+ * @returns The accumulated networks merged with any networks found in this chunk.
+ */
+export const extractNetworksFromChunk = (
+    chunk: string,
+    updated: AgentNetworkDefinitionEntry[],
+    accumulated: TemporaryNetwork[]
+): TemporaryNetwork[] => {
+    try {
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) return accumulated
+
+        // Always use the user's edited definition as the authoritative value.
+        const converted = extractTemporaryNetworks(chatMessage, updated)
+        if (converted.length === 0) return accumulated
+        return mergeNetworks(accumulated, converted)
+    } catch (e: unknown) {
+        console.warn("Failed to process chunk from network designer:", e)
+        return accumulated
+    }
+}

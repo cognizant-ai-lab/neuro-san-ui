@@ -23,7 +23,7 @@ import {
 import {
     AgentReservation,
     convertReservationsToNetworks,
-    extractTemporaryNetworksFromMessage,
+    extractTemporaryNetworks,
     isEditableAgent,
     isTemporaryNetwork,
     mergeNetworks,
@@ -148,7 +148,7 @@ describe("isEditableAgent", () => {
     })
 })
 
-describe("extractTemporaryNetworksFromMessage", () => {
+describe("extractTemporaryNetworks", () => {
     withStrictMocks()
 
     const makeReservationObj = (id: string): AgentReservation => ({
@@ -164,7 +164,7 @@ describe("extractTemporaryNetworksFromMessage", () => {
 
     it("returns an empty array when the message has no reservations", () => {
         const message: ChatMessage = {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: {}}
-        expect(extractTemporaryNetworksFromMessage(message)).toEqual([])
+        expect(extractTemporaryNetworks(message)).toEqual([])
     })
 
     it("returns an empty array for a non-AGENT_FRAMEWORK message", () => {
@@ -172,14 +172,14 @@ describe("extractTemporaryNetworksFromMessage", () => {
             type: ChatMessageType.AI,
             sly_data: {[AGENT_RESERVATIONS_KEY]: [makeReservationObj("res-1")]},
         }
-        expect(extractTemporaryNetworksFromMessage(message)).toEqual([])
+        expect(extractTemporaryNetworks(message)).toEqual([])
     })
 
     it("converts reservations from sly_data into TemporaryNetwork objects", () => {
         const reservation = makeReservationObj("my_net-7876642e-fe75-4d44-a61e-300688a1a6c5")
         const message = makeFrameworkMessage({[AGENT_RESERVATIONS_KEY]: [reservation]})
 
-        const result = extractTemporaryNetworksFromMessage(message)
+        const result = extractTemporaryNetworks(message)
 
         expect(result).toHaveLength(1)
         expect(result[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`)
@@ -192,7 +192,7 @@ describe("extractTemporaryNetworksFromMessage", () => {
             [AGENT_RESERVATIONS_KEY]: [reservation],
         })
 
-        const [network] = extractTemporaryNetworksFromMessage(message)
+        const [network] = extractTemporaryNetworks(message)
         expect(network.agentNetworkName).toBe("res-abc")
     })
 
@@ -204,7 +204,7 @@ describe("extractTemporaryNetworksFromMessage", () => {
             [AGENT_NETWORK_DEFINITION_KEY]: definition,
         })
 
-        const [network] = extractTemporaryNetworksFromMessage(message)
+        const [network] = extractTemporaryNetworks(message)
         expect(network.agentNetworkDefinition).toEqual(definition)
     })
 
@@ -217,7 +217,7 @@ describe("extractTemporaryNetworksFromMessage", () => {
             [AGENT_NETWORK_DEFINITION_KEY]: slyDefinition,
         })
 
-        const [network] = extractTemporaryNetworksFromMessage(message, overrideDefinition)
+        const [network] = extractTemporaryNetworks(message, overrideDefinition)
         expect(network.agentNetworkDefinition).toBe(overrideDefinition)
     })
 })

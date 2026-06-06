@@ -37,7 +37,7 @@ import {
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
+import {extractNetworksFromChunk, extractTemporaryNetworks, isTemporaryNetwork} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentIconSuggestions,
@@ -84,29 +84,6 @@ const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape
 export const SHOW_TOUR_DELAY_MS = 5000
 
 // #region: Agent-save helpers
-
-/**
- * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
- * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
- */
-const collectNetworksFromChunk = (
-    chunk: string,
-    updated: AgentNetworkDefinitionEntry[],
-    accumulated: TemporaryNetwork[]
-): TemporaryNetwork[] => {
-    try {
-        const chatMessage = chatMessageFromChunk(chunk)
-        if (!chatMessage) return accumulated
-
-        // Always use the user's edited definition as the authoritative value.
-        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
-        if (converted.length === 0) return accumulated
-        return mergeNetworks(accumulated, converted)
-    } catch (e: unknown) {
-        console.warn("Failed to process chunk from network designer:", e)
-        return accumulated
-    }
-}
 
 /** Logs and notifies about a save error. Suppresses AbortError (user-cancelled). */
 const notifySaveError = (agentName: string, e: unknown): void => {
@@ -493,7 +470,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
 
             // Handle agent reservations (temporary networks) that come in through the chat stream.
-            const newTemporaryNetworks = extractTemporaryNetworksFromMessage(chatMessage)
+            const newTemporaryNetworks = extractTemporaryNetworks(chatMessage)
             if (newTemporaryNetworks.length > 0) {
                 const upserted = useTempNetworksStore.getState().upsertTempNetworks(newTemporaryNetworks)
 
@@ -528,7 +505,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     agentNetworkName,
                     userInfo.userName,
                     (chunk) => {
-                        newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
+                        newNetworks = extractNetworksFromChunk(chunk, updated, newNetworks)
                     }
                 )
 
