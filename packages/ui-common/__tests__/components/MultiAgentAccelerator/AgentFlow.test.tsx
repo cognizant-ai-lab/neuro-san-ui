@@ -23,7 +23,11 @@ import {FC, useEffect} from "react"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {AgentFlow, AgentFlowProps, DOCK_BANNER_AUTO_DISMISS_MS} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {
+    AgentFlow,
+    AgentFlowProps,
+    DOCK_BANNER_AUTO_DISMISS_MS,
+} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../controller/agent/Agent"
@@ -146,6 +150,15 @@ describe("AgentFlow", () => {
             </ThemeProvider>
         )
     }
+
+    /**
+     * Clicks a React Flow (@xyflow/react) node using fireEvent rather than userEvent: userEvent's
+     * pointer-event sequence drives @xyflow/react's drag handlers, which read `document` off event
+     * internals jsdom doesn't populate (throwing "Cannot read properties of null"). A plain click is all
+     * the node's onClick needs. This is rooted in an upstream @testing-library/user-event bug, so switch
+     * back to userEvent once it's fixed. See https://github.com/xyflow/xyflow/issues/2461#issuecomment-3402243495
+     */
+    const clickFlowNode = (node: Element | null) => fireEvent.click(node)
 
     const verifyAgentNodes = (container: HTMLElement) => {
         const nodes = container.getElementsByClassName("react-flow__node")
@@ -1165,7 +1178,7 @@ describe("AgentFlow", () => {
         })
 
         // Click an agent node to open the popup, querying by the visible agent name.
-        fireEvent.click(screen.getByText(cleanUpAgentName("agent1")))
+        clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
 
         // The popup should now be open — make the form dirty then save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
@@ -1203,7 +1216,7 @@ describe("AgentFlow", () => {
 
         const agent1Node = container.querySelector('[data-id="agent1"]')
         expect(agent1Node).toBeInTheDocument()
-        fireEvent.click(agent1Node)
+        clickFlowNode(agent1Node)
 
         // Popup opens
         const cancelButton = await screen.findByRole("button", {name: "Cancel"})
@@ -1339,7 +1352,7 @@ describe("AgentFlow", () => {
         const {container} = renderAgentFlowComponent({networkId: networkKey})
 
         const agent1Node = container.querySelector('[data-id="agent1"]')
-        fireEvent.click(agent1Node)
+        clickFlowNode(agent1Node)
 
         // Popup must not appear
         expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
@@ -1363,7 +1376,7 @@ describe("AgentFlow", () => {
             agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
         })
 
-        fireEvent.click(container.querySelector('[data-id="agent1"]'))
+        clickFlowNode(container.querySelector('[data-id="agent1"]'))
         expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
     })
 
@@ -1383,7 +1396,7 @@ describe("AgentFlow", () => {
             agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
         })
 
-        fireEvent.click(container.querySelector('[data-id="agent1"]'))
+        clickFlowNode(container.querySelector('[data-id="agent1"]'))
         expect(await screen.findByRole("button", {name: "Save"})).toBeInTheDocument()
     })
 
@@ -1410,7 +1423,7 @@ describe("AgentFlow", () => {
         })
 
         const agent1Node = container.querySelector('[data-id="agent1"]')
-        fireEvent.click(agent1Node)
+        clickFlowNode(agent1Node)
 
         // Popup should show networkB's instructions, not networkA's
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
@@ -1437,7 +1450,7 @@ describe("AgentFlow", () => {
         })
 
         const agent1Node = container.querySelector('[data-id="agent1"]')
-        fireEvent.click(agent1Node)
+        clickFlowNode(agent1Node)
 
         // Edit the instructions and save
         const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
@@ -1620,7 +1633,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
 
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
@@ -1665,7 +1678,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
             await user.type(instructionsField, EDITED_INSTRUCTIONS)
@@ -1701,7 +1714,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
             await user.type(instructionsField, "Updated instructions")
@@ -1727,7 +1740,7 @@ describe("AgentFlow", () => {
                 // onSaveAgent intentionally omitted
             })
 
-            fireEvent.click(container.querySelector('[data-id="agent1"]'))
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
             await user.type(instructionsField, "Updated instructions")
@@ -2016,7 +2029,8 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            // Use fireEvent (synchronous) so fake timers work from the start
+            // userEvent is async and stalls under fake timers (it awaits real timer callbacks), so this
+            // fake-timer test uses synchronous fireEvent instead.
             const promptField = screen.getByPlaceholderText(/describe a change/iu)
             fireEvent.change(promptField, {target: {value: "add a node"}})
             fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
@@ -2240,6 +2254,7 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
+            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
             fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
             fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
 
@@ -2292,6 +2307,7 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
+            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
             fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
             fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
 
@@ -2319,17 +2335,15 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {
-                target: {value: "add a node"},
-            })
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
+            await user.click(screen.getByRole("button", {name: /apply/iu}))
 
             await waitFor(() => {
                 expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
             })
 
             // Click the X button — banner should disappear immediately without waiting for the timer
-            fireEvent.click(screen.getByRole("button", {name: /dismiss applied/iu}))
+            await user.click(screen.getByRole("button", {name: /dismiss applied/iu}))
 
             expect(container.querySelector("#test-flow-id-applied-info")).not.toBeInTheDocument()
         })
@@ -2354,6 +2368,7 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
+            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
             // First apply → stop & discard → cancelled banner
             fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "first change"}})
             fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
