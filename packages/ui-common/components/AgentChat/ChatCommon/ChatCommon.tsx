@@ -269,10 +269,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
-    // Keeps a copy of the last AGENT_FRAMEWORK message (or designated "final answer" for legacy agents)
-    // so we can highlight it as "final answer"
-    const finalAnswerText = useRef<string>("")
-
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
     const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[targetAgent])
@@ -365,21 +361,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 legacyTurnIdRef.current = uuid()
                 addTurn({
                     id: legacyTurnIdRef.current,
-                    role: MessageRole.LegacyAgent,
+                    messageType: ChatMessageType.AGENT,
+                    role: MessageRole.Agent,
                     text: currentResponse.current,
-                    alwaysShow: true,
                 })
             } else {
                 // We already have a turn for this response, so just update the text of that turn.
                 setTurns((prev) =>
                     prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
                 )
-            }
-
-            // Check for Final Answer from legacy agent
-            const finalAnswerMatch = extractFinalAnswer(currentResponse.current)
-            if (finalAnswerMatch) {
-                finalAnswerText.current = finalAnswerMatch
             }
         },
         [addTurn]
@@ -393,15 +383,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // This is an error since Neuro-san agents should send us ChatMessage structures.
                 // But don't want to spam output by logging errors for every bad message.
                 return
-            }
-
-            // Keep track of AGENT_FRAMEWORK messages. The last one is (by definition) the "final answer" from
-            // the agents. Therefore, every AGENT_FRAMEWORK message is a potential final answer,
-            // but we only display the last one we receive as the final answer. "Last one wins".
-            if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && (chatMessage.text || chatMessage.structure)) {
-                // For now, prioritize "text" as most agents populate that, but fall back to "structure" otherwise.
-                // Note: some agents can return both text and structure. In that case we won't display structure.
-                finalAnswerText.current = chatMessage.text || JSON.stringify(chatMessage.structure)
             }
 
             // Shallow merge existing slyData with incoming chatMessage.sly_data
@@ -425,7 +406,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         id: uuid(),
                         role: MessageRole.Warning,
                         text: errorMessage,
-                        alwaysShow: true,
                     })
                     succeeded.current = false
                 }
@@ -437,9 +417,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     chatMessage.origin?.length > 0
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
                         : "Agent message"
-                console.debug(
-                    `Received message from agent. Type: ${chatMessage.type}, Text: ${chatMessage.text.slice(0, 50)}`
-                )
                 addTurn({
                     id: uuid(),
                     role: MessageRole.Agent,
@@ -479,7 +456,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         // Reset state, whatever happened during request
         setIsAwaitingLlm(false)
         setChatInput("")
-        finalAnswerText.current = ""
 
         setPreviousResponse?.(targetAgent, currentResponse.current)
         currentResponse.current = ""
@@ -548,7 +524,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             id: uuid(),
                             role: MessageRole.Error,
                             text: `Error occurred: ${error}`,
-                            alwaysShow: true,
                         })
                     }
                 }
@@ -568,6 +543,82 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         ]
     )
 
+    const handleFinalAnswerLegacyAgent = useCallback(() => {
+        setTurns((prev) => {
+            // Prefer the most recent matching turn
+            const idx = prev.reduceRight(
+                (foundIndex, turn, i) =>
+                    foundIndex !== -1 || extractFinalAnswer(turn.text) === undefined ? foundIndex : i,
+                -1
+            )
+
+            if (idx === -1) {
+                // Use the last received turn as the final answer
+                const lastTurn = prev.slice(-1)[0]
+                if (lastTurn) {
+                    return [
+                        ...prev,
+                        {
+                            id: uuid(),
+                            role: MessageRole.FinalAnswer,
+                            text: lastTurn.text,
+                        },
+                    ]
+                }
+                return prev
+            }
+
+            const sourceTurn = prev[idx]
+            // Save item to chat history
+            updateChatHistory(targetAgent, [new AIMessage({content: sourceTurn.text, id: uuid()})])
+
+            // Extract the final answer from the turn.
+            const finalAnswer = extractFinalAnswer(sourceTurn.text)?.trim()
+            if (!finalAnswer) {
+                return prev
+            }
+
+            // Remove "Final Answer: <...>" from original turn text
+            const body = sourceTurn.text.replace(/Final Answer:\s*.*$/su, "").trim()
+
+            const updated = [...prev]
+
+            // Keep original turn, but without the final-answer section
+            updated[idx] = {
+                ...sourceTurn,
+                text: body,
+            }
+
+            // Add explicit final answer as a new terminal turn
+            updated.push({
+                id: uuid(),
+                role: MessageRole.FinalAnswer,
+                text: finalAnswer,
+            })
+
+            return updated
+        })
+    }, [targetAgent, updateChatHistory])
+
+    const handleFinalAnswerNeuroSanAgent = useCallback(() => {
+        setTurns((prev) => {
+            const idx = prev.reduceRight(
+                (found, turn, i) => (found !== -1 || turn.messageType !== ChatMessageType.AGENT_FRAMEWORK ? found : i),
+                -1
+            )
+
+            if (idx === -1) return prev
+
+            const sourceTurn = prev[idx]
+            const finalAnswerText = sourceTurn.text
+
+            if (finalAnswerText?.trim()) {
+                updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerText, id: uuid()})])
+            }
+
+            return prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn))
+        })
+    }, [targetAgent, updateChatHistory])
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
@@ -591,7 +642,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 id: uuid(),
                 role: MessageRole.User,
                 text: query,
-                alwaysShow: true,
             })
 
             // Allow clients to do something when streaming starts
@@ -611,32 +661,20 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // Invoke the logic to send the request and retry as necessary
                 const wasAborted = await doRetryLoop(queryToSend)
 
+                // Was the request aborted?
                 if (!wasAborted && !succeeded.current) {
                     addTurn({
-                        alwaysShow: true,
                         id: uuid(),
                         role: MessageRole.Error,
                         text: `Gave up after ${MAX_AGENT_RETRIES} attempts.`,
                     })
+                    return
                 }
 
-                // Display prominent "Final Answer" message if we have one
-                if (finalAnswerText.current) {
-                    addTurn({
-                        alwaysShow: true,
-                        id: uuid(),
-                        role: MessageRole.FinalAnswer,
-                        text: finalAnswerText.current,
-                    })
-
-                    // Record bot answer in history.
-                    if (currentResponse?.current?.length > 0) {
-                        updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerText.current, id: uuid()})])
-                    }
-                } else if (isLegacyAgentType(targetAgent) && currentResponse.current.length > 0) {
-                    // It's a legacy agent that didn't provide a "Final Answer", so just record the whole response
-                    // as the bot answer in that case.
-                    updateChatHistory(targetAgent, [new AIMessage({content: currentResponse.current, id: uuid()})])
+                if (isLegacyAgentType(targetAgent)) {
+                    handleFinalAnswerLegacyAgent()
+                } else {
+                    handleFinalAnswerNeuroSanAgent()
                 }
             } finally {
                 resetState()
@@ -649,6 +687,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             addTurn,
             agentDisplayName,
             doRetryLoop,
+            handleFinalAnswerLegacyAgent,
+            handleFinalAnswerNeuroSanAgent,
             onSend,
             onStreamingComplete,
             onStreamingStarted,
@@ -664,7 +704,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             controller?.current?.abort()
             controller.current = null
             addTurn({
-                alwaysShow: true,
                 id: uuid(),
                 role: MessageRole.Warning,
                 text: "Request cancelled.",
@@ -694,7 +733,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         resetHistory(targetAgent)
         setPreviousUserQuery("")
         currentResponse.current = ""
-        finalAnswerText.current = ""
     }, [resetHistory, targetAgent])
 
     const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
