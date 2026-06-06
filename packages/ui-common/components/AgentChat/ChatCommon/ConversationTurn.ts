@@ -12,7 +12,6 @@ export enum MessageRole {
 export interface ConversationTurn {
     readonly agentName?: string
     readonly agentDisplayName?: string
-    readonly alwaysShow?: boolean
     readonly id: string
     readonly messageType?: ChatMessageType
     readonly role: MessageRole
