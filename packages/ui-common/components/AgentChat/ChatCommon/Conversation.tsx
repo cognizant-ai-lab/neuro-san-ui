@@ -60,6 +60,7 @@ export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = 
                     case MessageRole.Agent:
                         return includeAgentMessages ? [turn.text] : []
                     case MessageRole.FinalAnswer:
+                        return [turn.text || JSON.stringify(turn.structure)]
                     case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.Warning:

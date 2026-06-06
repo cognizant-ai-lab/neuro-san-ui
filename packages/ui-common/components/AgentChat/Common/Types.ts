@@ -26,6 +26,14 @@ export const isLegacyAgentType = (agent: string) => {
     return Object.keys(LegacyAgentType).includes(agent)
 }
 
+// Agents which are known to provide a predictable "Final Answer" response
+export const givesFinalAnswer = (agent: CombinedAgentType) => {
+    return (
+        !isLegacyAgentType(agent) ||
+        [LegacyAgentType.ChatBot, LegacyAgentType.DMSChat].includes(agent as LegacyAgentType)
+    )
+}
+
 export type CombinedAgentType = LegacyAgentType | string
 
 /**
