@@ -269,7 +269,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
-    // Keeps a copy of the last AGENT_FRAMEWORK message so we can highlight it as "final answer"
+    // Keeps a copy of the last AGENT_FRAMEWORK message (or designated "final answer" for legacy agents)
+    // so we can highlight it as "final answer"
     const finalAnswerText = useRef<string>("")
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
@@ -395,8 +396,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
 
             // Keep track of AGENT_FRAMEWORK messages. The last one is (by definition) the "final answer" from
-            // the agents.
+            // the agents. Therefore, every AGENT_FRAMEWORK message is a potential final answer,
+            // but we only display the last one we receive as the final answer. "Last one wins".
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && (chatMessage.text || chatMessage.structure)) {
+                // For now, prioritize "text" as most agents populate that, but fall back to "structure" otherwise.
+                // Note: some agents can return both text and structure. In that case we won't display structure.
                 finalAnswerText.current = chatMessage.text || JSON.stringify(chatMessage.structure)
             }
 
