@@ -58,7 +58,7 @@ export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = 
                             </UserTurnBubble>,
                         ]
                     case MessageRole.Agent:
-                        return includeAgentMessages ? [turn.text] : []
+                        return includeAgentMessages ? [turn.text || JSON.stringify(turn.structure)] : []
                     case MessageRole.FinalAnswer:
                         return [turn.text || JSON.stringify(turn.structure)]
                     case MessageRole.LegacyAgent:
@@ -92,7 +92,7 @@ export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = 
                     }
                 }
             }),
-        [turns]
+        [includeAgentMessages, turns]
     )
 
     return (

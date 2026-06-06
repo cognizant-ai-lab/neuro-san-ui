@@ -23,6 +23,13 @@ const THINKING_MESSAGE_TYPES = new Set<ChatMessageType>([
     ChatMessageType.SYSTEM,
 ])
 
+const formatTurn = (turn: ConversationTurn) => {
+    const headerLine = `**${turn.agentName ?? "Agent"}**: ${turn.text}`
+    const structureLine = turn.structure != null ? `\n\`${JSON.stringify(turn.structure)}\`` : ""
+
+    return `${headerLine}${structureLine}`
+}
+
 /**
  * Component to render the "thinking" section of the chat, which includes all messages from the agent that are
  * of a type included in THINKING_MESSAGE_TYPES.
@@ -30,23 +37,22 @@ const THINKING_MESSAGE_TYPES = new Set<ChatMessageType>([
 export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
     const [showThinkingExpanded, setShowThinkingExpanded] = useState<boolean>(false)
 
-    const thinkingNodes: string = useMemo(() => {
+    const thinkingText: string = useMemo(() => {
         // Find start of latest interaction (most recent user prompt)
         const lastUserTurnIndex = turns.map((t) => t.role).lastIndexOf(MessageRole.User)
 
-        // If no user turn exists yet, show nothing
-        if (lastUserTurnIndex < 0) return ""
-
         // Only include thinking emitted after latest user prompt
+        // Deliberately allow -1 result to fall through and include all thinking messages if there are no user turns
         return turns
             .slice(lastUserTurnIndex + 1)
             .filter((turn) => turn.messageType && THINKING_MESSAGE_TYPES.has(turn.messageType))
-            .map((turn) => `**${turn.agentName ?? "Agent"}**: ${turn.text ?? ""}`)
+            .filter((turn) => turn.text?.trim().length > 0)
+            .map((turn) => formatTurn(turn))
             .join("\n\n")
     }, [turns])
 
     return (
-        thinkingNodes.length > 0 && (
+        thinkingText.length > 0 && (
             <Box
                 id={`${id}-thinking`}
                 sx={{marginBottom: "1rem"}}
@@ -90,7 +96,7 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
                             fontStyle: "italic",
                         }}
                     >
-                        <ReactMarkdown>{thinkingNodes}</ReactMarkdown>
+                        <ReactMarkdown>{thinkingText}</ReactMarkdown>
                     </Box>
                 </Collapse>
             </Box>
