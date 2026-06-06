@@ -32,7 +32,7 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
 
     const thinkingNodes: string = useMemo(() => {
         // Find start of latest interaction (most recent user prompt)
-        const lastUserTurnIndex = [...turns].map((t) => t.role).lastIndexOf(MessageRole.User)
+        const lastUserTurnIndex = turns.map((t) => t.role).lastIndexOf(MessageRole.User)
 
         // If no user turn exists yet, show nothing
         if (lastUserTurnIndex < 0) return ""
@@ -41,7 +41,7 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
         return turns
             .slice(lastUserTurnIndex + 1)
             .filter((turn) => turn.messageType && THINKING_MESSAGE_TYPES.has(turn.messageType))
-            .map((turn) => `**${turn.agentName}**: ${turn.text}`)
+            .map((turn) => `**${turn.agentName ?? "Agent"}**: ${turn.text ?? ""}`)
             .join("\n\n")
     }, [turns])
 
