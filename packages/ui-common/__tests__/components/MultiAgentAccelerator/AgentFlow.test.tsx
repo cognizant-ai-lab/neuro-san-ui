@@ -1754,6 +1754,21 @@ describe("AgentFlow", () => {
         const DOCK_NETWORK_NAME = "dock_network"
         const DOCK_DEFAULT_RES = "dock-default-res"
 
+        // User-visible dock copy, reused across queries below
+        const DOCK_HEADER = "Network Editor"
+        const APPLYING_TITLE = "Applying changes to network"
+        const ABORT_TITLE = "Abort changes?"
+        const APPLIED_BANNER = /changes applied/iu
+        const CANCELLED_BANNER = /applying cancelled/iu
+
+        // Accessible-name / placeholder matchers for the dock controls
+        const PROMPT_PLACEHOLDER = /describe a change/iu
+        const APPLY_BUTTON = /apply/iu
+        const STOP_BUTTON = /stop/iu
+        const STOP_DISCARD_BUTTON = /stop & discard/iu
+        const KEEP_APPLYING_BUTTON = /keep applying/iu
+        const CLOSE_EDIT_BUTTON = /close edit mode/iu
+
         const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
             JSON.stringify({
                 response: {
@@ -1806,45 +1821,44 @@ describe("AgentFlow", () => {
         })
 
         it("shows the topology editor dock when isEditMode and isSelectedNetworkTemporary are true", () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
             })
 
-            expect(container.querySelector("#test-flow-id-topology-editor-dock")).toBeInTheDocument()
-            expect(screen.getByText("Network Editor")).toBeInTheDocument()
+            expect(screen.getByText(DOCK_HEADER)).toBeInTheDocument()
         })
 
         it("does not show the dock when isEditMode is false", () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: false,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
             })
 
-            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+            expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
         })
 
         it("does not show the dock when isSelectedNetworkTemporary is false", () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: false,
                 networkId: DOCK_NETWORK_ID,
             })
 
-            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+            expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
         })
 
         it("does not show the dock when isAwaitingLlm is true", () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
                 isAwaitingLlm: true,
             })
 
-            expect(container.querySelector("#test-flow-id-topology-editor-dock")).not.toBeInTheDocument()
+            expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
         })
 
         it("calls onExitEditMode when the close button is clicked", async () => {
@@ -1856,7 +1870,7 @@ describe("AgentFlow", () => {
                 onExitEditMode,
             })
 
-            const closeButton = screen.getByRole("button", {name: /close edit mode/iu})
+            const closeButton = screen.getByRole("button", {name: CLOSE_EDIT_BUTTON})
             await user.click(closeButton)
 
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
@@ -1875,7 +1889,7 @@ describe("AgentFlow", () => {
                     })
             )
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -1884,14 +1898,14 @@ describe("AgentFlow", () => {
                 onExitEditMode,
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Wait until the overlay appears (streaming started)
-            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
 
             // Click the close button while request is in-flight
-            await user.click(screen.getByRole("button", {name: /close edit mode/iu}))
+            await user.click(screen.getByRole("button", {name: CLOSE_EDIT_BUTTON}))
 
             expect(capturedSignal?.aborted).toBe(true)
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
@@ -1909,7 +1923,7 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            expect(screen.getByRole("button", {name: /apply/iu})).toBeDisabled()
+            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeDisabled()
         })
 
         it("Apply button becomes enabled after typing a prompt", async () => {
@@ -1921,10 +1935,10 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a new agent")
 
-            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
+            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
         })
 
         it("forwards the dock prompt to sendChatQuery on Apply and replaces the network", async () => {
@@ -1943,9 +1957,9 @@ describe("AgentFlow", () => {
                 onNetworkReplaced,
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a legal review agent")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The typed prompt is forwarded to the designer...
             expect(sendChatQuery).toHaveBeenCalledTimes(1)
@@ -1968,9 +1982,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error toast explaining no reservation came back
             expect(enqueueSnackbar).toHaveBeenCalledWith(
@@ -1996,9 +2010,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error toast carrying the underlying failure
             expect(enqueueSnackbar).toHaveBeenCalledWith(
@@ -2006,7 +2020,7 @@ describe("AgentFlow", () => {
                 expect.objectContaining({variant: "error", description: expect.stringContaining("Network failure")})
             )
             // Button should re-enable after error
-            expect(screen.getByRole("button", {name: /apply/iu})).toBeEnabled()
+            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
         })
 
         it("shows a timeout error toast when the dock apply request times out", async () => {
@@ -2031,9 +2045,9 @@ describe("AgentFlow", () => {
 
             // userEvent is async and stalls under fake timers (it awaits real timer callbacks), so this
             // fake-timer test uses synchronous fireEvent instead.
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             fireEvent.change(promptField, {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Advance past the 120-second dock apply timeout
             await act(async () => {
@@ -2088,9 +2102,9 @@ describe("AgentFlow", () => {
                 onNetworkReplaced,
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The higher-expiry reservation should win
             expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
@@ -2105,13 +2119,13 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            const promptField = screen.getByPlaceholderText(/describe a change/iu)
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a node{Enter}")
             expect(sendChatQuery).toHaveBeenCalledTimes(1)
         })
 
         it("does not show the applying overlay when the dock is idle", () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2119,13 +2133,14 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
+            // The backdrop keeps its content mounted but hidden while idle, so it must not be visible
+            expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
         })
 
         it("shows the applying overlay with the prompt text while apply is in-flight", async () => {
             const release = mockInFlightDockApply()
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2133,12 +2148,11 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The overlay is shown with its title and the in-flight prompt text
-            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
-            expect(screen.getByText("Applying changes to network")).toBeInTheDocument()
+            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
             expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
 
             // Release the in-flight apply and flush all resulting state updates
@@ -2150,7 +2164,7 @@ describe("AgentFlow", () => {
         it("removes the applying overlay once the apply call completes", async () => {
             const release = mockInFlightDockApply()
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2158,23 +2172,23 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add some elves to check work")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
-            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add some elves to check work")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
 
             await act(async () => {
                 release()
             })
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
+                expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
             })
         })
 
         it("shows Stop button in backdrop while applying; clicking it shows the confirm card", async () => {
             const release = mockInFlightDockApply()
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2182,21 +2196,20 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            // Stop button should appear while backdrop is open
-            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
-            expect(container.querySelector("#test-flow-id-stop-confirm-card")).not.toBeInTheDocument()
-
-            const stopButton = container.querySelector("#test-flow-id-stop-button")
+            // Stop button should appear while backdrop is open, with no confirm card yet
+            const stopButton = screen.getByRole("button", {name: STOP_BUTTON})
             expect(stopButton).toBeInTheDocument()
+            expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
+
             await user.click(stopButton)
 
             // Confirm card should appear
-            expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
-            expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
-            expect(container.querySelector("#test-flow-id-stop-discard-button")).toBeInTheDocument()
+            expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
+            expect(screen.getByRole("button", {name: KEEP_APPLYING_BUTTON})).toBeInTheDocument()
+            expect(screen.getByRole("button", {name: STOP_DISCARD_BUTTON})).toBeInTheDocument()
 
             await act(async () => {
                 release()
@@ -2206,7 +2219,7 @@ describe("AgentFlow", () => {
         it("Keep applying dismisses the confirm card and continues streaming", async () => {
             const release = mockInFlightDockApply()
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2214,22 +2227,15 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
-            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            const stopButton = container.querySelector("#test-flow-id-stop-button")
-            expect(stopButton).toBeInTheDocument()
-            await user.click(stopButton)
-
-            expect(container.querySelector("#test-flow-id-keep-applying-button")).toBeInTheDocument()
-            const keepApplyingButton = container.querySelector("#test-flow-id-keep-applying-button")
-            expect(keepApplyingButton).toBeInTheDocument()
-            await user.click(keepApplyingButton)
+            await user.click(screen.getByRole("button", {name: STOP_BUTTON}))
+            await user.click(screen.getByRole("button", {name: KEEP_APPLYING_BUTTON}))
 
             // Progress card (with Stop button) should be back; backdrop still visible
-            expect(container.querySelector("#test-flow-id-stop-button")).toBeInTheDocument()
-            expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+            expect(screen.getByRole("button", {name: STOP_BUTTON})).toBeInTheDocument()
+            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
 
             await act(async () => {
                 release()
@@ -2246,7 +2252,7 @@ describe("AgentFlow", () => {
                     })
             )
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2255,32 +2261,29 @@ describe("AgentFlow", () => {
             })
 
             // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Wait for backdrop to open
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+                expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
             })
 
             // Open confirm card
-            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            fireEvent.click(screen.getByRole("button", {name: STOP_BUTTON}))
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+                expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
             })
-            fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
+            fireEvent.click(screen.getByRole("button", {name: STOP_DISCARD_BUTTON}))
 
             // Backdrop should close
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).not.toBeVisible()
+                expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
             })
 
-            // Cancelled banner should appear in the dock
-            expect(container.querySelector("#test-flow-id-cancelled-info")).toBeInTheDocument()
-            expect(screen.getByText(/applying cancelled/iu)).toBeInTheDocument()
+            // Cancelled banner should appear in the dock with the prompt restored
+            expect(screen.getByText(CANCELLED_BANNER)).toBeInTheDocument()
             expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
-
-            // Prompt should still be in the input
             expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
 
             // Once the auto-dismiss timeout elapses the cancelled banner disappears
@@ -2289,7 +2292,7 @@ describe("AgentFlow", () => {
             })
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-cancelled-info")).not.toBeInTheDocument()
+                expect(screen.queryByText(CANCELLED_BANNER)).not.toBeInTheDocument()
             })
 
             // Discarding is an intentional abort: no failure notification is surfaced
@@ -2299,7 +2302,7 @@ describe("AgentFlow", () => {
         it("shows applied banner after dock apply completes, then auto-dismisses", async () => {
             jest.useFakeTimers()
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2308,13 +2311,12 @@ describe("AgentFlow", () => {
             })
 
             // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "add a node"}})
+            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
+                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
             })
-            expect(screen.getByText(/changes applied/iu)).toBeInTheDocument()
 
             // Once the auto-dismiss timeout elapses the banner disappears
             act(() => {
@@ -2322,12 +2324,12 @@ describe("AgentFlow", () => {
             })
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-applied-info")).not.toBeInTheDocument()
+                expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
             })
         })
 
         it("dismisses the applied banner immediately when its X button is clicked", async () => {
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2335,17 +2337,17 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
+                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
             })
 
             // Click the X button — banner should disappear immediately without waiting for the timer
             await user.click(screen.getByRole("button", {name: /dismiss applied/iu}))
 
-            expect(container.querySelector("#test-flow-id-applied-info")).not.toBeInTheDocument()
+            expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
         })
 
         it("clears a prior timer when a second apply succeeds while cancelled banner is showing", async () => {
@@ -2360,7 +2362,7 @@ describe("AgentFlow", () => {
                     })
             )
 
-            const {container} = renderAgentFlowComponent({
+            renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
                 networkId: DOCK_NETWORK_ID,
@@ -2370,30 +2372,30 @@ describe("AgentFlow", () => {
 
             // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
             // First apply → stop & discard → cancelled banner
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "first change"}})
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "first change"}})
+            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-global-saving-backdrop")).toBeVisible()
+                expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
             })
-            fireEvent.click(container.querySelector("#test-flow-id-stop-button"))
+            fireEvent.click(screen.getByRole("button", {name: STOP_BUTTON}))
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-stop-confirm-card")).toBeInTheDocument()
+                expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
             })
-            fireEvent.click(container.querySelector("#test-flow-id-stop-discard-button"))
+            fireEvent.click(screen.getByRole("button", {name: STOP_DISCARD_BUTTON}))
 
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-cancelled-info")).toBeInTheDocument()
+                expect(screen.getByText(CANCELLED_BANNER)).toBeInTheDocument()
             })
 
             // Second apply while cancelled banner (and its 5s timer) is still running
-            fireEvent.change(screen.getByPlaceholderText(/describe a change/iu), {target: {value: "second change"}})
-            fireEvent.click(screen.getByRole("button", {name: /apply/iu}))
+            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "second change"}})
+            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Applied banner should replace the cancelled banner
             await waitFor(() => {
-                expect(container.querySelector("#test-flow-id-applied-info")).toBeInTheDocument()
-                expect(container.querySelector("#test-flow-id-cancelled-info")).not.toBeInTheDocument()
+                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
+                expect(screen.queryByText(CANCELLED_BANNER)).not.toBeInTheDocument()
             })
         })
 
@@ -2409,11 +2411,11 @@ describe("AgentFlow", () => {
                 "dark"
             )
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees a confirmation that their changes were applied...
-            expect(await screen.findByText(/changes applied/iu)).toBeInTheDocument()
+            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
 
             // ...with the dark-mode overlay (light translucent on dark, vs. dark on light). Reading the
             // banner's computed background mirrors the legend dark-mode test above; a styled Box has no
@@ -2441,13 +2443,13 @@ describe("AgentFlow", () => {
                 "dark"
             )
 
-            await user.type(screen.getByPlaceholderText(/describe a change/iu), "add a node")
-            await user.click(screen.getByRole("button", {name: /apply/iu}))
-            await user.click(await screen.findByRole("button", {name: /stop/iu}))
-            await user.click(await screen.findByRole("button", {name: /stop & discard/iu}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
+            await user.click(await screen.findByRole("button", {name: STOP_DISCARD_BUTTON}))
 
             // The user sees the cancellation notice with the dark-mode overlay (see note above).
-            expect(await screen.findByText(/applying cancelled/iu)).toBeInTheDocument()
+            expect(await screen.findByText(CANCELLED_BANNER)).toBeInTheDocument()
             const banner = container.querySelector("#test-flow-id-cancelled-info")
             expect(window.getComputedStyle(banner).backgroundColor).toBe("rgba(255, 255, 255, 0.05)")
         })
@@ -2462,7 +2464,7 @@ describe("AgentFlow", () => {
             })
 
             // Enter bypasses the disabled Apply button, so handleDockApply runs and must early-return.
-            await user.click(screen.getByPlaceholderText(/describe a change/iu))
+            await user.click(screen.getByPlaceholderText(PROMPT_PLACEHOLDER))
             await user.keyboard("{Enter}")
 
             expect(sendChatQuery).not.toHaveBeenCalled()

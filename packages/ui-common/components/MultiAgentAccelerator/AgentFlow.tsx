@@ -1077,7 +1077,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             </Box>
             {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
                 <Box
-                    id={`${id}-topology-editor-dock`}
                     sx={{
                         borderTop: `2px solid ${theme.palette.primary.main}`,
                         backgroundColor: theme.palette.background.paper,
@@ -1101,7 +1100,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                         >
                             <Typography
-                                id={`${id}-applied-info-text`}
                                 variant="caption"
                                 sx={{flex: 1}}
                             >
@@ -1135,7 +1133,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                         >
                             <Typography
-                                id={`${id}-cancelled-info-text`}
                                 variant="caption"
                                 sx={{flex: 1}}
                             >
@@ -1192,7 +1189,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     >
                         <TextField
                             fullWidth
-                            id={`${id}-dock-prompt-input`}
                             placeholder={DOCK_PROMPT_PLACEHOLDER}
                             variant="outlined"
                             size="small"
@@ -1208,7 +1204,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             slotProps={{htmlInput: {style: {fontSize: "0.75rem"}}}}
                         />
                         <Button
-                            id={`${id}-dock-apply-button`}
                             variant="contained"
                             onClick={() => void handleDockApply()}
                             disabled={isDockStreaming || !dockPrompt.trim()}
@@ -1246,13 +1241,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 />
             )}
             <Backdrop
-                id={`${id}-global-saving-backdrop`}
                 open={isDockStreaming}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
                 {stopState === "confirming" ? (
                     <Paper
-                        id={`${id}-stop-confirm-card`}
                         elevation={6}
                         sx={{
                             display: "flex",
@@ -1267,14 +1260,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         }}
                     >
                         <Typography
-                            id={`${id}-stop-confirm-title`}
                             variant="body1"
                             sx={{fontWeight: "bold"}}
                         >
                             Abort changes?
                         </Typography>
                         <Typography
-                            id={`${id}-stop-confirm-body`}
                             variant="body2"
                             color="text.secondary"
                         >
@@ -1288,14 +1279,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                         >
                             <Button
-                                id={`${id}-keep-applying-button`}
                                 variant="outlined"
                                 onClick={handleKeepApplying}
                             >
                                 Keep applying
                             </Button>
                             <Button
-                                id={`${id}-stop-discard-button`}
                                 variant="contained"
                                 color="error"
                                 startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
@@ -1320,13 +1309,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             maxWidth: 480,
                         }}
                     >
-                        <CircularProgress
-                            id={`${id}-global-saving-spinner`}
-                            size={24}
-                        />
+                        <CircularProgress size={24} />
                         <Box sx={{flex: 1}}>
                             <Typography
-                                id={`${id}-global-saving-title`}
                                 variant="body1"
                                 sx={{fontWeight: "bold"}}
                             >
@@ -1334,7 +1319,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             </Typography>
                             {dockPrompt && (
                                 <Typography
-                                    id={`${id}-global-saving-prompt`}
                                     variant="body2"
                                     color="text.secondary"
                                     sx={{mt: 0.25}}
@@ -1344,7 +1328,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             )}
                         </Box>
                         <Button
-                            id={`${id}-stop-button`}
                             variant="outlined"
                             size="small"
                             startIcon={<span style={{fontSize: "0.65rem"}}>&#9632;</span>}
