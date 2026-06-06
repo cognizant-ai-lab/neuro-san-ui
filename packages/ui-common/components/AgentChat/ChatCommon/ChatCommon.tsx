@@ -60,7 +60,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {CombinedAgentType, isLegacyAgentType} from "../Common/Types"
+import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
@@ -283,6 +283,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const updateSlyData = useAgentChatHistoryStore((state) => state.updateSlyData)
     const resetHistory = useAgentChatHistoryStore((state) => state.resetHistory)
 
+    // Ref copy of current turns, so we can safely use it in callbacks without worrying about stale closures
+    const turnsRef = useRef<ConversationTurn[]>([])
+
     // Microphone state for voice input
     const [isMicOn, setIsMicOn] = useState<boolean>(false)
 
@@ -341,6 +344,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [autoScrollEnabled, isAwaitingLlm, turns])
 
+    // Keep a ref copy of the turns array
+    useEffect(() => {
+        turnsRef.current = turns
+    }, [turns])
+
     const addTurn = useCallback((turn: ConversationTurn) => {
         setTurns((current) => {
             const next = [...current, turn]
@@ -398,31 +406,32 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }
 
             // Check if there is an error block in the "structure" field of the chat message.
-            if (chatMessage.structure) {
-                // If there is an error block, we should display it as an alert.
-                const errorMessage = checkError(chatMessage.structure)
+            const errorMessage = checkError(chatMessage.structure)
+            if (errorMessage) {
+                // If there is an error block, display it.
                 if (errorMessage) {
                     addTurn({
                         id: uuid(),
-                        role: MessageRole.Warning,
+                        role: MessageRole.Error,
                         text: errorMessage,
                     })
                     succeeded.current = false
                 }
-            } else if (chatMessage?.text?.trim() !== "") {
-                // Not an error, so output it if it has text. The backend sometimes sends messages with no text content,
-                // and we don't want to display those to the user.
-                // Agent name is the last tool in the origin array. If it's not there, use a default name.
+            } else if (chatMessage?.text?.trim() !== "" || chatMessage.structure) {
+                // Not an error, so output it if it has text or a structure.
+                // The backend sometimes sends messages with no text content, and we don't want to display those to the
+                // user. Agent name is the last tool in the origin array. If it's not there, use a default name.
                 const agentName =
                     chatMessage.origin?.length > 0
                         ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
-                        : "Agent message"
+                        : "Agent"
                 addTurn({
-                    id: uuid(),
-                    role: MessageRole.Agent,
                     agentName,
-                    text: chatMessage.text,
+                    id: uuid(),
                     messageType: chatMessage.type,
+                    role: MessageRole.Agent,
+                    structure: chatMessage.structure,
+                    text: chatMessage.text,
                 })
                 currentResponse.current += chatMessage.text
             }
@@ -543,50 +552,63 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         ]
     )
 
+    const getFinalAnswerErrorTurn = () => ({
+        id: uuid(),
+        role: MessageRole.Error,
+        text: "The agent did not provide a final answer in the expected format. This is an internal error.",
+    })
+
     const handleFinalAnswerLegacyAgent = useCallback(() => {
+        const currentTurns = turnsRef.current
+
+        // Prefer the most recent matching turn
+        const idx = currentTurns.reduceRight(
+            (foundIndex, turn, i) =>
+                foundIndex !== -1 || extractFinalAnswer(turn.text) === undefined ? foundIndex : i,
+            -1
+        )
+
+        if (idx === -1) {
+            // Use the last received turn as the final answer
+            const lastTurn = currentTurns.slice(-1)[0]
+            if (!lastTurn) return
+
+            setTurns((prev) => [
+                ...prev,
+                {
+                    id: uuid(),
+                    role: MessageRole.FinalAnswer,
+                    text: lastTurn.text,
+                },
+            ])
+
+            // Save it to chat history
+            updateChatHistory(targetAgent, [new AIMessage({content: lastTurn.text, id: uuid()})])
+            return
+        }
+
+        const sourceTurn = currentTurns[idx]
+
+        // Save item to chat history (same as original behavior)
+        updateChatHistory(targetAgent, [new AIMessage({content: sourceTurn.text, id: uuid()})])
+
+        // Extract the final answer from the turn.
+        const finalAnswer = extractFinalAnswer(sourceTurn.text)?.trim()
+        if (!finalAnswer) {
+            // Should never happen since we already searched and found this previously
+            return
+        }
+
         setTurns((prev) => {
-            // Prefer the most recent matching turn
-            const idx = prev.reduceRight(
-                (foundIndex, turn, i) =>
-                    foundIndex !== -1 || extractFinalAnswer(turn.text) === undefined ? foundIndex : i,
-                -1
-            )
-
-            if (idx === -1) {
-                // Use the last received turn as the final answer
-                const lastTurn = prev.slice(-1)[0]
-                if (lastTurn) {
-                    return [
-                        ...prev,
-                        {
-                            id: uuid(),
-                            role: MessageRole.FinalAnswer,
-                            text: lastTurn.text,
-                        },
-                    ]
-                }
-                return prev
-            }
-
-            const sourceTurn = prev[idx]
-            // Save item to chat history
-            updateChatHistory(targetAgent, [new AIMessage({content: sourceTurn.text, id: uuid()})])
-
-            // Extract the final answer from the turn.
-            const finalAnswer = extractFinalAnswer(sourceTurn.text)?.trim()
-            if (!finalAnswer) {
-                return prev
-            }
-
-            // Remove "Final Answer: <...>" from original turn text
-            const body = sourceTurn.text.replace(/Final Answer:\s*.*$/su, "").trim()
-
             const updated = [...prev]
 
             // Keep original turn, but without the final-answer section
-            updated[idx] = {
-                ...sourceTurn,
-                text: body,
+            const sourceTurnIndex = updated.findIndex((turn) => turn.id === sourceTurn.id)
+            if (sourceTurnIndex !== -1) {
+                updated[sourceTurnIndex] = {
+                    ...updated[sourceTurnIndex],
+                    text: sourceTurn.text,
+                }
             }
 
             // Add explicit final answer as a new terminal turn
@@ -600,25 +622,45 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         })
     }, [targetAgent, updateChatHistory])
 
+    /**
+     * Extract the final answer from the turns for a Neuro-san agent. For Neuro-san agents, we expect the final answer
+     * to be the most recent turn messageType === ChatMessageType.AGENT_FRAMEWORK.
+     */
     const handleFinalAnswerNeuroSanAgent = useCallback(() => {
-        setTurns((prev) => {
-            const idx = prev.reduceRight(
-                (found, turn, i) => (found !== -1 || turn.messageType !== ChatMessageType.AGENT_FRAMEWORK ? found : i),
-                -1
-            )
+        // Get current turns snapshot
+        const currentTurns = turnsRef.current
 
-            if (idx === -1) return prev
+        // Find the most recent turn that is from the agent framework, which should be the one that contains the
+        // final answer.
+        const idx = currentTurns.reduceRight(
+            (found, turn, i) => (found !== -1 || turn.messageType !== ChatMessageType.AGENT_FRAMEWORK ? found : i),
+            -1
+        )
 
-            const sourceTurn = prev[idx]
-            const finalAnswerText = sourceTurn.text
+        // Check for final answer
+        if (idx === -1) {
+            console.debug(`No turn with messageType ${ChatMessageType.AGENT_FRAMEWORK} found in turns:`, currentTurns)
+            // No final answer found in the turns. Should never happen for a Neuro-san agent.
+            setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
+            return
+        }
 
-            if (finalAnswerText?.trim()) {
-                updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerText, id: uuid()})])
-            }
+        // Extract final answer from that turn
+        const finalAnswerTurn = currentTurns[idx]
+        const finalAnswer =
+            finalAnswerTurn.text || (finalAnswerTurn.structure && JSON.stringify(finalAnswerTurn.structure))
+        if (finalAnswer) {
+            // Update relevant turn to be the final answer
+            setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
 
-            return prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn))
-        })
+            // Save final answer to chat history
+            updateChatHistory(targetAgent, [new AIMessage({content: finalAnswer, id: uuid()})])
+        } else {
+            // No final answer found, display error
+            setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
+        }
     }, [targetAgent, updateChatHistory])
+
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
@@ -937,6 +979,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )}
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
+                    <b>{targetAgent}: </b>
                     {networkDescription}
                 </Box>
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>{agentGreeting}</Box>
@@ -947,6 +990,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 />
                 <Conversation
                     id={`${id}-conversation-display`}
+                    includeAgentMessages={!givesFinalAnswer(targetAgent)}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
