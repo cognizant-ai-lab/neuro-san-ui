@@ -54,7 +54,18 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     return chatResponse.response
 }
 
-        )
+/**
+ * Type guard to check if a value has the shape of an AgentErrorProps, which indicates it's an error message from
+ * an agent. Note: not all Neuro-san agents follow this convention.
+ * @param value The value to check.
+ * @returns True if the value is an AgentErrorProps, false otherwise.
+ */
+const isAgentErrorLike = (value: unknown): value is AgentErrorProps => {
+    return typeof (value as {error?: unknown} | null)?.error === "string"
+}
+
+export const checkError = (chatMessageJson: Record<string, unknown>): string | null => {
+    if (!isAgentErrorLike(chatMessageJson)) {
         return null
     }
 
