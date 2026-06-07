@@ -50,7 +50,7 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
     return (
         thinkingText.length > 0 && (
             <AccordionLite
-                id={id}
+                id={`${id}-thinking`}
                 items={
                     <Box
                         sx={{

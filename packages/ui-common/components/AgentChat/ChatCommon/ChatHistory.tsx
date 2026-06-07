@@ -59,7 +59,7 @@ export const ChatHistory: FC<ChatHistoryProps> = ({id, messages}) => {
 
     return (
         <AccordionLite
-            id={id}
+            id={`${id}-history-items`}
             items={conversation}
             contentSx={{
                 // Slightly darker background to differentiate from main chat
