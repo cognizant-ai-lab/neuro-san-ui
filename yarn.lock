@@ -1526,7 +1526,6 @@ __metadata:
     fix-esm-import-path: "npm:1.10.3"
     globals: "catalog:default"
     http-status: "catalog:default"
-    jsonrepair: "npm:3.8.0"
     lodash-es: "catalog:default"
     notistack: "catalog:default"
     openapi-typescript: "npm:7.8.0"
@@ -8392,15 +8391,6 @@ __metadata:
   bin:
     json5: lib/cli.js
   checksum: 10c0/5a04eed94810fa55c5ea138b2f7a5c12b97c3750bc63d11e511dcecbfef758003861522a070c2272764ee0f4e3e323862f386945aeb5b85b87ee43f084ba586c
-  languageName: node
-  linkType: hard
-
-"jsonrepair@npm:3.8.0":
-  version: 3.8.0
-  resolution: "jsonrepair@npm:3.8.0"
-  bin:
-    jsonrepair: bin/cli.js
-  checksum: 10c0/24e90efde3f3683abb935b5b9dc9cacd9480eb897d3e2fc202ce594509c15af8c627755640f0bc36b9b8efdf13d291f8f7affee0eaf53ad7762a0e985582b867
   languageName: node
   linkType: hard
 
