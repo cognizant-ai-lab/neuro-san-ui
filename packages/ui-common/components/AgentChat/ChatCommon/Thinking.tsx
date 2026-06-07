@@ -23,7 +23,7 @@ const THINKING_MESSAGE_TYPES = new Set<ChatMessageType>([
 
 const formatTurn = (turn: ConversationTurn) => {
     const headerLine = `**${turn.agentName ?? "Agent"}**: ${turn.text}`
-    const structureLine = turn.structure != null ? `\n\`${JSON.stringify(turn.structure)}\`` : ""
+    const structureLine = turn.structure != null ? `\n\`${JSON.stringify(turn.structure, null, 2)}\`` : ""
 
     return `${headerLine}${structureLine}`
 }
