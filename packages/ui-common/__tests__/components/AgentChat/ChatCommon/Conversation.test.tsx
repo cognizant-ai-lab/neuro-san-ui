@@ -32,22 +32,14 @@ const TURNS: ConversationTurn[] = [
     {
         agentDisplayName: "Agent Display Name",
         agentName: "Agent Name",
-        alwaysShow: true,
         id: "1",
         role: MessageRole.Agent,
-        text: '"Agent message"',
+        text: "Agent message",
     },
     {
-        alwaysShow: true,
         id: "2",
         role: MessageRole.Agent,
-        text: '"Agent message with no agent name or display name"',
-    },
-    {
-        alwaysShow: false,
-        id: "3",
-        role: MessageRole.Agent,
-        text: "Agent message that should not show because showThinking is false",
+        text: "Agent message with no agent name or display name",
     },
 ]
 
@@ -57,18 +49,14 @@ describe("Conversation", () => {
     it("Renders correctly", async () => {
         render(
             <Conversation
-                id=""
+                id="test"
                 shouldWrapOutput={false}
+                includeAgentMessages={true}
                 turns={TURNS}
             />
         )
 
         await screen.findByText(TURNS[0].text)
-
-        await screen.findByText(TURNS[1].text)
-        await screen.findByText(TURNS[2].text)
-
-        // item 3 should not have the text rendered because showThinking is false and it's not alwaysShow
-        expect(screen.queryByText(TURNS[3].text)).not.toBeInTheDocument()
+        await screen.findByText(TURNS[1].text + TURNS[2].text)
     })
 })
