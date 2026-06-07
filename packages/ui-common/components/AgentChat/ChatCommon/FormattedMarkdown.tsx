@@ -20,6 +20,7 @@ import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighter"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
+import remarkGfm from "remark-gfm"
 
 import {hashString} from "../../../utils/text"
 
@@ -71,6 +72,7 @@ export const FormattedMarkdown = ({
         <ReactMarkdown
             key={`${hashString(stringToFormat)}-${index}`}
             rehypePlugins={[rehypeRaw, rehypeSlug]}
+            remarkPlugins={[remarkGfm]}
             components={{
                 code: (codeProps) => {
                     const {children, className, ...rest} = codeProps
