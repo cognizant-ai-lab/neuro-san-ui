@@ -27,7 +27,12 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {ChatCommon, ChatCommonHandle, ChatCommonProps} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {
+    ChatCommon,
+    ChatCommonHandle,
+    ChatCommonProps,
+    MAX_TURNS,
+} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
@@ -83,7 +88,7 @@ describe("ChatCommon", () => {
         userImage: "",
     }
 
-    const renderChatCommonComponent = (overrides = {}, mode: PaletteMode = "light") => {
+    const renderChatCommonComponent = (overrides = {}, mode: PaletteMode = "light") =>
         render(
             <ThemeProvider
                 theme={createTheme({
@@ -105,7 +110,6 @@ describe("ChatCommon", () => {
                 />
             </ThemeProvider>
         )
-    }
 
     beforeEach(() => {
         user = userEvent.setup({delay: null})
@@ -468,8 +472,39 @@ describe("ChatCommon", () => {
         expect(errors).toHaveLength(1)
     })
 
+    it("Should truncate at MAX_TURNS", async () => {
+        renderChatCommonComponent()
+
+        const messages = Array.from({length: MAX_TURNS + 1}, (_, i) =>
+            getResponseMessage(ChatMessageType.AGENT, `Sample AI response ${i + 1}`)
+        )
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            for (const chatMessage of messages) {
+                callback(JSON.stringify({response: chatMessage}))
+            }
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Test query")
+
+        const thinkingSection = document.querySelector(`#${defaultProps.id}-thinking`)
+        expect(thinkingSection).toBeInTheDocument()
+        screen.debug(thinkingSection)
+
+        // Oldest streamed response should be evicted once MAX_TURNS is exceeded
+        expect(within(thinkingSection as HTMLElement).queryByText(/Sample AI response 1/u)).not.toBeInTheDocument()
+
+        // Newest streamed response should be retained
+        expect(
+            within(thinkingSection as HTMLElement).getByText(new RegExp(`Sample AI response ${MAX_TURNS + 1}`, "u"))
+        ).toBeInTheDocument()
+
+        // Single request in this test path
+        expect(sendChatQuery).toHaveBeenCalledTimes(1)
+    })
+
     it("Should correctly handle chat context", async () => {
-        const {rerender} = render(<ChatCommon {...defaultProps} />)
+        const {rerender} = renderChatCommonComponent()
 
         const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
@@ -500,7 +535,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should not clear chat when a new agent is selected", async () => {
-        const {rerender} = render(<ChatCommon {...defaultProps} />)
+        const {rerender} = renderChatCommonComponent()
 
         // Make sure first agent greeting appears
         await screen.findByText(TEST_AGENT_MATH_GUY)
@@ -521,14 +556,11 @@ describe("ChatCommon", () => {
 
     it("Should use custom agent greetings when supplied", async () => {
         const customGreeting = "Custom Greeting"
-        render(
-            <ChatCommon
-                {...defaultProps}
-                customAgentGreetings={{
-                    [TEST_AGENT_MATH_GUY]: customGreeting,
-                }}
-            />
-        )
+        renderChatCommonComponent({
+            customAgentGreetings: {
+                [TEST_AGENT_MATH_GUY]: customGreeting,
+            },
+        })
 
         await screen.findByText(customGreeting)
     })
@@ -640,6 +672,30 @@ describe("ChatCommon", () => {
         // Should also appear in Chat History
         const chatHistory = document.querySelector(`#${defaultProps.id}-history-items`)
         within(chatHistory as HTMLElement).getByText(agentFinalAnswer)
+    })
+
+    it("Should handle final answer with no text, structure only from Neuro-san agents", async () => {
+        renderChatCommonComponent()
+
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        const structure = {answer: "Final answer in structure"}
+        const responseMessage = {
+            ...getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, undefined),
+            structure,
+        }
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponse = {response: responseMessage}
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
+
+        // Structure answer should be displayed in conversation section even if text is undefined
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(new RegExp(structure.answer, "u"))
     })
 
     it("Should handle 'show thinking' section correctly", async () => {

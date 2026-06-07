@@ -34,6 +34,7 @@ import MenuItem from "@mui/material/MenuItem"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
+import {isEmpty} from "lodash-es"
 import {
     CSSProperties,
     Dispatch,
@@ -406,16 +407,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             const errorMessage = checkError(chatMessage.structure)
             if (errorMessage) {
                 // If there is an error block, display it.
-                if (errorMessage) {
-                    addTurn({
-                        id: uuid(),
-                        role: MessageRole.Warning,
-                        text: errorMessage,
-                    })
-                    succeeded.current = false
-                }
+                addTurn({
+                    id: uuid(),
+                    role: MessageRole.Warning,
+                    text: errorMessage,
+                })
+                succeeded.current = false
             } else if (chatMessage?.text?.trim() !== "" || chatMessage.structure) {
                 // Not an error, so output it if it has text or a structure.
+                // This is the normal happy path for an incoming message.
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
                 // user. Agent name is the last tool in the origin array. If it's not there, use a default name.
                 const agentName =
@@ -591,22 +591,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Extract the final answer from the turn.
         const finalAnswer = extractFinalAnswer(sourceTurn.text)?.trim()
-        if (!finalAnswer) {
-            // Should never happen since we already searched and found this previously
-            return
-        }
 
+        // Update the turn to be a final answer turn, and add a new final answer turn with just the final answer text.
         setTurns((prev) => {
-            const updated = [...prev]
+            const sourceTurnIndex = prev.findIndex(({id}) => id === sourceTurn.id)
 
-            // Keep original turn, but without the final-answer section
-            const sourceTurnIndex = updated.findIndex((turn) => turn.id === sourceTurn.id)
-            if (sourceTurnIndex !== -1) {
-                updated[sourceTurnIndex] = {
-                    ...updated[sourceTurnIndex],
-                    text: sourceTurn.text,
-                }
-            }
+            const updated =
+                sourceTurnIndex === -1
+                    ? [...prev]
+                    : prev.map((turn, index) => (index === sourceTurnIndex ? {...turn, text: sourceTurn.text} : turn))
 
             // Add explicit final answer as a new terminal turn
             updated.push({
@@ -643,14 +636,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Extract final answer from that turn
         const finalAnswerTurn = currentTurns[idx]
-        const finalAnswer =
-            finalAnswerTurn.text || (finalAnswerTurn.structure && JSON.stringify(finalAnswerTurn.structure))
-        if (finalAnswer) {
+        const hasFinalAnswer = finalAnswerTurn.text?.trim().length > 0 || !isEmpty(finalAnswerTurn.structure)
+        if (hasFinalAnswer) {
             // Update relevant turn to be the final answer
             setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
 
             // Save final answer to chat history
-            updateChatHistory(targetAgent, [new AIMessage({content: finalAnswer, id: uuid()})])
+            const finalAnswerContent = finalAnswerTurn.text || JSON.stringify(finalAnswerTurn.structure, null, 2)
+            updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerContent, id: uuid()})])
         } else {
             // No final answer found, display error
             setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])

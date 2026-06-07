@@ -39,8 +39,8 @@ export type CombinedAgentType = LegacyAgentType | string
 /**
  * Models the error we receive from neuro-san agents.
  */
-export interface AgentErrorProps {
-    error: string
-    traceback?: string
-    tool?: string
+export type AgentErrorProps = {
+    readonly error: string
+    readonly traceback?: string
+    readonly tool?: string
 }

@@ -54,17 +54,12 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     return chatResponse.response
 }
 
-export const checkError: (chatMessageJson: object) => string | null = (chatMessageJson: object) => {
-    if (chatMessageJson && "error" in chatMessageJson) {
-        const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
-        return (
-            `Error occurred. Error: "${agentError.error}", ` +
-            `traceback: "${agentError?.traceback}", ` +
-            `tool: "${agentError?.tool}"`
         )
-    } else {
         return null
     }
+
+    const {error, traceback, tool} = chatMessageJson
+    return `Error occurred. Error: "${error}", traceback: "${traceback}", tool: "${tool}"`
 }
 
 export const removeTrailingUuid = (agentName: string): string => {
