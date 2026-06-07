@@ -34,6 +34,23 @@ const UserTurnBubble = styled(Box)(({theme}) => ({
 }))
 
 /**
+ * Format the content of a conversation turn for display. Pretty-print JSON.
+ * @param turn The conversation turn to format.
+ * @returns The formatted content of the turn with JSON fences as appropriate.
+ */
+const formatTurnContent = (turn: ConversationTurn): string => {
+    if (turn.text) {
+        return turn.text
+    }
+
+    if (turn.structure != null) {
+        return `\`\`\`json\n${JSON.stringify(turn.structure, null, 2)}\n\`\`\``
+    }
+
+    return ""
+}
+
+/**
  * Component to render a conversation between the user and the agent.
  */
 export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = false, shouldWrapOutput, turns}) => {
@@ -58,9 +75,9 @@ export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = 
                             </UserTurnBubble>,
                         ]
                     case MessageRole.Agent:
-                        return includeAgentMessages ? [turn.text || JSON.stringify(turn.structure, null, 2)] : []
+                        return includeAgentMessages ? [formatTurnContent(turn)] : []
                     case MessageRole.FinalAnswer:
-                        return [turn.text || JSON.stringify(turn.structure, null, 2)]
+                        return [formatTurnContent(turn)]
                     case MessageRole.LegacyAgent:
                         return [turn.text]
                     case MessageRole.Warning:
