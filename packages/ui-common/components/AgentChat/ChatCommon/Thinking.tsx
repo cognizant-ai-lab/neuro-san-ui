@@ -21,8 +21,10 @@ const THINKING_MESSAGE_TYPES = new Set<ChatMessageType>([
     ChatMessageType.SYSTEM,
 ])
 
+const DEFAULT_AGENT_NAME = "Agent"
+
 const formatTurn = (turn: ConversationTurn) => {
-    const headerLine = `**${turn.agentName ?? "Agent"}**: ${turn.text}`
+    const headerLine = `**${turn.agentName ?? DEFAULT_AGENT_NAME}**: ${turn.text}`
     const structureLine = turn.structure != null ? `\n\`${JSON.stringify(turn.structure, null, 2)}\`` : ""
 
     return `${headerLine}${structureLine}`
