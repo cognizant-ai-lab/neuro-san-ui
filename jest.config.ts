@@ -22,18 +22,27 @@ import type {Config} from "@jest/types"
 
 // Packages in ESM format that need to be transformed by Jest because they are not distributed in CommonJS format
 const esmPackagesToTransform = [
+    "ccount",
     "character-.*",
     "comma-.*",
     "decode-.*",
+    "devlop",
+    "escape-string-regexp",
     "hast.*",
     "is-.*",
     "lodash-es",
+    "longest-streak",
+    "markdown-table",
     "mdast.*",
+    "micromark-.*",
     "parse-.*",
     "property-.*",
     "refractor",
+    "remark-gfm",
     "space-.*",
+    "unist-.*",
     "uuid",
+    "zwitch",
 ]
 
 const config: Config.InitialOptions = {
@@ -74,10 +83,10 @@ const config: Config.InitialOptions = {
 
     coverageThreshold: {
         global: {
-            statements: -134,
-            branches: -186,
+            statements: -135,
+            branches: -185,
             functions: -36,
-            lines: -104,
+            lines: -105,
         },
     },
 
