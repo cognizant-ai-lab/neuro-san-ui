@@ -594,7 +594,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Update the turn to be a final answer turn, and add a new final answer turn with just the final answer text.
         setTurns((prev) => {
-            const sourceTurnIndex = prev.findIndex(({id}) => id === sourceTurn.id)
+            const sourceTurnIndex = prev.findIndex(({id: itemId}) => itemId === sourceTurn.id)
 
             const updated =
                 sourceTurnIndex === -1
