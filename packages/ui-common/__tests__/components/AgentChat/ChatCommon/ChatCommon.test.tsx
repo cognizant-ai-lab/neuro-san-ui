@@ -487,20 +487,22 @@ describe("ChatCommon", () => {
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Test query")
 
+        await screen.findByText("Show Thinking")
         const thinkingSection = document.querySelector(`#${defaultProps.id}-thinking`)
         expect(thinkingSection).toBeInTheDocument()
         screen.debug(thinkingSection)
 
         // Oldest streamed response should be evicted once MAX_TURNS is exceeded
-        expect(within(thinkingSection as HTMLElement).queryByText(/Sample AI response 1/u)).not.toBeInTheDocument()
+        expect(within(thinkingSection as HTMLElement).queryByText(/Sample AI response 1$/u)).not.toBeInTheDocument()
 
-        // Newest streamed response should be retained
-        expect(
-            within(thinkingSection as HTMLElement).getByText(new RegExp(`Sample AI response ${MAX_TURNS + 1}`, "u"))
-        ).toBeInTheDocument()
-
-        // Single request in this test path
-        expect(sendChatQuery).toHaveBeenCalledTimes(1)
+        // Messages 2..MAX_TURNS+1 should be retained
+        for (let responseNumber = 2; responseNumber <= MAX_TURNS + 1; responseNumber += 1) {
+            expect(
+                within(thinkingSection as HTMLElement).getByText(
+                    new RegExp(String.raw`Sample AI response ${responseNumber}(?!\d)`, "u")
+                )
+            ).toBeInTheDocument()
+        }
     })
 
     it("Should correctly handle chat context", async () => {

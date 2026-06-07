@@ -205,7 +205,7 @@ const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
 // Maximum number of turns to save
-const MAX_TURNS = 50
+export const MAX_TURNS = 50
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
