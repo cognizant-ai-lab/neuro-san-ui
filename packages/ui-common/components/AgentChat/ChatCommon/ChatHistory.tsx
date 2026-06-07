@@ -1,50 +1,72 @@
+import {BaseMessage} from "@langchain/core/messages"
 import {useTheme} from "@mui/material/styles"
 import {FC} from "react"
 
 import {Conversation} from "./Conversation"
-import {ConversationTurn} from "./ConversationTurn"
+import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {adjustBrightness} from "../../../Theme/Theme"
-import {MUIAccordion} from "../../Common/MUIAccordion"
+import {AccordionLite} from "../../Common/AccordionLite"
 
 // #region: Types
 interface ChatHistoryProps {
-    readonly chatHistoryKey: string
+    readonly messages: BaseMessage[]
     readonly id: string
-    readonly turns: ConversationTurn[]
 }
 // #endregion: Types
 
 /**
+ * Helper function to convert from BaseMessage format used in persisted chat history to ConversationTurn format used for
+ * rendering the conversation.
+ * @param chatHistory
+ */
+const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
+    chatHistory
+        .filter((message) => message.type === "human" || message.type === "ai")
+        .map((message) => {
+            let role: MessageRole
+            if (message.type === "human") {
+                role = MessageRole.User
+            } else if (message.type === "ai") {
+                role = MessageRole.Agent
+            }
+            return {
+                alwaysShow: true,
+                id: message.id,
+                text: message.content.toString(),
+                role,
+            }
+        })
+
+/**
  * Component for displaying chat history from previous interactions with the agent.
  */
-export const ChatHistory: FC<ChatHistoryProps> = ({chatHistoryKey, id, turns}) => {
+export const ChatHistory: FC<ChatHistoryProps> = ({id, messages}) => {
     const theme = useTheme()
+
+    const turns = toTurns(messages)
+
+    const conversation = (
+        <Conversation
+            id={`${id}-conversation`}
+            key={`${id}-conversation`}
+            // Pass "true" here to include final answers, which get persisted as agent
+            // messages in chat history.
+            includeAgentMessages={true}
+            shouldWrapOutput={true}
+            turns={turns}
+        />
+    )
+
     return (
-        <MUIAccordion
+        <AccordionLite
             id={id}
-            key={chatHistoryKey}
-            sx={{
-                marginBottom: "1rem",
-                marginTop: "1rem",
+            items={conversation}
+            contentSx={{
                 // Slightly darker background to differentiate from main chat
                 backgroundColor: adjustBrightness(theme.palette.background.paper, -5),
                 opacity: 0.5,
             }}
-            items={[
-                {
-                    title: "Chat History",
-                    content: (
-                        <Conversation
-                            id={`${id}-conversation`}
-                            // Pass "true" here to include final answers, which get persisted as agent
-                            // messages in chat history.
-                            includeAgentMessages={true}
-                            shouldWrapOutput={true}
-                            turns={turns}
-                        />
-                    ),
-                },
-            ]}
+            title="Chat History"
         />
     )
 }

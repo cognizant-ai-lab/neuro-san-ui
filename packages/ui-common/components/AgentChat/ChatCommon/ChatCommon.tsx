@@ -17,7 +17,7 @@ limitations under the License.
 /**
  * See main function description.
  */
-import {AIMessage, BaseMessage, HumanMessage} from "@langchain/core/messages"
+import {AIMessage, HumanMessage} from "@langchain/core/messages"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import TuneIcon from "@mui/icons-material/Tune"
@@ -181,9 +181,6 @@ export interface ChatCommonProps {
      */
     readonly sampleQueries?: string[]
 }
-
-// Key for the chat history, which gets special treatment; always visible even if "show thinking" is off.
-const CHAT_HISTORY_KEY = "chat-history-accordion"
 
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
 const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
@@ -865,24 +862,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const agentGreeting = customAgentGreetings[targetAgent] ?? "Hi, how can I help?"
 
-    const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
-        chatHistory
-            .filter((message) => message.type === "human" || message.type === "ai")
-            .map((message) => {
-                let role: MessageRole
-                if (message.type === "human") {
-                    role = MessageRole.User
-                } else if (message.type === "ai") {
-                    role = MessageRole.Agent
-                }
-                return {
-                    alwaysShow: true,
-                    id: message.id,
-                    text: message.content.toString(),
-                    role,
-                }
-            })
-
     const handleOptionsMenuClose = () => {
         setOptionsMenuAnchorEl(null)
         setOptionsMenuOpen(false)
@@ -972,9 +951,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 {getOptionsMenuButton()}
                 {agentChatHistory?.chatHistory?.length > 0 && (
                     <ChatHistory
-                        chatHistoryKey={CHAT_HISTORY_KEY}
-                        id={`${id}-chat-history`}
-                        turns={toTurns(agentChatHistory.chatHistory)}
+                        id={id}
+                        messages={agentChatHistory.chatHistory}
                     />
                 )}
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
@@ -988,7 +966,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     sampleQueries={sampleQueries}
                 />
                 <Conversation
-                    id={`${id}-conversation-display`}
+                    id={id}
                     includeAgentMessages={!givesFinalAnswer(targetAgent)}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
@@ -996,7 +974,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 {!isAwaitingLlm && turns.length > 0 && (
                     // Only show thinking once streaming is complete
                     <Thinking
-                        id={`${id}-thinking-display`}
+                        id={id}
                         turns={turns}
                     />
                 )}

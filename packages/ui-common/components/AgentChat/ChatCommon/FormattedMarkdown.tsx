@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import Box from "@mui/material/Box"
 import {Fragment, JSX as ReactJSX, ReactNode} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighter"
@@ -149,5 +150,5 @@ export const FormattedMarkdown = ({
         formattedOutput.push(concatenatedText)
     }
 
-    return <div id={id}>{formattedOutput}</div>
+    return <Box id={id}>{formattedOutput}</Box>
 }
