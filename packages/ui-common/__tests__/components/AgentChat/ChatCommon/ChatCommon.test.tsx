@@ -490,7 +490,6 @@ describe("ChatCommon", () => {
         await screen.findByText("Show Thinking")
         const thinkingSection = document.querySelector(`#${defaultProps.id}-thinking`)
         expect(thinkingSection).toBeInTheDocument()
-        screen.debug(thinkingSection)
 
         // Oldest streamed response should be evicted once MAX_TURNS is exceeded
         expect(within(thinkingSection as HTMLElement).queryByText(/Sample AI response 1$/u)).not.toBeInTheDocument()
