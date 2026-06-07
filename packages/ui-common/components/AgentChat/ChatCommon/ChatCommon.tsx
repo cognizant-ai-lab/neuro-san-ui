@@ -409,7 +409,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (errorMessage) {
                     addTurn({
                         id: uuid(),
-                        role: MessageRole.Error,
+                        role: MessageRole.Warning,
                         text: errorMessage,
                     })
                     succeeded.current = false
