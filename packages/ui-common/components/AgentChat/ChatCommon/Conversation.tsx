@@ -78,8 +78,6 @@ export const Conversation: FC<ConversationProps> = ({id, includeAgentMessages = 
                         return includeAgentMessages ? [formatTurnContent(turn)] : []
                     case MessageRole.FinalAnswer:
                         return [formatTurnContent(turn)]
-                    case MessageRole.LegacyAgent:
-                        return [turn.text]
                     case MessageRole.Warning:
                         return [
                             <MUIAlert

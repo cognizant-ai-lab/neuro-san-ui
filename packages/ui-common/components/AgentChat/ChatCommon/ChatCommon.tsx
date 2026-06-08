@@ -715,7 +715,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         },
         [
             addTurn,
-            agentDisplayName,
             doRetryLoop,
             handleFinalAnswerLegacyAgent,
             handleFinalAnswerNeuroSanAgent,

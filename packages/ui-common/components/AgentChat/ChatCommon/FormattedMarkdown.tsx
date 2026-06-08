@@ -79,8 +79,8 @@ export const FormattedMarkdown = ({
                     const match = /language-(?<language>\w+)/u.exec(className || "")
                     return match ? (
                         <SyntaxHighlighter
-                            id={`syntax-highlighter-${match.groups["language"]}`}
                             PreTag="div"
+                            id={`syntax-highlighter-${match.groups["language"]}`}
                             language={match.groups["language"]}
                             style={style}
                             wrapLongLines={wrapLongLines}
