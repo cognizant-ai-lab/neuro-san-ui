@@ -82,7 +82,7 @@ describe("ChatCommon", () => {
         id: "test",
         isAwaitingLlm: false,
         onSend: jest.fn(),
-        sampleQueries: MOCK_CONNECTIVITY_INFO.metadata.sample_queries,
+        sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
         setIsAwaitingLlm: jest.fn(),
         targetAgent: TEST_AGENT_MATH_GUY,
         userImage: "",

@@ -338,6 +338,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
         }
 
+        // Clear out existing
+        setNetworkDescription("")
         if (selectedNetwork && !isLegacyAgentType(selectedNetwork)) {
             void fetchAgentDetails()
         }
@@ -370,7 +372,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         a?.origin.localeCompare(b?.origin)
                     )
                     setAgentsInNetwork(agentsInNetworkSorted)
-                    setSampleQueries(connectivity?.metadata?.["sample_queries"] as string[])
+                    const sampleQueriesTmp = connectivity?.metadata?.["sample_queries"]
+                    if (Array.isArray(sampleQueriesTmp)) {
+                        setSampleQueries(sampleQueriesTmp)
+                    } else {
+                        setSampleQueries([])
+                    }
                     setAgentIconSuggestions(null)
                     closeNotification()
                 } catch (e) {

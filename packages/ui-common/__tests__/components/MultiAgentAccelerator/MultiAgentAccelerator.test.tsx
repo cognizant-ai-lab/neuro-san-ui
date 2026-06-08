@@ -23,6 +23,7 @@ import {Ref} from "react"
 
 import {
     LIST_NETWORKS_RESPONSE,
+    MOCK_CONNECTIVITY_INFO,
     TEMPORARY_NETWORK,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
@@ -230,24 +231,14 @@ const renderMultiAgentAcceleratorPage = () =>
         </SnackbarProvider>
     )
 
-describe("Multi Agent Accelerator Page", () => {
+describe("MultiAgentAccelerator", () => {
     withStrictMocks()
 
     let user: UserEvent
 
     beforeEach(() => {
         ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
-        ;(getConnectivity as jest.Mock).mockResolvedValue({
-            connectivity_info: [
-                {
-                    origin: "date_time_provider",
-                    tools: ["current_date_time"],
-                },
-                {
-                    origin: "current_date_time",
-                },
-            ],
-        })
+        ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
 
         // make extractConversations the real implementation
@@ -264,11 +255,11 @@ describe("Multi Agent Accelerator Page", () => {
         useTourStore.getState().reset()
     })
 
-    it.each([false, true])(
-        "should render the component with darkMode=%s and change the network when item is clicked in the sidebar",
-        async (darkMode) => {
+    it.each(["dark", "light"])(
+        "should render the component with mode:%s and change the network when item is clicked in the sidebar",
+        async (mode) => {
             ;(useColorScheme as jest.Mock).mockReturnValue({
-                mode: darkMode ? "dark" : "light",
+                mode,
             })
 
             renderMultiAgentAcceleratorPage()
@@ -298,10 +289,34 @@ describe("Multi Agent Accelerator Page", () => {
                     currentUser: MOCK_USER,
                     targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
                     neuroSanURL: NEURO_SAN_SERVER_URL,
+                    sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
                 })
             )
         }
     )
+
+    it("should handle a network with no sample queries", async () => {
+        ;(getConnectivity as jest.Mock).mockResolvedValue({
+            ...MOCK_CONNECTIVITY_INFO,
+            metadata: {},
+        })
+        renderMultiAgentAcceleratorPage()
+
+        // Expand networks
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // Select a network to trigger getConnectivity
+        const network = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await user.click(network)
+
+        // Make sure the page rendered ChatCommon with expected props
+        expect(chatCommonMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sampleQueries: [],
+            })
+        )
+    })
 
     it("should display error toast when an error occurs for getAgentNetworks", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()

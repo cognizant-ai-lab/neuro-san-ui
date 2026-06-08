@@ -27,7 +27,7 @@ export const AccordionLite: FC<AccordionLiteProps> = ({id, items, contentSx, tit
                     <ExpandMoreIcon
                         sx={{
                             fontSize: "1rem",
-                            transform: !isExpanded && "rotate(270deg)",
+                            transform: isExpanded ? "rotate(0deg)" : "rotate(270deg)",
                             transition: "transform 150ms ease",
                         }}
                     />

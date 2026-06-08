@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box"
+import {isEmpty} from "lodash-es"
 import {FC, useMemo} from "react"
 import ReactMarkdown from "react-markdown"
 
@@ -24,7 +25,7 @@ const THINKING_MESSAGE_TYPES = new Set<ChatMessageType>([
 const DEFAULT_AGENT_NAME = "Agent"
 
 const formatTurn = (turn: ConversationTurn) => {
-    const headerLine = `**${turn.agentName ?? DEFAULT_AGENT_NAME}**: ${turn.text}`
+    const headerLine = `**${turn.agentName ?? DEFAULT_AGENT_NAME}**: ${turn.text || ""}`
     const structureLine = turn.structure != null ? `\n\`${JSON.stringify(turn.structure, null, 2)}\`` : ""
 
     return `${headerLine}${structureLine}`
@@ -43,8 +44,8 @@ export const Thinking: FC<ThinkingProps> = ({id, turns}) => {
         // Deliberately allow -1 result to fall through and include all thinking messages if there are no user turns
         return turns
             .slice(lastUserTurnIndex + 1)
-            .filter((turn) => turn.messageType && THINKING_MESSAGE_TYPES.has(turn.messageType))
-            .filter((turn) => turn.text?.trim().length > 0)
+            .filter((turn) => THINKING_MESSAGE_TYPES.has(turn.messageType))
+            .filter((turn) => turn.text?.trim().length > 0 || !isEmpty(turn.structure))
             .map((turn) => formatTurn(turn))
             .join("\n\n")
     }, [turns])
