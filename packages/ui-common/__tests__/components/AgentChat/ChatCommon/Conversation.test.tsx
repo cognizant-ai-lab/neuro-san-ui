@@ -59,4 +59,24 @@ describe("Conversation", () => {
         await screen.findByText(TURNS[0].text)
         await screen.findByText(TURNS[1].text + TURNS[2].text)
     })
+
+    it("Handles turn with neither text nor structure", async () => {
+        render(
+            <Conversation
+                id="test"
+                shouldWrapOutput={false}
+                includeAgentMessages={true}
+                turns={[
+                    {
+                        id: "42",
+                        role: MessageRole.Agent,
+                        text: null,
+                    },
+                ]}
+            />
+        )
+
+        const conversationNode = document.querySelector("#test-conversation")
+        expect(conversationNode?.textContent).toBe("")
+    })
 })

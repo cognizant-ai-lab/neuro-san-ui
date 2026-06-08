@@ -45,9 +45,9 @@ const formatTurnContent = (turn: ConversationTurn): string => {
 
     if (turn.structure != null) {
         return `\`\`\`json\n${JSON.stringify(turn.structure, null, 2)}\n\`\`\``
+    } else {
+        return ""
     }
-
-    return ""
 }
 
 /**
