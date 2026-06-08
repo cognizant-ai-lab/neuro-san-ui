@@ -32,8 +32,8 @@ describe("FormattedMarkdown component tests", () => {
             />
         )
 
-        await screen.findByText(/# Heading/u)
-        await screen.findByText(/Some \*\*bold\*\* text/u)
+        screen.getByRole("heading", {level: 1, name: "Heading"})
+        expect(document.querySelector("p")).toHaveTextContent("Some bold text.")
     })
 
     it("Aggregates consecutive string nodes", async () => {
@@ -101,28 +101,14 @@ describe("FormattedMarkdown component tests", () => {
         })
     })
 
-    it("Renders fenced code block with language via SyntaxHighlighter", () => {
-        const md = "```javascript\nconsole.log('x')\n```"
-        // Should not throw during render
-        expect(() =>
-            render(
-                <FormattedMarkdown
-                    id="test-code"
-                    nodesList={[md]}
-                    style={{}}
-                    wrapLongLines={false}
-                />
-            )
-        ).not.toThrow()
-    })
-
     it("Renders code blocks with and without language and exposes expected ids", async () => {
         const withLang = "```python\nprint(1)\n```"
         const withoutLang = "```\nplain code\n```"
 
+        const id = "formatted-markdown-test"
         const {container} = render(
             <FormattedMarkdown
-                id="test-code-ids"
+                id={id}
                 nodesList={[withLang, withoutLang]}
                 style={{}}
                 wrapLongLines={false}
@@ -130,7 +116,14 @@ describe("FormattedMarkdown component tests", () => {
         )
 
         // Syntax highlighter for python should be present (or at least the id should be present in markup)
-        expect(container.innerHTML).toMatch(/syntax-highlighter-python|code-/u)
+        const itemWithId = container.querySelector(`#${id}`)
+        expect(itemWithId).toBeInTheDocument()
+
+        const codeBlocks = screen.getAllByRole("code")
+        expect(codeBlocks).toHaveLength(2)
+
+        expect(codeBlocks[0]).toHaveClass("language-python")
+        screen.getByText("plain code")
     })
 
     it("Applies wrapLongLines style for non-language code blocks", () => {
