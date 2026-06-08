@@ -83,6 +83,7 @@ export const FormattedMarkdown = ({
                             PreTag="div"
                             language={match.groups["language"]}
                             style={style}
+                            wrapLongLines={wrapLongLines}
                         >
                             {String(children).replace(/\n$/u, "")}
                         </SyntaxHighlighter>

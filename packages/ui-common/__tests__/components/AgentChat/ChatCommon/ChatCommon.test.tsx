@@ -17,7 +17,7 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {createRef} from "react"
+import {createRef, Ref} from "react"
 
 import {
     MOCK_CONNECTIVITY_INFO,
@@ -34,7 +34,7 @@ import {
     MAX_TURNS,
 } from "../../../../components/AgentChat/ChatCommon/ChatCommon"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
-import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
+import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
@@ -88,7 +88,10 @@ describe("ChatCommon", () => {
         userImage: "",
     }
 
-    const renderChatCommonComponent = (overrides = {}, mode: PaletteMode = "light") =>
+    const renderChatCommonComponent = (
+        overrides: Partial<ChatCommonProps> & {ref?: Ref<ChatCommonHandle>} = {},
+        mode: PaletteMode = "light"
+    ) =>
         render(
             <ThemeProvider
                 theme={createTheme({
@@ -149,6 +152,15 @@ describe("ChatCommon", () => {
         screen.getByRole("button", {name: "Clear Chat"})
         screen.getByRole("button", {name: "Regenerate"})
         screen.getByRole("button", {name: "Send"})
+    })
+
+    it("Renders with network description", async () => {
+        const networkDescription = "test network description"
+        renderChatCommonComponent({networkDescription})
+
+        // Should show description and agent
+        screen.getByText(`${TEST_AGENT_MATH_GUY}:`)
+        screen.getByText(networkDescription)
     })
 
     it("Should render and send sample queries correctly", async () => {
@@ -329,7 +341,8 @@ describe("ChatCommon", () => {
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        await screen.findByText(testResponseText1 + testResponseText2)
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(testResponseText1 + testResponseText2)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(2)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText2)
@@ -354,6 +367,63 @@ describe("ChatCommon", () => {
 
         // The body of the final answer should be displayed
         screen.getByText(finalAnswerText)
+    })
+
+    it("Should handle no chunks received", async () => {
+        renderChatCommonComponent()
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(null)
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
+    })
+
+    it("Should handle when legacy agents fail to send a Final Answer", async () => {
+        const onChunkReceivedMock = jest.fn()
+        const responseText = "Text without the magical final answer string"
+
+        expect(givesFinalAnswer(LegacyAgentType.OpportunityFinder)).toBe(false)
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            targetAgent: LegacyAgentType.OpportunityFinder,
+        })
+        screen.getByText(LegacyAgentType.OpportunityFinder)
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            callback(responseText)
+        })
+
+        await sendQuery(LegacyAgentType.OpportunityFinder, "test")
+
+        // The chosen agent is known not to give a final answer, so we should just display whatever text it gives us
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(responseText)
+    })
+
+    it("Should show an error when legacy agent fails to respond with a final answer", async () => {
+        const onChunkReceivedMock = jest.fn()
+        const responseText = "Text without the magical final answer string"
+
+        expect(givesFinalAnswer(LegacyAgentType.DMSChat)).toBe(true)
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            targetAgent: LegacyAgentType.DMSChat,
+        })
+
+        screen.getByText(LegacyAgentType.DMSChat)
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            callback(responseText)
+        })
+
+        await sendQuery(LegacyAgentType.DMSChat, "test")
+
+        // This agent is supposed to give a final answer, so it's an error that it didn't. Check for the alert.
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
     })
 
     it("Should handle error thrown while fetching", async () => {
@@ -697,6 +767,30 @@ describe("ChatCommon", () => {
         // Structure answer should be displayed in conversation section even if text is undefined
         const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
         within(conversation as HTMLElement).getByText(new RegExp(structure.answer, "u"))
+    })
+
+    it("Should handle final answer with no text or structure from Neuro-san agents", async () => {
+        renderChatCommonComponent()
+
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        const responseMessage: ChatMessage = {
+            type: ChatMessageType.AGENT_FRAMEWORK,
+            text: null,
+            structure: null,
+        }
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponse = {response: responseMessage}
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
     })
 
     it("Should handle 'show thinking' section correctly", async () => {
@@ -1187,13 +1281,16 @@ describe("ChatCommon", () => {
             targetAgent: LegacyAgentType.OpportunityFinder,
             legacyAgentEndpoint: testEndpoint,
         })
+
+        screen.getByText(LegacyAgentType.OpportunityFinder)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback("Legacy response with custom endpoint")
         })
 
         await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
-        await screen.findByText("Legacy response with custom endpoint")
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText("Legacy response with custom endpoint")
     })
 
     it.each([

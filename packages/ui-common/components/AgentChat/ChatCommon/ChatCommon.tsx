@@ -566,22 +566,24 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         )
 
         if (idx === -1) {
-            // Use the last received turn as the final answer
-            const lastTurn = currentTurns.slice(-1)[0]
-            if (!lastTurn) return
+            if (givesFinalAnswer(targetAgent)) {
+                // This agent is supposed to give final answers, but didn't this time. An error.
+                setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
+                return
+            } else {
+                // Use the last received turn as the final answer
+                const lastTurn = currentTurns.slice(-1)[0]
+                if (!lastTurn) return
 
-            setTurns((prev) => [
-                ...prev,
-                {
-                    id: uuid(),
-                    role: MessageRole.FinalAnswer,
-                    text: lastTurn.text,
-                },
-            ])
+                // Just set the last turn as the final answer
+                setTurns((prev) =>
+                    prev.map((turn) => (turn.id === lastTurn.id ? {...turn, role: MessageRole.FinalAnswer} : turn))
+                )
 
-            // Save it to chat history
-            updateChatHistory(targetAgent, [new AIMessage({content: lastTurn.text, id: uuid()})])
-            return
+                // Save it to chat history
+                updateChatHistory(targetAgent, [new AIMessage({content: lastTurn.text, id: uuid()})])
+                return
+            }
         }
 
         const sourceTurn = currentTurns[idx]
@@ -682,30 +684,27 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             controller.current = new AbortController()
             setIsAwaitingLlm(true)
 
-            addTurn({
-                agentName: `Contacting ${agentDisplayName}...`,
-                id: uuid(),
-                role: MessageRole.Agent,
-                text: `Query: ${queryToSend}`,
-            })
             try {
                 // Invoke the logic to send the request and retry as necessary
                 const wasAborted = await doRetryLoop(queryToSend)
 
-                // Was the request aborted?
-                if (!wasAborted && !succeeded.current) {
-                    addTurn({
-                        id: uuid(),
-                        role: MessageRole.Error,
-                        text: `Gave up after ${MAX_AGENT_RETRIES} attempts.`,
-                    })
-                    return
-                }
-
-                if (isLegacyAgentType(targetAgent)) {
-                    handleFinalAnswerLegacyAgent()
-                } else {
-                    handleFinalAnswerNeuroSanAgent()
+                // Abort condition is handled elsewhere
+                if (!wasAborted) {
+                    if (succeeded.current) {
+                        // Success: infer final answer depending on agent type
+                        if (isLegacyAgentType(targetAgent)) {
+                            handleFinalAnswerLegacyAgent()
+                        } else {
+                            handleFinalAnswerNeuroSanAgent()
+                        }
+                    } else {
+                        // Exhausted retries without success. Display error to user.
+                        addTurn({
+                            id: uuid(),
+                            role: MessageRole.Error,
+                            text: `Gave up after ${MAX_AGENT_RETRIES} attempts.`,
+                        })
+                    }
                 }
             } finally {
                 resetState()
@@ -949,8 +948,24 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     />
                 )}
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
-                    <strong>{targetAgent}</strong>
-                    {networkDescription ? `: ${networkDescription}` : ""}
+                    <Typography
+                        component="span"
+                        sx={{fontWeight: 700}}
+                        variant="inherit"
+                    >
+                        {targetAgent}
+                        {networkDescription && ":"}
+                    </Typography>
+                    {networkDescription && (
+                        <Typography
+                            component="span"
+                            sx={{ml: 0.5}}
+                            variant="inherit"
+                        >
+                            {" "}
+                            {networkDescription}
+                        </Typography>
+                    )}
                 </Box>
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>{agentGreeting}</Box>
                 <SampleQueries
