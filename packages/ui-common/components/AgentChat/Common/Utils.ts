@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {isEmpty} from "lodash-es"
 import startCase from "lodash-es/startCase.js"
 
 import {AgentErrorProps} from "./Types"
@@ -65,7 +66,7 @@ const isAgentErrorLike = (value: unknown): value is AgentErrorProps => {
 }
 
 export const checkError = (chatMessageJson: Record<string, unknown>): string | null => {
-    if (!isAgentErrorLike(chatMessageJson)) {
+    if (isEmpty(chatMessageJson) || !isAgentErrorLike(chatMessageJson)) {
         return null
     }
 

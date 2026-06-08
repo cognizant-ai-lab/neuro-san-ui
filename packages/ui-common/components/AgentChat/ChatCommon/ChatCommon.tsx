@@ -413,7 +413,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     text: errorMessage,
                 })
                 succeeded.current = false
-            } else if (chatMessage?.text?.trim() !== "" || chatMessage.structure) {
+            } else if (chatMessage?.text?.trim().length > 0 || chatMessage.structure) {
                 // Not an error, so output it if it has text or a structure.
                 // This is the normal happy path for an incoming message.
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
@@ -430,7 +430,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     structure: chatMessage.structure,
                     text: chatMessage.text,
                 })
-                currentResponse.current += chatMessage.text
+                if (chatMessage?.text?.trim().length > 0) {
+                    // Append to current response if present
+                    currentResponse.current += chatMessage.text
+                }
             }
         },
         [addTurn, targetAgent, updateChatContext, updateSlyData]
@@ -868,7 +871,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const getOptionsMenu = () => (
         <Menu
-            id="options-menu"
+            id={`${id}-options-menu`}
             anchorEl={optionsMenuAnchorEl}
             open={optionsMenuOpen}
             onClose={handleOptionsMenuClose}

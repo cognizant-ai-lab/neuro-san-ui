@@ -22,15 +22,9 @@ interface ChatHistoryProps {
 const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
     chatHistory
         .filter((message) => message.type === "human" || message.type === "ai")
-        .map((message) => {
-            let role: MessageRole
-            if (message.type === "human") {
-                role = MessageRole.User
-            } else if (message.type === "ai") {
-                role = MessageRole.Agent
-            }
+        .map((message): ConversationTurn => {
+            const role: MessageRole = message.type === "human" ? MessageRole.User : MessageRole.Agent
             return {
-                alwaysShow: true,
                 id: message.id,
                 text: message.content.toString(),
                 role,

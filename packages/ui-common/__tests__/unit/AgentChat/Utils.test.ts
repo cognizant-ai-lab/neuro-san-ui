@@ -79,6 +79,8 @@ describe("AgentChat/Utils/checkError", () => {
         })
 
         expect(result).toBeNull()
+
+        expect(checkError(null)).toBeNull()
     })
 })
 
