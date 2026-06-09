@@ -1,21 +1,25 @@
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
+/**
+ * The various messages roles in a conversation turn.
+ */
 export enum MessageRole {
-    "AgentHeader" = "AgentHeader",
     "Agent" = "Agent",
     "Error" = "Error",
     "FinalAnswer" = "FinalAnswer",
-    "LegacyAgent" = "LegacyAgent",
     "User" = "User",
     "Warning" = "Warning",
 }
 
+/**
+ * Represents a single turn in a conversation, which may include a message from the user or agent, or an error
+ */
 export interface ConversationTurn {
-    readonly agentName?: string
     readonly agentDisplayName?: string
-    readonly alwaysShow?: boolean
+    readonly agentName?: string
     readonly id: string
     readonly messageType?: ChatMessageType
     readonly role: MessageRole
-    readonly text: string
+    readonly structure?: Record<string, unknown>
+    readonly text?: string
 }

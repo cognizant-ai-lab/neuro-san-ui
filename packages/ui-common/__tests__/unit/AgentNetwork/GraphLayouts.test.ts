@@ -16,6 +16,7 @@ limitations under the License.
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Common/Utils"
+import {FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from "../../../components/MultiAgentAccelerator/AgentNode"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
 import {
     addThoughtBubbleEdge,
@@ -125,8 +126,8 @@ describe("GraphLayouts", () => {
 
         // Check that the nodes are in roughly the correct position
         // agent1 should be at the center
-        expect(nodes[0].position.x).toBe(DEFAULT_FRONTMAN_X_POS)
-        expect(nodes[0].position.y).toBe(DEFAULT_FRONTMAN_Y_POS)
+        expect(nodes[0].position.x).toBe(DEFAULT_FRONTMAN_X_POS - (NODE_WIDTH * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2)
+        expect(nodes[0].position.y).toBe(DEFAULT_FRONTMAN_Y_POS - (NODE_HEIGHT * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2)
 
         // agents2 and 5 should be right of frontman
         const agent2 = nodes.find((node) => node.id === "agent2")

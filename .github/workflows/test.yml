@@ -66,9 +66,7 @@ jobs:
               # v1.0.7
               uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
-                  # Pinned version. 22.18+ breaks tests due to
-                  # https://github.com/nodejs/node/issues/59364
-                  node-version: "22.17.1"
+                  node-version: ${{ vars.NODEJS_VERSION }}
                   clean-install: "true"
 
             - name: Install prerequisites for code generation
