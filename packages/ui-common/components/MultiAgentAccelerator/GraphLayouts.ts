@@ -22,7 +22,7 @@ import {Edge, MarkerType, Node as RFNode} from "@xyflow/react"
 import cloneDeep from "lodash-es/cloneDeep.js"
 
 import {AgentConversation} from "./AgentConversations"
-import {AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
+import {AgentNodeProps, FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
 import {isEditableAgent} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -31,6 +31,9 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Common/Utils"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
+
+const FRONTMAN_OFFSET_X = (NODE_WIDTH * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2
+const FRONTMAN_OFFSET_Y = (NODE_HEIGHT * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2
 
 /**
  * Result of the layout algorithms, containing the nodes and edges with their computed positions and properties.
@@ -273,7 +276,10 @@ export const layoutRadial = (
                         isTemporaryNetwork &&
                         isEditableAgent(agentsInNetwork.find((a) => a.origin === nodeId)?.display_as),
                 },
-                position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x, y},
+                // position: allow for Frontman being larger
+                position: isFrontman
+                    ? {x: DEFAULT_FRONTMAN_X_POS - FRONTMAN_OFFSET_X, y: DEFAULT_FRONTMAN_Y_POS - FRONTMAN_OFFSET_Y}
+                    : {x, y},
                 style: {
                     border: "none",
                     background: "transparent",
@@ -398,12 +404,15 @@ export const layoutLinear = (
     // Convert dagre's layout to what our flow graph needs
     nodesTmp.forEach((node) => {
         const nodeWithPosition = dagreGraph.node(node.id)
+        const isFrontman = frontman?.origin === node.id
 
         // We are shifting the dagre node position (anchor=center) to the top left
         // so it matches the React Flow node anchor point (top left).
+        const x = nodeWithPosition.x - NODE_WIDTH / 2 - (isFrontman ? FRONTMAN_OFFSET_X : 0)
+        const y = nodeWithPosition.y - NODE_HEIGHT / 2 - (isFrontman ? FRONTMAN_OFFSET_Y : 0)
         node.position = {
-            x: nodeWithPosition.x - NODE_WIDTH / 2,
-            y: nodeWithPosition.y - NODE_HEIGHT / 2,
+            x,
+            y,
         }
 
         // Depth is index of x position in xPositions array
