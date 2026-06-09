@@ -267,6 +267,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Whether to wrap output text
     const [shouldWrapOutput, setShouldWrapOutput] = useState<boolean>(true)
 
+    // Options menu control
+    const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
+    const [optionsMenuOpen, setOptionsMenuOpen] = useState<boolean | undefined>(false)
+
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
     const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[targetAgent])
@@ -766,9 +770,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setPreviousUserQuery("")
         currentResponse.current = ""
     }, [resetHistory, targetAgent])
-
-    const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
-    const [optionsMenuOpen, setOptionsMenuOpen] = useState<boolean | undefined>(false)
 
     // Expose the handleStop and handleClearChat methods to parent components via ref for external control
     useImperativeHandle(
