@@ -56,36 +56,23 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              # v6.0.2
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
               with:
                   fetch-depth: 0
                   ref: ${{ inputs.revision || github.ref }}
 
-            # Install yarn version from package.json packageManager field using corepack
-            # "corepack install" reads package.json and installs the right yarn version from the packageManager field
-            - name: Set up yarn version
-              run: |
-                  corepack enable
-                  corepack install 
-                  yarn --version
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
+            - name: Setup Node.js environment
+              # v1.0.7
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
-                  # Specific version. 22.18+ is bad due to https://github.com/nodejs/node/issues/59364 and breaks tests.
-                  node-version: 22.17.1
-                  cache: yarn
-
-            - name: Install dependencies
-              run: |
-                  rm -rf node_modules
-                  yarn cache clean --all
-                  yarn install
+                  node-version: ${{ vars.NODEJS_VERSION }}
+                  clean-install: "true"
 
             - name: Install prerequisites for code generation
               run: |
-                  sudo apt-get update -y > /dev/null
-                  sudo apt-get install -y --no-install-recommends --no-install-suggests \
+                  sudo apt-get update --yes > /dev/null
+                  sudo apt-get install --yes --no-install-recommends --no-install-suggests \
                     bash shellcheck > /dev/null
 
             - name: Generate OpenAPI types
@@ -118,12 +105,12 @@ jobs:
                   yarn knip
 
             - name: Lint Dockerfiles (hadolint)
-              uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5
               id: hadolint
               if: success() || failure()
+              # v1.0.7
+              uses: cognizant-ai-lab/build-common/actions/run-hadolint@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
-                  dockerfile: apps/main/Dockerfile
-                  recursive: true
+                  recursive: "true"
                   failure-threshold: info
 
             - name: Docker build check

@@ -80,7 +80,6 @@ import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {usePalette} from "../../Theme/Palettes"
-import {getDarkModeOutlinedButtonSx} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
@@ -130,6 +129,10 @@ type Layout = "radial" | "linear"
 
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
+
+// How long the dock's "applied"/"cancelled" status banner stays visible before auto-dismissing.
+// Exported so tests can advance timers by this amount rather than hard-coding the value.
+export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
 // #endregion: Constants
 
@@ -338,7 +341,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [setThoughtBubbleEdges]) // mount/unmount only
 
     // Shadow color for icon
-    const shadowColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black
+    const isDarkMode = theme.palette.mode === "dark"
+    const foregroundColor = isDarkMode ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
 
     const palette = usePalette()
@@ -439,7 +443,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Clear the banner timer on unmount
     useEffect(() => {
         return () => {
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+            clearTimeout(bannerTimeoutRef.current)
         }
     }, [])
 
@@ -457,11 +461,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setStopState("cancelled")
         bannerTimeoutRef.current = setTimeout(() => {
             setStopState(null)
-        }, 5_000)
+        }, DOCK_BANNER_AUTO_DISMISS_MS)
     }, [])
 
     const handleDismissBanner = useCallback(() => {
-        if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+        clearTimeout(bannerTimeoutRef.current)
         setStopState(null)
     }, [])
 
@@ -556,11 +560,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )
             applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
             setDockPrompt("")
-            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current)
+            clearTimeout(bannerTimeoutRef.current)
             setStopState("applied")
             bannerTimeoutRef.current = setTimeout(() => {
                 setStopState(null)
-            }, 5_000)
+            }, DOCK_BANNER_AUTO_DISMISS_MS)
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
@@ -580,8 +584,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setIsDockStreaming(false)
         }
     }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
-
-    const dockSubtitle = "Changes apply only to this Temporary network"
 
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
@@ -743,11 +745,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-legend`}
                 sx={{
                     position: "absolute",
-                    top: "5px",
+                    top: "1.5rem",
                     right: "10px",
                     padding: "5px",
                     borderRadius: "5px",
-                    boxShadow: `0 0 5px color-mix(in srgb, ${shadowColor} 30%, transparent)`,
+                    boxShadow: `0 0 5px color-mix(in srgb, ${foregroundColor} 30%, transparent)`,
                     display: "flex",
                     alignItems: "center",
                     zIndex: getZIndex(2, theme),
@@ -842,7 +844,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         if (!isActive) {
             return undefined
         }
-        return theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[200]
+        return isDarkMode ? theme.palette.grey[800] : theme.palette.grey[200]
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
@@ -937,6 +939,80 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
+    const titleBackgroundColor = alpha(theme.palette.background.paper, 0.75)
+
+    const getTitle = () => {
+        return (
+            networkDisplayName && (
+                <Box
+                    id={`${id}-network-title-bar`}
+                    sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        gap: 1,
+                        left: "50%",
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0,
+                        transform: "translateX(-50%)",
+                        zIndex: getZIndex(2, theme),
+                    }}
+                >
+                    <Tooltip
+                        title={networkDisplayName}
+                        placement="top"
+                    >
+                        <Box sx={{pointerEvents: "auto"}}>
+                            <Typography
+                                id={`${id}-network-title`}
+                                variant="subtitle1"
+                                sx={{
+                                    backdropFilter: "blur(6px)",
+                                    backgroundColor: titleBackgroundColor,
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                                    borderRadius: 2,
+                                    boxShadow:
+                                        theme.palette.mode === "dark"
+                                            ? `0 6px 20px ${alpha(theme.palette.common.black, 0.35)}`
+                                            : `0 6px 16px ${alpha(theme.palette.common.black, 0.12)}`,
+                                    color: theme.palette.getContrastText(alpha(titleBackgroundColor, 0.65)),
+                                    fontWeight: 600,
+                                    letterSpacing: "0.01em",
+                                    lineHeight: 1.35,
+                                    maxWidth: 400,
+                                    overflow: "hidden",
+                                    paddingLeft: 2,
+                                    paddingRight: 2,
+                                    paddingBottom: 0.45,
+                                    paddingTop: 0.45,
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {networkDisplayName}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                    {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
+                        <Button
+                            id={`${id}-enter-edit-mode-btn`}
+                            variant="contained"
+                            size="small"
+                            onClick={onEnterEditMode}
+                            startIcon={<EditIcon />}
+                            sx={{
+                                pointerEvents: "auto",
+                                "&:hover": {backgroundColor: theme.palette.primary.main},
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
+                </Box>
+            )
+        )
+    }
+
     return (
         <Box
             id={`${id}-outer-box`}
@@ -970,61 +1046,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-react-flow-wrapper`}
                 sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                {networkDisplayName && (
-                    <Box
-                        id={`${id}-network-title-bar`}
-                        sx={{
-                            position: "absolute",
-                            top: 44,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            zIndex: getZIndex(1, theme),
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            pointerEvents: "none",
-                        }}
-                    >
-                        <Typography
-                            id={`${id}-network-title`}
-                            variant="subtitle1"
-                            sx={{
-                                fontWeight: "bold",
-                                backgroundColor: alpha(theme.palette.background.paper, 0.85),
-                                borderRadius: 1.5,
-                                color:
-                                    theme.palette.mode === "dark"
-                                        ? theme.palette.common.white
-                                        : theme.palette.text.primary,
-                                paddingLeft: 1.5,
-                                paddingRight: 1.5,
-                                paddingTop: 0.25,
-                                paddingBottom: 0.25,
-                                whiteSpace: "nowrap",
-                                maxWidth: 400,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                            }}
-                        >
-                            {networkDisplayName}
-                        </Typography>
-                        {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
-                            <Button
-                                id={`${id}-enter-edit-mode-btn`}
-                                variant="contained"
-                                size="small"
-                                onClick={onEnterEditMode}
-                                startIcon={<EditIcon />}
-                                sx={{
-                                    pointerEvents: "auto",
-                                    "&:hover": {backgroundColor: theme.palette.primary.main},
-                                }}
-                            >
-                                Edit
-                            </Button>
-                        )}
-                    </Box>
-                )}
+                {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
                 <ReactFlow
                     id={`${id}-react-flow`}
                     nodes={nodes}
@@ -1055,7 +1077,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             </Box>
             {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
                 <Box
-                    id={`${id}-topology-editor-dock`}
                     sx={{
                         borderTop: `2px solid ${theme.palette.primary.main}`,
                         backgroundColor: theme.palette.background.paper,
@@ -1067,20 +1088,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <Box
                             id={`${id}-applied-info`}
                             sx={{
+                                backdropFilter: "blur(6px)",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                paddingLeft: 2,
-                                paddingRight: 2,
-                                paddingTop: 0.75,
-                                paddingBottom: 0.75,
+                                paddingLeft: 1.25,
+                                paddingRight: 0.25,
                                 backgroundColor: (t) =>
                                     t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                                 borderBottom: `1px solid ${theme.palette.divider}`,
                             }}
                         >
                             <Typography
-                                id={`${id}-applied-info-text`}
                                 variant="caption"
                                 sx={{flex: 1}}
                             >
@@ -1102,20 +1121,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         <Box
                             id={`${id}-cancelled-info`}
                             sx={{
+                                backdropFilter: "blur(6px)",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                paddingLeft: 2,
-                                paddingRight: 2,
-                                paddingTop: 0.75,
-                                paddingBottom: 0.75,
+                                paddingLeft: 1.25,
+                                paddingRight: 0.25,
                                 backgroundColor: (t) =>
                                     t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                                 borderBottom: `1px solid ${theme.palette.divider}`,
                             }}
                         >
                             <Typography
-                                id={`${id}-cancelled-info-text`}
                                 variant="caption"
                                 sx={{flex: 1}}
                             >
@@ -1135,13 +1152,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     {/* Dock header */}
                     <Box
                         sx={{
+                            backdropFilter: "blur(6px)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 0.5,
-                            paddingBottom: 0.5,
+                            paddingLeft: 1.25,
+                            paddingRight: 0.25,
                             borderBottom: `1px solid ${theme.palette.divider}`,
                         }}
                     >
@@ -1159,34 +1175,20 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             <CloseIcon fontSize="small" />
                         </IconButton>
                     </Box>
-                    <Typography
-                        variant="caption"
-                        sx={{
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 0.5,
-                            paddingBottom: 0,
-                            color: theme.palette.text.secondary,
-                            display: "block",
-                        }}
-                    >
-                        {dockSubtitle}
-                    </Typography>
                     {/* Prompt input row */}
                     <Box
                         sx={{
                             display: "flex",
                             gap: 1,
-                            paddingLeft: 2,
-                            paddingRight: 2,
-                            paddingTop: 1.5,
-                            paddingBottom: 1.5,
+                            paddingLeft: 1,
+                            paddingRight: 1,
+                            paddingTop: 0.5,
+                            paddingBottom: 0.5,
                             alignItems: "center",
                         }}
                     >
                         <TextField
                             fullWidth
-                            id={`${id}-dock-prompt-input`}
                             placeholder={DOCK_PROMPT_PLACEHOLDER}
                             variant="outlined"
                             size="small"
@@ -1199,14 +1201,20 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 }
                             }}
                             disabled={isDockStreaming}
-                            slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
+                            slotProps={{htmlInput: {style: {fontSize: "0.75rem"}}}}
                         />
                         <Button
-                            id={`${id}-dock-apply-button`}
                             variant="contained"
                             onClick={() => void handleDockApply()}
                             disabled={isDockStreaming || !dockPrompt.trim()}
-                            sx={{whiteSpace: "nowrap", minWidth: 120}}
+                            sx={{
+                                whiteSpace: "nowrap",
+                                minWidth: 120,
+                                paddingTop: 0.3,
+                                paddingBottom: 0.3,
+                                marginBottom: "1px",
+                                marginRight: 0,
+                            }}
                             startIcon={
                                 isDockStreaming ? (
                                     <CircularProgress
@@ -1216,7 +1224,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 ) : undefined
                             }
                         >
-                            {isDockStreaming ? "Applying…" : "Apply"}
+                            {isDockStreaming ? "Applying..." : "Apply"}
                         </Button>
                     </Box>
                 </Box>
@@ -1233,13 +1241,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 />
             )}
             <Backdrop
-                id={`${id}-global-saving-backdrop`}
                 open={isDockStreaming}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
                 {stopState === "confirming" ? (
                     <Paper
-                        id={`${id}-stop-confirm-card`}
                         elevation={6}
                         sx={{
                             display: "flex",
@@ -1254,18 +1260,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         }}
                     >
                         <Typography
-                            id={`${id}-stop-confirm-title`}
                             variant="body1"
                             sx={{fontWeight: "bold"}}
                         >
-                            Stop applying changes?
+                            Abort changes?
                         </Typography>
                         <Typography
-                            id={`${id}-stop-confirm-body`}
                             variant="body2"
                             color="text.secondary"
                         >
-                            The in-progress update will be cancelled and discarded. Your network won’t change.
+                            The in-progress update will be cancelled and discarded. Your network will not be modified.
                         </Typography>
                         <Box
                             sx={{
@@ -1275,15 +1279,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             }}
                         >
                             <Button
-                                id={`${id}-keep-applying-button`}
                                 variant="outlined"
                                 onClick={handleKeepApplying}
-                                sx={getDarkModeOutlinedButtonSx(theme)}
                             >
                                 Keep applying
                             </Button>
                             <Button
-                                id={`${id}-stop-discard-button`}
                                 variant="contained"
                                 color="error"
                                 startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
@@ -1308,13 +1309,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             maxWidth: 480,
                         }}
                     >
-                        <CircularProgress
-                            id={`${id}-global-saving-spinner`}
-                            size={24}
-                        />
+                        <CircularProgress size={24} />
                         <Box sx={{flex: 1}}>
                             <Typography
-                                id={`${id}-global-saving-title`}
                                 variant="body1"
                                 sx={{fontWeight: "bold"}}
                             >
@@ -1322,7 +1319,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             </Typography>
                             {dockPrompt && (
                                 <Typography
-                                    id={`${id}-global-saving-prompt`}
                                     variant="body2"
                                     color="text.secondary"
                                     sx={{mt: 0.25}}
@@ -1332,7 +1328,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             )}
                         </Box>
                         <Button
-                            id={`${id}-stop-button`}
                             variant="outlined"
                             size="small"
                             startIcon={<span style={{fontSize: "0.65rem"}}>&#9632;</span>}

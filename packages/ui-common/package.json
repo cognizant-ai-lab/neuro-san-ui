@@ -22,6 +22,7 @@
         "react-syntax-highlighter": "16.1.0",
         "rehype-raw": "catalog:default",
         "rehype-slug": "catalog:default",
+        "remark-gfm": "4.0.1",
         "uuid": "14.0.0",
         "zustand": "4.5.7"
     },

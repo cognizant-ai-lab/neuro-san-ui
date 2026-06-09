@@ -1,72 +1,66 @@
 import {BaseMessage} from "@langchain/core/messages"
+import {useTheme} from "@mui/material/styles"
 import {FC} from "react"
 
-import {UserQueryDisplay} from "./UserQueryDisplay"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {hashString} from "../../../utils/text"
-import {MUIAccordion} from "../../Common/MUIAccordion"
+import {Conversation} from "./Conversation"
+import {ConversationTurn, MessageRole} from "./ConversationTurn"
+import {adjustBrightness} from "../../../Theme/Theme"
+import {AccordionLite} from "../../Common/AccordionLite"
 
 // #region: Types
 interface ChatHistoryProps {
-    readonly agentDisplayName: string
-    readonly agentImage: string
-    readonly chatHistoryKey: string
-    readonly currentUser: string
-    readonly id: string
     readonly messages: BaseMessage[]
-    readonly targetAgent: string
-    readonly userImage: string
+    readonly id: string
 }
 // #endregion: Types
 
 /**
+ * Helper function to convert from BaseMessage format used in persisted chat history to ConversationTurn format used for
+ * rendering the conversation.
+ * @param chatHistory
+ */
+const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
+    chatHistory
+        .filter((message) => message.type === "human" || message.type === "ai")
+        .map((message): ConversationTurn => {
+            const role: MessageRole = message.type === "human" ? MessageRole.User : MessageRole.Agent
+            return {
+                id: message.id,
+                text: message.content.toString(),
+                role,
+            }
+        })
+
+/**
  * Component for displaying chat history from previous interactions with the agent.
  */
-export const ChatHistory: FC<ChatHistoryProps> = ({
-    agentDisplayName,
-    agentImage,
-    chatHistoryKey,
-    currentUser,
-    id,
-    messages,
-    targetAgent,
-    userImage,
-}) => (
-    <MUIAccordion
-        id={id}
-        key={chatHistoryKey}
-        sx={{marginBottom: "2rem", marginTop: "1rem"}}
-        items={[
-            {
-                title: "Chat History",
-                content: messages.map((message) => {
-                    const itemKey = hashString(message.text + message.type + message.id)
-                    if (message.type.toUpperCase() === ChatMessageType.HUMAN) {
-                        return (
-                            <UserQueryDisplay
-                                key={itemKey}
-                                sx={{opacity: 0.5}}
-                                title={currentUser}
-                                userImage={userImage}
-                                userQuery={message.text}
-                            />
-                        )
-                    } else if (message.type.toUpperCase() === ChatMessageType.AI) {
-                        return (
-                            <UserQueryDisplay
-                                key={itemKey}
-                                sx={{opacity: 0.5}}
-                                title={targetAgent}
-                                userImage={agentImage}
-                                userQuery={`${agentDisplayName}: ${message.text}`}
-                            />
-                        )
-                    } else {
-                        console.warn(`Unrecognized message type in chat history: ${message.type}`)
-                        return null
-                    }
-                }),
-            },
-        ]}
-    />
-)
+export const ChatHistory: FC<ChatHistoryProps> = ({id, messages}) => {
+    const theme = useTheme()
+
+    const turns = toTurns(messages)
+
+    const conversation = (
+        <Conversation
+            id={`${id}-conversation`}
+            key={`${id}-conversation`}
+            // Pass "true" here to include final answers, which get persisted as agent
+            // messages in chat history.
+            includeAgentMessages={true}
+            shouldWrapOutput={true}
+            turns={turns}
+        />
+    )
+
+    return (
+        <AccordionLite
+            id={`${id}-history-items`}
+            items={conversation}
+            contentSx={{
+                // Slightly darker background to differentiate from main chat
+                backgroundColor: adjustBrightness(theme.palette.background.paper, -5),
+                opacity: 0.5,
+            }}
+            title="Chat History"
+        />
+    )
+}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import capitalize from "lodash-es/capitalize.js"
+import {isEmpty} from "lodash-es"
 import startCase from "lodash-es/startCase.js"
 
 import {AgentErrorProps} from "./Types"
@@ -55,17 +55,23 @@ export const chatMessageFromChunk = (chunk: string): ChatMessage | null => {
     return chatResponse.response
 }
 
-export const checkError: (chatMessageJson: object) => string | null = (chatMessageJson: object) => {
-    if (chatMessageJson && "error" in chatMessageJson) {
-        const agentError: AgentErrorProps = chatMessageJson as AgentErrorProps
-        return (
-            `Error occurred. Error: "${agentError.error}", ` +
-            `traceback: "${agentError?.traceback}", ` +
-            `tool: "${agentError?.tool}"`
-        )
-    } else {
+/**
+ * Type guard to check if a value has the shape of an AgentErrorProps, which indicates it's an error message from
+ * an agent. Note: not all Neuro-san agents follow this convention.
+ * @param value The value to check.
+ * @returns True if the value is an AgentErrorProps, false otherwise.
+ */
+const isAgentErrorLike = (value: unknown): value is AgentErrorProps => {
+    return typeof (value as {error?: unknown} | null)?.error === "string"
+}
+
+export const checkError = (chatMessageJson: Record<string, unknown>): string | null => {
+    if (isEmpty(chatMessageJson) || !isAgentErrorLike(chatMessageJson)) {
         return null
     }
+
+    const {error, traceback, tool} = chatMessageJson
+    return `Error occurred. Error: "${error}", traceback: "${traceback}", tool: "${tool}"`
 }
 
 export const removeTrailingUuid = (agentName: string): string => {
@@ -81,5 +87,5 @@ export const removeTrailingUuid = (agentName: string): string => {
  * @returns User-friendly agent name.
  */
 export const cleanUpAgentName = (agentName: string): string => {
-    return startCase(capitalize(agentName))
+    return startCase(agentName)
 }

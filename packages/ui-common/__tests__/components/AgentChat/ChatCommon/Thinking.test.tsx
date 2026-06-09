@@ -17,66 +17,58 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {Conversation} from "../../../../components/AgentChat/ChatCommon/Conversation"
 import {ConversationTurn, MessageRole} from "../../../../components/AgentChat/ChatCommon/ConversationTurn"
-
-jest.mock("../../../../controller/agent/Agent")
-jest.mock("../../../../components/Common/notification")
+import {Thinking} from "../../../../components/AgentChat/ChatCommon/Thinking"
+import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
 
 const TURNS: ConversationTurn[] = [
     {
         id: "0",
+        messageType: ChatMessageType.HUMAN,
         role: MessageRole.User,
-        text: "User message",
+        text: "Human message",
     },
     {
         agentDisplayName: "Agent Display Name",
         agentName: "Agent Name",
         id: "1",
+        messageType: ChatMessageType.AGENT,
         role: MessageRole.Agent,
         text: "Agent message",
     },
     {
+        agentDisplayName: "Agent Display Name",
         id: "2",
+        messageType: ChatMessageType.AGENT,
         role: MessageRole.Agent,
-        text: "Agent message with no agent name or display name",
+        structure: {key: "value"},
+        text: null,
     },
 ]
 
-describe("Conversation", () => {
+describe("Thinking", () => {
     withStrictMocks()
 
     it("Renders correctly", async () => {
         render(
-            <Conversation
-                id="test"
-                shouldWrapOutput={false}
-                includeAgentMessages={true}
+            <Thinking
+                id="test-thinking"
                 turns={TURNS}
             />
         )
 
-        await screen.findByText(TURNS[0].text)
-        await screen.findByText(TURNS[1].text + TURNS[2].text)
-    })
+        // Item of type User should not show up in "Thinking"
+        expect(screen.queryByText(new RegExp(TURNS[0].text, "u"))).not.toBeInTheDocument()
 
-    it("Handles turn with neither text nor structure", async () => {
-        render(
-            <Conversation
-                id="test"
-                shouldWrapOutput={false}
-                includeAgentMessages={true}
-                turns={[
-                    {
-                        id: "42",
-                        role: MessageRole.Agent,
-                        text: null,
-                    },
-                ]}
-            />
-        )
+        // Make sure thinking items show up
+        const paragraphs = document.querySelectorAll("p")
+        expect(paragraphs).toHaveLength(2)
+        expect(paragraphs[0]).toHaveTextContent(`${TURNS[1].agentName}: ${TURNS[1].text}`)
+        expect(paragraphs[1]).toHaveTextContent("Agent: ")
 
-        const conversationNode = document.querySelector("#test-conversation")
-        expect(conversationNode?.textContent).toBe("")
+        // Should be a separate "code" block with the JSON structure
+        const codeBlock = paragraphs[1].querySelector("code")
+        expect(codeBlock).toBeInTheDocument()
+        expect(JSON.parse(codeBlock.textContent)).toEqual(TURNS[2].structure)
     })
 })

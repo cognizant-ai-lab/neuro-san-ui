@@ -20,8 +20,7 @@ import failOnConsole from "jest-fail-on-console"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
 import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
-import type {ReactNode} from "react"
-import {createElement} from "react"
+
 /*
 This next part is a hack to get around "ReferenceError: TextEncoder is not defined" errors when running Jest.
 See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
@@ -103,40 +102,6 @@ Object.defineProperties(global.HTMLElement.prototype, {
 // See: https://github.com/jsdom/jsdom/issues/3363
 // eslint-disable-next-line unicorn/prefer-structured-clone
 global.structuredClone = (val: object) => JSON.parse(JSON.stringify(val))
-
-/* Have to mock these up due to https://github.com/remarkjs/react-markdown/issues/635
- Summary from that ticket:
- "As part of the the version 7 release, the react-markdown is packaged as standard ESM. Despite ESM being standard
- for JavaScript, some tools, including Jest and Electron require some configuration to use ESM."
- And we can't even fix it using `transformIgnorePatterns` due to https:github.com/vercel/next.js/issues/35634 */
-/* eslint-disable react/display-name, react/no-multi-comp */
-jest.mock(
-    "react-markdown",
-    () =>
-        ({children}: {children: ReactNode}) =>
-            createElement("div", null, children)
-)
-jest.mock(
-    "rehype-raw",
-    () =>
-        ({children}: {children: ReactNode}) =>
-            createElement("div", null, children)
-)
-jest.mock(
-    "rehype-slug",
-    () =>
-        ({children}: {children: ReactNode}) =>
-            createElement("div", null, children)
-)
-
-jest.mock(
-    "remark-toc",
-    () =>
-        ({children}: {children: ReactNode}) =>
-            createElement("div", null, children)
-)
-
-/* eslint-enable react/display-name, react/no-multi-comp */
 
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = jest.fn()

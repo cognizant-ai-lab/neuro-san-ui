@@ -67,17 +67,3 @@ export const isLightColor = (color: string): boolean => {
     // Return true if light (threshold 0.5)
     return luminance > 0.5
 }
-
-/**
- * Returns MUI `sx` props that keep an outlined button legible in dark mode by
- * forcing white text and border colours.  Returns an empty object in light mode
- * so that the theme's default styles are used unchanged.
- */
-export const getDarkModeOutlinedButtonSx = (theme: {palette: {mode: string}}) =>
-    theme.palette.mode === "dark"
-        ? {
-              color: "common.white",
-              borderColor: "common.white",
-              "&:hover": {borderColor: "common.white"},
-          }
-        : {}
