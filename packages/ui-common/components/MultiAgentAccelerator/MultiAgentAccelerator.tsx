@@ -51,7 +51,7 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {useSettingsStore} from "../../state/Settings"
+import {LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
@@ -138,6 +138,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
 
+    const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
+
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
@@ -172,6 +174,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
+    const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
+
     const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
 
     // An extra set of quotes is making it in the string in local storage.
@@ -181,7 +185,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
-    //common function to change the selected network and reset related state
+
+    // Common function to change the selected network and reset related state
     const changeSelectedNetwork = useCallback((next: string | null) => {
         setSelectedNetwork(next)
         setAgentCounts(new Map())
@@ -289,6 +294,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         ? temporaryNetworks.find((n) => n.agentNetworkName === designerNetworkName)
         : undefined
 
+    const keyInfo = {
+        llm_config: {
+            openai_api_key: "key",
+        },
+    }
+
     const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
         ? {
               [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
@@ -297,16 +308,20 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                   ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
                   : {}),
               ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
+              ...keyInfo,
           }
         : designerTempNetwork
-          ? {[AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition}
-          : undefined
+          ? {[AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition, ...keyInfo}
+          : keyInfo
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
         chatRef.current?.handleStop()
         resetState()
     }, [resetState])
+
+    const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === "object" && value !== null && !Array.isArray(value)
 
     useEffect(() => {
         ;(async () => {
@@ -333,8 +348,36 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             try {
                 const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, userInfo.userName)
                 setNetworkDescription(agentFunction?.function?.description || "")
-            } catch {
-                // Ignore. May be a legacy agent without a functional description in Neuro-san.
+
+                const schema = agentFunction?.function?.sly_data_schema
+                const schemaProperties = isRecord(schema) ? schema["properties"] : undefined
+                const llmConfig = isRecord(schemaProperties) ? schemaProperties["llm_config"] : undefined
+                const llmConfigRequired = isRecord(llmConfig) ? llmConfig["required"] : undefined
+
+                const requiredApiKeysTmp: string[] = Array.isArray(llmConfigRequired)
+                    ? llmConfigRequired.filter((x): x is LLMProvider => typeof x === "string")
+                    : []
+
+                setProviderKeysRequired(
+                    new Set(
+                        requiredApiKeysTmp.flatMap((key): LLMProvider[] => {
+                            if (key === "openai_api_key") {
+                                return ["OpenAI"]
+                            }
+                            if (key === "anthropic_api_key") {
+                                return ["Anthropic"]
+                            }
+
+                            console.warn(
+                                `Unknown API key requirement "${key}" for network ${selectedNetwork}. Skipping.`
+                            )
+                            // Will get dropped by flatMap
+                            return []
+                        })
+                    )
+                )
+            } catch (e) {
+                console.warn(`Unable to get agent details for network ${selectedNetwork}:`, e)
             }
         }
 
@@ -772,14 +815,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <ChatCommon
-                        customAgentGreetings={{
-                            [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
-                        }}
                         agentPlaceholders={{
                             [AGENT_NETWORK_DESIGNER_ID]:
                                 "Describe in plain language the network you would like to build.",
                         }}
+                        apiKeys={apiKeys}
                         currentUser={userInfo.userName}
+                        customAgentGreetings={{
+                            [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
+                        }}
                         extraSlyData={extraSlyData}
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
@@ -789,6 +833,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
+                        providerKeysRequired={providerKeysRequired}
                         ref={chatRef}
                         sampleQueries={sampleQueries}
                         setIsAwaitingLlm={setIsAwaitingLlm}

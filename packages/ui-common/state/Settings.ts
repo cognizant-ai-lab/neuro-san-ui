@@ -53,6 +53,10 @@ interface Settings {
     readonly behavior: {
         readonly enableZenMode: boolean
     }
+    readonly apiKeys: {
+        readonly openai: string | null
+        readonly anthropic: string | null
+    }
 }
 
 /**
@@ -87,6 +91,10 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     behavior: {
         enableZenMode: true,
+    },
+    apiKeys: {
+        openai: null,
+        anthropic: null,
     },
 }
 
