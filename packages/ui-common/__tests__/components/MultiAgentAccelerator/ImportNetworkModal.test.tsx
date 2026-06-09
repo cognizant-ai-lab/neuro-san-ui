@@ -252,7 +252,7 @@ describe("ImportNetworkModal", () => {
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("ecommerce support")
+        expect(nameInput.value).toBe("Ecommerce Support")
     })
 
     it("should show conflict warning when name matches an existing network", async () => {
@@ -284,7 +284,7 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("WarningAmberIcon")
         await user.click(screen.getByRole("button", {name: /Rename/u}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("ecommerce support (2)")
+        expect(nameInput.value).toBe("Ecommerce Support (2)")
         expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
     })
 
@@ -295,7 +295,7 @@ describe("ImportNetworkModal", () => {
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         await user.click(await screen.findByRole("button", {name: /Import network/u}))
-        expect(onImportMock).toHaveBeenCalledWith("my_network", expect.stringContaining('"agents"'))
+        expect(onImportMock).toHaveBeenCalledWith("My_Network", expect.stringContaining('"agents"'))
     })
 
     it("should call onClose after Import network is clicked", async () => {
@@ -346,22 +346,22 @@ describe("formatFileSize", () => {
 })
 
 describe("filenameToNetworkName", () => {
-    it("should convert underscore filename to spaced name", () => {
-        expect(filenameToNetworkName("ecommerce_support.hocon")).toBe("ecommerce support")
+    it("should convert underscore filename to spaced, capitalized name", () => {
+        expect(filenameToNetworkName("ecommerce_support.hocon")).toBe("Ecommerce Support")
     })
     it("should convert hyphenated filename", () => {
-        expect(filenameToNetworkName("my-network.json")).toBe("my network")
+        expect(filenameToNetworkName("my-network.json")).toBe("My Network")
     })
     it("should handle filename with no extension", () => {
-        expect(filenameToNetworkName("mynetwork")).toBe("mynetwork")
+        expect(filenameToNetworkName("mynetwork")).toBe("Mynetwork")
     })
     it("should strip trailing UUIDs from filenames", () => {
         expect(filenameToNetworkName("autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.hocon")).toBe(
-            "autonomous venture studio ops"
+            "Autonomous Venture Studio Ops"
         )
     })
     it("should keep normal filenames unchanged aside from formatting", () => {
-        expect(filenameToNetworkName("my_network.hocon")).toBe("my network")
+        expect(filenameToNetworkName("my_network.hocon")).toBe("My Network")
     })
 })
 

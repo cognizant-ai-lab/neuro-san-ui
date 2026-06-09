@@ -36,6 +36,7 @@ import {styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
+import startCase from "lodash-es/startCase.js"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"
@@ -152,9 +153,7 @@ export const formatFileSize = (bytes: number): string => {
  */
 export const filenameToNetworkName = (filename: string): string => {
     const {name: stem} = splitFilename(filename)
-    const stemWithoutUuid = removeTrailingUuid(stem)
-    const spaced = stemWithoutUuid.replaceAll(/[_-]+/gu, " ").toLowerCase()
-    return spaced.trim()
+    return startCase(removeTrailingUuid(stem))
 }
 
 /** Normalise a name for conflict comparison (underscores → spaces, lowercase, trimmed). */
@@ -386,7 +385,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                 <Stepper
                     activeStep={activeStep}
                     id="import-network-modal-stepper"
-                    sx={{
+                    sx={(theme) => ({
                         marginTop: 1,
                         // MUI v9 rejects the CSS named color "gray" it uses by default for
                         // inactive steps/connectors — override with valid token values.
@@ -399,7 +398,14 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
                             color: "var(--bs-gray-medium)",
                         },
-                    }}
+                        // In dark mode the completed-step icon defaults to a muted/gray fill;
+                        // make it white so completed steps read clearly against the dark backdrop.
+                        ...(theme.palette.mode === "dark" && {
+                            "& .MuiStepIcon-root.Mui-completed": {
+                                color: theme.palette.common.white,
+                            },
+                        }),
+                    })}
                 >
                     {STEPS.map((label) => (
                         <Step key={label}>
@@ -518,7 +524,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                         alignItems: "center",
                                         backgroundColor: "success.dark",
                                         borderRadius: 1,
-                                        color: "success.contrastText",
+                                        color: "var(--bs-white)",
                                         display: "flex",
                                         gap: 1,
                                         padding: "10px 14px",
