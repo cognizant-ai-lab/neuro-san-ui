@@ -6,9 +6,6 @@ permissions:
     security-events: write
 
 on:
-    push:
-        branches:
-            - devin/1781032792-add-checkmarx
     schedule:
         # M-F at 2:30 am UTC (offset from neuro-san to avoid contention)
         - cron: "30 2 * * 1-5"
