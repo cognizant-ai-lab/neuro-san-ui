@@ -55,6 +55,7 @@ const ZERO_WIDTH_SPACE = "\u200B"
 // Node dimensions
 export const NODE_HEIGHT = 100
 export const NODE_WIDTH = 100
+export const FRONTMAN_SIZE_MULTIPLIER = 1.25
 
 // Icon sizes
 // These are used to set the size of the icons displayed in the agent nodes.
@@ -221,7 +222,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         // Also split abbreviation->word boundary (e.g., HTTPServer -> HTTP|Server), but not H|T|T|P
         .replaceAll(/(?<abbr>[A-Z])(?<word>[A-Z][a-z])/gu, `$<abbr>${ZERO_WIDTH_SPACE}$<word>`)
 
-    const height = NODE_HEIGHT * (isFrontman ? 1.25 : 1.0)
+    const height = NODE_HEIGHT * (isFrontman ? FRONTMAN_SIZE_MULTIPLIER : 1.0)
     const width = height
 
     const getEditButton = () => (
