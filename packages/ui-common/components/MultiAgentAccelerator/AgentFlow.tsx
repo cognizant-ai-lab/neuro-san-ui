@@ -20,6 +20,7 @@ import CloseIcon from "@mui/icons-material/Close"
 import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
+import Alert, {AlertColor} from "@mui/material/Alert"
 import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -129,6 +130,10 @@ type Layout = "radial" | "linear"
 
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
+
+// How long the dock'sstatus banner stays visible before auto-dismissing. Error banners persist until dismissed.
+// Exported for tests.
+export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
 // #endregion: Constants
 
@@ -432,8 +437,33 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
     const dockAbortControllerRef = useRef<AbortController | null>(null)
 
-    // Stop-confirm overlay state: null = not shown, "confirming" = dialog open, "cancelled" = brief info message
+    // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
     const [stopState, setStopState] = useState<"confirming" | null>(null)
+
+    // Inline status banner shown above the dock header after an apply succeeds, is cancelled, or fails.
+    const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
+    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Clear the banner auto-dismiss timer on unmount.
+    useEffect(() => {
+        return () => {
+            clearTimeout(bannerTimeoutRef.current)
+        }
+    }, [])
+
+    // Show a dock banner. Success/cancel banners auto-dismiss; error banners persist until dismissed.
+    const showDockBanner = useCallback((banner: {severity: AlertColor; title: string; detail: string}) => {
+        clearTimeout(bannerTimeoutRef.current)
+        setDockBanner(banner)
+        if (banner.severity !== "error") {
+            bannerTimeoutRef.current = setTimeout(() => setDockBanner(null), DOCK_BANNER_AUTO_DISMISS_MS)
+        }
+    }, [])
+
+    const handleDismissBanner = useCallback(() => {
+        clearTimeout(bannerTimeoutRef.current)
+        setDockBanner(null)
+    }, [])
 
     const handleStopClick = useCallback(() => {
         setStopState("confirming")
@@ -447,12 +477,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
         setStopState(null)
-        sendNotification(
-            NotificationType.info,
-            "Applying cancelled.",
-            "Nothing was changed. Your prompt is restored below."
-        )
-    }, [])
+        showDockBanner({
+            severity: "info",
+            title: "Applying cancelled.",
+            detail: "Nothing was changed. Your prompt is restored below.",
+        })
+    }, [showDockBanner])
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
         (_event, node) => {
@@ -487,16 +517,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         setIsSavingAgent(false)
     }, [])
 
-    /** Applies the networks returned by the designer: upserts them and triggers navigation if needed. */
+    /**
+     * Applies the networks returned by the designer: upserts them and triggers navigation if needed.
+     * Returns true when a matching reservation was applied, false (and surfaces an error banner) otherwise.
+     */
     const applyNetworkSaveResult = useCallback(
-        (agentName: string, newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined) => {
+        (newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined): boolean => {
             if (newNetworksFromSave.length === 0) {
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to update network "${agentName}".`,
-                    "The network designer did not return a reservation. Please try again."
-                )
-                return
+                showDockBanner({
+                    severity: "error",
+                    title: "Failed to apply network change.",
+                    detail: "The network designer did not return a reservation. Please try again.",
+                })
+                return false
             }
 
             const replacement = newNetworksFromSave.find((n) => n.agentNetworkName === currentAgentNetworkName)
@@ -506,16 +539,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
                     onNetworkReplaced(networkId, replacement.agentInfo.agent_name)
                 }
-            } else {
-                // Reservations came back but none matched the current network — surface this to the user.
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to update network "${agentName}".`,
-                    "A reservation was returned but did not match the current network. Please try again."
-                )
+                return true
             }
+
+            // Reservations came back but none matched the current network — surface this in the dock banner.
+            showDockBanner({
+                severity: "error",
+                title: "Failed to apply network change.",
+                detail: "A reservation was returned but did not match the current network. Please try again.",
+            })
+            return false
         },
-        [networkId, onNetworkReplaced]
+        [networkId, onNetworkReplaced, showDockBanner]
     )
 
     const handleDockApply = useCallback(async () => {
@@ -543,28 +578,32 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 currentTempNetwork?.agentNetworkName,
                 currentUser
             )
-            applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
-            setDockPrompt("")
-            sendNotification(NotificationType.success, "Changes applied.", "Your network has been updated.")
+            const applied = applyNetworkSaveResult(newNetworks, currentTempNetwork?.agentNetworkName)
+            if (applied) {
+                setDockPrompt("")
+                showDockBanner({
+                    severity: "success",
+                    title: "Changes applied.",
+                    detail: "Your network has been updated.",
+                })
+            }
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
-                sendNotification(NotificationType.error, "Failed to apply network change.", String(e), undefined, null)
+                showDockBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
             } else if (hasTimedOut) {
-                sendNotification(
-                    NotificationType.error,
-                    "Failed to apply network change.",
-                    "The request timed out. Please try again.",
-                    undefined,
-                    null // show indefinitely until the user dismisses
-                )
+                showDockBanner({
+                    severity: "error",
+                    title: "Failed to apply network change.",
+                    detail: "The request timed out. Please try again.",
+                })
             }
         } finally {
             clearTimeout(timeoutId)
             dockAbortControllerRef.current = null
             setIsDockStreaming(false)
         }
-    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, tempNetworks])
+    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
@@ -962,10 +1001,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                     lineHeight: 1.35,
                                     maxWidth: 400,
                                     overflow: "hidden",
-                                    paddingLeft: 2,
-                                    paddingRight: 2,
-                                    paddingBottom: 0.45,
-                                    paddingTop: 0.45,
+                                    px: 2,
+                                    py: 0.45,
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
                                 }}
@@ -1064,6 +1101,44 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         flexShrink: 0,
                     }}
                 >
+                    {/* Status banner: shown after an apply succeeds, is cancelled, or fails */}
+                    {dockBanner && (
+                        <Alert
+                            id={`${id}-dock-banner`}
+                            severity={dockBanner.severity}
+                            variant="standard"
+                            onClose={handleDismissBanner}
+                            sx={{
+                                borderRadius: 0,
+                                paddingTop: 0,
+                                paddingBottom: 0,
+                                // Match the dock header's right padding so the banner's close X lines up
+                                // vertically with the header's close X below it.
+                                paddingRight: 0.25,
+                                alignItems: "center",
+                                // Frost the banner like the dock header so the graph doesn't show through the
+                                // app's translucent paper background; keep a tinted, mostly-opaque severity wash.
+                                backdropFilter: "blur(8px)",
+                                backgroundColor: alpha(
+                                    theme.palette[dockBanner.severity].main,
+                                    isDarkMode ? 0.28 : 0.16
+                                ),
+                                "& .MuiAlert-action": {
+                                    alignItems: "center",
+                                    marginRight: 0,
+                                    paddingTop: 0,
+                                },
+                            }}
+                        >
+                            <Typography
+                                variant="caption"
+                                component="span"
+                            >
+                                <strong>{dockBanner.title}</strong>
+                                {` ${dockBanner.detail}`}
+                            </Typography>
+                        </Alert>
+                    )}
                     {/* Dock header */}
                     <Box
                         sx={{
@@ -1095,10 +1170,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             display: "flex",
                             gap: 1,
-                            paddingLeft: 1,
-                            paddingRight: 1,
-                            paddingTop: 0.5,
-                            paddingBottom: 0.5,
+                            px: 1,
+                            py: 0.5,
                             alignItems: "center",
                         }}
                     >
@@ -1123,12 +1196,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             onClick={() => void handleDockApply()}
                             disabled={isDockStreaming || !dockPrompt.trim()}
                             sx={{
-                                whiteSpace: "nowrap",
-                                minWidth: 120,
-                                paddingTop: 0.3,
-                                paddingBottom: 0.3,
+                                fontSize: 16,
                                 marginBottom: "1px",
                                 marginRight: 0,
+                                minWidth: 110,
+                                paddingTop: 0.3,
+                                paddingBottom: 0.3,
+                                whiteSpace: "nowrap",
                             }}
                             startIcon={
                                 isDockStreaming ? (
@@ -1166,10 +1240,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             display: "flex",
                             flexDirection: "column",
                             gap: 2,
-                            paddingLeft: 4,
-                            paddingRight: 4,
-                            paddingTop: 3,
-                            paddingBottom: 3,
+                            px: 4,
+                            py: 3,
                             borderRadius: 2,
                             maxWidth: 420,
                         }}
@@ -1216,10 +1288,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             display: "flex",
                             alignItems: "center",
                             gap: 2,
-                            paddingLeft: 4,
-                            paddingRight: 4,
-                            paddingTop: 2.5,
-                            paddingBottom: 2.5,
+                            px: 4,
+                            py: 2.5,
                             borderRadius: 2,
                             maxWidth: 480,
                         }}

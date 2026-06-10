@@ -23,7 +23,11 @@ import {FC, useEffect} from "react"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {
+    AgentFlow,
+    AgentFlowProps,
+    DOCK_BANNER_AUTO_DISMISS_MS,
+} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../controller/agent/Agent"
@@ -1760,6 +1764,11 @@ describe("AgentFlow", () => {
         const APPLYING_TITLE = "Applying changes to network"
         const ABORT_TITLE = "Abort changes?"
 
+        // Status-banner copy (rendered inline in the dock as a MUI Alert)
+        const APPLIED_BANNER = /changes applied/iu
+        const CANCELLED_BANNER = /applying cancelled/iu
+        const FAILED_BANNER = /failed to apply network change/iu
+
         // Accessible-name / placeholder matchers for the dock controls
         const PROMPT_PLACEHOLDER = /describe a change/iu
         const APPLY_BUTTON = /apply/iu
@@ -1767,6 +1776,8 @@ describe("AgentFlow", () => {
         const STOP_DISCARD_BUTTON = /stop & discard/iu
         const KEEP_APPLYING_BUTTON = /keep applying/iu
         const CLOSE_EDIT_BUTTON = /close edit mode/iu
+        // MUI Alert's dismiss button has aria-label "Close"; anchor it so it doesn't match "close edit mode".
+        const DISMISS_BANNER_BUTTON = /^close$/iu
 
         const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
             JSON.stringify({
@@ -1804,9 +1815,9 @@ describe("AgentFlow", () => {
             return () => release()
         }
 
-        // sendNotification (which the dock's apply/cancel flows call for real) logs every notification
-        // to console.debug. Tests assert on that line to verify what the user was shown, and the spy
-        // doubles as suppression so jest-fail-on-console doesn't trip on the copy.
+        // All dock outcomes — apply, cancel, timeout, and reservation-validation failures — now render
+        // inline banners and are asserted against the DOM. The spy stays as a guard: tests assert
+        // sendNotification's console.debug copy is NOT emitted, confirming nothing escapes to a global toast.
         let consoleDebugSpy: jest.SpyInstance
 
         beforeEach(() => {
@@ -1972,7 +1983,7 @@ describe("AgentFlow", () => {
             expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
         })
 
-        it("shows an error toast when dock apply returns no reservations", async () => {
+        it("shows an error banner when dock apply returns no reservations", async () => {
             mockSendChatQuery.mockResolvedValue({})
 
             renderAgentFlowComponent({
@@ -1987,11 +1998,44 @@ describe("AgentFlow", () => {
             await user.type(promptField, "Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            // The user sees an error toast explaining no reservation came back
-            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
+            // The user sees an error banner explaining no reservation came back
+            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
+            expect(screen.getByText(/did not return a reservation/iu)).toBeInTheDocument()
         })
 
-        it("shows error toast and resets state when dock apply throws", async () => {
+        it("shows an error banner when dock apply returns a reservation that does not match the network", async () => {
+            // The current network has no name, so the designer's returned network name can't match it,
+            // exercising the "reservation returned but did not match" branch.
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([makeTempNetwork(DOCK_NETWORK_ID, [{origin: "agent1", tools: []}], undefined)])
+            })
+            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+                chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, "some-other-network"))
+            })
+
+            const onNetworkReplaced = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+                onNetworkReplaced,
+            })
+
+            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.type(promptField, "Add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+            // The user sees an error banner explaining the reservation did not match, and no navigation occurs
+            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
+            expect(screen.getByText(/did not match the current network/iu)).toBeInTheDocument()
+            expect(onNetworkReplaced).not.toHaveBeenCalled()
+        })
+
+        it("shows an error banner and resets state when dock apply throws", async () => {
             mockSendChatQuery.mockRejectedValue(new Error("Network failure"))
 
             renderAgentFlowComponent({
@@ -2006,13 +2050,14 @@ describe("AgentFlow", () => {
             await user.type(promptField, "Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            // The user sees an error toast carrying the underlying failure
-            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("Network failure"))
+            // The user sees an error banner carrying the underlying failure
+            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
+            expect(screen.getByText(/network failure/iu)).toBeInTheDocument()
             // Button should re-enable after error
             expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
         })
 
-        it("shows a timeout error toast when the dock apply request times out", async () => {
+        it("shows a timeout error banner that persists when the dock apply request times out", async () => {
             jest.useFakeTimers()
             // Re-initialise userEvent with advanceTimers so its internal delays stay in sync with
             // fake timers (the module-level `user` is bound to real timers and would stall here).
@@ -2041,10 +2086,14 @@ describe("AgentFlow", () => {
                 jest.advanceTimersByTime(121_000)
             })
 
-            // The user sees an error toast explaining the request timed out
-            await waitFor(() => {
-                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("timed out"))
+            // The user sees an error banner explaining the request timed out...
+            expect(await screen.findByText(/timed out/iu)).toBeInTheDocument()
+
+            // ...and, unlike success/cancel banners, it does not auto-dismiss
+            act(() => {
+                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
             })
+            expect(screen.getByText(FAILED_BANNER)).toBeInTheDocument()
         })
 
         it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
@@ -2222,7 +2271,7 @@ describe("AgentFlow", () => {
             })
         })
 
-        it("Stop & discard aborts the request, hides backdrop, notifies, and restores the prompt", async () => {
+        it("Stop & discard aborts the request, hides backdrop, shows a cancel banner, restores prompt", async () => {
             mockSendChatQuery.mockImplementation(
                 (_url: string, signal: AbortSignal) =>
                     new Promise<void>((_resolve, reject) => {
@@ -2250,18 +2299,16 @@ describe("AgentFlow", () => {
                 expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
             })
 
-            // The user sees a cancellation notification and the prompt is left intact for retry
-            await waitFor(() => {
-                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("prompt is restored below"))
-            })
+            // The user sees a cancel banner and the prompt is left intact for retry
+            expect(await screen.findByText(CANCELLED_BANNER)).toBeInTheDocument()
+            expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
             expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
 
-            // Discarding logs the cancellation notice, not a failure: it's an intentional abort
-            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("Applying cancelled."))
-            expect(consoleDebugSpy).not.toHaveBeenCalledWith(expect.stringContaining("Failed to apply network change"))
+            // Discarding is an intentional abort, not a failure
+            expect(screen.queryByText(FAILED_BANNER)).not.toBeInTheDocument()
         })
 
-        it("notifies and clears the prompt after dock apply completes", async () => {
+        it("shows a success banner and clears the prompt after dock apply completes", async () => {
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -2273,12 +2320,56 @@ describe("AgentFlow", () => {
             await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            // The user sees a success notification confirming their changes were applied...
-            await waitFor(() => {
-                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("network has been updated"))
-            })
+            // The user sees a success banner confirming their changes were applied...
+            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
+            expect(screen.getByText(/network has been updated/iu)).toBeInTheDocument()
             // ...and the prompt is cleared once the change lands
             expect(screen.getByPlaceholderText(PROMPT_PLACEHOLDER)).toHaveValue("")
+        })
+
+        it("auto-dismisses the success banner after the timeout elapses", async () => {
+            jest.useFakeTimers()
+            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await localUser.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await localUser.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
+
+            // Once the auto-dismiss timer fires, the banner disappears
+            act(() => {
+                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+            })
+            await waitFor(() => {
+                expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
+            })
+        })
+
+        it("dismisses the banner immediately when its close button is clicked", async () => {
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                neuroSanURL: "http://localhost:8080",
+                currentUser: "test-user",
+            })
+
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
+
+            // Clicking the banner's close button removes it without waiting for the timer
+            await user.click(screen.getByRole("button", {name: DISMISS_BANNER_BUTTON}))
+            expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
         })
 
         it("does nothing when Enter is pressed with an empty prompt", async () => {
