@@ -24,3 +24,6 @@
 package.tgz
 yarn-error.log
 .yarn
+
+# Claude
+.claude/
