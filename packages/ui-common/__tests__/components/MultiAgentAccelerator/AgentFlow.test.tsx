@@ -23,11 +23,7 @@ import {FC, useEffect} from "react"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {
-    AgentFlow,
-    AgentFlowProps,
-    DOCK_BANNER_AUTO_DISMISS_MS,
-} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {AgentFlow, AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../controller/agent/Agent"
@@ -1758,8 +1754,6 @@ describe("AgentFlow", () => {
         const DOCK_HEADER = "Network Editor"
         const APPLYING_TITLE = "Applying changes to network"
         const ABORT_TITLE = "Abort changes?"
-        const APPLIED_BANNER = /changes applied/iu
-        const CANCELLED_BANNER = /applying cancelled/iu
 
         // Accessible-name / placeholder matchers for the dock controls
         const PROMPT_PLACEHOLDER = /describe a change/iu
@@ -1806,6 +1800,9 @@ describe("AgentFlow", () => {
         }
 
         beforeEach(() => {
+            // Apply/cancel now surface notistack notifications, which log a copy to console.debug.
+            // jest-fail-on-console treats that as a failure, so suppress it for the whole dock suite.
+            jest.spyOn(console, "debug").mockImplementation()
             // Default to a successful designer response: a reservation matching the current network.
             // Tests that need a failure (no/unmatched reservation, throw, timeout) override this.
             ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
@@ -2242,9 +2239,9 @@ describe("AgentFlow", () => {
             })
         })
 
-        it("Stop & discard aborts the request, hides backdrop, shows cancelled info message", async () => {
-            jest.useFakeTimers()
+        it("Stop & discard aborts the request, hides backdrop, notifies, and restores the prompt", async () => {
             const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const {enqueueSnackbar} = jest.requireMock("notistack")
             ;(sendChatQuery as jest.Mock).mockImplementation(
                 (_url: string, signal: AbortSignal) =>
                     new Promise<void>((_resolve, reject) => {
@@ -2260,75 +2257,37 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
-            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            // Wait for backdrop to open
-            await waitFor(() => {
-                expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-            })
-
-            // Open confirm card
-            fireEvent.click(screen.getByRole("button", {name: STOP_BUTTON}))
-            await waitFor(() => {
-                expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
-            })
-            fireEvent.click(screen.getByRole("button", {name: STOP_DISCARD_BUTTON}))
+            // Open confirm card, then discard
+            await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
+            await user.click(await screen.findByRole("button", {name: STOP_DISCARD_BUTTON}))
 
             // Backdrop should close
             await waitFor(() => {
                 expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
             })
 
-            // Cancelled banner should appear in the dock with the prompt restored
-            expect(screen.getByText(CANCELLED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
-            expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
-
-            // Once the auto-dismiss timeout elapses the cancelled banner disappears
-            act(() => {
-                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
-            })
-
+            // The user sees a cancellation notification and the prompt is left intact for retry
             await waitFor(() => {
-                expect(screen.queryByText(CANCELLED_BANNER)).not.toBeInTheDocument()
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({
+                        variant: "info",
+                        description: expect.stringContaining("prompt is restored below"),
+                    })
+                )
             })
+            expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
 
             // Discarding is an intentional abort: no failure notification is surfaced
             expect(consoleDebugSpy).not.toHaveBeenCalledWith(expect.stringContaining("Failed to apply network change"))
         })
 
-        it("shows applied banner after dock apply completes, then auto-dismisses", async () => {
-            jest.useFakeTimers()
+        it("notifies and clears the prompt after dock apply completes", async () => {
+            const {enqueueSnackbar} = jest.requireMock("notistack")
 
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
-            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            await waitFor(() => {
-                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
-            })
-
-            // Once the auto-dismiss timeout elapses the banner disappears
-            act(() => {
-                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
-            })
-
-            await waitFor(() => {
-                expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
-            })
-        })
-
-        it("dismisses the applied banner immediately when its X button is clicked", async () => {
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -2340,118 +2299,18 @@ describe("AgentFlow", () => {
             await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
+            // The user sees a success notification confirming their changes were applied...
             await waitFor(() => {
-                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
-            })
-
-            // Click the X button — banner should disappear immediately without waiting for the timer
-            await user.click(screen.getByRole("button", {name: /dismiss applied/iu}))
-
-            expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
-        })
-
-        it("clears a prior timer when a second apply succeeds while cancelled banner is showing", async () => {
-            jest.useFakeTimers()
-
-            // First apply: abort immediately so the cancelled banner appears. The second apply falls through
-            // to the success default from beforeEach.
-            ;(sendChatQuery as jest.Mock).mockImplementationOnce(
-                (_url: string, signal: AbortSignal) =>
-                    new Promise<void>((_resolve, reject) => {
-                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                expect(enqueueSnackbar).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({
+                        variant: "success",
+                        description: expect.stringContaining("network has been updated"),
                     })
-            )
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
+                )
             })
-
-            // userEvent is async and stalls under fake timers, so this fake-timer test uses fireEvent.
-            // First apply → stop & discard → cancelled banner
-            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "first change"}})
-            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            await waitFor(() => {
-                expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-            })
-            fireEvent.click(screen.getByRole("button", {name: STOP_BUTTON}))
-            await waitFor(() => {
-                expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
-            })
-            fireEvent.click(screen.getByRole("button", {name: STOP_DISCARD_BUTTON}))
-
-            await waitFor(() => {
-                expect(screen.getByText(CANCELLED_BANNER)).toBeInTheDocument()
-            })
-
-            // Second apply while cancelled banner (and its 5s timer) is still running
-            fireEvent.change(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), {target: {value: "second change"}})
-            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // Applied banner should replace the cancelled banner
-            await waitFor(() => {
-                expect(screen.getByText(APPLIED_BANNER)).toBeInTheDocument()
-                expect(screen.queryByText(CANCELLED_BANNER)).not.toBeInTheDocument()
-            })
-        })
-
-        it("renders the applied banner with the dark-mode background in dark mode", async () => {
-            const {container} = renderAgentFlowComponent(
-                {
-                    isEditMode: true,
-                    isSelectedNetworkTemporary: true,
-                    networkId: DOCK_NETWORK_ID,
-                    neuroSanURL: "http://localhost:8080",
-                    currentUser: "test-user",
-                },
-                "dark"
-            )
-
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The user sees a confirmation that their changes were applied...
-            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
-
-            // ...with the dark-mode overlay (light translucent on dark, vs. dark on light). Reading the
-            // banner's computed background mirrors the legend dark-mode test above; a styled Box has no
-            // accessible handle, so it's queried by id.
-            const banner = container.querySelector("#test-flow-id-applied-info")
-            expect(window.getComputedStyle(banner).backgroundColor).toBe("rgba(255, 255, 255, 0.05)")
-        })
-
-        it("renders the cancelled banner with the dark-mode background in dark mode", async () => {
-            ;(sendChatQuery as jest.Mock).mockImplementation(
-                (_url: string, signal: AbortSignal) =>
-                    new Promise<void>((_resolve, reject) => {
-                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                    })
-            )
-
-            const {container} = renderAgentFlowComponent(
-                {
-                    isEditMode: true,
-                    isSelectedNetworkTemporary: true,
-                    networkId: DOCK_NETWORK_ID,
-                    neuroSanURL: "http://localhost:8080",
-                    currentUser: "test-user",
-                },
-                "dark"
-            )
-
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-            await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
-            await user.click(await screen.findByRole("button", {name: STOP_DISCARD_BUTTON}))
-
-            // The user sees the cancellation notice with the dark-mode overlay (see note above).
-            expect(await screen.findByText(CANCELLED_BANNER)).toBeInTheDocument()
-            const banner = container.querySelector("#test-flow-id-cancelled-info")
-            expect(window.getComputedStyle(banner).backgroundColor).toBe("rgba(255, 255, 255, 0.05)")
+            // ...and the prompt is cleared once the change lands
+            expect(screen.getByPlaceholderText(PROMPT_PLACEHOLDER)).toHaveValue("")
         })
 
         it("does nothing when Enter is pressed with an empty prompt", async () => {

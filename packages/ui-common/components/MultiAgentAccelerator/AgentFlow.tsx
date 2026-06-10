@@ -130,10 +130,6 @@ type Layout = "radial" | "linear"
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
-// How long the dock's "applied"/"cancelled" status banner stays visible before auto-dismissing.
-// Exported so tests can advance timers by this amount rather than hard-coding the value.
-export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
-
 // #endregion: Constants
 
 const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
@@ -437,15 +433,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const dockAbortControllerRef = useRef<AbortController | null>(null)
 
     // Stop-confirm overlay state: null = not shown, "confirming" = dialog open, "cancelled" = brief info message
-    const [stopState, setStopState] = useState<"confirming" | "cancelled" | "applied" | null>(null)
-    const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-    // Clear the banner timer on unmount
-    useEffect(() => {
-        return () => {
-            clearTimeout(bannerTimeoutRef.current)
-        }
-    }, [])
+    const [stopState, setStopState] = useState<"confirming" | null>(null)
 
     const handleStopClick = useCallback(() => {
         setStopState("confirming")
@@ -458,15 +446,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const handleStopAndDiscard = useCallback(() => {
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
-        setStopState("cancelled")
-        bannerTimeoutRef.current = setTimeout(() => {
-            setStopState(null)
-        }, DOCK_BANNER_AUTO_DISMISS_MS)
-    }, [])
-
-    const handleDismissBanner = useCallback(() => {
-        clearTimeout(bannerTimeoutRef.current)
         setStopState(null)
+        sendNotification(
+            NotificationType.info,
+            "Applying cancelled.",
+            "Nothing was changed. Your prompt is restored below."
+        )
     }, [])
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
@@ -560,11 +545,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             )
             applyNetworkSaveResult(dockPrompt, newNetworks, currentTempNetwork?.agentNetworkName)
             setDockPrompt("")
-            clearTimeout(bannerTimeoutRef.current)
-            setStopState("applied")
-            bannerTimeoutRef.current = setTimeout(() => {
-                setStopState(null)
-            }, DOCK_BANNER_AUTO_DISMISS_MS)
+            sendNotification(NotificationType.success, "Changes applied.", "Your network has been updated.")
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (!isAbort) {
@@ -1025,18 +1006,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 backgroundColor: theme.palette.background.default,
 
                 "& .react-flow__node": {
-                    border: `1px solid ${theme.palette.divider}`,
+                    border: "1px solid divider",
                 },
 
                 "& .react-flow__panel": {
                     backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
+                    border: "1px solid divider",
                     color: theme.palette.text.primary,
                 },
 
                 "& .react-flow__controls-button": {
                     backgroundColor: theme.palette.background.paper,
-                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    borderBottom: "1px solid divider",
                     color: theme.palette.text.primary,
                     fill: theme.palette.text.primary,
                 },
@@ -1083,82 +1064,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         flexShrink: 0,
                     }}
                 >
-                    {/* Applied success banner */}
-                    {stopState === "applied" && (
-                        <Box
-                            id={`${id}-applied-info`}
-                            sx={{
-                                backdropFilter: "blur(6px)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                paddingLeft: 1.25,
-                                paddingRight: 0.25,
-                                backgroundColor: (t) =>
-                                    t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                                borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                        >
-                            <Typography
-                                variant="caption"
-                                sx={{flex: 1}}
-                            >
-                                <strong>Changes applied.</strong>
-                                {" Your network has been updated."}
-                            </Typography>
-                            <IconButton
-                                size="small"
-                                aria-label="dismiss applied message"
-                                onClick={handleDismissBanner}
-                                sx={{flexShrink: 0}}
-                            >
-                                <CloseIcon fontSize="small" />
-                            </IconButton>
-                        </Box>
-                    )}
-                    {/* Cancelled banner */}
-                    {stopState === "cancelled" && (
-                        <Box
-                            id={`${id}-cancelled-info`}
-                            sx={{
-                                backdropFilter: "blur(6px)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                paddingLeft: 1.25,
-                                paddingRight: 0.25,
-                                backgroundColor: (t) =>
-                                    t.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                                borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                        >
-                            <Typography
-                                variant="caption"
-                                sx={{flex: 1}}
-                            >
-                                <strong>Applying cancelled.</strong>
-                                {" Nothing was changed. Your prompt is restored below."}
-                            </Typography>
-                            <IconButton
-                                size="small"
-                                aria-label="dismiss cancelled message"
-                                onClick={handleDismissBanner}
-                                sx={{flexShrink: 0}}
-                            >
-                                <CloseIcon fontSize="small" />
-                            </IconButton>
-                        </Box>
-                    )}
                     {/* Dock header */}
                     <Box
                         sx={{
                             backdropFilter: "blur(6px)",
+                            borderBottom: "1px solid divider",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
                             paddingLeft: 1.25,
                             paddingRight: 0.25,
-                            borderBottom: `1px solid ${theme.palette.divider}`,
                         }}
                     >
                         <Typography
