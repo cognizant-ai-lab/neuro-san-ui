@@ -1679,7 +1679,9 @@ describe("AgentFlow", () => {
             await user.clear(instructionsField)
             await user.type(instructionsField, EDITED_INSTRUCTIONS)
             await user.click(screen.getByRole("button", {name: "Save"}))
-            expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+            await waitFor(() => {
+                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+            })
 
             expect(onSaveAgent).toHaveBeenCalledTimes(1)
             const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
@@ -1908,7 +1910,7 @@ describe("AgentFlow", () => {
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
 
             expect(consoleErrorSpy).not.toHaveBeenCalled()
-            expect(consoleDebugSpy).not.toHaveBeenCalledWith(expect.stringContaining("Failed to apply network change"))
+            expect(consoleDebugSpy).not.toHaveBeenCalled()
         })
 
         it("Apply button is disabled when prompt is empty", () => {
@@ -2281,7 +2283,8 @@ describe("AgentFlow", () => {
             })
             expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
 
-            // Discarding is an intentional abort: no failure notification is surfaced
+            // Discarding logs the cancellation notice, not a failure: it's an intentional abort
+            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("Applying cancelled."))
             expect(consoleDebugSpy).not.toHaveBeenCalledWith(expect.stringContaining("Failed to apply network change"))
         })
 
