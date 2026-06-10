@@ -2137,7 +2137,8 @@ describe("AgentFlow", () => {
         })
 
         it("shows the applying overlay with the prompt text while apply is in-flight", async () => {
-            const release = mockInFlightDockApply()
+            // Keep the apply in-flight so the overlay stays mounted; it never resolves, so no cleanup is needed.
+            mockInFlightDockApply()
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2153,11 +2154,6 @@ describe("AgentFlow", () => {
             // The overlay is shown with its title and the in-flight prompt text
             expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
             expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
-
-            // Release the in-flight apply and flush all resulting state updates
-            await act(async () => {
-                release()
-            })
         })
 
         it("removes the applying overlay once the apply call completes", async () => {
