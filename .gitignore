@@ -25,5 +25,5 @@ package.tgz
 yarn-error.log
 .yarn
 
-# Claude
+# Claude Code
 .claude/
