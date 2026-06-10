@@ -2024,6 +2024,9 @@ describe("AgentFlow", () => {
 
         it("shows a timeout error toast when the dock apply request times out", async () => {
             jest.useFakeTimers()
+            // Re-initialise userEvent with advanceTimers so its internal delays stay in sync with
+            // fake timers (the module-level `user` is bound to real timers and would stall here).
+            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
             // The notification also logs a copy to console.debug; suppress it (jest-fail-on-console)
             jest.spyOn(console, "debug").mockImplementation()
             const {enqueueSnackbar} = jest.requireMock("notistack")
@@ -2042,11 +2045,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            // userEvent is async and stalls under fake timers (it awaits real timer callbacks), so this
-            // fake-timer test uses synchronous fireEvent instead.
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            fireEvent.change(promptField, {target: {value: "add a node"}})
-            fireEvent.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            await localUser.type(promptField, "add a node")
+            await localUser.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Advance past the 120-second dock apply timeout
             await act(async () => {
