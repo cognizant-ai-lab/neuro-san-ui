@@ -38,6 +38,9 @@ jest.mock("notistack", () => ({
     enqueueSnackbar: jest.fn(),
 }))
 
+// Handle to the auto-mocked sendChatQuery so tests can stub it without repeating the cast.
+const mockSendChatQuery = sendChatQuery as jest.Mock
+
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
 const mockPlasmaEdgeTestId = "mock-plasma-edge"
@@ -1789,7 +1792,7 @@ describe("AgentFlow", () => {
          */
         const mockInFlightDockApply = () => {
             let release!: () => void
-            ;(sendChatQuery as jest.Mock).mockImplementation(
+            mockSendChatQuery.mockImplementation(
                 (_url, _signal, _query, _agent, chunkCallback) =>
                     new Promise<void>((resolve) => {
                         release = () => {
@@ -1801,13 +1804,16 @@ describe("AgentFlow", () => {
             return () => release()
         }
 
+        // sendNotification (which the dock's apply/cancel flows call for real) logs every notification
+        // to console.debug. Tests assert on that line to verify what the user was shown, and the spy
+        // doubles as suppression so jest-fail-on-console doesn't trip on the copy.
+        let consoleDebugSpy: jest.SpyInstance
+
         beforeEach(() => {
-            // Apply/cancel now surface notistack notifications, which log a copy to console.debug.
-            // jest-fail-on-console treats that as a failure, so suppress it for the whole dock suite.
-            jest.spyOn(console, "debug").mockImplementation()
+            consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             // Default to a successful designer response: a reservation matching the current network.
             // Tests that need a failure (no/unmatched reservation, throw, timeout) override this.
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
             })
             act(() => {
@@ -1876,11 +1882,10 @@ describe("AgentFlow", () => {
         })
 
         it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
             const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
             const onExitEditMode = jest.fn()
             let capturedSignal: AbortSignal | undefined
-            ;(sendChatQuery as jest.Mock).mockImplementation(
+            mockSendChatQuery.mockImplementation(
                 (_url: string, signal: AbortSignal) =>
                     new Promise<void>((_resolve, reject) => {
                         capturedSignal = signal
@@ -1942,7 +1947,7 @@ describe("AgentFlow", () => {
 
         it("forwards the dock prompt to sendChatQuery on Apply and replaces the network", async () => {
             const NEW_DOCK_RES_ID = "dock-new-res"
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(NEW_DOCK_RES_ID, DOCK_NETWORK_NAME))
             })
 
@@ -1961,17 +1966,14 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The typed prompt is forwarded to the designer...
-            expect(sendChatQuery).toHaveBeenCalledTimes(1)
-            expect((sendChatQuery as jest.Mock).mock.calls[0][2]).toBe("Add a legal review agent")
+            expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
+            expect(mockSendChatQuery.mock.calls[0][2]).toBe("Add a legal review agent")
             // ...and the returned reservation replaces the current network
             expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
         })
 
         it("shows an error toast when dock apply returns no reservations", async () => {
-            // The notification also logs a copy to console.debug; suppress it (jest-fail-on-console)
-            jest.spyOn(console, "debug").mockImplementation()
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockResolvedValue({})
+            mockSendChatQuery.mockResolvedValue({})
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -1986,20 +1988,11 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error toast explaining no reservation came back
-            expect(enqueueSnackbar).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    variant: "error",
-                    description: expect.stringContaining("did not return a reservation"),
-                })
-            )
+            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
         })
 
         it("shows error toast and resets state when dock apply throws", async () => {
-            // The notification also logs a copy to console.debug; suppress it (jest-fail-on-console)
-            jest.spyOn(console, "debug").mockImplementation()
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockRejectedValue(new Error("Network failure"))
+            mockSendChatQuery.mockRejectedValue(new Error("Network failure"))
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2014,10 +2007,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error toast carrying the underlying failure
-            expect(enqueueSnackbar).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({variant: "error", description: expect.stringContaining("Network failure")})
-            )
+            expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("Network failure"))
             // Button should re-enable after error
             expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
         })
@@ -2027,10 +2017,7 @@ describe("AgentFlow", () => {
             // Re-initialise userEvent with advanceTimers so its internal delays stay in sync with
             // fake timers (the module-level `user` is bound to real timers and would stall here).
             const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
-            // The notification also logs a copy to console.debug; suppress it (jest-fail-on-console)
-            jest.spyOn(console, "debug").mockImplementation()
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockImplementation(
+            mockSendChatQuery.mockImplementation(
                 (_url: string, signal: AbortSignal) =>
                     new Promise<void>((_resolve, reject) => {
                         signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
@@ -2056,10 +2043,7 @@ describe("AgentFlow", () => {
 
             // The user sees an error toast explaining the request timed out
             await waitFor(() => {
-                expect(enqueueSnackbar).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.objectContaining({variant: "error", description: expect.stringContaining("timed out")})
-                )
+                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("timed out"))
             })
         })
 
@@ -2086,7 +2070,7 @@ describe("AgentFlow", () => {
                     },
                 })
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 // Send low-expiry first, then high-expiry (high should win)
                 chunkCallback(makeChunk(FIRST_RES, LOW_EXPIRY))
                 chunkCallback(makeChunk(SECOND_RES, HIGH_EXPIRY))
@@ -2121,7 +2105,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.type(promptField, "Add a node{Enter}")
-            expect(sendChatQuery).toHaveBeenCalledTimes(1)
+            expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
         })
 
         it("does not show the applying overlay when the dock is idle", () => {
@@ -2239,9 +2223,7 @@ describe("AgentFlow", () => {
         })
 
         it("Stop & discard aborts the request, hides backdrop, notifies, and restores the prompt", async () => {
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-            ;(sendChatQuery as jest.Mock).mockImplementation(
+            mockSendChatQuery.mockImplementation(
                 (_url: string, signal: AbortSignal) =>
                     new Promise<void>((_resolve, reject) => {
                         signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
@@ -2270,13 +2252,7 @@ describe("AgentFlow", () => {
 
             // The user sees a cancellation notification and the prompt is left intact for retry
             await waitFor(() => {
-                expect(enqueueSnackbar).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.objectContaining({
-                        variant: "info",
-                        description: expect.stringContaining("prompt is restored below"),
-                    })
-                )
+                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("prompt is restored below"))
             })
             expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
 
@@ -2286,8 +2262,6 @@ describe("AgentFlow", () => {
         })
 
         it("notifies and clears the prompt after dock apply completes", async () => {
-            const {enqueueSnackbar} = jest.requireMock("notistack")
-
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -2301,13 +2275,7 @@ describe("AgentFlow", () => {
 
             // The user sees a success notification confirming their changes were applied...
             await waitFor(() => {
-                expect(enqueueSnackbar).toHaveBeenCalledWith(
-                    expect.anything(),
-                    expect.objectContaining({
-                        variant: "success",
-                        description: expect.stringContaining("network has been updated"),
-                    })
-                )
+                expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("network has been updated"))
             })
             // ...and the prompt is cleared once the change lands
             expect(screen.getByPlaceholderText(PROMPT_PLACEHOLDER)).toHaveValue("")
@@ -2326,7 +2294,7 @@ describe("AgentFlow", () => {
             await user.click(screen.getByPlaceholderText(PROMPT_PLACEHOLDER))
             await user.keyboard("{Enter}")
 
-            expect(sendChatQuery).not.toHaveBeenCalled()
+            expect(mockSendChatQuery).not.toHaveBeenCalled()
             // The saving backdrop stays closed, so its title is never shown to the user.
             expect(screen.getByText(/applying changes to network/iu)).not.toBeVisible()
         })
