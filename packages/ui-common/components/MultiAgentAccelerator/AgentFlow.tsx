@@ -156,10 +156,14 @@ const streamNetworkDesignerPrompt = async (
         AGENT_NETWORK_DESIGNER_ID,
         (chunk: string) => {
             const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) return
+            if (!chatMessage) {
+                return
+            }
 
             const reservations = extractReservations(chatMessage)
-            if (reservations.length === 0) return
+            if (reservations.length === 0) {
+                return
+            }
 
             const networkHocon = extractNetworkHocon(chatMessage)
             const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined

@@ -154,11 +154,15 @@ export const extractNetworksFromChunk = (
 ): TemporaryNetwork[] => {
     try {
         const chatMessage = chatMessageFromChunk(chunk)
-        if (!chatMessage) return accumulated
+        if (!chatMessage) {
+            return accumulated
+        }
 
         // Always use the user's edited definition as the authoritative value.
         const converted = extractTemporaryNetworks(chatMessage, updated)
-        if (converted.length === 0) return accumulated
+        if (converted.length === 0) {
+            return accumulated
+        }
         return mergeNetworks(accumulated, converted)
     } catch (e: unknown) {
         console.warn("Failed to process chunk from network designer:", e)

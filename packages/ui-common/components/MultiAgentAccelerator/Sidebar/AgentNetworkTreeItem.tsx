@@ -8,7 +8,7 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
-import {useTheme} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {
     TreeItemContent,
@@ -43,6 +43,17 @@ type TagColor = (typeof TAG_COLORS)[number]
 
 // Keep track of which tags have which colors so that the same tag always has the same color
 const tagsToColors = new Map<string, TagColor>()
+
+// Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
+// color and only dims via opacity.
+const ActionIconButton = styled(IconButton)({
+    padding: 0,
+    color: "var(--bs-secondary)",
+    "&:hover": {color: "var(--bs-secondary-dark)"},
+    "&.Mui-disabled": {
+        opacity: 0.3,
+    },
+})
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly nodeIndex: NodeIndex
@@ -191,7 +202,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 {networkHocon && (
                                     <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                         <span>
-                                            <IconButton
+                                            <ActionIconButton
                                                 onClick={(e) => {
                                                     e.stopPropagation()
                                                     if (isExpired) {
@@ -204,42 +215,24 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"
                                                 size="small"
-                                                sx={{
-                                                    padding: 0,
-                                                    color: "var(--bs-secondary)",
-                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                    "&.Mui-disabled": {
-                                                        color: "var(--bs-secondary)",
-                                                        opacity: 0.3,
-                                                    },
-                                                }}
                                             >
                                                 <DownloadIcon sx={{fontSize: "0.75rem"}} />
-                                            </IconButton>
+                                            </ActionIconButton>
                                         </span>
                                     </Tooltip>
                                 )}
                                 <Tooltip title="Edit this network">
                                     <span>
-                                        <IconButton
+                                        <ActionIconButton
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 onEditNetwork?.(itemId)
                                             }}
                                             disabled={isExpired}
                                             size="small"
-                                            sx={{
-                                                padding: 0,
-                                                color: "var(--bs-secondary)",
-                                                "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                "&.Mui-disabled": {
-                                                    color: "var(--bs-secondary)",
-                                                    opacity: 0.3,
-                                                },
-                                            }}
                                         >
                                             <Edit sx={{fontSize: "0.75rem"}} />
-                                        </IconButton>
+                                        </ActionIconButton>
                                     </span>
                                 </Tooltip>
                                 <Tooltip title="Delete network">
@@ -252,7 +245,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             color: "var(--bs-secondary)",
                                             "&:hover": {color: theme.palette.warning.main},
                                             "&.Mui-disabled": {
-                                                color: "var(--bs-secondary)",
                                                 opacity: 0.3,
                                             },
                                             cursor: "pointer",
