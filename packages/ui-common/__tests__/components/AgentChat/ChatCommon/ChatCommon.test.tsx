@@ -17,20 +17,24 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-import {createRef} from "react"
+import {createRef, Ref} from "react"
 
 import {
     MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
-    TEST_AGENT_MUSIC_NERD_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {ChatCommon, ChatCommonHandle} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {
+    ChatCommon,
+    ChatCommonHandle,
+    ChatCommonProps,
+    MAX_TURNS,
+} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
-import {CombinedAgentType, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
+import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
@@ -48,8 +52,6 @@ jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`
-
-const CONNECTIVITY_LIST_HEADER = /I can connect you to the following agents/u
 
 const MODAL_Z_INDEX = 11
 
@@ -75,17 +77,21 @@ describe("ChatCommon", () => {
 
     let user: UserEvent
 
-    const defaultProps = {
+    const defaultProps: ChatCommonProps = {
         currentUser: TEST_USER,
         id: "test",
         isAwaitingLlm: false,
         onSend: jest.fn(),
+        sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
         setIsAwaitingLlm: jest.fn(),
         targetAgent: TEST_AGENT_MATH_GUY,
         userImage: "",
     }
 
-    const renderChatCommonComponent = (overrides = {}, mode: PaletteMode = "light") => {
+    const renderChatCommonComponent = (
+        overrides: Partial<ChatCommonProps> & {ref?: Ref<ChatCommonHandle>} = {},
+        mode: PaletteMode = "light"
+    ) =>
         render(
             <ThemeProvider
                 theme={createTheme({
@@ -107,13 +113,11 @@ describe("ChatCommon", () => {
                 />
             </ThemeProvider>
         )
-    }
 
     beforeEach(() => {
         user = userEvent.setup({delay: null})
 
         // Mock getConnectivity to return dummy connectivity info
-        ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
         ;(getAgentFunction as jest.Mock).mockResolvedValue({
             function: {
                 description: "Test description",
@@ -142,54 +146,21 @@ describe("ChatCommon", () => {
     it.each(["light", "dark"] as PaletteMode[])("Should render correctly with %s mode", async (darkMode) => {
         renderChatCommonComponent({}, darkMode)
 
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
 
         // Should have "Clear Chat", "Regenerate" and "Send" buttons
         screen.getByRole("button", {name: "Clear Chat"})
         screen.getByRole("button", {name: "Regenerate"})
         screen.getByRole("button", {name: "Send"})
-
-        // Check that connectivity info is rendered correctly
-        await user.click(await screen.findByText("Network Details")) // Click to expand
-        const connectivityList = screen.getByRole("list", {name: CONNECTIVITY_LIST_HEADER})
-
-        // Check that the expected agents are in the connectivity list
-        within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD)
-
-        // Check that the tools for Music Nerd are listed
-
-        // Verify specific tools are present in the list
-        // eslint-disable-next-line newline-per-chained-call -- prettier/eslint fight over this
-        const musicNerdItem = within(connectivityList).getByText(TEST_AGENT_MUSIC_NERD).closest("li")
-
-        MOCK_CONNECTIVITY_INFO.connectivity_info
-            .find((item) => item.origin === TEST_AGENT_MUSIC_NERD)
-            .tools.forEach((tool) => {
-                within(musicNerdItem).getByText(tool)
-            })
-
-        // Now math guy
-        const mathGuyItem = within(connectivityList).queryByText(TEST_AGENT_MATH_GUY_DISPLAY)
-
-        // Should not be present since we are chatting with Math Guy, and we don't show agents connecting to themselves
-        expect(mathGuyItem).toBeNull()
     })
 
-    it("Should handle missing connectivity info gracefully", async () => {
-        // Destructure while removing metadata to simulate missing connectivity info
-        const withoutConnectivityInfo = {metadata: MOCK_CONNECTIVITY_INFO.metadata}
+    it("Renders with network description", async () => {
+        const networkDescription = "test network description"
+        renderChatCommonComponent({networkDescription})
 
-        ;(getConnectivity as jest.Mock).mockResolvedValue(withoutConnectivityInfo)
-        renderChatCommonComponent()
-
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
-
-        // Connectivity info block should not be present
-        expect(screen.queryByText("Network Details")).not.toBeInTheDocument()
-        expect(screen.queryByText(CONNECTIVITY_LIST_HEADER)).not.toBeInTheDocument()
-
-        // ...but sample queries should still show up
-        screen.queryByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])
+        // Should show description and agent
+        screen.getByText(`${TEST_AGENT_MATH_GUY}:`)
+        screen.getByText(networkDescription)
     })
 
     it("Should render and send sample queries correctly", async () => {
@@ -221,29 +192,18 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle missing sample queries gracefully", async () => {
-        // Destructure while removing metadata to simulate missing sample queries
-        const withoutMetadata = {connectivity_info: MOCK_CONNECTIVITY_INFO.connectivity_info}
+        renderChatCommonComponent({sampleQueries: undefined})
 
-        ;(getConnectivity as jest.Mock).mockResolvedValue(withoutMetadata)
-        renderChatCommonComponent()
-
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
 
         // Should be no sample query chips rendered
         expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
     })
 
     it("Should handle empty sample queries gracefully", async () => {
-        // Destructure with empty array for sample queries
-        const emptySampleQueriesArray = {
-            connectivity_info: MOCK_CONNECTIVITY_INFO.connectivity_info,
-            sample_queries: [] as unknown[],
-        }
+        renderChatCommonComponent({sampleQueries: []})
 
-        ;(getConnectivity as jest.Mock).mockResolvedValue(emptySampleQueriesArray)
-        renderChatCommonComponent()
-
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
 
         // Should be no sample query chips rendered
         expect(document.querySelectorAll(".MuiChip-root").length).toBe(0)
@@ -345,7 +305,7 @@ describe("ChatCommon", () => {
 
             const chatResponse: ChatResponse = {
                 response: {
-                    type: ChatMessageType.AI,
+                    type: ChatMessageType.AGENT_FRAMEWORK,
                     text: testResponseText,
                     origin: [{tool: "testTool", instantiation_index: 1}],
                     sly_data: {answer: 42},
@@ -360,7 +320,8 @@ describe("ChatCommon", () => {
             const query = "Sample test query for chunk handling"
             await sendQuery(TEST_AGENT_MATH_GUY, query)
 
-            await screen.findByText(testResponseText)
+            // Should appear once in chat history, once in regular output
+            expect(await screen.findAllByText(testResponseText)).toHaveLength(2)
             expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
             expect(onChunkReceivedMock).toHaveBeenCalledWith(chunk)
         }
@@ -380,15 +341,17 @@ describe("ChatCommon", () => {
         const query = "Sample test query for chunk handling"
         await sendQuery(LegacyAgentType.DataGenerator, query)
 
-        await screen.findByText(testResponseText1 + testResponseText2)
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(testResponseText1 + testResponseText2)
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(2)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText2)
     })
 
     it("Should handle final answer from legacy agents correctly", async () => {
-        const onChunkReceivedMock = jest.fn().mockReturnValue(true)
-        const testResponseText = "Final Answer: Sample final answer from LLM"
+        const onChunkReceivedMock = jest.fn()
+        const finalAnswerText = "Sample final answer from LLM"
+        const testResponseText = `Final Answer: ${finalAnswerText}`
 
         renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DMSChat})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
@@ -402,8 +365,65 @@ describe("ChatCommon", () => {
         expect(onChunkReceivedMock).toHaveBeenCalledTimes(1)
         expect(onChunkReceivedMock).toHaveBeenCalledWith(testResponseText)
 
-        // should be a span with content "Final Answer"
-        screen.getByText("Final Answer")
+        // The body of the final answer should be displayed
+        screen.getByText(finalAnswerText)
+    })
+
+    it("Should handle no chunks received", async () => {
+        renderChatCommonComponent()
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(null)
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
+    })
+
+    it("Should handle when legacy agents fail to send a Final Answer", async () => {
+        const onChunkReceivedMock = jest.fn()
+        const responseText = "Text without the magical final answer string"
+
+        expect(givesFinalAnswer(LegacyAgentType.OpportunityFinder)).toBe(false)
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            targetAgent: LegacyAgentType.OpportunityFinder,
+        })
+        screen.getByText(LegacyAgentType.OpportunityFinder)
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            callback(responseText)
+        })
+
+        await sendQuery(LegacyAgentType.OpportunityFinder, "test")
+
+        // The chosen agent is known not to give a final answer, so we should just display whatever text it gives us
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(responseText)
+    })
+
+    it("Should show an error when legacy agent fails to respond with a final answer", async () => {
+        const onChunkReceivedMock = jest.fn()
+        const responseText = "Text without the magical final answer string"
+
+        expect(givesFinalAnswer(LegacyAgentType.DMSChat)).toBe(true)
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            targetAgent: LegacyAgentType.DMSChat,
+        })
+
+        screen.getByText(LegacyAgentType.DMSChat)
+        ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            callback(responseText)
+        })
+
+        await sendQuery(LegacyAgentType.DMSChat, "test")
+
+        // This agent is supposed to give a final answer, so it's an error that it didn't. Check for the alert.
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
     })
 
     it("Should handle error thrown while fetching", async () => {
@@ -522,8 +542,40 @@ describe("ChatCommon", () => {
         expect(errors).toHaveLength(1)
     })
 
+    it("Should truncate at MAX_TURNS", async () => {
+        renderChatCommonComponent()
+
+        const messages = Array.from({length: MAX_TURNS + 1}, (_, i) =>
+            getResponseMessage(ChatMessageType.AGENT, `Sample AI response ${i + 1}`)
+        )
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            for (const chatMessage of messages) {
+                callback(JSON.stringify({response: chatMessage}))
+            }
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Test query")
+
+        await screen.findByText("Show Thinking")
+        const thinkingSection = document.querySelector(`#${defaultProps.id}-thinking`)
+        expect(thinkingSection).toBeInTheDocument()
+
+        // Oldest streamed response should be evicted once MAX_TURNS is exceeded
+        expect(within(thinkingSection as HTMLElement).queryByText(/Sample AI response 1$/u)).not.toBeInTheDocument()
+
+        // Messages 2..MAX_TURNS+1 should be retained
+        for (let responseNumber = 2; responseNumber <= MAX_TURNS + 1; responseNumber += 1) {
+            expect(
+                within(thinkingSection as HTMLElement).getByText(
+                    new RegExp(String.raw`Sample AI response ${responseNumber}(?!\d)`, "u")
+                )
+            ).toBeInTheDocument()
+        }
+    })
+
     it("Should correctly handle chat context", async () => {
-        const {rerender} = render(<ChatCommon {...defaultProps} />)
+        const {rerender} = renderChatCommonComponent()
 
         const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
@@ -550,14 +602,14 @@ describe("ChatCommon", () => {
     it("Should show agent introduction", async () => {
         renderChatCommonComponent()
 
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
     })
 
     it("Should not clear chat when a new agent is selected", async () => {
-        const {rerender} = render(<ChatCommon {...defaultProps} />)
+        const {rerender} = renderChatCommonComponent()
 
         // Make sure first agent greeting appears
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
 
         rerender(
             <ChatCommon
@@ -567,22 +619,19 @@ describe("ChatCommon", () => {
         )
 
         // Previous agent output should still be present
-        screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        screen.queryByText(TEST_AGENT_MATH_GUY)
 
         // New agent greeting should be present
-        await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
+        await screen.findByText(TEST_AGENT_MUSIC_NERD)
     })
 
     it("Should use custom agent greetings when supplied", async () => {
         const customGreeting = "Custom Greeting"
-        render(
-            <ChatCommon
-                {...defaultProps}
-                customAgentGreetings={{
-                    [TEST_AGENT_MATH_GUY]: customGreeting,
-                }}
-            />
-        )
+        renderChatCommonComponent({
+            customAgentGreetings: {
+                [TEST_AGENT_MATH_GUY]: customGreeting,
+            },
+        })
 
         await screen.findByText(customGreeting)
     })
@@ -653,28 +702,30 @@ describe("ChatCommon", () => {
         await screen.findByText("Sample query 1")
     })
 
-    it("Should handle autoscroll toggle correctly", async () => {
+    it.each(["Wrap output", "Auto-scroll output"])("Should handle %s toggle correctly", async (menuLabel) => {
         renderChatCommonComponent()
 
-        const autoscrollButton = screen.getByRole("button", {name: "Autoscroll enabled"})
+        const optionsButton = screen.getByTestId("TuneIcon")
+        await user.click(optionsButton)
 
-        await user.click(autoscrollButton)
-        screen.getByRole("button", {name: "Autoscroll disabled"})
-    })
+        const menuItem = screen.getByRole("menuitem", {name: menuLabel})
 
-    it("Should handle text wrapping toggle correctly", async () => {
-        renderChatCommonComponent()
+        // Checked by default
+        expect(menuItem.querySelector("svg")).toHaveAttribute("data-testid", "CheckBoxIcon")
 
-        const wrapButton = screen.getByRole("button", {name: "Text wrapping enabled"})
+        await user.click(menuItem)
 
-        await user.click(wrapButton)
-        screen.getByRole("button", {name: "Text wrapping disabled"})
+        // Should now be unchecked
+        expect(menuItem.querySelector("svg")).toHaveAttribute("data-testid", "CheckBoxOutlineBlankIcon")
     })
 
     it("Should handle final answer from Neuro-san agents correctly", async () => {
         renderChatCommonComponent()
 
-        const responseMessage = getResponseMessage(ChatMessageType.AI, "Sample AI response")
+        screen.getByText(TEST_AGENT_MATH_GUY)
+
+        const agentFinalAnswer = "Agent final answer"
+        const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, agentFinalAnswer)
 
         // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
         const chatResponse = {response: responseMessage}
@@ -685,41 +736,72 @@ describe("ChatCommon", () => {
 
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
-        await screen.findByText("Final Answer")
+        // Should appear once in conversation section
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(agentFinalAnswer)
+
+        // Should also appear in Chat History
+        const chatHistory = document.querySelector(`#${defaultProps.id}-history-items`)
+        within(chatHistory as HTMLElement).getByText(agentFinalAnswer)
     })
 
-    it.each([
-        {mode: "light" as PaletteMode, expectedShadow: "rgba(0, 0, 0, 0.08)"},
-        {mode: "dark" as PaletteMode, expectedShadow: "rgba(255, 255, 255, 0.08)"},
-    ])("Applies correct shadow depending if final answer in $mode mode", async ({mode, expectedShadow}) => {
-        renderChatCommonComponent({}, mode)
+    it("Should handle final answer with no text, structure only from Neuro-san agents", async () => {
+        renderChatCommonComponent()
 
-        const responseMessage = getResponseMessage(ChatMessageType.AI, "Shadow test response")
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        const structure = {answer: "Final answer in structure"}
+        const responseMessage = {
+            ...getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, undefined),
+            structure,
+        }
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
         const chatResponse = {response: responseMessage}
+
         ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
             callback(JSON.stringify(chatResponse))
         })
 
-        await sendQuery(TEST_AGENT_MATH_GUY, "test query")
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
 
-        const finalDiv = await screen.findByText("Final Answer")
-        const parentAccordion = finalDiv.closest(".MuiAccordion-root")
-        expect(parentAccordion).toBeInTheDocument()
-        const computed = window.getComputedStyle(parentAccordion)
-        expect(computed.boxShadow).toContain(expectedShadow)
+        // Structure answer should be displayed in conversation section even if text is undefined
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(new RegExp(structure.answer, "u"))
     })
 
-    it("Should handle 'show thinking' button correctly", async () => {
+    it("Should handle final answer with no text or structure from Neuro-san agents", async () => {
         renderChatCommonComponent()
 
-        // Send two responses, a regular AGENT one and an AI one
-        // The initial [] is to make sure the message is not treated as JSON
-        //    See: https://github.com/cognizant-ai-lab/neuro-san-ui/issues/277
-        const agentResponseText = "[]Sample Agent response"
-        const aiResponseText = "[]Sample AI response"
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        const responseMessage: ChatMessage = {
+            type: ChatMessageType.AGENT_FRAMEWORK,
+            text: null,
+            structure: null,
+        }
+
+        // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
+        const chatResponse = {response: responseMessage}
+
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(chatResponse))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/final answer/u)
+    })
+
+    it("Should handle 'show thinking' section correctly", async () => {
+        renderChatCommonComponent()
+
+        // Send two responses, a regular AGENT one and an AGENT_FRAMEWORK one
+        const agentResponseText = "Sample Agent response"
+        const agentFrameworkResponse = "Sample agent framework response"
         const responseMessages = [
             getResponseMessage(ChatMessageType.AGENT, agentResponseText),
-            getResponseMessage(ChatMessageType.AI, aiResponseText),
+            getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, agentFrameworkResponse),
         ]
 
         // Chunk handler expects messages to be a JSON object with a "response" field
@@ -732,24 +814,21 @@ describe("ChatCommon", () => {
             callback(JSON.stringify(chatResponses[1]))
         })
 
-        // Click "show thinking" button. It defaults to "hiding agent thinking" so we look for that
-        const showThinkingButton = document.getElementById("show-thinking-button")
-        await user.click(showThinkingButton)
-
         await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query handle thinking button test")
 
-        // All responses should be visible when "show thinking" is enabled
-        expect(await screen.findAllByText(aiResponseText)).toHaveLength(2)
-        await screen.findByText(agentResponseText)
+        // Agent framework response is the "final answer" and should always be shown in the conversation section
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText(agentFrameworkResponse)
 
-        // Now click the button again to hide agent thinking
-        await user.click(showThinkingButton)
+        // Agent message should appear in the "thinking" section
+        const thinkingSection = document.querySelector(`#${defaultProps.id}-thinking`)
+        const item = within(thinkingSection as HTMLElement).getByText(new RegExp(agentResponseText, "u"))
+        expect(item).not.toBeVisible()
 
-        // Only the AI response should be visible
-        expect(screen.getAllByText(aiResponseText)).toHaveLength(1)
-
-        // Agent response should not be in the DOM as we disabled "show thinking"
-        expect(screen.queryByText(agentResponseText)).not.toBeInTheDocument()
+        // Expand thinking section and verify agent message is visible
+        const expandButton = within(thinkingSection as HTMLElement).getByRole("button")
+        await user.click(expandButton)
+        expect(item).toBeVisible()
     })
 
     it("Should handle voice transcription correctly", async () => {
@@ -937,7 +1016,7 @@ describe("ChatCommon", () => {
         await user.click(clearButton)
 
         // Verify chat is cleared and agent introduction appears
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
         expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
     })
 
@@ -961,7 +1040,6 @@ describe("ChatCommon", () => {
         const customColor = "#FF0000"
         renderChatCommonComponent({
             backgroundColor: customColor,
-            id: "test-chat",
         })
 
         let chatContainer: HTMLElement | null = null
@@ -1138,7 +1216,7 @@ describe("ChatCommon", () => {
         await sendQuery(TEST_AGENT_MATH_GUY, "test query")
 
         // Component should still be functional - check for agent greeting elements
-        const agentGreetings = screen.getAllByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        const agentGreetings = screen.getAllByText(TEST_AGENT_MATH_GUY)
         expect(agentGreetings.length).toBeGreaterThan(0)
     })
 
@@ -1203,13 +1281,16 @@ describe("ChatCommon", () => {
             targetAgent: LegacyAgentType.OpportunityFinder,
             legacyAgentEndpoint: testEndpoint,
         })
+
+        screen.getByText(LegacyAgentType.OpportunityFinder)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback("Legacy response with custom endpoint")
         })
 
         await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
-        await screen.findByText("Legacy response with custom endpoint")
+        const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
+        within(conversation as HTMLElement).getByText("Legacy response with custom endpoint")
     })
 
     it.each([
@@ -1226,7 +1307,7 @@ describe("ChatCommon", () => {
             expect(chatContainer).toBeInTheDocument()
         })
 
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
     })
 
     it("Should handle connectivity info error gracefully", async () => {
@@ -1236,7 +1317,7 @@ describe("ChatCommon", () => {
         renderChatCommonComponent()
 
         // Component should still render despite connectivity error
-        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        await screen.findByText(TEST_AGENT_MATH_GUY)
     })
 
     it("Should handle network request timeout", async () => {

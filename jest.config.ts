@@ -22,18 +22,38 @@ import type {Config} from "@jest/types"
 
 // Packages in ESM format that need to be transformed by Jest because they are not distributed in CommonJS format
 const esmPackagesToTransform = [
+    "bail",
+    "ccount",
     "character-.*",
     "comma-.*",
     "decode-.*",
+    "devlop",
+    "escape-string-regexp",
+    "estree-util-.*",
+    "github-slugger",
     "hast.*",
+    "html-.*",
     "is-.*",
     "lodash-es",
+    "longest-streak",
+    "markdown-table",
     "mdast.*",
+    "micromark.*",
     "parse-.*",
     "property-.*",
+    "react-markdown",
     "refractor",
+    "rehype-.*",
+    "remark-.*",
     "space-.*",
+    "trim-lines",
+    "trough",
+    "unified",
+    "unist-.*",
     "uuid",
+    "vfile.*",
+    "web-namespaces",
+    "zwitch",
 ]
 
 const config: Config.InitialOptions = {
@@ -50,7 +70,7 @@ const config: Config.InitialOptions = {
                 tsconfig: "<rootDir>/tsconfig.test.json",
             },
         ],
-        "^.+\\.(js|jsx)$": ["babel-jest", {configFile: "./babel.jest.config.cjs"}],
+        "^.+\\.(js|jsx|mjs)$": ["babel-jest", {configFile: "./babel.jest.config.cjs"}],
     },
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
@@ -74,8 +94,8 @@ const config: Config.InitialOptions = {
 
     coverageThreshold: {
         global: {
-            statements: -127,
-            branches: -175,
+            statements: -129,
+            branches: -172,
             functions: -34,
             lines: -99,
         },
