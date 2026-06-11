@@ -83,14 +83,30 @@ export const createAppTheme = (primary: string, secondary: string, background: s
         components: {
             MuiButton: {
                 styleOverrides: {
-                    root: {
-                        "&:hover": {
-                            // TODO: May still want this for some buttons like "Cancel" in the modals,
-                            // but it was causing issues with icons.
-                            backgroundColor: "transparent",
-                        },
-                    },
+                    root: ({ownerState}) => ({
+                        // Suppress the hover background for text/outlined buttons (it was causing
+                        // issues with icons). Contained buttons keep their default hover so their
+                        // (often white) text stays legible against the filled background.
+                        ...(ownerState.variant !== "contained" && {
+                            "&:hover": {
+                                backgroundColor: "transparent",
+                            },
+                        }),
+                    }),
                 },
+                variants: [
+                    {
+                        // Keep outlined buttons legible in dark mode by forcing white text and
+                        // border colours. In light mode the theme's default styles are used unchanged.
+                        props: {variant: "outlined"},
+                        style: ({theme}) =>
+                            theme.applyStyles("dark", {
+                                color: theme.palette.common.white,
+                                borderColor: theme.palette.common.white,
+                                "&:hover": {borderColor: theme.palette.common.white},
+                            }),
+                    },
+                ],
             },
             MuiDialog: {
                 styleOverrides: {
