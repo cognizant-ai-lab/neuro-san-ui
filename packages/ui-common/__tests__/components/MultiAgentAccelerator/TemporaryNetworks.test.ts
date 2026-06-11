@@ -340,7 +340,9 @@ describe("extractNetworksFromChunk", () => {
             null
         )
         const chunk = makeChunk({
-            [AGENT_RESERVATIONS_KEY]: [{reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 999}],
+            [AGENT_RESERVATIONS_KEY]: [
+                {reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 999},
+            ],
         })
 
         const result = extractNetworksFromChunk(chunk, [], older)

@@ -85,11 +85,11 @@ describe("Controller/Agent/testConnection", () => {
         // A fetch that only settles when its AbortSignal fires — simulates a hung request.
         global.fetch = jest.fn(
             (_url, options) =>
-                new Promise((_resolve, reject) => {
-                    ;(options as RequestInit).signal?.addEventListener("abort", () =>
+                new Promise<Response>((_resolve, reject) => {
+                    options?.signal?.addEventListener("abort", () =>
                         reject(new DOMException("The operation was aborted", "AbortError"))
                     )
-                }) as Promise<Response>
+                })
         )
 
         const resultPromise = testConnection("https://slow.example.com")
