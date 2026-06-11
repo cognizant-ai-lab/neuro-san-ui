@@ -387,7 +387,6 @@ export const Navbar = ({
                             ...MENU_ITEM_TEXT_PROPS,
                         }}
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             id="user-image"
                             src={userInfo.image || DEFAULT_USER_IMAGE}
