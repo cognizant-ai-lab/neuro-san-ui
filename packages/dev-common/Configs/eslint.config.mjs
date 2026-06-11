@@ -124,6 +124,9 @@ export default defineConfig([
             // Disable by default - consumers must configure with their project-specific pages path
             "@next/next/no-html-link-for-pages": "off",
 
+            // We don't care about Next.js image optimization
+            "@next/next/no-img-element": "off",
+
             // Turn on some optional, stricter settings for this rule
             "react/jsx-key": [
                 "error",

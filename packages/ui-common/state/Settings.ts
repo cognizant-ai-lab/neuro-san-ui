@@ -30,6 +30,8 @@ type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
 
+export type LLMProvider = "OpenAI" | "Anthropic"
+
 /**
  * User preference settings
  */
@@ -53,10 +55,7 @@ interface Settings {
     readonly behavior: {
         readonly enableZenMode: boolean
     }
-    readonly apiKeys: {
-        readonly openai: string | null
-        readonly anthropic: string | null
-    }
+    readonly apiKeys: Partial<Record<LLMProvider, string>>
 }
 
 /**
@@ -92,10 +91,7 @@ export const DEFAULT_SETTINGS: Settings = {
     behavior: {
         enableZenMode: true,
     },
-    apiKeys: {
-        openai: null,
-        anthropic: null,
-    },
+    apiKeys: {},
 }
 
 /**
