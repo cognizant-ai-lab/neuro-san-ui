@@ -1114,11 +1114,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 // Override MUIAlert's default 1rem bottom margin so the banner sits flush
                                 // against the dock header below it.
                                 marginBottom: 0,
-                                paddingTop: 0,
-                                paddingBottom: 0,
+                                py: 0,
                                 // Match the dock header's right padding so the banner's close X lines up
                                 // vertically with the header's close X below it.
-                                paddingRight: 0.25,
+                                paddingRight: 0.5,
                                 alignItems: "center",
                                 // Frost the banner like the dock header so the graph doesn't show through the
                                 // app's translucent paper background; keep a tinted, mostly-opaque severity wash.
