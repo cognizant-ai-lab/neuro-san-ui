@@ -294,25 +294,69 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         ? temporaryNetworks.find((n) => n.agentNetworkName === designerNetworkName)
         : undefined
 
-    const keyInfo = {
-        llm_config: {
-            openai_api_key: "key",
-        },
+    /**
+     * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
+     * by the currently selected network. Only includes keys for providers that are required.
+     */
+    const getApiKeys = () => {
+        const llmConfig: Record<string, string | undefined> = {}
+
+        if (providerKeysRequired.has("OpenAI")) {
+            llmConfig["openai_api_key"] = apiKeys["OpenAI"]
+        }
+
+        if (providerKeysRequired.has("Anthropic")) {
+            llmConfig["anthropic_api_key"] = apiKeys["Anthropic"]
+        }
+
+        return {llm_config: llmConfig}
     }
 
-    const extraSlyData: Record<string, unknown> | undefined = currentTempNetwork
-        ? {
-              [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
-              // Use the agentNetworkName, not reservation_id
-              ...(currentTempNetwork.agentNetworkName
-                  ? {[AGENT_NETWORK_NAME_KEY]: currentTempNetwork.agentNetworkName}
-                  : {}),
-              ...(currentTempNetwork.networkHocon ? {[AGENT_NETWORK_HOCON]: currentTempNetwork.networkHocon} : {}),
-              ...keyInfo,
-          }
-        : designerTempNetwork
-          ? {[AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition, ...keyInfo}
-          : keyInfo
+    /**
+     * Builds the extraSlyData object to be sent with each request, including information for Agent Network Designer
+     * and (if required) API keys for LLM providers.
+     */
+    const buildExtraSlyData = (): Record<string, unknown> | undefined => {
+        if (currentTempNetwork) {
+            const result: Record<string, unknown> = {
+                [AGENT_NETWORK_DEFINITION_KEY]: currentTempNetwork.agentNetworkDefinition,
+            }
+
+            // Use agentNetworkName, not reservation_id
+            if (currentTempNetwork.agentNetworkName) {
+                result[AGENT_NETWORK_NAME_KEY] = currentTempNetwork.agentNetworkName
+            }
+
+            if (currentTempNetwork.networkHocon) {
+                result[AGENT_NETWORK_HOCON] = currentTempNetwork.networkHocon
+            }
+
+            return result
+        }
+
+        if (designerTempNetwork) {
+            return {
+                [AGENT_NETWORK_DEFINITION_KEY]: designerTempNetwork.agentNetworkDefinition,
+            }
+        }
+
+        return undefined
+    }
+
+    // Whether any API keys are required
+    const shouldIncludeApiKeys = providerKeysRequired.size > 0
+
+    // Build base extraSlyData
+    const baseExtraSlyData = buildExtraSlyData()
+
+    // Add API keys to extraSlyData if needed, merging with baseExtraSlyData if it exists
+    const extraSlyData: Record<string, unknown> | undefined =
+        shouldIncludeApiKeys || baseExtraSlyData
+            ? {
+                  ...baseExtraSlyData,
+                  ...(shouldIncludeApiKeys ? getApiKeys() : {}),
+              }
+            : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
