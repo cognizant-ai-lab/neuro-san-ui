@@ -2,7 +2,6 @@ import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Checkbox from "@mui/material/Checkbox"
-import CircularProgress from "@mui/material/CircularProgress"
 import Divider from "@mui/material/Divider"
 import FormLabel from "@mui/material/FormLabel"
 import {createTheme, ThemeProvider, useTheme} from "@mui/material/styles"
@@ -13,9 +12,11 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
+import {ApiKeyInput} from "./ApiKeyInput"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {getBrandingSuggestions} from "../../controller/agent/Agent"
-import {useSettingsStore} from "../../state/Settings"
+import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/LlmMetadata"
+import {LLMProvider, useSettingsStore} from "../../state/Settings"
 import {PaletteKey, PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {CustomerLogo} from "../Common/CustomerLogo"
@@ -66,6 +67,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     // Zen mode
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
     const enableZenModeCheckmark = useCheckmarkFade()
+
+    // API keys
+    const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -179,6 +183,16 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         setIsBrandingApplying(false)
     }
 
+    const persistKey = (vendor: LLMProvider, key: string) => {
+        if (key !== apiKeys[vendor]) {
+            updateSettings({
+                apiKeys: {
+                    [vendor]: key,
+                },
+            })
+        }
+    }
+
     // Effect to keep input in sync with state store
     useEffect(() => {
         setCustomerInput(customer ?? "")
@@ -193,7 +207,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         Wrapping in a span allows the tooltip to still function while the inner component is disabled.
         See: https://github.com/mui/material-ui/issues/8416
      */
-
     return (
         // Always use default theme for settings dialog so user can always see to reset. It's possible that with
         // certain custom themes the dialog would be unreadable.
@@ -238,12 +251,47 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         variant="h6"
                         sx={{marginBottom: 1}}
                     >
+                        API Keys
+                    </Typography>
+                    <Box sx={{display: "flex", flexDirection: "column", gap: 1.5}}>
+                        <ApiKeyInput
+                            forgetKey={() => persistKey("OpenAI", "")}
+                            id={`${id}-openai-api-key-input`}
+                            key="openai"
+                            logo={theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png"}
+                            onSave={(key: string): void => persistKey("OpenAI", key)}
+                            onTest={(key: string): Promise<boolean> => isOpenAIKeyValid(key)}
+                            persistedValue={apiKeys.OpenAI}
+                            vendor="OpenAI"
+                        />
+                        <ApiKeyInput
+                            forgetKey={() => persistKey("Anthropic", "")}
+                            id={`${id}-anthropic-api-key-input`}
+                            key="anthropic"
+                            logo="/claude.png"
+                            onSave={(key: string): void => persistKey("Anthropic", key)}
+                            onTest={(key: string): Promise<boolean> => isAnthropicKeyValid(key)}
+                            persistedValue={apiKeys.Anthropic}
+                            vendor="Anthropic"
+                        />
+                    </Box>
+                </Box>
+                <Box sx={{marginBottom: 3}}>
+                    <Typography
+                        variant="h6"
+                        sx={{marginBottom: 1}}
+                    >
                         Behavior
                     </Typography>
                     <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
                         <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
-                        {/* eslint-disable-next-line max-len */}
-                        <Tooltip title="Hides most of the UI during agent network animations, providing a more immersive experience.">
+                        {}
+                        <Tooltip
+                            title={
+                                "Hides most of the UI during agent network animations, " +
+                                "providing a more immersive experience."
+                            }
+                        >
                             <Checkbox
                                 checked={enableZenMode}
                                 data-testid="zen-mode-checkbox"
@@ -296,17 +344,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 variant="contained"
                                 size="small"
                                 onClick={handleBrandingApply}
-                                startIcon={
-                                    isBrandingApplying ? (
-                                        <CircularProgress
-                                            size={16}
-                                            color="inherit"
-                                        />
-                                    ) : undefined
-                                }
+                                loading={isBrandingApplying}
                                 sx={{minWidth: "8rem"}}
                             >
-                                {isBrandingApplying ? "Applying..." : "Apply"}
+                                Apply
                             </Button>
                             <FadingCheckmark show={brandingCheckmark.show} />
                         </Box>
