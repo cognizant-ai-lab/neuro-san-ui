@@ -256,22 +256,24 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     <Box sx={{display: "flex", flexDirection: "column", gap: 1.5}}>
                         <ApiKeyInput
                             forgetKey={() => persistKey("OpenAI", "")}
-                            id={`${id}-openai-api-key-input`}
+                            id={`${id}-openai`}
                             key="openai"
                             logo={theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png"}
                             onSave={(key: string): void => persistKey("OpenAI", key)}
                             onTest={(key: string): Promise<boolean> => isOpenAIKeyValid(key)}
                             persistedValue={apiKeys.OpenAI}
+                            placeholder="sk-..."
                             vendor="OpenAI"
                         />
                         <ApiKeyInput
                             forgetKey={() => persistKey("Anthropic", "")}
-                            id={`${id}-anthropic-api-key-input`}
+                            id={`${id}-anthropic`}
                             key="anthropic"
                             logo="/claude.png"
                             onSave={(key: string): void => persistKey("Anthropic", key)}
                             onTest={(key: string): Promise<boolean> => isAnthropicKeyValid(key)}
                             persistedValue={apiKeys.Anthropic}
+                            placeholder="sk-ant-..."
                             vendor="Anthropic"
                         />
                     </Box>
