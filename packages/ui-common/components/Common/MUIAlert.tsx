@@ -38,16 +38,18 @@ interface MUIAlertProps {
     children: ReactNode
     closeable?: boolean
     id: string
+    onClose?: () => void
     severity: AlertColor
     sx?: SxProps
 }
 // #endregion: Types
 
-export const MUIAlert: FC<MUIAlertProps> = ({children, closeable = false, id, severity, sx}) => {
+export const MUIAlert: FC<MUIAlertProps> = ({children, closeable = false, id, onClose, severity, sx}) => {
     const [alertOpen, setAlertOpen] = useState<boolean>(true)
 
     const handleClose = () => {
         setAlertOpen(false)
+        onClose?.()
     }
 
     return (
@@ -62,9 +64,7 @@ export const MUIAlert: FC<MUIAlertProps> = ({children, closeable = false, id, se
                             aria-label="close"
                             color="inherit"
                             id={`${id}-icon-button`}
-                            onClick={() => {
-                                setAlertOpen(false)
-                            }}
+                            onClick={handleClose}
                             size="small"
                             sx={{
                                 bottom: "2px",
