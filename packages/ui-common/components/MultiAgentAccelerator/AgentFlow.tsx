@@ -20,7 +20,7 @@ import CloseIcon from "@mui/icons-material/Close"
 import EditIcon from "@mui/icons-material/Edit"
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
 import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
-import Alert, {AlertColor} from "@mui/material/Alert"
+import {AlertColor} from "@mui/material/Alert"
 import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -83,6 +83,7 @@ import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetwo
 import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
+import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
 // #region: Types
 export interface AgentFlowProps {
@@ -451,6 +452,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
     }, [])
 
+    const handleDismissBanner = useCallback(() => {
+        clearTimeout(bannerTimeoutRef.current)
+        setDockBanner(null)
+    }, [])
+
     // Show a dock banner. Success/cancel banners auto-dismiss; error banners persist until dismissed.
     const showDockBanner = useCallback((banner: {severity: AlertColor; title: string; detail: string}) => {
         clearTimeout(bannerTimeoutRef.current)
@@ -458,11 +464,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         if (banner.severity !== "error") {
             bannerTimeoutRef.current = setTimeout(() => setDockBanner(null), DOCK_BANNER_AUTO_DISMISS_MS)
         }
-    }, [])
-
-    const handleDismissBanner = useCallback(() => {
-        clearTimeout(bannerTimeoutRef.current)
-        setDockBanner(null)
     }, [])
 
     const handleStopClick = useCallback(() => {
@@ -1103,13 +1104,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 >
                     {/* Status banner: shown after an apply succeeds, is cancelled, or fails */}
                     {dockBanner && (
-                        <Alert
+                        <MUIAlert
+                            closeable
                             id={`${id}-dock-banner`}
-                            severity={dockBanner.severity}
-                            variant="standard"
                             onClose={handleDismissBanner}
+                            severity={dockBanner.severity}
                             sx={{
                                 borderRadius: 0,
+                                // Override MUIAlert's default 1rem bottom margin so the banner sits flush
+                                // against the dock header below it.
+                                marginBottom: 0,
                                 paddingTop: 0,
                                 paddingBottom: 0,
                                 // Match the dock header's right padding so the banner's close X lines up
@@ -1137,7 +1141,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 <strong>{dockBanner.title}</strong>
                                 {` ${dockBanner.detail}`}
                             </Typography>
-                        </Alert>
+                        </MUIAlert>
                     )}
                     {/* Dock header */}
                     <Box
