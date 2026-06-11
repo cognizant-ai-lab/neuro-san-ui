@@ -27,6 +27,10 @@ export const isAnthropicKeyValid = async (key: string) => {
                 Accept: "application/json",
                 "anthropic-version": "2023-06-01",
                 "X-Api-Key": key,
+                // Request vendor to allow CORS for this endpoint
+                // Reference: https://simonwillison.net/2024/Aug/23/anthropic-dangerous-direct-browser-access/
+                // The request will be rejected without this.
+                "anthropic-dangerous-direct-browser-access": "true",
             },
         })
 
