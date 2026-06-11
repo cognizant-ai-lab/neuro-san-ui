@@ -332,8 +332,16 @@ describe("SideBar", () => {
 
         // The download and edit action buttons should be disabled while the network is expired
         const treeItem = tempNetworkName.closest('[role="treeitem"]')
-        expect(within(treeItem as HTMLElement).getByTestId("DownloadIcon").closest("button")).toBeDisabled()
-        expect(within(treeItem as HTMLElement).getByTestId("EditIcon").closest("button")).toBeDisabled()
+        expect(
+            within(treeItem as HTMLElement)
+                .getByTestId("DownloadIcon")
+                .closest("button")
+        ).toBeDisabled()
+        expect(
+            within(treeItem as HTMLElement)
+                .getByTestId("EditIcon")
+                .closest("button")
+        ).toBeDisabled()
 
         setSelectedNetworkMock.mockClear()
 
