@@ -18,7 +18,7 @@ interface ApiKeyInputProps {
     readonly onSave: (key: string) => void
     readonly onTest: (key: string) => Promise<boolean>
     readonly persistedValue: string
-    readonly placeholder?: string
+    readonly placeholder: string
     readonly vendor: string
 }
 
@@ -35,10 +35,10 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     placeholder,
     vendor,
 }) => {
-    const [inputValue, setInputValue] = useState<string>(persistedValue)
+    const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
-    const [forgetKeyConfirmationModalOpen, setForgetKeyConfirmationModalOpen] = useState<boolean>(false)
+    const [confirmationDialogOpen, setConfirmationDialogOpen] = useState<boolean>(false)
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         setInputValue(e.target.value)
@@ -46,6 +46,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleOnTest = async () => {
         setIsValidating(true)
+        setKeyValidated(null)
         try {
             const isValid = await onTest(inputValue)
             setKeyValidated(isValid)
@@ -57,8 +58,11 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     const disableActions = !inputValue || inputValue === persistedValue || isValidating
 
     return (
-        <Box sx={{display: "flex", alignItems: "center", width: "100%", gap: 2}}>
-            {forgetKeyConfirmationModalOpen ? (
+        <Box
+            data-testid={`${id}-input`}
+            sx={{display: "flex", alignItems: "center", width: "100%", gap: 2}}
+        >
+            {confirmationDialogOpen ? (
                 <ConfirmationModal
                     id={`${id}-forget-key-confirmation-modal`}
                     content={
@@ -66,10 +70,10 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                         " the key again to use networks that require it. Are you sure you want to continue?"
                     }
                     handleCancel={() => {
-                        setForgetKeyConfirmationModalOpen(false)
+                        setConfirmationDialogOpen(false)
                     }}
                     handleOk={() => {
-                        setForgetKeyConfirmationModalOpen(false)
+                        setConfirmationDialogOpen(false)
                         setInputValue("")
                         forgetKey()
                     }}
@@ -93,9 +97,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 />
             </Box>
 
-            <FormLabel sx={{width: 90, flexShrink: 0}}>{vendor}</FormLabel>
+            <FormLabel
+                id={`${id}-label`}
+                sx={{width: 90, flexShrink: 0}}
+            >
+                {vendor}
+            </FormLabel>
 
             <TextField
+                aria-labelledby={`${id}-label`}
                 autoComplete="off"
                 placeholder={placeholder}
                 size="small"
@@ -152,7 +162,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 Save
             </Button>
             <Button
-                onClick={() => setForgetKeyConfirmationModalOpen(true)}
+                onClick={() => setConfirmationDialogOpen(true)}
                 size="small"
                 variant="contained"
                 disabled={!persistedValue || isValidating}
