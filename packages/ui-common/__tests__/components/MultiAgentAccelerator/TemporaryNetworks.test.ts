@@ -17,12 +17,14 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
+    AGENT_NETWORK_HOCON,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../../components/MultiAgentAccelerator/const"
 import {
     AgentReservation,
     convertReservationsToNetworks,
+    extractNetworksFromChunk,
     extractTemporaryNetworks,
     isEditableAgent,
     isTemporaryNetwork,
@@ -196,6 +198,18 @@ describe("extractTemporaryNetworks", () => {
         expect(network.agentNetworkName).toBe("res-abc")
     })
 
+    it("propagates the networkHocon from sly_data onto the resulting networks", () => {
+        const reservation = makeReservationObj("res-abc")
+        const hocon = 'include required(classpath("base.conf"))'
+        const message = makeFrameworkMessage({
+            [AGENT_RESERVATIONS_KEY]: [reservation],
+            [AGENT_NETWORK_HOCON]: hocon,
+        })
+
+        const [network] = extractTemporaryNetworks(message)
+        expect(network.networkHocon).toBe(hocon)
+    })
+
     it("reads agentNetworkDefinition from sly_data when no override is given", () => {
         const reservation = makeReservationObj("res-abc")
         const definition = [{origin: "agent1", tools: [] as string[]}]
@@ -288,5 +302,66 @@ describe("mergeNetworks", () => {
         mergeNetworks(target, [incoming])
 
         expect(target).toHaveLength(1)
+    })
+})
+
+describe("extractNetworksFromChunk", () => {
+    withStrictMocks()
+
+    // Wraps a ChatMessage in the streamed-chunk envelope the backend sends ({"response": {...}}).
+    const makeChunk = (slyData: Record<string, unknown>): string =>
+        JSON.stringify({response: {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: slyData}})
+
+    it("returns accumulated unchanged when the chunk is not valid JSON", () => {
+        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
+        expect(extractNetworksFromChunk("not-json{", [], accumulated)).toBe(accumulated)
+    })
+
+    it("returns accumulated unchanged when the chunk yields no reservations", () => {
+        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
+        const chunk = makeChunk({}) // AGENT_FRAMEWORK message with no reservations
+        expect(extractNetworksFromChunk(chunk, [], accumulated)).toBe(accumulated)
+    })
+
+    it("merges networks found in the chunk into the accumulated list", () => {
+        const reservation = makeReservation("brand_new-7876642e-fe75-4d44-a61e-300688a1a6c5")
+        const chunk = makeChunk({[AGENT_RESERVATIONS_KEY]: [reservation]})
+
+        const result = extractNetworksFromChunk(chunk, [], [])
+
+        expect(result).toHaveLength(1)
+        expect(result[0].reservation).toEqual(reservation)
+        expect(result[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`)
+    })
+
+    it("keeps the later-expiring reservation when merging a chunk with an existing network of the same name", () => {
+        const older = convertReservationsToNetworks(
+            [{reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 100}],
+            null
+        )
+        const chunk = makeChunk({
+            [AGENT_RESERVATIONS_KEY]: [{reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 999}],
+        })
+
+        const result = extractNetworksFromChunk(chunk, [], older)
+
+        expect(result).toHaveLength(1)
+        expect(result[0].reservation.expiration_time_in_seconds).toBe(999)
+    })
+
+    it("returns accumulated and warns when processing the chunk throws", () => {
+        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
+        // Reservations is a non-array value, so the downstream `.map` call throws and is caught.
+        const chunk = makeChunk({[AGENT_RESERVATIONS_KEY]: "not-an-array"})
+
+        const result = extractNetworksFromChunk(chunk, [], accumulated)
+
+        expect(result).toBe(accumulated)
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("Failed to process chunk from network designer"),
+            expect.anything()
+        )
+        consoleWarnSpy.mockRestore()
     })
 })
