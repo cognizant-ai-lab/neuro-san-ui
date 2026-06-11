@@ -1,5 +1,6 @@
 import CheckIcon from "@mui/icons-material/Check"
 import ClearIcon from "@mui/icons-material/Clear"
+import ErrorIcon from "@mui/icons-material/Error"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import FormLabel from "@mui/material/FormLabel"
@@ -21,6 +22,9 @@ interface ApiKeyInputProps {
     readonly vendor: string
 }
 
+/**
+ * Component for inputting an API key for a given vendor, with the ability to test the key and forget the saved key.
+ */
 export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     forgetKey,
     id,
@@ -69,7 +73,8 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                         setInputValue("")
                         forgetKey()
                     }}
-                    title="Reset to default settings"
+                    okBtnLabel="Yes, forget key"
+                    title={`Forget ${vendor} API key?`}
                 />
             ) : null}
             <Box
@@ -101,7 +106,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                                 <IconButton
                                     aria-label="Clear input"
                                     edge="end"
-                                    onClick={() => setForgetKeyConfirmationModalOpen(true)}
+                                    onClick={() => setInputValue("")}
                                     size="small"
                                 >
                                     <ClearIcon fontSize="small" />
@@ -120,16 +125,13 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 sx={{
                     width: 24,
                     height: 24,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     color: (theme) => (keyValidated ? theme.palette.success.main : theme.palette.error.main),
                 }}
             >
                 {keyValidated === null ? null : keyValidated ? (
                     <CheckIcon fontSize="small" />
                 ) : (
-                    <ClearIcon fontSize="small" />
+                    <ErrorIcon fontSize="small" />
                 )}
             </Box>
             <Button
@@ -137,7 +139,6 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 loading={isValidating}
                 onClick={handleOnTest}
                 size="small"
-                sx={{height: (theme) => theme.spacing(5)}}
                 variant="contained"
             >
                 Test
@@ -146,10 +147,17 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 onClick={() => onSave(inputValue)}
                 size="small"
                 variant="contained"
-                sx={{height: (theme) => theme.spacing(5)}}
                 disabled={disableActions}
             >
                 Save
+            </Button>
+            <Button
+                onClick={() => setForgetKeyConfirmationModalOpen(true)}
+                size="small"
+                variant="contained"
+                disabled={!persistedValue || isValidating}
+            >
+                Forget
             </Button>
         </Box>
     )
