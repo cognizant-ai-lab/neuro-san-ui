@@ -204,11 +204,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         <span>
                                             <ActionIconButton
                                                 onClick={(e) => {
+                                                    // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-                                                    if (isExpired) {
-                                                        return
-                                                    }
-
                                                     const fileName = `${toSafeFilename(labelString)}.hocon`
                                                     downloadFile(networkHocon, fileName)
                                                 }}
