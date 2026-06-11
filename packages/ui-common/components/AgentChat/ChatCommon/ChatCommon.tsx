@@ -32,7 +32,6 @@ import ListItemText from "@mui/material/ListItemText"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
 import {useTheme} from "@mui/material/styles"
-import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {isEmpty} from "lodash-es"
 import {
@@ -60,8 +59,8 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {LLMProvider} from "../../../state/Settings"
 import {hasOnlyWhitespace} from "../../../utils/text"
-import {LLMProvider} from "../../MultiAgentAccelerator/Types"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -72,97 +71,120 @@ export interface ChatCommonProps {
      * HTML id to use for the outer component
      */
     readonly id: string
+
     /**
      * The current username of the logged-in user. Used for fetching things from APIs mainly
      */
     readonly currentUser: string
+
     /**
      * Path to image for user avatar
      */
     readonly userImage: string
+
     /**
      * Function to set the state of the component to indicate whether we are awaiting a response from the LLM
      */
     readonly setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
+
     /**
      * Whether we are currently awaiting a response from the LLM
      */
     readonly isAwaitingLlm: boolean
+
     /**
      * The agent to send the request to.
      */
     readonly targetAgent: string
+
     /**
      * Special endpoint for legacy agents since they do not have a single unified endpoint like Neuro-san agents.
      */
     readonly legacyAgentEndpoint?: string
+
     /**
      * Optional extra callback for containers to do extra things with the chunks as they are received. Parent
      * returns true if it believes the chunk indicates that the interaction with the agent was successful and no
      * retries are necessary.
      */
     readonly onChunkReceived?: (chunk: string) => boolean
+
     /**
      * Will be called when the streaming is started, before any chunks are received.
      */
     readonly onStreamingStarted?: () => void
+
     /**
      * Will be called when the streaming is complete, whatever the reason for termination (normal or error)
      */
     readonly onStreamingComplete?: () => void
+
     /**
      * Optional callback to modify the query before sending it to the server. This is useful for adding extra
      * information to the query before sending it or totally modifying the user query before sending.
      */
     readonly onSend?: (query: string) => string
+
     /**
      * Lifted state for parent to manage the previous response from the agent.
      */
     readonly setPreviousResponse?: (agent: CombinedAgentType, response: string) => void
+
     /**
      * Optional placeholders for input to agents.
      */
     readonly agentPlaceholders?: Partial<Record<CombinedAgentType, string>>
+
     /**
      * Optional greetings for specific agents to display
      */
     readonly customAgentGreetings?: Partial<Record<CombinedAgentType, string>>
+
     /**
      * Extra parameters to send to the server to be forwarded to the agent or used by the server.
      * @note This is only used for legacy agents to aid in UI consolidation, only Neuro-san agents.
      */
     readonly extraParams?: Record<string, unknown>
+
     /**
      * Background color for the chat window. Helps when there are multiple chats on a single page.
      */
     readonly backgroundColor?: string
+
     /**
      * If present, the chat window will have a title bar with this title.
      */
     readonly title?: string
+
     /**
      * If present, the chat window will have a close button that will call this function when clicked.
      */
     readonly onClose?: () => void
+
     /**
      * The neuro-san server URL
      */
     readonly neuroSanURL?: string
+
     /**
      * Extra sly_data entries to merge into each outgoing request. Used by parent components (e.g. temp networks)
      * to re-supply data that lives outside the IndexedDB slyData store (e.g. localStorage).
      */
     readonly extraSlyData?: Record<string, unknown>
+
     /**
      * Optional description of the network to display in the UI.
      */
     readonly networkDescription?: string
+
     /**
      * Sample queries for the current network that the user can "click to send"
      */
     readonly sampleQueries?: string[]
 
-    providerKeysRequired?: ReadonlySet<LLMProvider>
+    readonly providerKeysRequired?: ReadonlySet<LLMProvider>
+
+    readonly apiKeys?: Partial<Record<"OpenAI" | "Anthropic", string>>
 }
 
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
@@ -198,6 +220,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const {
         customAgentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
+        apiKeys,
         backgroundColor,
         currentUser,
         extraParams,
@@ -764,26 +787,32 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [handleStop, handleClearChat]
     )
 
-    const getNoAgentOverlay = () => (
-        <Tooltip
-            title="Please select a Network from the list to start the chat."
-            placement="auto"
+    const getErrorOverlay = (errorText: string) => (
+        <Box
+            id="chat-disabled-overlay"
+            sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: theme.zIndex.modal - 1,
+                cursor: "not-allowed",
+                // Capture all pointer events to prevent interaction with the chat when no agent is selected
+                pointerEvents: "all",
+            }}
         >
-            <Box
-                id="chat-disabled-overlay"
+            <Typography
                 sx={{
                     position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: theme.zIndex.modal - 1,
-                    cursor: "not-allowed",
-                    // Capture all pointer events to prevent interaction with the chat when no agent is selected
-                    pointerEvents: "all",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
                 }}
-            />
-        </Tooltip>
+            >
+                {errorText}
+            </Typography>
+        </Box>
     )
 
     const getTitle = () => (
@@ -852,6 +881,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const handleToggleWrapOutput = () => {
         setShouldWrapOutput((prev) => !prev)
     }
+
+    const missingKeys = providerKeysRequired ? [...providerKeysRequired].filter((provider) => !apiKeys?.[provider]) : []
 
     const getOptionsMenu = () => (
         <Menu
@@ -954,8 +985,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     )}
                 </Box>
                 <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>{agentGreeting}</Box>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>Keys required: {providerKeysRequired}</Box>
-
                 <SampleQueries
                     disabled={isAwaitingLlm}
                     handleSend={handleSend}
@@ -1131,7 +1160,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 position: "relative",
             }}
         >
-            {targetAgent ? getChatBox() : getNoAgentOverlay()}
+            {targetAgent
+                ? missingKeys?.length === 0
+                    ? getChatBox()
+                    : getErrorOverlay(
+                          `API key(s) required for: ${missingKeys.join(", ")}. ` +
+                              "Please add the required key(s) in Settings to use this Network."
+                      )
+                : getErrorOverlay("Please select a Network from the list to start the chat.")}
         </Box>
     )
 }
