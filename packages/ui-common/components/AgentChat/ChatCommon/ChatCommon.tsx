@@ -418,7 +418,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     text: errorMessage,
                 })
                 succeeded.current = false
-            } else if (chatMessage?.text?.trim().length > 0 || chatMessage.structure) {
+            } else if (chatMessage?.text?.trim().length > 0 || !isEmpty(chatMessage.structure)) {
                 // Not an error, so output it if it has text or a structure.
                 // This is the normal happy path for an incoming message.
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
@@ -646,18 +646,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Extract final answer from that turn
         const finalAnswerTurn = currentTurns[idx]
-        const hasFinalAnswer = finalAnswerTurn.text?.trim().length > 0 || !isEmpty(finalAnswerTurn.structure)
-        if (hasFinalAnswer) {
-            // Update relevant turn to be the final answer
-            setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
+        // Update relevant turn to be the final answer
+        setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
 
-            // Save final answer to chat history
-            const finalAnswerContent = finalAnswerTurn.text || JSON.stringify(finalAnswerTurn.structure, null, 2)
-            updateChatHistory(selectedNetwork, [new AIMessage({content: finalAnswerContent, id: uuid()})])
-        } else {
-            // No final answer found, display error
-            setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
-        }
+        // Save final answer to chat history
+        const finalAnswerContent = finalAnswerTurn.text || JSON.stringify(finalAnswerTurn.structure, null, 2)
+        updateChatHistory(selectedNetwork, [new AIMessage({content: finalAnswerContent, id: uuid()})])
     }, [selectedNetwork, updateChatHistory])
 
     const handleSend = useCallback(
@@ -763,7 +757,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
     const getPlaceholder = () =>
-        !selectedNetwork ? null : agentPlaceholders[selectedNetwork] || `Chat with ${agentDisplayName}`
+        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${agentDisplayName}` : null
 
     const handleClearChat = useCallback(() => {
         setTurns([])

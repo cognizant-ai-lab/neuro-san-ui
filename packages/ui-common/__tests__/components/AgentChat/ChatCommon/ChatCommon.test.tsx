@@ -792,7 +792,22 @@ describe("ChatCommon", () => {
 
         // No final answer from a Neuro-san agent; this is an error
         const alertItem = screen.getByRole("alert")
-        within(alertItem).getByText(/final answer/u)
+        within(alertItem).getByText(/did not provide a final answer/u)
+    })
+
+    it("Should handle when Neuro-san agents fail to send a final answer", async () => {
+        renderChatCommonComponent()
+
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(getResponseMessage(ChatMessageType.AGENT, "response")))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/did not provide a final answer/u)
     })
 
     it("Should handle 'show thinking' section correctly", async () => {

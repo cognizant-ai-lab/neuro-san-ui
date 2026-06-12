@@ -244,6 +244,25 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
     })
 
+    it("doesn't change palette if user clicks again on the existing option", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Find button to select "GrayScale" palette
+        const grayScaleButton = screen.getByRole("button", {name: /grayScale-palette-button/u})
+        await user.click(grayScaleButton)
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+
+        // Click the same button again
+        await user.click(grayScaleButton)
+
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+    })
+
     it("Allows selecting and unselecting auto agent icon color", async () => {
         // Set non-default value first
         useSettingsStore.getState().updateSettings({
