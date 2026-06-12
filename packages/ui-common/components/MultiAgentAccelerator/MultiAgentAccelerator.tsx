@@ -344,17 +344,17 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
 
     // Whether any API keys are required
-    const shouldIncludeApiKeys = providerKeysRequired.size > 0
+    const anyApiKeysRequired = providerKeysRequired.size > 0
 
     // Build base extraSlyData
     const baseExtraSlyData = buildExtraSlyData()
 
     // Add API keys to extraSlyData if needed, merging with baseExtraSlyData if it exists
     const extraSlyData: Record<string, unknown> | undefined =
-        shouldIncludeApiKeys || baseExtraSlyData
+        anyApiKeysRequired || baseExtraSlyData
             ? {
                   ...baseExtraSlyData,
-                  ...(shouldIncludeApiKeys ? getApiKeys() : {}),
+                  ...(anyApiKeysRequired ? getApiKeys() : {}),
               }
             : undefined
 

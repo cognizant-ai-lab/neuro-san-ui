@@ -1208,18 +1208,28 @@ describe("MultiAgentAccelerator", () => {
             })
         })
 
-        it("should handle networks that require BYOK", async () => {
+        const badProvider = "not_a_known_provider"
+
+        it.each([
+            {required: ["openai_api_key"]},
+            {required: ["openai_api_key", "anthropic_api_key"]},
+            {required: ["anthropic_api_key"]},
+            {required: [badProvider]},
+            {required: []},
+        ])("should handle networks that require BYOK for $required", async ({required}) => {
             ;(getAgentFunction as jest.Mock).mockResolvedValue({
                 function: {
                     sly_data_schema: {
                         properties: {
                             llm_config: {
-                                required: ["openai_api_key"],
+                                required,
                             },
                         },
                     },
                 },
             })
+
+            const debugSpy = jest.spyOn(console, "warn").mockImplementation()
 
             // Add existing API key to store
             const anthropicKey = "anthropic-key"
@@ -1236,12 +1246,64 @@ describe("MultiAgentAccelerator", () => {
 
             await screen.findByText(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
-            // We simulated that this network requires an OpenAI key but we only provided Anthropic, so ChatCommon
+            const expectedMissingKeys = required.includes("openai_api_key") ? ["OpenAI"] : []
+
+            // We simulated that this network requires an OpenAI key, but we only provided Anthropic, so ChatCommon
             // should have been notified about the missing key
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    missingApiKeys: ["OpenAI"],
+                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                    missingApiKeys: expectedMissingKeys,
                 })
+            )
+
+            if (required[0] === badProvider) {
+                // eslint-disable-next-line jest/no-conditional-expect
+                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(badProvider))
+            }
+        })
+
+        it.each([
+            {},
+            {function: {}},
+            {function: {sly_data_schema: {}}},
+            {function: {sly_data_schema: {properties: {}}}},
+            {function: {sly_data_schema: {properties: {llm_config: {}}}}},
+            {function: {sly_data_schema: {properties: {llm_config: {required: []}}}}},
+        ])("handles missing items in the BYOK info from the backend", async (byokResponse) => {
+            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: "anthropic-key"}})
+            ;(getAgentFunction as jest.Mock).mockResolvedValue(byokResponse)
+            renderMultiAgentAcceleratorPage()
+
+            // Search for something known to make sure rendering settled
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            await act(async () => {
+                setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+            })
+
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                    missingApiKeys: [],
+                })
+            )
+        })
+
+        it("handles an error when fetching agent function", async () => {
+            jest.spyOn(console, "warn").mockImplementation()
+            ;(getAgentFunction as jest.Mock).mockRejectedValue(new Error("Failed to fetch agent function"))
+            renderMultiAgentAcceleratorPage()
+
+            // Search for something known to make sure rendering settled
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await act(async () => {
+                setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+            })
+
+            expect(console.warn).toHaveBeenCalledWith(
+                expect.stringContaining(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`),
+                expect.any(Error)
             )
         })
     })
