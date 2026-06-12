@@ -293,7 +293,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     </Typography>
                     <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
                         <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
-                        {}
                         <Tooltip
                             title={
                                 "Hides most of the UI during agent network animations, " +
