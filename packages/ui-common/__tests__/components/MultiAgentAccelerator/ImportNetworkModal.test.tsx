@@ -171,7 +171,7 @@ describe("ImportNetworkModal", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
         const file = new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"})
-        fireEvent.change(fileInput, {target: {files: [file]}})
+        await user.upload(fileInput, file)
 
         // Should advance to the review step and parse successfully
         await screen.findByTestId("CheckCircleOutlinedIcon")
