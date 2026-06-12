@@ -1,12 +1,15 @@
 import CheckIcon from "@mui/icons-material/Check"
 import ClearIcon from "@mui/icons-material/Clear"
 import ErrorIcon from "@mui/icons-material/Error"
+import Visibility from "@mui/icons-material/Visibility"
+import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import FormLabel from "@mui/material/FormLabel"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
 import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../Common/ConfirmationModal"
@@ -39,6 +42,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
     const [confirmationDialogOpen, setConfirmationDialogOpen] = useState<boolean>(false)
+    const [showKey, setShowKey] = useState<boolean>(false)
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         setKeyValidated(null)
@@ -114,12 +118,30 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             <TextField
                 aria-labelledby={`${id}-label`}
                 autoComplete="off"
+                onChange={handleValueChange}
                 placeholder={placeholder}
                 size="small"
                 slotProps={{
                     input: {
                         endAdornment: (
                             <InputAdornment position="end">
+                                <Tooltip title={showKey ? "Hide API key" : "Show API key"}>
+                                    <span>
+                                        <IconButton
+                                            aria-label="toggle key visibility"
+                                            disabled={!inputValue}
+                                            onClick={() => setShowKey(!showKey)}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            size="small"
+                                        >
+                                            {showKey ? (
+                                                <VisibilityOff fontSize="small" />
+                                            ) : (
+                                                <Visibility fontSize="small" />
+                                            )}
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
                                 <IconButton
                                     aria-label="Clear input"
                                     edge="end"
@@ -132,10 +154,10 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                         ),
                     },
                 }}
-                value={inputValue}
-                onChange={handleValueChange}
                 sx={{flex: 1}}
-                type="password"
+                // Type depends on whether we're showing or hiding the key
+                type={showKey ? "text" : "password"}
+                value={inputValue}
                 variant="outlined"
             />
             <Box

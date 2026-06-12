@@ -174,6 +174,40 @@ describe("SettingsDialog", () => {
 
             expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBeFalsy()
         })
+
+        it("allows a user to show/hide keys", async () => {
+            // set an existing key value
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    OpenAI: TEST_API_KEY,
+                },
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyContainer = screen.getByTestId("settings-dialog-openai-input")
+            const input = within(apiKeyContainer).getByPlaceholderText("sk-...")
+
+            // Assert initial state: masked
+            expect(input).toHaveAttribute("type", "password")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Click the toggle button
+            const showHideButton = within(apiKeyContainer).getByRole("button", {name: "toggle key visibility"})
+            await user.click(showHideButton)
+
+            // Now should be unmasked (regular text control)
+            expect(input).toHaveAttribute("type", "text")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Assert the Tooltip change
+            expect(screen.getByLabelText("Hide API key")).toBeInTheDocument()
+        })
     })
 
     it.each([
