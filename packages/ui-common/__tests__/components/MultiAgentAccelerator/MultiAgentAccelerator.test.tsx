@@ -399,6 +399,124 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
+    it("should toast an error when the imported file contains no agents", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport("Empty Network", JSON.stringify({agents: {}}))
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining('does not contain an "agents" object')
+            )
+        })
+        // The designer should never be contacted when the definition is empty
+        expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
+    })
+
+    it("should toast an error when the network designer returns no reservation", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport(
+                "Reservationless Network",
+                JSON.stringify({
+                    tools: [{name: "frontman", function: {description: "d"}, instructions: "i", tools: []}],
+                })
+            )
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining("did not return a reservation")
+            )
+        })
+        expect(sendNetworkDesignerUpsert).toHaveBeenCalled()
+    })
+
+    it("should toast an error when conversion of the imported file throws", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // notifySaveError also logs via console.error before surfacing the notification.
+        jest.spyOn(console, "error").mockImplementation()
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        // Not valid JSON — hoconJsonToNetworkDefinition's JSON.parse throws, exercising the catch branch.
+        await act(async () => {
+            onImport("Broken Network", "this is not json")
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to update network "Broken Network"')
+            )
+        })
+        expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
+    })
+
+    it("should pick the frontman as the agent not referenced as a tool by any other agent", async () => {
+        // The designer mock returns no reservation, which surfaces a notification (logged via console.debug).
+        jest.spyOn(console, "debug").mockImplementation()
+        const upsertMock = sendNetworkDesignerUpsert as jest.Mock
+        upsertMock.mockResolvedValue([])
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        // boss references worker as a tool; worker has no tools key (covers `entry.tools ?? []`).
+        // Therefore boss is the frontman.
+        await act(async () => {
+            onImport(
+                "Two Agent Network",
+                JSON.stringify({
+                    agents: {
+                        boss: {tools: ["worker"], instructions: "lead"},
+                        worker: {instructions: "work"},
+                    },
+                })
+            )
+        })
+
+        await waitFor(() => expect(upsertMock).toHaveBeenCalled())
+        // Third positional arg to sendNetworkDesignerUpsert is the frontman name.
+        expect(upsertMock.mock.calls[0][2]).toBe("boss")
+    })
+
+    it("should fall back to the first entry as frontman when every agent is referenced as a tool", async () => {
+        // The designer mock returns no reservation, which surfaces a notification (logged via console.debug).
+        jest.spyOn(console, "debug").mockImplementation()
+        const upsertMock = sendNetworkDesignerUpsert as jest.Mock
+        upsertMock.mockResolvedValue([])
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        // Each agent is listed as a tool of the other, so no clear frontman exists; falls back to the first.
+        await act(async () => {
+            onImport(
+                "Cyclic Network",
+                JSON.stringify({
+                    agents: {
+                        alpha: {tools: ["beta"], instructions: "a"},
+                        beta: {tools: ["alpha"], instructions: "b"},
+                    },
+                })
+            )
+        })
+
+        await waitFor(() => expect(upsertMock).toHaveBeenCalled())
+        expect(upsertMock.mock.calls[0][2]).toBe("alpha")
+    })
+
     it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
         ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
 

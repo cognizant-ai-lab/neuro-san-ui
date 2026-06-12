@@ -22,6 +22,7 @@ import {
     filenameToNetworkName,
     findNonConflictingName,
     formatFileSize,
+    hoconJsonToNetworkDefinition,
     IMPORT_MODAL_ACCEPTED_EXTENSIONS,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
     ImportNetworkModal,
@@ -166,6 +167,18 @@ describe("ImportNetworkModal", () => {
         expect(fileInput.accept).toBe(".hocon,.conf,.json")
     })
 
+    it("should process a file chosen via the hidden file input", async () => {
+        renderModal()
+        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const file = new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"})
+        fireEvent.change(fileInput, {target: {files: [file]}})
+
+        // Should advance to the review step and parse successfully
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        // The input value is reset so the same file can be re-selected
+        expect(fileInput.value).toBe("")
+    })
+
     // Step 2: Review
     it("should show loading spinner after a file is dropped", async () => {
         renderModal()
@@ -194,10 +207,11 @@ describe("ImportNetworkModal", () => {
     it("should show parse error banner when file content is unparseable", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        // Drop a file whose content cannot be repaired at all
-        dropFile(dropZone, "bad.json", "not json at all !!!! @@@")
-        // Should show an error state (no Continue button)
-        await waitFor(() => expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument())
+        // Empty content is genuinely unparseable (jsonrepair throws on an empty string).
+        dropFile(dropZone, "bad.json", "")
+        // The error banner appears and there is no Continue button to advance.
+        await screen.findByText(/Parse error:/u)
+        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
     })
 
     it("should go back to step 1 from step 2 when Back is clicked", async () => {
@@ -207,6 +221,17 @@ describe("ImportNetworkModal", () => {
         const backBtn = await screen.findByRole("button", {name: /^Back$/u})
         await user.click(backBtn)
         await screen.findByRole("button", {name: /drop zone/iu})
+    })
+
+    it("should show an error when the file cannot be read", async () => {
+        // withStrictMocks() restores all mocks before each test, so no manual restore is needed.
+        jest.spyOn(FileReader.prototype, "readAsText").mockImplementation(function readAsTextMock(this: FileReader) {
+            this.dispatchEvent(new Event("error"))
+        })
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "unreadable.json", '{"agents": {}}')
+        await screen.findByText(/Failed to read the file\./u)
     })
 
     // Step 3: Confirm
@@ -291,6 +316,31 @@ describe("ImportNetworkModal", () => {
         await user.click(await screen.findByRole("button", {name: /Import network/u}))
         expect(onCloseMock).toHaveBeenCalled()
     })
+
+    it("should let the user edit the network name on the confirm step", async () => {
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput.value).toBe("Ecommerce Support")
+
+        await user.clear(nameInput)
+        await user.type(nameInput, "Renamed Network")
+        expect(nameInput.value).toBe("Renamed Network")
+    })
+
+    it("should send the edited name (underscored) to onImport", async () => {
+        renderModal({onImport: onImportMock})
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "my_network.json", '{"agents": {}}')
+        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        await user.clear(nameInput)
+        await user.type(nameInput, "Custom Name")
+        await user.click(await screen.findByRole("button", {name: /Import network/u}))
+        expect(onImportMock).toHaveBeenCalledWith("Custom_Name", expect.stringContaining('"agents"'))
+    })
 })
 
 // #region: Utility function unit tests
@@ -314,6 +364,113 @@ describe("parseNetworkFileContent", () => {
         const result = parseNetworkFileContent("::::: not json :::::")
         // Accept either success or failure — jsonrepair is lenient
         expect(result).toHaveProperty("success")
+    })
+
+    it("should fail on content that cannot be repaired", () => {
+        // An empty string is genuinely unparseable.
+        const result = parseNetworkFileContent("")
+        expect(result.success).toBe(false)
+        expect((result as {success: false; error: string}).error).toMatch(/Unexpected end/u)
+    })
+
+    it("should pre-process HOCON: comments, includes, triple-quoted strings, and substitutions", () => {
+        const hocon = `# a comment line
+include "llm_config.hocon"
+{
+    prefix = """Hello"""
+    "agents": {
+        "frontman": {
+            "instructions": """\${prefix} world \${unknown_inner}""",
+            "name": "foo" "bar"
+        }
+    }
+    "leftover": \${prefix}
+    "missing": \${unknown_outer}
+}`
+        const result = parseNetworkFileContent(hocon)
+        expect(result.success).toBe(true)
+        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
+        const agents = parsed["agents"] as Record<string, Record<string, unknown>>
+        // ${prefix} expanded inside the triple-quoted string; the unknown var expands to ""
+        expect(agents["frontman"]["instructions"]).toBe("Hello world ")
+        // Adjacent strings on the same line are concatenated
+        expect(agents["frontman"]["name"]).toBe("foobar")
+        // Standalone ${prefix} resolves; an unknown standalone var becomes an empty string
+        expect(parsed["leftover"]).toBe("Hello")
+        expect(parsed["missing"]).toBe("")
+    })
+})
+
+describe("hoconJsonToNetworkDefinition", () => {
+    it("should convert the native HOCON tools[] format", () => {
+        const json = JSON.stringify({
+            tools: [
+                {
+                    name: "frontman",
+                    function: {description: "The boss"},
+                    instructions: "Lead the team",
+                    tools: ["helper"],
+                    display_as: "llm_agent",
+                    metadata: {color: "blue"},
+                },
+            ],
+        })
+        expect(hoconJsonToNetworkDefinition(json)).toEqual([
+            {
+                origin: "frontman",
+                tools: ["helper"],
+                display_as: "llm_agent",
+                metadata: {color: "blue"},
+                instructions: "Lead the team",
+                description: "The boss",
+            },
+        ])
+    })
+
+    it("should default display_as to llm_agent and omit metadata when absent in tools[] format", () => {
+        const json = JSON.stringify({tools: [{name: "solo", instructions: "Work alone"}]})
+        const result = hoconJsonToNetworkDefinition(json)
+        expect(result[0]).toMatchObject({origin: "solo", display_as: "llm_agent", instructions: "Work alone"})
+        expect(result[0]).not.toHaveProperty("metadata")
+    })
+
+    it("should skip tools[] entries without a string name", () => {
+        const json = JSON.stringify({tools: [{name: "valid"}, {instructions: "no name"}]})
+        const result = hoconJsonToNetworkDefinition(json)
+        expect(result).toHaveLength(1)
+        expect(result[0].origin).toBe("valid")
+    })
+
+    it("should convert the exported agents{} dict format", () => {
+        const json = JSON.stringify({
+            agents: {
+                frontman: {
+                    tools: ["helper"],
+                    display_as: "llm_agent",
+                    metadata: {color: "red"},
+                    instructions: "Lead",
+                    description: "Boss agent",
+                },
+            },
+        })
+        expect(hoconJsonToNetworkDefinition(json)).toEqual([
+            {
+                origin: "frontman",
+                tools: ["helper"],
+                display_as: "llm_agent",
+                metadata: {color: "red"},
+                instructions: "Lead",
+                description: "Boss agent",
+            },
+        ])
+    })
+
+    it("should return an empty array when neither tools[] nor agents{} are present", () => {
+        expect(hoconJsonToNetworkDefinition('{"something": "else"}')).toEqual([])
+    })
+
+    it("should return an empty array for an empty agents{} object", () => {
+        expect(hoconJsonToNetworkDefinition('{"agents": {}}')).toEqual([])
     })
 })
 
