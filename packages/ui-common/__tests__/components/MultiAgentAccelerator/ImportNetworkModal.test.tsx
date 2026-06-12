@@ -224,7 +224,6 @@ describe("ImportNetworkModal", () => {
     })
 
     it("should show an error when the file cannot be read", async () => {
-        // withStrictMocks() restores all mocks before each test, so no manual restore is needed.
         jest.spyOn(FileReader.prototype, "readAsText").mockImplementation(function readAsTextMock(this: FileReader) {
             this.dispatchEvent(new Event("error"))
         })

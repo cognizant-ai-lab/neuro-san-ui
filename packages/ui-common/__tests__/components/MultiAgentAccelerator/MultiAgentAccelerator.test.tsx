@@ -399,7 +399,7 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
-    it("should toast an error when the imported file contains no agents", async () => {
+    it("should show an error toast when the imported file contains no agents", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
 
         renderMultiAgentAcceleratorPage()
@@ -410,15 +410,13 @@ describe("MultiAgentAccelerator", () => {
         })
 
         await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining('does not contain an "agents" object')
-            )
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('does not contain an "agents" object'))
         })
         // The designer should never be contacted when the definition is empty
         expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
     })
 
-    it("should toast an error when the network designer returns no reservation", async () => {
+    it("should show an error toast when the network designer returns no reservation", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
         // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
 
@@ -435,14 +433,12 @@ describe("MultiAgentAccelerator", () => {
         })
 
         await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining("did not return a reservation")
-            )
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
         })
         expect(sendNetworkDesignerUpsert).toHaveBeenCalled()
     })
 
-    it("should toast an error when conversion of the imported file throws", async () => {
+    it("should show an error toast when conversion of the imported file throws", async () => {
         const debugSpy = jest.spyOn(console, "debug").mockImplementation()
         // notifySaveError also logs via console.error before surfacing the notification.
         jest.spyOn(console, "error").mockImplementation()
@@ -456,9 +452,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to update network "Broken Network"')
-            )
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update network "Broken Network"'))
         })
         expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
     })
