@@ -33,7 +33,6 @@ import {
     TEST_AGENTS_FOLDER_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
@@ -56,6 +55,7 @@ import {
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
+    getAgentFunction,
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
@@ -211,12 +211,12 @@ jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
             <div
                 id="test-chat-common"
                 data-testid="test-chat-common"
-            />
+            >
+                {props.selectedNetwork}
+            </div>
         )
     },
 }))
-
-window.fetch = mockFetch({})
 
 const renderMultiAgentAcceleratorPage = () =>
     render(
@@ -287,7 +287,7 @@ describe("MultiAgentAccelerator", () => {
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
                     currentUser: MOCK_USER,
-                    targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
+                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
                     neuroSanURL: NEURO_SAN_SERVER_URL,
                     sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
                 })
@@ -855,10 +855,10 @@ describe("MultiAgentAccelerator", () => {
             // Chat history for the deleted network should have been purged from the store (IndexedDB).
             expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
 
-            // ChatCommon's targetAgent should be cleared, proving the active-network deselection branch ran.
+            // ChatCommon's selectedNetwork should be cleared, proving the active-network deselection branch ran.
             expect(chatCommonMock).toHaveBeenLastCalledWith(
                 expect.objectContaining({
-                    targetAgent: null,
+                    selectedNetwork: null,
                 })
             )
         })
@@ -889,10 +889,10 @@ describe("MultiAgentAccelerator", () => {
             // Chat history for the deleted network should have been purged.
             expect(useAgentChatHistoryStore.getState().history[expectedAgentName]).toBeUndefined()
 
-            // Active-network deselection should have run (targetAgent becomes null).
+            // Active-network deselection should have run (selectedNetwork becomes null).
             expect(chatCommonMock).toHaveBeenLastCalledWith(
                 expect.objectContaining({
-                    targetAgent: null,
+                    selectedNetwork: null,
                 })
             )
         })
@@ -1003,7 +1003,7 @@ describe("MultiAgentAccelerator", () => {
             // to verify that the network was selected. There may be a more elegant way to do this.
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    targetAgent: expectedNetworkName,
+                    selectedNetwork: expectedNetworkName,
                 })
             )
 
@@ -1017,7 +1017,7 @@ describe("MultiAgentAccelerator", () => {
 
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    targetAgent: expectedNetworkName,
+                    selectedNetwork: expectedNetworkName,
                 })
             )
 
@@ -1032,7 +1032,7 @@ describe("MultiAgentAccelerator", () => {
             // Verify network was de-selected
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    targetAgent: null,
+                    selectedNetwork: null,
                 })
             )
 
@@ -1144,7 +1144,7 @@ describe("MultiAgentAccelerator", () => {
             await waitFor(() => {
                 expect(chatCommonMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        targetAgent: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                        selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
                         extraSlyData: undefined,
                     })
                 )
@@ -1164,7 +1164,7 @@ describe("MultiAgentAccelerator", () => {
             await waitFor(() => {
                 expect(chatCommonMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        targetAgent: TEMPORARY_NETWORK.agentInfo.agent_name,
+                        selectedNetwork: TEMPORARY_NETWORK.agentInfo.agent_name,
                         extraSlyData: {
                             [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
                             [AGENT_NETWORK_NAME_KEY]: TEMPORARY_NETWORK.agentNetworkName,
@@ -1199,13 +1199,50 @@ describe("MultiAgentAccelerator", () => {
             await waitFor(() => {
                 expect(chatCommonMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        targetAgent: AGENT_NETWORK_DESIGNER_ID,
+                        selectedNetwork: AGENT_NETWORK_DESIGNER_ID,
                         extraSlyData: {
                             [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
                         },
                     })
                 )
             })
+        })
+
+        it("should handle networks that require BYOK", async () => {
+            ;(getAgentFunction as jest.Mock).mockResolvedValue({
+                function: {
+                    sly_data_schema: {
+                        properties: {
+                            llm_config: {
+                                required: ["openai_api_key"],
+                            },
+                        },
+                    },
+                },
+            })
+
+            // Add existing API key to store
+            const anthropicKey = "anthropic-key"
+            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: anthropicKey}})
+
+            renderMultiAgentAcceleratorPage()
+
+            // Search for something known to make sure rendering settled
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            await act(async () => {
+                setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+            })
+
+            await screen.findByText(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+
+            // We simulated that this network requires an OpenAI key but we only provided Anthropic, so ChatCommon
+            // should have been notified about the missing key
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    missingApiKeys: ["OpenAI"],
+                })
+            )
         })
     })
 

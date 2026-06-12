@@ -1,3 +1,4 @@
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {UserEvent} from "@testing-library/user-event"
 import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
@@ -67,14 +68,16 @@ describe("SettingsDialog", () => {
     })
 
     describe("API keys", () => {
-        it("allows user to input and save API keys", async () => {
+        it.each(["dark", "light"] satisfies PaletteMode[])("allows user to input and save API keys", async (mode) => {
             global.fetch = mockFetch({}, true)
 
             render(
-                <SettingsDialog
-                    id="settings-dialog"
-                    isOpen={true}
-                />
+                <ThemeProvider theme={createTheme({palette: {mode}})}>
+                    <SettingsDialog
+                        id="settings-dialog"
+                        isOpen={true}
+                    />
+                </ThemeProvider>
             )
 
             const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
@@ -88,8 +91,6 @@ describe("SettingsDialog", () => {
             const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
             expect(testButton).toBeEnabled()
             await user.click(testButton)
-
-            screen.debug(apiKeyInput)
 
             // Click "Save" to save the API key
             const saveButton = await within(apiKeyInput).findByRole("button", {name: /Save/u})

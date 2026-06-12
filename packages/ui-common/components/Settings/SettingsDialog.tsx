@@ -184,13 +184,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     }
 
     const persistKey = (vendor: LLMProvider, key: string) => {
-        if (key !== apiKeys[vendor]) {
-            updateSettings({
-                apiKeys: {
-                    [vendor]: key,
-                },
-            })
-        }
+        updateSettings({
+            apiKeys: {
+                [vendor]: key,
+            },
+        })
     }
 
     // Effect to keep input in sync with state store
@@ -200,6 +198,23 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const availablePalettes = customer && brandingRangePalette?.length > 0 ? {brand: brandingRangePalette} : PALETTES
     const paletteKeys: PaletteKey[] = Object.keys(availablePalettes) as (keyof typeof availablePalettes)[]
+
+    const apiKeyConfigs = [
+        {
+            vendor: "OpenAI" as LLMProvider,
+            idSuffix: "openai",
+            logo: theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png",
+            onTest: isOpenAIKeyValid,
+            placeholder: "sk-...",
+        },
+        {
+            vendor: "Anthropic" as LLMProvider,
+            idSuffix: "anthropic",
+            logo: "/claude.png",
+            onTest: isAnthropicKeyValid,
+            placeholder: "sk-ant-...",
+        },
+    ]
 
     /* Dev note:
         Before you go removing the "useless" spans in code below that wrap MUI elements: they are required because 
@@ -254,28 +269,19 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         API Keys
                     </Typography>
                     <Box sx={{display: "flex", flexDirection: "column", gap: 1.5}}>
-                        <ApiKeyInput
-                            forgetKey={() => persistKey("OpenAI", "")}
-                            id={`${id}-openai`}
-                            key="openai"
-                            logo={theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png"}
-                            onSave={(key: string): void => persistKey("OpenAI", key)}
-                            onTest={(key: string): Promise<boolean> => isOpenAIKeyValid(key)}
-                            persistedValue={apiKeys.OpenAI}
-                            placeholder="sk-..."
-                            vendor="OpenAI"
-                        />
-                        <ApiKeyInput
-                            forgetKey={() => persistKey("Anthropic", "")}
-                            id={`${id}-anthropic`}
-                            key="anthropic"
-                            logo="/claude.png"
-                            onSave={(key: string): void => persistKey("Anthropic", key)}
-                            onTest={(key: string): Promise<boolean> => isAnthropicKeyValid(key)}
-                            persistedValue={apiKeys.Anthropic}
-                            placeholder="sk-ant-..."
-                            vendor="Anthropic"
-                        />
+                        {apiKeyConfigs.map(({vendor, idSuffix, logo, onTest, placeholder}) => (
+                            <ApiKeyInput
+                                key={idSuffix}
+                                forgetKey={() => persistKey(vendor, "")}
+                                id={`${id}-${idSuffix}`}
+                                logo={logo}
+                                onSave={(key) => persistKey(vendor, key)}
+                                onTest={onTest}
+                                persistedValue={apiKeys[vendor]}
+                                placeholder={placeholder}
+                                vendor={vendor}
+                            />
+                        ))}
                     </Box>
                 </Box>
                 <Box sx={{marginBottom: 3}}>
