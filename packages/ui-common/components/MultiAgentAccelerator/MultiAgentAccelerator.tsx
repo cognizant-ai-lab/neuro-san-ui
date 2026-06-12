@@ -398,13 +398,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 const llmConfig = isRecord(schemaProperties) ? schemaProperties["llm_config"] : undefined
                 const llmConfigRequired = isRecord(llmConfig) ? llmConfig["required"] : undefined
 
-                const requiredApiKeysTmp: string[] = Array.isArray(llmConfigRequired)
-                    ? llmConfigRequired.filter((x): x is LLMProvider => typeof x === "string")
-                    : []
-
                 setProviderKeysRequired(
                     new Set(
-                        requiredApiKeysTmp.flatMap((key): LLMProvider[] => {
+                        (Array.isArray(llmConfigRequired) ? llmConfigRequired : []).flatMap((key): LLMProvider[] => {
                             if (key === "openai_api_key") {
                                 return ["OpenAI"]
                             }
@@ -754,6 +750,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
+    const getMissingApiKeys = () => {
+        return providerKeysRequired.size > 0 ? [...providerKeysRequired].filter((provider) => !apiKeys?.[provider]) : []
+    }
+
     const getLeftPanel = () => {
         return (
             <Slide
@@ -863,7 +863,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             [AGENT_NETWORK_DESIGNER_ID]:
                                 "Describe in plain language the network you would like to build.",
                         }}
-                        apiKeys={apiKeys}
                         currentUser={userInfo.userName}
                         customAgentGreetings={{
                             [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
@@ -872,17 +871,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
                         key={selectedNetwork ?? "no-network"}
+                        missingApiKeys={getMissingApiKeys()}
                         networkDescription={networkDescription}
                         neuroSanURL={neuroSanURL}
                         onChunkReceived={onChunkReceived}
                         onStreamingComplete={onStreamingComplete}
                         onStreamingStarted={onStreamingStarted}
-                        providerKeysRequired={providerKeysRequired}
                         ref={chatRef}
                         sampleQueries={sampleQueries}
                         setIsAwaitingLlm={setIsAwaitingLlm}
-                        targetAgent={selectedNetwork}
-                        userImage={userInfo.userImage}
+                        selectedNetwork={selectedNetwork}
                     />
                 </Grid>
             </Slide>

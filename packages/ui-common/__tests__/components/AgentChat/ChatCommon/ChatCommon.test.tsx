@@ -84,8 +84,7 @@ describe("ChatCommon", () => {
         onSend: jest.fn(),
         sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
         setIsAwaitingLlm: jest.fn(),
-        targetAgent: TEST_AGENT_MATH_GUY,
-        userImage: "",
+        selectedNetwork: TEST_AGENT_MATH_GUY,
     }
 
     const renderChatCommonComponent = (
@@ -332,7 +331,10 @@ describe("ChatCommon", () => {
         const testResponseText1 = "Response text 1 from LLM"
         const testResponseText2 = "Response text 2 from LLM"
 
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            selectedNetwork: LegacyAgentType.DataGenerator,
+        })
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText1)
             callback(testResponseText2)
@@ -353,7 +355,7 @@ describe("ChatCommon", () => {
         const finalAnswerText = "Sample final answer from LLM"
         const testResponseText = `Final Answer: ${finalAnswerText}`
 
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DMSChat})
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, selectedNetwork: LegacyAgentType.DMSChat})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText)
         })
@@ -390,7 +392,7 @@ describe("ChatCommon", () => {
         expect(givesFinalAnswer(LegacyAgentType.OpportunityFinder)).toBe(false)
         renderChatCommonComponent({
             onChunkReceived: onChunkReceivedMock,
-            targetAgent: LegacyAgentType.OpportunityFinder,
+            selectedNetwork: LegacyAgentType.OpportunityFinder,
         })
         screen.getByText(LegacyAgentType.OpportunityFinder)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
@@ -411,7 +413,7 @@ describe("ChatCommon", () => {
         expect(givesFinalAnswer(LegacyAgentType.DMSChat)).toBe(true)
         renderChatCommonComponent({
             onChunkReceived: onChunkReceivedMock,
-            targetAgent: LegacyAgentType.DMSChat,
+            selectedNetwork: LegacyAgentType.DMSChat,
         })
 
         screen.getByText(LegacyAgentType.DMSChat)
@@ -427,7 +429,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle error thrown while fetching", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new Error("Sample error from fetch")
         })
@@ -443,7 +445,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle non-error type thrown while fetching", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
         jest.spyOn(console, "error").mockImplementation()
 
@@ -462,7 +464,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle an abort error correctly", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new (class extends Error {
                 constructor(message?: string) {
@@ -483,7 +485,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle other types of errors than AbortError correctly", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
         jest.spyOn(console, "error").mockImplementation()
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
@@ -614,7 +616,7 @@ describe("ChatCommon", () => {
         rerender(
             <ChatCommon
                 {...defaultProps}
-                targetAgent={TEST_AGENT_MUSIC_NERD}
+                selectedNetwork={TEST_AGENT_MUSIC_NERD}
             />
         )
 
@@ -638,7 +640,7 @@ describe("ChatCommon", () => {
 
     it("Should refuse interaction when no target agent is set", async () => {
         const mockSendFunction = jest.fn()
-        renderChatCommonComponent({onSend: mockSendFunction, targetAgent: null})
+        renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
 
         // Should be no "Chat with"
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
@@ -1251,7 +1253,7 @@ describe("ChatCommon", () => {
         }
 
         renderChatCommonComponent({
-            targetAgent: LegacyAgentType.DataGenerator,
+            selectedNetwork: LegacyAgentType.DataGenerator,
             extraParams: testExtraParams,
         })
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
@@ -1278,7 +1280,7 @@ describe("ChatCommon", () => {
         const testEndpoint = "custom-legacy-endpoint"
 
         renderChatCommonComponent({
-            targetAgent: LegacyAgentType.OpportunityFinder,
+            selectedNetwork: LegacyAgentType.OpportunityFinder,
             legacyAgentEndpoint: testEndpoint,
         })
 
