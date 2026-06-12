@@ -7,7 +7,7 @@ import FormLabel from "@mui/material/FormLabel"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import TextField from "@mui/material/TextField"
-import {FC, ChangeEvent as ReactChangeEvent, useState} from "react"
+import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 
@@ -41,6 +41,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     const [confirmationDialogOpen, setConfirmationDialogOpen] = useState<boolean>(false)
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
+        setKeyValidated(null)
         setInputValue(e.target.value)
     }
 
@@ -56,6 +57,12 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     }
 
     const disableActions = !inputValue || inputValue === persistedValue || isValidating
+
+    // Sync with persisted value changes - if the persisted value changes from outside
+    useEffect(() => {
+        setInputValue(persistedValue ?? "")
+        setKeyValidated(null)
+    }, [persistedValue])
 
     return (
         <Box
@@ -92,7 +99,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 <img
                     src={logo}
-                    alt="Logo"
+                    alt={`${vendor} logo`}
                     style={{maxWidth: "100%", maxHeight: "100%", objectFit: "contain"}}
                 />
             </Box>

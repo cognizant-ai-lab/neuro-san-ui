@@ -90,7 +90,7 @@ export interface ChatCommonProps {
     /**
      * The network to send the request to.
      */
-    readonly selectedNetwork: string
+    readonly selectedNetwork: string | null
 
     /**
      * Special endpoint for legacy agents since they do not have a single unified endpoint like Neuro-san agents.
@@ -274,7 +274,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
-    const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[selectedNetwork])
+    const storedChatHistory = useAgentChatHistoryStore((state) =>
+        selectedNetwork ? state?.history?.[selectedNetwork] : undefined
+    )
+
     const agentChatHistory = useMemo(
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
