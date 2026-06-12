@@ -28,6 +28,7 @@ import {
     ImportNetworkModal,
     ImportNetworkModalProps,
     parseNetworkFileContent,
+    validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 
 const onCloseMock = jest.fn()
@@ -154,7 +155,7 @@ describe("ImportNetworkModal", () => {
     })
 
     it("should expose correct accepted extensions constant", () => {
-        expect(IMPORT_MODAL_ACCEPTED_EXTENSIONS).toEqual([".hocon", ".conf", ".json"])
+        expect(IMPORT_MODAL_ACCEPTED_EXTENSIONS).toEqual([".hocon", ".json"])
     })
 
     it("should expose correct max file size constant (5 MB)", () => {
@@ -164,7 +165,7 @@ describe("ImportNetworkModal", () => {
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        expect(fileInput.accept).toBe(".hocon,.conf,.json")
+        expect(fileInput.accept).toBe(".hocon,.json")
     })
 
     it("should process a file chosen via the hidden file input", async () => {
@@ -231,6 +232,29 @@ describe("ImportNetworkModal", () => {
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "unreadable.json", '{"agents": {}}')
         await screen.findByText(/Failed to read the file\./u)
+    })
+
+    it("should reject a dropped file with an unsupported extension before parsing", async () => {
+        const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "diagram.png", "not a network")
+        await screen.findByText(/Unsupported file type ".png"/u)
+        // No Continue button, and the file was never read/parsed
+        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
+        expect(readSpy).not.toHaveBeenCalled()
+    })
+
+    it("should reject a dropped file that exceeds the max size before parsing", async () => {
+        const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        const oversized = new File(['{"agents": {}}'], "huge.json", {type: "application/json"})
+        Object.defineProperty(oversized, "size", {value: 6 * 1024 * 1024})
+        fireEvent.drop(dropZone, {dataTransfer: {files: [oversized]}})
+        await screen.findByText(/File is too large/u)
+        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
+        expect(readSpy).not.toHaveBeenCalled()
     })
 
     // Step 3: Confirm
@@ -397,6 +421,36 @@ include "llm_config.hocon"
         // Standalone ${prefix} resolves; an unknown standalone var becomes an empty string
         expect(parsed["leftover"]).toBe("Hello")
         expect(parsed["missing"]).toBe("")
+    })
+})
+
+describe("validateImportFile", () => {
+    const fileWithSize = (fileName: string, size: number): File => {
+        const file = new File(["x"], fileName, {type: "application/octet-stream"})
+        Object.defineProperty(file, "size", {value: size})
+        return file
+    }
+
+    it("should accept supported extensions within the size limit", () => {
+        expect(validateImportFile(fileWithSize("net.hocon", 1024))).toBeNull()
+        expect(validateImportFile(fileWithSize("net.json", 1024))).toBeNull()
+        // Extension match is case-insensitive
+        expect(validateImportFile(fileWithSize("NET.JSON", 1024))).toBeNull()
+    })
+
+    it("should reject unsupported extensions", () => {
+        expect(validateImportFile(fileWithSize("image.png", 1024))).toMatch(/Unsupported file type ".png"/u)
+        expect(validateImportFile(fileWithSize("noextension", 1024))).toMatch(/Unsupported file type\./u)
+    })
+
+    it("should reject files larger than the max size", () => {
+        expect(validateImportFile(fileWithSize("net.json", IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1))).toMatch(
+            /File is too large/u
+        )
+    })
+
+    it("should accept a file exactly at the size limit", () => {
+        expect(validateImportFile(fileWithSize("net.json", IMPORT_MODAL_MAX_FILE_SIZE_BYTES))).toBeNull()
     })
 })
 

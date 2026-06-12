@@ -278,7 +278,7 @@ describe("Controller/Agent/getAgentFunction", () => {
     })
 })
 
-describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
+describe("Controller/Agent/sendNetworkDesignerUpsert", () => {
     withStrictMocks()
 
     it("calls sendChatQuery with the designer agent ID and correct sly_data", async () => {

@@ -41,7 +41,7 @@ import {AgentNetworkDefinitionEntry} from "../const"
 // #region: Constants
 
 export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
-export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".hocon", ".conf", ".json"]
+export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".hocon", ".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(",")
 const STEPS = ["Select file", "Review", "Confirm"]
 const TEMPORARY_FOLDER_DISPLAY = "Temporary"
@@ -189,6 +189,31 @@ export const formatFileSize = (bytes: number): string => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+/**
+ * Validate a selected file against the advertised constraints before reading it.
+ *
+ * The `<input accept>` attribute only filters the file-picker dialog and is bypassed
+ * entirely by drag/drop, so we re-check the extension here. We also enforce the
+ * advertised size limit — purely a client-side guard so a pathological file can't be
+ * fed into the synchronous parsing/regex pass and freeze the UI; the server imposes
+ * no such limit.
+ *
+ * Returns a human-readable error message on rejection, or null if the file is acceptable.
+ */
+export const validateImportFile = (file: File): string | null => {
+    const {ext} = splitFilename(file.name)
+    const normalizedExt = `.${ext.toLowerCase()}`
+    if (!IMPORT_MODAL_ACCEPTED_EXTENSIONS.includes(normalizedExt)) {
+        const accepted = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(" and ")
+        return `Unsupported file type${ext ? ` ".${ext}"` : ""}. Accepts ${accepted}.`
+    }
+    if (file.size > IMPORT_MODAL_MAX_FILE_SIZE_BYTES) {
+        const max = formatFileSize(IMPORT_MODAL_MAX_FILE_SIZE_BYTES)
+        return `File is too large (${formatFileSize(file.size)}). Maximum size is ${max}.`
+    }
+    return null
+}
+
 /** Convert a filename stem to a display-friendly network name.
  *
  * Strips a trailing UUID in the form `_xxxxxxxx_xxxx_xxxx_xxxx_xxxxxxxxxxxx`
@@ -301,9 +326,20 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const processFile = (selectedFile: File) => {
         setFile(selectedFile)
         setActiveStep(1)
+        setParsedJson(null)
+
+        // Validate extension + size before reading. The <input accept> filter only
+        // hints the picker and is bypassed by drag/drop, so unsupported or oversized
+        // files would otherwise be fed straight into the parser.
+        const validationError = validateImportFile(selectedFile)
+        if (validationError) {
+            setParseState("error")
+            setParseError(validationError)
+            return
+        }
+
         setParseState("loading")
         setParseError(null)
-        setParsedJson(null)
 
         const reader = new FileReader()
         reader.addEventListener("load", (event) => {
@@ -311,7 +347,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             const result = parseNetworkFileContent(text)
             if ("error" in result) {
                 setParseState("error")
-                setParseError(result.error)
+                setParseError(`Parse error: ${result.error}`)
                 return
             }
             setParsedJson(result.json)
@@ -704,7 +740,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             }}
                         >
                             <ErrorOutlineIcon fontSize="small" />
-                            <Typography variant="body2">{`Parse error: ${parseError}`}</Typography>
+                            <Typography variant="body2">{parseError}</Typography>
                         </Box>
                     )}
                 </Box>
