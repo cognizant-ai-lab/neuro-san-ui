@@ -654,6 +654,23 @@ describe("ChatCommon", () => {
         })
     })
 
+    it("Should refuse interaction when API keys are required but not present", async () => {
+        renderChatCommonComponent({missingApiKeys: ["OpenAI"]})
+
+        // Should be no "Chat with"
+        expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
+
+        screen.getByText(/API key\(s\) required/u)
+
+        const overlay = document.getElementById("chat-disabled-overlay")
+        expect(overlay).toHaveStyle({
+            position: "absolute",
+            zIndex: MODAL_Z_INDEX - 1,
+            cursor: "not-allowed",
+            pointerEvents: "all",
+        })
+    })
+
     it("Should handle Stop correctly", async () => {
         const setAwaitingLlmMock = jest.fn()
         renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
