@@ -1079,10 +1079,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         display: "flex",
                         alignItems: "center",
                         gap: 2,
-                        paddingLeft: 4,
-                        paddingRight: 4,
-                        paddingTop: 2.5,
-                        paddingBottom: 2.5,
+                        px: 4,
+                        py: 2.5,
                         borderRadius: 2,
                         maxWidth: 480,
                     }}

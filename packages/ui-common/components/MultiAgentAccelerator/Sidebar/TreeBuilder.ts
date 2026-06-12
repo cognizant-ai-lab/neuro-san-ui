@@ -73,8 +73,10 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    // Prefer an explicit display name (e.g. agentNetworkName from a temp network) so that
-                    // word-separator characters are preserved for cleanUpAgentName to split on.
+                    // For temp networks, `part` is the raw reservation_id, which is canonicalized and may have
+                    // lost the word separators (_/-) that cleanUpAgentName relies on to produce a spaced label.
+                    // So prefer `overrideDisplayName` (the caller passes the temp network's agentNetworkName)
+                    // when one is given; otherwise fall back to stripping the trailing UUID off the path part.
                     const cleanedName = cleanUpAgentName(overrideDisplayName ?? removeTrailingUuid(part))
 
                     // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3", etc.)
