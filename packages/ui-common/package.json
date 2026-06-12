@@ -14,6 +14,7 @@
         "@langchain/core": "catalog:default",
         "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
+        "jsonrepair": "catalog:default",
         "lodash-es": "catalog:default",
         "notistack": "catalog:default",
         "react-joyride": "catalog:default",

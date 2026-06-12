@@ -48,7 +48,8 @@ const addNetworkToTree = (
     uncategorized: TreeViewDefaultItemModelProperties,
     map: Map<string, TreeViewDefaultItemModelProperties>,
     nodeIndex: NodeIndex,
-    displayNameCounts: Map<string, number>
+    displayNameCounts: Map<string, number>,
+    overrideDisplayName?: string
 ): void => {
     const parts = network.agent_name.split("/")
 
@@ -72,7 +73,11 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    const cleanedName = cleanUpAgentName(removeTrailingUuid(part))
+                    // For temp networks, `part` is the raw reservation_id, which is canonicalized and may have
+                    // lost the word separators (_/-) that cleanUpAgentName relies on to produce a spaced label.
+                    // So prefer `overrideDisplayName` (the caller passes the temp network's agentNetworkName)
+                    // when one is given; otherwise fall back to stripping the trailing UUID off the path part.
+                    const cleanedName = cleanUpAgentName(overrideDisplayName ?? removeTrailingUuid(part))
 
                     // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3", etc.)
                     const count = displayNameCounts.get(cleanedName) || 0
@@ -150,7 +155,8 @@ export const buildTreeViewItems = (
             uncategorized,
             treeBuilderMap,
             nodeIndex,
-            displayNameCounts
+            displayNameCounts,
+            temporaryNetwork.agentNetworkName
         )
     )
 

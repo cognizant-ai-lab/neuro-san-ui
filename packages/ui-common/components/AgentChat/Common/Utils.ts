@@ -75,7 +75,10 @@ export const checkError = (chatMessageJson: Record<string, unknown>): string | n
 }
 
 export const removeTrailingUuid = (agentName: string): string => {
-    return agentName?.replace(/-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u, "")
+    return agentName?.replace(
+        /[_-][0-9a-fA-F]{8}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{12}$/u,
+        ""
+    )
 }
 
 /**

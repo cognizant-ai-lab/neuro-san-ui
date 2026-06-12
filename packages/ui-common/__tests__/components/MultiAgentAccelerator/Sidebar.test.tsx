@@ -66,6 +66,7 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
 }
 
 const onDeleteNetworkMock = jest.fn()
+const onImportClickMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
@@ -75,6 +76,7 @@ const DEFAULT_PROPS: SidebarProps = {
     networks: LIST_NETWORKS_RESPONSE,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     onDeleteNetwork: onDeleteNetworkMock,
+    onImportClick: onImportClickMock,
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
@@ -387,10 +389,19 @@ describe("SideBar", () => {
         expect(onEditNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
     })
 
-    it("should disable the Settings button when isAwaitingLlm is true", async () => {
+    it("should disable the Settings and import button when isAwaitingLlm is true", async () => {
         renderSidebarComponent({isAwaitingLlm: true})
         const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         expect(settingsButton).toBeDisabled()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should render the import button and call onImportClick when the import button is clicked", async () => {
+        renderSidebarComponent()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+        expect(onImportClickMock).toHaveBeenCalledTimes(1)
     })
 
     it("should display tooltip with customURLLocalStorage if provided", async () => {

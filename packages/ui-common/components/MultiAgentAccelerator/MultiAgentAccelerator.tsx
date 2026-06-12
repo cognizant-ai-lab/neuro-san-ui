@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 import StopCircle from "@mui/icons-material/StopCircle"
+import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
+import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
@@ -36,6 +39,7 @@ import {
     AgentNetworkDefinitionEntry,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
+import {hoconJsonToNetworkDefinition, ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -45,7 +49,7 @@ import {
     getAgentNetworks,
     getConnectivity,
     getNetworkIconSuggestions,
-    sendNetworkDesignerUpdate,
+    sendNetworkDesignerUpsert,
 } from "../../controller/agent/Agent"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
@@ -121,6 +125,16 @@ const notifySaveError = (agentName: string, e: unknown): void => {
     sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
 }
 
+/**
+ * Returns the frontman agent name: the agent that is not listed as a tool by any other agent.
+ * Falls back to the first entry if every agent is referenced as a tool (unlikely but defensive).
+ */
+const findFrontman = (networkDef: AgentNetworkDefinitionEntry[]): string => {
+    const allTools = new Set(networkDef.flatMap((entry) => entry.tools ?? []))
+    const frontman = networkDef.find((entry) => entry.origin && !allTools.has(entry.origin))
+    return frontman?.origin ?? networkDef[0]?.origin ?? "agent"
+}
+
 // #endregion: Agent-save helpers
 
 /**
@@ -154,6 +168,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Track newly added temp networks so we can highlight them
     const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
+
+    // True while a file import is in-flight (after modal confirm, before the new network appears)
+    const [isImporting, setIsImporting] = useState<boolean>(false)
 
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
@@ -199,6 +216,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     >(new Map())
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [importModalOpen, setImportModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
@@ -546,7 +564,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         ): Promise<void> => {
             try {
                 let newNetworks: TemporaryNetwork[] = []
-                await sendNetworkDesignerUpdate(
+                await sendNetworkDesignerUpsert(
                     neuroSanURL,
                     signal,
                     agentName,
@@ -588,6 +606,61 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
         },
         [neuroSanURL, userInfo.userName, selectedNetwork]
+    )
+
+    /**
+     * Handles an import from the ImportNetworkModal: converts the HOCON/JSON content to a
+     * network definition, streams it through the network designer to obtain a reservation,
+     * then upserts the result into the temporary-networks store and navigates to the new network.
+     */
+    const handleImportNetwork = useCallback(
+        async (agentNetworkName: string, content: string): Promise<void> => {
+            setIsImporting(true)
+            try {
+                const networkDef = hoconJsonToNetworkDefinition(content)
+                if (networkDef.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to import "${agentNetworkName}".`,
+                        'The file does not contain an "agents" object.'
+                    )
+                    return
+                }
+                const frontman = findFrontman(networkDef)
+                const abortController = new AbortController()
+                let newNetworks: TemporaryNetwork[] = []
+                await sendNetworkDesignerUpsert(
+                    neuroSanURL,
+                    abortController.signal,
+                    frontman,
+                    networkDef,
+                    agentNetworkName,
+                    userInfo.userName,
+                    (chunk) => {
+                        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
+                    }
+                )
+                if (newNetworks.length === 0) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to import "${agentNetworkName}".`,
+                        "The network designer did not return a reservation. Please try again."
+                    )
+                    return
+                }
+                useTempNetworksStore.getState().upsertTempNetworks(newNetworks)
+                const first = newNetworks[0]
+                if (first) {
+                    setNewlyAddedTemporaryNetworks(new Set([first.agentInfo.agent_name]))
+                    changeSelectedNetwork(first.agentInfo.agent_name)
+                }
+            } catch (e: unknown) {
+                notifySaveError(agentNetworkName, e)
+            } finally {
+                setIsImporting(false)
+            }
+        },
+        [changeSelectedNetwork, neuroSanURL, userInfo.userName]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -693,8 +766,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onEditNetwork={handleEditNetwork}
                         onDeleteNetwork={handleDeleteNetwork}
+                        onEditNetwork={handleEditNetwork}
+                        onImportClick={() => setImportModalOpen(true)}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
@@ -862,6 +936,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
+    const getImportNetworkModal = () => (
+        <ImportNetworkModal
+            existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
+            isOpen={importModalOpen}
+            onClose={() => setImportModalOpen(false)}
+            onImport={handleImportNetwork}
+        />
+    )
+
     const getTourModal = () =>
         tourModalOpen && (
             <MUIDialog
@@ -982,8 +1065,39 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
-
             {getDeleteNetworkConfirmationModal()}
+            {getImportNetworkModal()}
+            <Backdrop
+                id="multi-agent-accelerator-import-backdrop"
+                data-testid="multi-agent-accelerator-import-backdrop"
+                open={isImporting}
+                sx={{zIndex: (t) => t.zIndex.modal + 1}}
+            >
+                <Paper
+                    elevation={6}
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        px: 4,
+                        py: 2.5,
+                        borderRadius: 2,
+                        maxWidth: 480,
+                    }}
+                >
+                    <CircularProgress
+                        id="multi-agent-accelerator-import-spinner"
+                        size={24}
+                    />
+                    <Typography
+                        id="multi-agent-accelerator-import-title"
+                        variant="body1"
+                        sx={{fontWeight: "bold"}}
+                    >
+                        Importing network...
+                    </Typography>
+                </Paper>
+            </Backdrop>
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

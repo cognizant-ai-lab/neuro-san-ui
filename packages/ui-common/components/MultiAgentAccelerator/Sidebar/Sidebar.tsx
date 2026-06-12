@@ -16,6 +16,7 @@ limitations under the License.
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined"
 import ClearIcon from "@mui/icons-material/Clear"
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined"
 import HighlightOff from "@mui/icons-material/HighlightOff"
 import SettingsIcon from "@mui/icons-material/Settings"
 import Box from "@mui/material/Box"
@@ -148,6 +149,7 @@ export interface SidebarProps {
     readonly networks: readonly AgentInfo[]
     readonly onEditNetwork?: (network: string) => void
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
+    readonly onImportClick?: () => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
@@ -167,6 +169,7 @@ export const Sidebar: FC<SidebarProps> = ({
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
     onEditNetwork,
+    onImportClick,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -363,6 +366,23 @@ export const Sidebar: FC<SidebarProps> = ({
                             >
                                 <AddBoxRounded
                                     id="add-network-icon"
+                                    sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                                />
+                            </Tooltip>
+                        </Button>
+                        <Button
+                            aria-label="Import Network Definition"
+                            disabled={isAwaitingLlm}
+                            id="import-network-btn"
+                            onClick={onImportClick}
+                            sx={{display: "inline-block", minWidth: "40px"}}
+                        >
+                            <Tooltip
+                                title="Import a network definition file"
+                                placement="top"
+                            >
+                                <FileUploadOutlinedIcon
+                                    id="import-network-icon"
                                     sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
                                 />
                             </Tooltip>
