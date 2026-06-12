@@ -136,6 +136,7 @@ jest.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
     const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
     return {
         __esModule: true,
+        ...originalModule,
         ImportNetworkModal: (props: ImportNetworkModalProps) => {
             onImport = props.onImport
             const OriginalModal = originalModule.ImportNetworkModal

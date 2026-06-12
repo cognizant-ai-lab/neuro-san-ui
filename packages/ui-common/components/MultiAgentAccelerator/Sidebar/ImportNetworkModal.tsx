@@ -200,7 +200,7 @@ export const filenameToNetworkName = (filename: string): string => {
     return startCase(removeTrailingUuid(stem))
 }
 
-/** Normalise a name for conflict comparison (underscores → spaces, lowercase, trimmed). */
+/** Normalize a name for conflict comparison (underscores → spaces, lowercase, trimmed). */
 const normalizeForComparison = (rawName: string): string => {
     const spaced = rawName.replaceAll(/[_-]+/gu, " ").toLowerCase()
     return spaced.trim()
