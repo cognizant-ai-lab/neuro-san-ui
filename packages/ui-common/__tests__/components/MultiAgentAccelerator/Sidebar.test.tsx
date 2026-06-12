@@ -389,28 +389,19 @@ describe("SideBar", () => {
         expect(onEditNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
     })
 
-    it("should disable the Settings button when isAwaitingLlm is true", async () => {
+    it("should disable the Settings and import button when isAwaitingLlm is true", async () => {
         renderSidebarComponent({isAwaitingLlm: true})
         const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
         expect(settingsButton).toBeDisabled()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
     })
 
-    it("should render the Import Network Definition button", async () => {
-        renderSidebarComponent()
-        await screen.findByRole("button", {name: /Import Network Definition/u})
-    })
-
-    it("should call onImportClick when the import button is clicked", async () => {
+    it("should render the import button and call onImportClick when the import button is clicked", async () => {
         renderSidebarComponent()
         const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
         await user.click(importButton)
         expect(onImportClickMock).toHaveBeenCalledTimes(1)
-    })
-
-    it("should disable the import button when isAwaitingLlm is true", async () => {
-        renderSidebarComponent({isAwaitingLlm: true})
-        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
-        expect(importButton).toBeDisabled()
     })
 
     it("should display tooltip with customURLLocalStorage if provided", async () => {

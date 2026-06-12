@@ -406,16 +406,20 @@ describe("MultiAgentAccelerator", () => {
         await screen.findByText("Agent Networks")
 
         // The modal is not mounted until the import button is clicked.
-        expect(screen.queryByTestId("import-network-modal")).not.toBeInTheDocument()
+        expect(screen.queryByText("Import network definition")).not.toBeInTheDocument()
+        expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument()
 
         const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
         await user.click(importButton)
 
-        await screen.findByTestId("import-network-modal")
+        // Modal is mounted after clicking import button
+        expect(screen.getByText("Import network definition")).toBeInTheDocument()
+        expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
 
+        // The modal is unmounted after clicking the cancel button.
         await user.click(screen.getByRole("button", {name: /cancel/iu}))
-
-        await waitFor(() => expect(screen.queryByTestId("import-network-modal")).not.toBeInTheDocument())
+        await waitFor(() => expect(screen.queryByText("Import network definition")).not.toBeInTheDocument())
+        await waitFor(() => expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument())
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {

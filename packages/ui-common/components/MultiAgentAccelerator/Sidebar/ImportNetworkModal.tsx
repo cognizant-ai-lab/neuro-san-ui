@@ -352,7 +352,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     return (
         <Dialog
             id="import-network-modal"
-            data-testid="import-network-modal"
             open={isOpen}
             onClose={onClose}
             slotProps={{

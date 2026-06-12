@@ -62,26 +62,21 @@ describe("ImportNetworkModal", () => {
         user = userEvent.setup()
     })
 
-    it("should render when isOpen is true", () => {
-        renderModal()
-        expect(screen.getByTestId("import-network-modal")).toBeInTheDocument()
-    })
-
     it("should not render content when isOpen is false", () => {
         renderModal({isOpen: false})
-        expect(screen.queryByTestId("import-network-modal")).not.toBeInTheDocument()
+        expect(screen.queryByText("Import network definition")).not.toBeInTheDocument()
+        expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument()
     })
 
-    it("should display the modal title", () => {
+    it("should render content when isOpen is true", () => {
         renderModal()
         expect(screen.getByText("Import network definition")).toBeInTheDocument()
-    })
-
-    it("should display all three stepper steps", () => {
-        renderModal()
         expect(screen.getByText("Select file")).toBeInTheDocument()
         expect(screen.getByText("Review")).toBeInTheDocument()
         expect(screen.getByText("Confirm")).toBeInTheDocument()
+        expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
+        expect(screen.getByRole("button", {name: /browse your files/iu})).toBeInTheDocument()
+        expect(screen.getByText(/Accepts \.hocon and \.json up to 5 MB\./u)).toBeInTheDocument()
     })
 
     it("should show the first step as active", () => {
@@ -90,21 +85,6 @@ describe("ImportNetworkModal", () => {
         const stepper = screen.getByRole("list")
         const steps = stepper.querySelectorAll('[class*="MuiStep-root"]')
         expect(steps.length).toBe(3)
-    })
-
-    it("should display the drag-and-drop prompt text", () => {
-        renderModal()
-        expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
-    })
-
-    it('should display the "browse your files" link', () => {
-        renderModal()
-        expect(screen.getByRole("button", {name: /browse your files/iu})).toBeInTheDocument()
-    })
-
-    it("should display the accepted file type hint", () => {
-        renderModal()
-        expect(screen.getByText(/Accepts \.hocon and \.json up to 5 MB\./u)).toBeInTheDocument()
     })
 
     it("should call onClose when Cancel button is clicked", async () => {
@@ -202,22 +182,16 @@ describe("ImportNetworkModal", () => {
         await waitFor(() => expect(screen.queryByRole("button", {name: /drop zone/iu})).not.toBeInTheDocument())
     })
 
-    it("should show success banner after a valid JSON file is dropped", async () => {
+    it("should show success banner and show Continue button after a valid JSON file is dropped", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
         // CheckCircleOutlinedIcon appears in the success alert banner
         await screen.findByTestId("CheckCircleOutlinedIcon")
-    })
-
-    it("should show Continue button after successful parse", async () => {
-        renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
         await screen.findByRole("button", {name: /Continue/u})
     })
 
-    it("should show parse error banner when file content is completely unparseable", async () => {
+    it("should show parse error banner when file content is unparseable", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         // Drop a file whose content cannot be repaired at all
@@ -236,35 +210,18 @@ describe("ImportNetworkModal", () => {
     })
 
     // Step 3: Confirm
-    it("should advance to step 3 after clicking Continue", async () => {
-        renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await screen.findByRole("button", {name: /Import network/u})
-    })
-
-    it("should pre-fill network name from filename", async () => {
+    it("should advance to step 3 after clicking Continue and should pre-fill network name from filename", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
+        await screen.findByRole("button", {name: /Import network/u})
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput.value).toBe("Ecommerce Support")
     })
 
-    it("should show conflict warning when name matches an existing network", async () => {
-        renderModal({existingNetworkNames: ["ecommerce_support"]})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await screen.findByTestId("WarningAmberIcon")
-    })
-
-    it("should dismiss conflict warning when Replace is clicked", async () => {
+    it("should show conflict warning and dismiss conflict warning when Replace is clicked", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
@@ -275,7 +232,7 @@ describe("ImportNetworkModal", () => {
         await waitFor(() => expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument())
     })
 
-    it("should rename the network when Rename is clicked", async () => {
+    it("should show conflict warning and dismiss conflict warning / rename when Rename is clicked", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
