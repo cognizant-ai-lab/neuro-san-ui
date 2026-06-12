@@ -36,6 +36,7 @@ import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEff
 import {splitFilename} from "../../../utils/File"
 import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
+import {AgentNetworkDefinitionEntry} from "../const"
 
 // #region: Constants
 
@@ -131,6 +132,54 @@ export const parseNetworkFileContent = (
     } catch (err) {
         return {success: false, error: err instanceof Error ? err.message : String(err)}
     }
+}
+
+/**
+ * Converts a parsed network JSON (from a HOCON/JSON import file) into an array of
+ * AgentNetworkDefinitionEntry objects suitable for sendNetworkDesignerUpsert.
+ *
+ * Supports two neuro-san formats:
+ * 1. Native HOCON `tools[]` array – each entry has `name`, `function.description`,
+ *    `instructions`, `tools`, and optional `display_as` / `metadata`.
+ * 2. Exported `agents{}` dict – each key is the agent name, value has the same fields
+ *    (minus the explicit `name` key).
+ */
+export const hoconJsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
+    const parsed = JSON.parse(jsonString) as Record<string, unknown>
+
+    // --- Format 1: native HOCON tools[] array ---
+    const toolsArray = parsed["tools"] as Record<string, unknown>[] | undefined
+    if (Array.isArray(toolsArray) && toolsArray.length > 0) {
+        return toolsArray
+            .filter((tool) => typeof tool["name"] === "string")
+            .map((tool) => {
+                const fn = tool["function"] as Record<string, unknown> | undefined
+                const meta = tool["metadata"] as Record<string, unknown> | undefined
+                return {
+                    origin: tool["name"] as string,
+                    tools: tool["tools"] as string[] | undefined,
+                    display_as: (tool["display_as"] as string | undefined) ?? "llm_agent",
+                    ...(meta !== undefined ? {metadata: meta} : {}),
+                    instructions: tool["instructions"] as string | undefined,
+                    description: fn?.["description"] as string | undefined,
+                }
+            })
+    }
+
+    // --- Format 2: agents{} dict (exported/converted JSON) ---
+    const agents = parsed["agents"] as Record<string, Record<string, unknown>> | undefined
+    if (agents !== undefined && Object.keys(agents).length > 0) {
+        return Object.entries(agents).map(([agentName, agentDef]) => ({
+            origin: agentName,
+            tools: agentDef["tools"] as string[] | undefined,
+            display_as: agentDef["display_as"] as string | undefined,
+            metadata: agentDef["metadata"] as Record<string, unknown> | undefined,
+            instructions: agentDef["instructions"] as string | undefined,
+            description: agentDef["description"] as string | undefined,
+        }))
+    }
+
+    return []
 }
 
 /** Format byte count to a human-readable string (e.g. "4.2 KB"). */
