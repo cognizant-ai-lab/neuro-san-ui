@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined"
-import CloseIcon from "@mui/icons-material/Close"
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
 import HourglassTopIcon from "@mui/icons-material/HourglassTop"
@@ -24,11 +23,6 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
-import Dialog from "@mui/material/Dialog"
-import DialogActions from "@mui/material/DialogActions"
-import DialogContent from "@mui/material/DialogContent"
-import DialogTitle from "@mui/material/DialogTitle"
-import IconButton from "@mui/material/IconButton"
 import Step from "@mui/material/Step"
 import StepLabel from "@mui/material/StepLabel"
 import Stepper from "@mui/material/Stepper"
@@ -41,6 +35,7 @@ import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEff
 
 import {splitFilename} from "../../../utils/File"
 import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {MUIDialog} from "../../Common/MUIDialog"
 
 // #region: Constants
 
@@ -349,459 +344,438 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const fileExt = file ? splitFilename(file.name).ext.toUpperCase() : ""
 
-    return (
-        <Dialog
-            id="import-network-modal"
-            open={isOpen}
-            onClose={onClose}
-            slotProps={{
-                paper: {
-                    sx: {minWidth: "560px"},
-                },
-            }}
-        >
-            <DialogTitle
-                id="import-network-modal-title"
-                sx={{
-                    alignItems: "center",
-                    display: "flex",
-                    gap: 1.5,
-                    paddingBottom: 1,
-                }}
-            >
-                Import network definition
-                <IconButton
-                    aria-label="close"
-                    id="import-network-modal-close-btn"
+    const footer = (
+        <>
+            {activeStep === 0 && (
+                <Button
+                    id="import-network-modal-cancel-btn"
                     onClick={onClose}
-                    size="small"
-                    sx={{marginLeft: "auto"}}
+                    variant="outlined"
                 >
-                    <CloseIcon fontSize="small" />
-                </IconButton>
-            </DialogTitle>
-            <DialogContent>
-                <Stepper
-                    activeStep={activeStep}
-                    id="import-network-modal-stepper"
-                    sx={(theme) => ({
-                        marginTop: 1,
-                        // MUI v9 rejects the CSS named color "gray" it uses by default for
-                        // inactive steps/connectors — override with valid token values.
-                        "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
-                            color: "var(--bs-gray-medium)",
-                        },
-                        "& .MuiStepConnector-line": {
-                            borderColor: "var(--bs-gray-light)",
-                        },
-                        "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
-                            color: "var(--bs-gray-medium)",
-                        },
-                        // In dark mode the completed-step icon defaults to a muted/gray fill;
-                        // make it white so completed steps read clearly against the dark backdrop.
-                        ...(theme.palette.mode === "dark" && {
-                            "& .MuiStepIcon-root.Mui-completed": {
-                                color: theme.palette.common.white,
-                            },
-                        }),
-                    })}
-                >
-                    {STEPS.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-
-                {/* Step 1: Select file */}
-                {activeStep === 0 && (
-                    <DropZone
-                        isDragOver={isDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                        onClick={handleBrowseClick}
-                        role="button"
-                        aria-label="Drop zone for network definition file"
+                    Cancel
+                </Button>
+            )}
+            {activeStep === 1 && (
+                <>
+                    <Button
+                        id="import-network-modal-back-btn"
+                        onClick={handleBack}
+                        variant="outlined"
                     >
-                        <CloudUploadOutlinedIcon
-                            id="import-network-modal-upload-icon"
-                            sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
-                        />
-                        <Typography
-                            id="import-network-modal-drop-text"
-                            variant="subtitle1"
-                            sx={{color: "primary.main", fontWeight: "bold"}}
+                        Back
+                    </Button>
+                    {parseState === "success" && (
+                        <Button
+                            id="import-network-modal-continue-btn"
+                            onClick={handleContinue}
+                            sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
+                            variant="contained"
                         >
-                            Drag &amp; drop a network definition
-                        </Typography>
-                        <Typography variant="body2">
-                            {"or "}
+                            Continue →
+                        </Button>
+                    )}
+                </>
+            )}
+            {activeStep === 2 && (
+                <>
+                    <Button
+                        id="import-network-modal-back-btn"
+                        onClick={handleBack}
+                        variant="outlined"
+                    >
+                        Back
+                    </Button>
+                    <Button
+                        disabled={!networkName.trim()}
+                        id="import-network-modal-import-btn"
+                        onClick={handleImport}
+                        sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
+                        variant="contained"
+                    >
+                        Import network
+                    </Button>
+                </>
+            )}
+        </>
+    )
+
+    return (
+        <MUIDialog
+            id="import-network-modal"
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Import network definition"
+            paperProps={{minWidth: "560px"}}
+            footer={footer}
+        >
+            <Stepper
+                activeStep={activeStep}
+                id="import-network-modal-stepper"
+                sx={(theme) => ({
+                    marginTop: 1,
+                    // MUI v9 rejects the CSS named color "gray" it uses by default for
+                    // inactive steps/connectors — override with valid token values.
+                    "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
+                        color: "var(--bs-gray-medium)",
+                    },
+                    "& .MuiStepConnector-line": {
+                        borderColor: "var(--bs-gray-light)",
+                    },
+                    "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
+                        color: "var(--bs-gray-medium)",
+                    },
+                    // In dark mode the completed-step icon defaults to a muted/gray fill;
+                    // make it white so completed steps read clearly against the dark backdrop.
+                    ...(theme.palette.mode === "dark" && {
+                        "& .MuiStepIcon-root.Mui-completed": {
+                            color: theme.palette.common.white,
+                        },
+                    }),
+                })}
+            >
+                {STEPS.map((label) => (
+                    <Step key={label}>
+                        <StepLabel>{label}</StepLabel>
+                    </Step>
+                ))}
+            </Stepper>
+
+            {/* Step 1: Select file */}
+            {activeStep === 0 && (
+                <DropZone
+                    isDragOver={isDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={handleBrowseClick}
+                    role="button"
+                    aria-label="Drop zone for network definition file"
+                >
+                    <CloudUploadOutlinedIcon
+                        id="import-network-modal-upload-icon"
+                        sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
+                    />
+                    <Typography
+                        id="import-network-modal-drop-text"
+                        variant="subtitle1"
+                        sx={{color: "primary.main", fontWeight: "bold"}}
+                    >
+                        Drag &amp; drop a network definition
+                    </Typography>
+                    <Typography variant="body2">
+                        {"or "}
+                        <Box
+                            component="button"
+                            id="import-network-modal-browse-link"
+                            onClick={(event) => {
+                                event.stopPropagation()
+                                handleBrowseClick()
+                            }}
+                            sx={{
+                                background: "none",
+                                border: "none",
+                                color: "var(--bs-secondary)",
+                                cursor: "pointer",
+                                font: "inherit",
+                                padding: 0,
+                                textDecoration: "underline",
+                                "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                            }}
+                        >
+                            browse your files
+                        </Box>
+                    </Typography>
+                    <Typography
+                        id="import-network-modal-file-types"
+                        variant="caption"
+                        sx={{color: "text.secondary"}}
+                    >
+                        Accepts .hocon and .json up to 5 MB.
+                    </Typography>
+                    <input
+                        accept={ACCEPTED_MIME_TYPES}
+                        aria-hidden="true"
+                        data-testid="import-network-file-input"
+                        onChange={handleFileChange}
+                        onClick={(event) => event.stopPropagation()}
+                        ref={fileInputRef}
+                        style={{display: "none"}}
+                        tabIndex={-1}
+                        type="file"
+                    />
+                </DropZone>
+            )}
+
+            {/* Step 2: Review */}
+            {activeStep === 1 && (
+                <Box
+                    id="import-network-modal-review"
+                    sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        marginTop: 4,
+                        minHeight: "220px",
+                    }}
+                >
+                    {parseState === "loading" && (
+                        <>
+                            <CircularProgress
+                                id="import-network-modal-spinner"
+                                size={48}
+                            />
+                            <Typography
+                                id="import-network-modal-parsing-text"
+                                variant="subtitle1"
+                                sx={{fontWeight: "bold"}}
+                            >
+                                {`Parsing & validating ${fileExt}…`}
+                            </Typography>
+                            <Typography
+                                id="import-network-modal-parsing-filename"
+                                variant="body2"
+                                sx={{color: "text.secondary", fontFamily: "monospace"}}
+                            >
+                                {file?.name}
+                            </Typography>
+                        </>
+                    )}
+                    {parseState === "success" && (
+                        <Box sx={{width: "100%"}}>
+                            {/* Success banner */}
                             <Box
-                                component="button"
-                                id="import-network-modal-browse-link"
-                                onClick={(event) => {
-                                    event.stopPropagation()
-                                    handleBrowseClick()
-                                }}
+                                id="import-network-modal-success-banner"
                                 sx={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "var(--bs-secondary)",
-                                    cursor: "pointer",
-                                    font: "inherit",
-                                    padding: 0,
-                                    textDecoration: "underline",
-                                    "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                                    alignItems: "center",
+                                    backgroundColor: (theme) => alpha(theme.palette.success.main, 0.12),
+                                    border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
+                                    borderRadius: 2,
+                                    color: "var(--bs-green)",
+                                    display: "flex",
+                                    gap: 1.5,
+                                    padding: "14px 16px",
                                 }}
                             >
-                                browse your files
+                                <CheckCircleOutlineIcon />
+                                <Typography variant="body2">
+                                    {`Valid ${fileExt} — `}
+                                    <Box
+                                        component="span"
+                                        sx={{fontWeight: "bold"}}
+                                    >
+                                        parsed successfully
+                                    </Box>
+                                </Typography>
                             </Box>
-                        </Typography>
-                        <Typography
-                            id="import-network-modal-file-types"
-                            variant="caption"
-                            sx={{color: "text.secondary"}}
-                        >
-                            Accepts .hocon and .json up to 5 MB.
-                        </Typography>
-                        <input
-                            accept={ACCEPTED_MIME_TYPES}
-                            aria-hidden="true"
-                            data-testid="import-network-file-input"
-                            onChange={handleFileChange}
-                            onClick={(event) => event.stopPropagation()}
-                            ref={fileInputRef}
-                            style={{display: "none"}}
-                            tabIndex={-1}
-                            type="file"
-                        />
-                    </DropZone>
-                )}
-
-                {/* Step 2: Review */}
-                {activeStep === 1 && (
-                    <Box
-                        id="import-network-modal-review"
-                        sx={{
-                            alignItems: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            marginTop: 4,
-                            minHeight: "220px",
-                        }}
-                    >
-                        {parseState === "loading" && (
-                            <>
-                                <CircularProgress
-                                    id="import-network-modal-spinner"
-                                    size={48}
+                            {/* File info row */}
+                            <Box
+                                sx={{
+                                    alignItems: "flex-start",
+                                    display: "flex",
+                                    gap: 1.5,
+                                    marginTop: 3,
+                                }}
+                            >
+                                <InsertDriveFileOutlinedIcon
+                                    id="import-network-modal-file-icon"
+                                    sx={{color: "text.secondary", fontSize: "2rem"}}
                                 />
                                 <Typography
-                                    id="import-network-modal-parsing-text"
-                                    variant="subtitle1"
-                                    sx={{fontWeight: "bold"}}
-                                >
-                                    {`Parsing & validating ${fileExt}…`}
-                                </Typography>
-                                <Typography
-                                    id="import-network-modal-parsing-filename"
-                                    variant="body2"
-                                    sx={{color: "text.secondary", fontFamily: "monospace"}}
+                                    id="import-network-modal-review-filename"
+                                    variant="body1"
+                                    sx={{
+                                        flex: 1,
+                                        fontFamily: "monospace",
+                                        fontSize: 16,
+                                        minWidth: 0,
+                                        wordBreak: "break-all",
+                                    }}
                                 >
                                     {file?.name}
                                 </Typography>
-                            </>
-                        )}
-                        {parseState === "success" && (
-                            <Box sx={{width: "100%"}}>
-                                {/* Success banner */}
-                                <Box
-                                    id="import-network-modal-success-banner"
+                                <Typography
+                                    id="import-network-modal-review-filesize"
+                                    variant="body2"
                                     sx={{
-                                        alignItems: "center",
-                                        backgroundColor: (theme) => alpha(theme.palette.success.main, 0.12),
-                                        border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
-                                        borderRadius: 2,
-                                        color: "var(--bs-green)",
-                                        display: "flex",
-                                        gap: 1.5,
-                                        padding: "14px 16px",
+                                        color: "text.secondary",
+                                        flexShrink: 0,
+                                        fontSize: 14,
+                                        whiteSpace: "nowrap",
                                     }}
                                 >
-                                    <CheckCircleOutlineIcon />
-                                    <Typography variant="body2">
-                                        {`Valid ${fileExt} — `}
-                                        <Box
-                                            component="span"
-                                            sx={{fontWeight: "bold"}}
-                                        >
-                                            parsed successfully
-                                        </Box>
-                                    </Typography>
-                                </Box>
-                                {/* File info row */}
-                                <Box
-                                    sx={{
-                                        alignItems: "flex-start",
-                                        display: "flex",
-                                        gap: 1.5,
-                                        marginTop: 3,
-                                    }}
-                                >
-                                    <InsertDriveFileOutlinedIcon
-                                        id="import-network-modal-file-icon"
-                                        sx={{color: "text.secondary", fontSize: "2rem"}}
-                                    />
-                                    <Typography
-                                        id="import-network-modal-review-filename"
-                                        variant="body1"
-                                        sx={{
-                                            flex: 1,
-                                            fontFamily: "monospace",
-                                            fontSize: 16,
-                                            minWidth: 0,
-                                            wordBreak: "break-all",
-                                        }}
-                                    >
-                                        {file?.name}
-                                    </Typography>
-                                    <Typography
-                                        id="import-network-modal-review-filesize"
-                                        variant="body2"
-                                        sx={{
-                                            color: "text.secondary",
-                                            flexShrink: 0,
-                                            fontSize: 14,
-                                            whiteSpace: "nowrap",
-                                        }}
-                                    >
-                                        {formatFileSize(file?.size ?? 0)}
-                                    </Typography>
-                                </Box>
-                                {/* Info note */}
-                                <Box
-                                    id="import-network-modal-hocon-note"
-                                    sx={{
-                                        alignItems: "flex-start",
-                                        backgroundColor: "action.hover",
-                                        borderRadius: 2,
-                                        display: "flex",
-                                        gap: 1.5,
-                                        marginTop: 3,
-                                        padding: "14px 16px",
-                                    }}
-                                >
-                                    <InfoOutlinedIcon
-                                        fontSize="small"
-                                        sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
-                                    />
-                                    <Typography
-                                        variant="body2"
-                                        sx={{color: "text.secondary"}}
-                                    >
-                                        Definitions are stored as JSON, so{" "}
-                                        <Box
-                                            component="span"
-                                            sx={{color: "text.primary", fontWeight: "bold"}}
-                                        >
-                                            comments in your HOCON will be removed
-                                        </Box>{" "}
-                                        on import. Keep the original file if you need them.
-                                    </Typography>
-                                </Box>
+                                    {formatFileSize(file?.size ?? 0)}
+                                </Typography>
                             </Box>
-                        )}
-                        {parseState === "error" && (
+                            {/* Info note */}
                             <Box
-                                id="import-network-modal-error-banner"
-                                sx={{
-                                    alignItems: "center",
-                                    backgroundColor: "error.dark",
-                                    borderRadius: 1,
-                                    color: "error.contrastText",
-                                    display: "flex",
-                                    gap: 1,
-                                    padding: "10px 14px",
-                                    width: "100%",
-                                }}
-                            >
-                                <ErrorOutlineIcon fontSize="small" />
-                                <Typography variant="body2">{`Parse error: ${parseError}`}</Typography>
-                            </Box>
-                        )}
-                    </Box>
-                )}
-
-                {/* Step 3: Confirm */}
-                {activeStep === 2 && (
-                    <Box
-                        id="import-network-modal-confirm"
-                        sx={{display: "flex", flexDirection: "column", gap: 2, marginTop: 3}}
-                    >
-                        {/* Network name field */}
-                        <Box>
-                            <Typography
-                                id="import-network-modal-name-label"
-                                variant="caption"
-                                sx={{
-                                    color: "text.secondary",
-                                    fontWeight: "bold",
-                                    letterSpacing: "0.08em",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                Network name
-                            </Typography>
-                            <TextField
-                                id="import-network-modal-name-input"
-                                fullWidth
-                                helperText="Pulled from the filename — edit if you like."
-                                onChange={(event) => {
-                                    setNetworkName(event.target.value)
-                                    setConflictAcknowledgedFor(null)
-                                }}
-                                size="small"
-                                sx={{marginTop: 0.5}}
-                                value={networkName}
-                            />
-                        </Box>
-                        {/* Conflict warning */}
-                        {showConflict && (
-                            <Box
-                                id="import-network-modal-conflict-warning"
+                                id="import-network-modal-hocon-note"
                                 sx={{
                                     alignItems: "flex-start",
-                                    borderRadius: 1,
-                                    borderStyle: "solid",
-                                    borderWidth: "1px",
-                                    borderColor: "warning.main",
+                                    backgroundColor: "action.hover",
+                                    borderRadius: 2,
                                     display: "flex",
-                                    flexDirection: "column",
-                                    gap: 1,
-                                    padding: "10px 14px",
+                                    gap: 1.5,
+                                    marginTop: 3,
+                                    padding: "14px 16px",
                                 }}
                             >
-                                <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
-                                    <WarningAmberIcon
-                                        fontSize="small"
-                                        sx={{color: "warning.main", flexShrink: 0}}
-                                    />
-                                    <Typography variant="body2">
-                                        {`A network named "${networkName.trim()}" already exists in `}
-                                        <strong>{TEMPORARY_FOLDER_DISPLAY}</strong>.
-                                    </Typography>
-                                </Box>
-                                <Box sx={{display: "flex", gap: 1, marginTop: 0.5}}>
-                                    <Button
-                                        id="import-network-modal-replace-btn"
-                                        onClick={handleReplace}
-                                        size="small"
-                                        variant="outlined"
+                                <InfoOutlinedIcon
+                                    fontSize="small"
+                                    sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
+                                />
+                                <Typography
+                                    variant="body2"
+                                    sx={{color: "text.secondary"}}
+                                >
+                                    Definitions are stored as JSON, so{" "}
+                                    <Box
+                                        component="span"
+                                        sx={{color: "text.primary", fontWeight: "bold"}}
                                     >
-                                        Replace
-                                    </Button>
-                                    <Button
-                                        id="import-network-modal-rename-btn"
-                                        onClick={handleRename}
-                                        size="small"
-                                        sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
-                                        variant="contained"
-                                    >
-                                        Rename
-                                    </Button>
-                                </Box>
+                                        comments in your HOCON will be removed
+                                    </Box>{" "}
+                                    on import. Keep the original file if you need them.
+                                </Typography>
                             </Box>
-                        )}
-                        {/* Added to Temporary info */}
+                        </Box>
+                    )}
+                    {parseState === "error" && (
                         <Box
-                            id="import-network-modal-temporary-info"
+                            id="import-network-modal-error-banner"
+                            sx={{
+                                alignItems: "center",
+                                backgroundColor: "error.dark",
+                                borderRadius: 1,
+                                color: "error.contrastText",
+                                display: "flex",
+                                gap: 1,
+                                padding: "10px 14px",
+                                width: "100%",
+                            }}
+                        >
+                            <ErrorOutlineIcon fontSize="small" />
+                            <Typography variant="body2">{`Parse error: ${parseError}`}</Typography>
+                        </Box>
+                    )}
+                </Box>
+            )}
+
+            {/* Step 3: Confirm */}
+            {activeStep === 2 && (
+                <Box
+                    id="import-network-modal-confirm"
+                    sx={{display: "flex", flexDirection: "column", gap: 2, marginTop: 3}}
+                >
+                    {/* Network name field */}
+                    <Box>
+                        <Typography
+                            id="import-network-modal-name-label"
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                fontWeight: "bold",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            Network name
+                        </Typography>
+                        <TextField
+                            id="import-network-modal-name-input"
+                            fullWidth
+                            helperText="Pulled from the filename — edit if you like."
+                            onChange={(event) => {
+                                setNetworkName(event.target.value)
+                                setConflictAcknowledgedFor(null)
+                            }}
+                            size="small"
+                            sx={{marginTop: 0.5}}
+                            value={networkName}
+                        />
+                    </Box>
+                    {/* Conflict warning */}
+                    {showConflict && (
+                        <Box
+                            id="import-network-modal-conflict-warning"
                             sx={{
                                 alignItems: "flex-start",
                                 borderRadius: 1,
                                 borderStyle: "solid",
                                 borderWidth: "1px",
-                                borderColor: "divider",
+                                borderColor: "warning.main",
                                 display: "flex",
-                                gap: 1.5,
+                                flexDirection: "column",
+                                gap: 1,
                                 padding: "10px 14px",
                             }}
                         >
-                            <HourglassTopIcon
-                                fontSize="small"
-                                sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
-                            />
-                            <Box>
-                                <Typography
-                                    variant="body2"
-                                    sx={{fontWeight: "bold"}}
-                                >
-                                    Added to {TEMPORARY_FOLDER_DISPLAY}
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{color: "text.secondary"}}
-                                >
-                                    Imported networks always land in the {TEMPORARY_FOLDER_DISPLAY} category.
+                            <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
+                                <WarningAmberIcon
+                                    fontSize="small"
+                                    sx={{color: "warning.main", flexShrink: 0}}
+                                />
+                                <Typography variant="body2">
+                                    {`A network named "${networkName.trim()}" already exists in `}
+                                    <strong>{TEMPORARY_FOLDER_DISPLAY}</strong>.
                                 </Typography>
                             </Box>
+                            <Box sx={{display: "flex", gap: 1, marginTop: 0.5}}>
+                                <Button
+                                    id="import-network-modal-replace-btn"
+                                    onClick={handleReplace}
+                                    size="small"
+                                    variant="outlined"
+                                >
+                                    Replace
+                                </Button>
+                                <Button
+                                    id="import-network-modal-rename-btn"
+                                    onClick={handleRename}
+                                    size="small"
+                                    sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
+                                    variant="contained"
+                                >
+                                    Rename
+                                </Button>
+                            </Box>
+                        </Box>
+                    )}
+                    {/* Added to Temporary info */}
+                    <Box
+                        id="import-network-modal-temporary-info"
+                        sx={{
+                            alignItems: "flex-start",
+                            borderRadius: 1,
+                            borderStyle: "solid",
+                            borderWidth: "1px",
+                            borderColor: "divider",
+                            display: "flex",
+                            gap: 1.5,
+                            padding: "10px 14px",
+                        }}
+                    >
+                        <HourglassTopIcon
+                            fontSize="small"
+                            sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
+                        />
+                        <Box>
+                            <Typography
+                                variant="body2"
+                                sx={{fontWeight: "bold"}}
+                            >
+                                Added to {TEMPORARY_FOLDER_DISPLAY}
+                            </Typography>
+                            <Typography
+                                variant="body2"
+                                sx={{color: "text.secondary"}}
+                            >
+                                Imported networks always land in the {TEMPORARY_FOLDER_DISPLAY} category.
+                            </Typography>
                         </Box>
                     </Box>
-                )}
-            </DialogContent>
-            <DialogActions sx={{paddingTop: 0}}>
-                {activeStep === 0 && (
-                    <Button
-                        id="import-network-modal-cancel-btn"
-                        onClick={onClose}
-                        variant="outlined"
-                    >
-                        Cancel
-                    </Button>
-                )}
-                {activeStep === 1 && (
-                    <>
-                        <Button
-                            id="import-network-modal-back-btn"
-                            onClick={handleBack}
-                            variant="outlined"
-                        >
-                            Back
-                        </Button>
-                        {parseState === "success" && (
-                            <Button
-                                id="import-network-modal-continue-btn"
-                                onClick={handleContinue}
-                                sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
-                                variant="contained"
-                            >
-                                Continue →
-                            </Button>
-                        )}
-                    </>
-                )}
-                {activeStep === 2 && (
-                    <>
-                        <Button
-                            id="import-network-modal-back-btn"
-                            onClick={handleBack}
-                            variant="outlined"
-                        >
-                            Back
-                        </Button>
-                        <Button
-                            disabled={!networkName.trim()}
-                            id="import-network-modal-import-btn"
-                            onClick={handleImport}
-                            sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
-                            variant="contained"
-                        >
-                            Import network
-                        </Button>
-                    </>
-                )}
-            </DialogActions>
-        </Dialog>
+                </Box>
+            )}
+        </MUIDialog>
     )
 }
