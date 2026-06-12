@@ -1094,7 +1094,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         variant="body1"
                         sx={{fontWeight: "bold"}}
                     >
-                        Importing network…
+                        Importing network...
                     </Typography>
                 </Paper>
             </Backdrop>
