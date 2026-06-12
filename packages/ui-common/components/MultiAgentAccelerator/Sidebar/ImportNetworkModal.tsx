@@ -32,7 +32,7 @@ import IconButton from "@mui/material/IconButton"
 import Step from "@mui/material/Step"
 import StepLabel from "@mui/material/StepLabel"
 import Stepper from "@mui/material/Stepper"
-import {styled} from "@mui/material/styles"
+import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
 import {jsonrepair} from "jsonrepair"
@@ -522,43 +522,63 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     id="import-network-modal-success-banner"
                                     sx={{
                                         alignItems: "center",
-                                        backgroundColor: "success.dark",
-                                        borderRadius: 1,
-                                        color: "var(--bs-white)",
+                                        backgroundColor: (theme) => alpha(theme.palette.success.main, 0.12),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
+                                        borderRadius: 2,
+                                        color: "var(--bs-green)",
                                         display: "flex",
-                                        gap: 1,
-                                        padding: "10px 14px",
+                                        gap: 1.5,
+                                        padding: "14px 16px",
                                     }}
                                 >
-                                    <CheckCircleOutlineIcon fontSize="small" />
-                                    <Typography variant="body2">{`Valid ${fileExt} — parsed successfully`}</Typography>
+                                    <CheckCircleOutlineIcon />
+                                    <Typography variant="body2">
+                                        {`Valid ${fileExt} — `}
+                                        <Box
+                                            component="span"
+                                            sx={{fontWeight: "bold"}}
+                                        >
+                                            parsed successfully
+                                        </Box>
+                                    </Typography>
                                 </Box>
                                 {/* File info row */}
                                 <Box
                                     sx={{
-                                        alignItems: "center",
+                                        alignItems: "flex-start",
                                         display: "flex",
-                                        gap: 1,
-                                        marginTop: 2,
+                                        gap: 1.5,
+                                        marginTop: 3,
                                     }}
                                 >
                                     <InsertDriveFileOutlinedIcon
                                         id="import-network-modal-file-icon"
-                                        sx={{color: "text.secondary"}}
+                                        sx={{color: "text.secondary", fontSize: "2rem"}}
                                     />
                                     <Typography
                                         id="import-network-modal-review-filename"
-                                        variant="body2"
-                                        sx={{fontFamily: "monospace", minWidth: 0, wordBreak: "break-all"}}
+                                        variant="body1"
+                                        sx={{
+                                            flex: 1,
+                                            fontFamily: "monospace",
+                                            fontSize: 16,
+                                            minWidth: 0,
+                                            wordBreak: "break-all",
+                                        }}
                                     >
                                         {file?.name}
                                     </Typography>
                                     <Typography
                                         id="import-network-modal-review-filesize"
                                         variant="body2"
-                                        sx={{color: "text.secondary"}}
+                                        sx={{
+                                            color: "text.secondary",
+                                            flexShrink: 0,
+                                            fontSize: 14,
+                                            whiteSpace: "nowrap",
+                                        }}
                                     >
-                                        {`· ${formatFileSize(file?.size ?? 0)}`}
+                                        {formatFileSize(file?.size ?? 0)}
                                     </Typography>
                                 </Box>
                                 {/* Info note */}
@@ -566,24 +586,30 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     id="import-network-modal-hocon-note"
                                     sx={{
                                         alignItems: "flex-start",
-                                        borderRadius: 1,
-                                        borderStyle: "solid",
-                                        borderWidth: "1px",
-                                        borderColor: "divider",
+                                        backgroundColor: "action.hover",
+                                        borderRadius: 2,
                                         display: "flex",
                                         gap: 1.5,
-                                        marginTop: 2,
-                                        padding: "10px 14px",
+                                        marginTop: 3,
+                                        padding: "14px 16px",
                                     }}
                                 >
                                     <InfoOutlinedIcon
                                         fontSize="small"
                                         sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
                                     />
-                                    <Typography variant="body2">
+                                    <Typography
+                                        variant="body2"
+                                        sx={{color: "text.secondary"}}
+                                    >
                                         Definitions are stored as JSON, so{" "}
-                                        <strong>comments in your HOCON will be removed</strong> on import. Keep the
-                                        original file if you need them.
+                                        <Box
+                                            component="span"
+                                            sx={{color: "text.primary", fontWeight: "bold"}}
+                                        >
+                                            comments in your HOCON will be removed
+                                        </Box>{" "}
+                                        on import. Keep the original file if you need them.
                                     </Typography>
                                 </Box>
                             </Box>

@@ -39,6 +39,7 @@ import {
     AgentNetworkDefinitionEntry,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
+import {ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -263,6 +264,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     >(new Map())
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [importModalOpen, setImportModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
@@ -814,7 +816,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
                         onEditNetwork={handleEditNetwork}
-                        onImportNetwork={handleImportNetwork}
+                        onImportClick={() => setImportModalOpen(true)}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
@@ -982,6 +984,15 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
+    const getImportNetworkModal = () => (
+        <ImportNetworkModal
+            existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
+            isOpen={importModalOpen}
+            onClose={() => setImportModalOpen(false)}
+            onImport={handleImportNetwork}
+        />
+    )
+
     const getTourModal = () =>
         tourModalOpen && (
             <MUIDialog
@@ -1103,6 +1114,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getTourModal()}
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
+            {getImportNetworkModal()}
             <Backdrop
                 id="multi-agent-accelerator-import-backdrop"
                 data-testid="multi-agent-accelerator-import-backdrop"

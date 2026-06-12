@@ -39,7 +39,6 @@ import {
 } from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
-import {ImportNetworkModal} from "./ImportNetworkModal"
 import {buildTreeViewItems} from "./TreeBuilder"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
@@ -150,7 +149,7 @@ export interface SidebarProps {
     readonly networks: readonly AgentInfo[]
     readonly onEditNetwork?: (network: string) => void
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
-    readonly onImportNetwork?: (name: string, content: string) => void
+    readonly onImportClick?: () => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
     readonly newlyAddedTemporaryNetworks?: Set<string>
@@ -170,7 +169,7 @@ export const Sidebar: FC<SidebarProps> = ({
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
     onEditNetwork,
-    onImportNetwork,
+    onImportClick,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -185,7 +184,6 @@ export const Sidebar: FC<SidebarProps> = ({
     const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
     const settingsPopoverOpen = Boolean(settingsAnchorEl)
-    const [importModalOpen, setImportModalOpen] = useState(false)
 
     const [expandedItems, setExpandedItems] = useState<string[]>([])
 
@@ -376,7 +374,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             aria-label="Import Network Definition"
                             disabled={isAwaitingLlm}
                             id="import-network-btn"
-                            onClick={() => setImportModalOpen(true)}
+                            onClick={onImportClick}
                             sx={{display: "inline-block", minWidth: "40px"}}
                         >
                             <Tooltip
@@ -578,12 +576,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Box>
                 )}
             </Popover>
-            <ImportNetworkModal
-                existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
-                isOpen={importModalOpen}
-                onClose={() => setImportModalOpen(false)}
-                onImport={onImportNetwork}
-            />
         </>
     )
 }

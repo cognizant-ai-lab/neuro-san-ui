@@ -66,6 +66,7 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
 }
 
 const onDeleteNetworkMock = jest.fn()
+const onImportClickMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
@@ -75,6 +76,7 @@ const DEFAULT_PROPS: SidebarProps = {
     networks: LIST_NETWORKS_RESPONSE,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     onDeleteNetwork: onDeleteNetworkMock,
+    onImportClick: onImportClickMock,
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
@@ -398,21 +400,11 @@ describe("SideBar", () => {
         await screen.findByRole("button", {name: /Import Network Definition/u})
     })
 
-    it("should open the ImportNetworkModal when the import button is clicked", async () => {
+    it("should call onImportClick when the import button is clicked", async () => {
         renderSidebarComponent()
         const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
         await user.click(importButton)
-        await screen.findByTestId("import-network-modal")
-    })
-
-    it("should close the ImportNetworkModal when Cancel is clicked", async () => {
-        renderSidebarComponent()
-        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
-        await user.click(importButton)
-        await screen.findByTestId("import-network-modal")
-
-        await user.click(screen.getByRole("button", {name: /cancel/iu}))
-        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+        expect(onImportClickMock).toHaveBeenCalledTimes(1)
     })
 
     it("should disable the import button when isAwaitingLlm is true", async () => {

@@ -53,6 +53,7 @@ import {
     MultiAgentAccelerator,
     SHOW_TOUR_DELAY_MS,
 } from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {ImportNetworkModalProps} from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
@@ -77,7 +78,7 @@ const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
 const networkIconSuggestionsMock = jest.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
-let onImportNetwork: (name: string, content: string) => void
+let onImport: (name: string, content: string) => void
 let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
@@ -124,10 +125,21 @@ jest.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
             onDeleteNetwork = props.onDeleteNetwork
-            onImportNetwork = props.onImportNetwork
             setSelectedNetwork = props.setSelectedNetwork
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
+        },
+    }
+})
+
+jest.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", () => {
+    const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
+    return {
+        __esModule: true,
+        ImportNetworkModal: (props: ImportNetworkModalProps) => {
+            onImport = props.onImport
+            const OriginalModal = originalModule.ImportNetworkModal
+            return <OriginalModal {...props} />
         },
     }
 })
@@ -358,7 +370,7 @@ describe("MultiAgentAccelerator", () => {
         await screen.findByText("Agent Networks")
 
         await act(async () => {
-            onImportNetwork(
+            onImport(
                 "Santas Workshop Ops",
                 JSON.stringify({
                     tools: [
@@ -384,6 +396,26 @@ describe("MultiAgentAccelerator", () => {
         await waitFor(() => {
             expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).not.toBeVisible()
         })
+    })
+
+    it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
+        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
+
+        renderMultiAgentAcceleratorPage()
+
+        await screen.findByText("Agent Networks")
+
+        // The modal is not mounted until the import button is clicked.
+        expect(screen.queryByTestId("import-network-modal")).not.toBeInTheDocument()
+
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+
+        await screen.findByTestId("import-network-modal")
+
+        await user.click(screen.getByRole("button", {name: /cancel/iu}))
+
+        await waitFor(() => expect(screen.queryByTestId("import-network-modal")).not.toBeInTheDocument())
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {
