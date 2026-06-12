@@ -221,6 +221,33 @@ describe("ImportNetworkModal", () => {
         expect(nameInput.value).toBe("Ecommerce Support")
     })
 
+    it("should navigate from step 3 all the way back to step 1 via Back", async () => {
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "my_network.json", '{"agents": {}}')
+        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        await screen.findByRole("button", {name: /Import network/u})
+        // Step 3 -> step 2
+        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
+        await screen.findByRole("button", {name: /Continue/u})
+        // Step 2 -> step 1
+        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
+        await screen.findByRole("button", {name: /drop zone/iu})
+    })
+
+    it("should re-advance to step 3 after going back to step 2", async () => {
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        // Step 3 -> step 2
+        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
+        // Step 2 -> step 3 again
+        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput.value).toBe("Ecommerce Support")
+    })
+
     it("should show conflict warning and dismiss conflict warning when Replace is clicked", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
