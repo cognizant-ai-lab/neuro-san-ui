@@ -82,11 +82,20 @@ main() {
     "        },"
   ' "${coverage_summary}" >"${new_coverage_values}"
 
+    # Regex for locating the global block in jest.config.ts.
+    global_block_range='/^[[:space:]]*global:[[:space:]]*{/,/^[[:space:]]*},[[:space:]]*$/'
+
+    # Check if the values changed
+    if diff "${new_coverage_values}" <(sed -n "${global_block_range}p" jest.config.ts) >/dev/null; then
+        echo "Coverage values have not changed. No update needed."
+        exit 0
+    fi
+
     # Update coverage numbers in jest.config.ts.
-    if sed "${sed_inplace[@]}" '/^[[:space:]]*global:[[:space:]]*{/,/^[[:space:]]*},[[:space:]]*$/{
-    /^[[:space:]]*global:[[:space:]]*{/r '"${new_coverage_values}"'
+    if sed "${sed_inplace[@]}" "${global_block_range}{
+    /^[[:space:]]*global:[[:space:]]*{/r ${new_coverage_values}
     d
-  }' jest.config.ts; then
+    }" jest.config.ts; then
         echo "Coverage updated successfully in jest.config.ts"
     else
         echo "Error: Failed to update coverage in jest.config.ts" >&2
