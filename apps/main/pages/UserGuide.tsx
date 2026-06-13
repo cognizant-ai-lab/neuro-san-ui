@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useEffect, useState} from "react"
+import {FC, JSX as ReactJSX, useEffect, useState} from "react"
 import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 import remarkToc from "remark-toc"
 
+import {CustomPageProps} from "./Types"
 import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
 
 // Path to user guide Markdown doc on the server
 const USER_GUIDE_PATH = "user_guide.md"
 
 // Main function.
-export default function UserGuide() {
+export const UserGuide: FC & CustomPageProps = (): ReactJSX.Element => {
     const [userGuide, setUserGuide] = useState(null)
 
     const getData = async () => {
@@ -72,3 +73,5 @@ export default function UserGuide() {
 }
 
 UserGuide.authRequired = true
+
+export default UserGuide

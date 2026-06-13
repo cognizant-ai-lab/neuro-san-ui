@@ -330,7 +330,7 @@ export const Navbar = ({
                         id="user-guide"
                         key="user-guide"
                         component="a"
-                        href="/userguide"
+                        href="/UserGuide"
                         target="_blank"
                         sx={{...DISABLE_OUTLINE_PROPS}}
                     >

@@ -20,7 +20,7 @@ import {useSession} from "next-auth/react"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {MultiAgentAcceleratorProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import MultiAgentAcceleratorPage from "../../pages/multiAgentAccelerator"
+import {default as MultiAgentAcceleratorPage} from "../../pages/multiAgentAccelerator"
 
 const MOCK_USER = "mock-user"
 const MOCK_IMAGE = "https://example.com/mock-image.png"

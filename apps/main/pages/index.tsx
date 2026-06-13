@@ -20,8 +20,9 @@ import {styled} from "@mui/material/styles"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
-import {ReactElement} from "react"
+import {FC, JSX as ReactJSX} from "react"
 
+import {CustomPageProps} from "./Types"
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 
@@ -132,7 +133,7 @@ const NeuroAIToolsContainer = styled(Box)({
 // #endregion: Styled Components
 
 // Main function.
-export default function Index(): ReactElement {
+export const Index: FC & CustomPageProps = (): ReactJSX.Element => {
     const router = useRouter()
 
     // Access environment info
@@ -232,3 +233,5 @@ export default function Index(): ReactElement {
 
 // Explicitly want to leave this splash page open
 Index.authRequired = false
+
+export default Index

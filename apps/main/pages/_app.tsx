@@ -49,15 +49,9 @@ import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
+import {CustomPageProps} from "./Types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
-
-interface CustomPageProps {
-    authRequired?: boolean
-    isContainedInViewport?: boolean
-    pageContext?: string
-    withBreadcrumbs?: boolean
-}
 
 type ExtendedAppProps = AppProps & {
     // Extend Component with custom properties
@@ -100,7 +94,7 @@ const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
 
 // Main function.
 // eslint-disable-next-line react/no-multi-comp
-export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): ReactElement {
+export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
     const {
         auth0ClientId,
         auth0Domain,
@@ -382,3 +376,5 @@ export default function NeuroSanUI({Component, pageProps}: ExtendedAppProps): Re
         </div>
     )
 }
+
+export default NeuroSanUI
