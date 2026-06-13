@@ -21,7 +21,7 @@ limitations under the License.
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
-import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
+import {authenticationEnabled} from "../../packages/ui-common/const"
 
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will

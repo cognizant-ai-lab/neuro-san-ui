@@ -30,7 +30,7 @@ export const MultiAgentAcceleratorPage: FC & CustomPageProps = (): ReactJSX.Elem
 
     return (
         <MultiAgentAccelerator
-            userName={username}
+            username={username}
             backendNeuroSanApiUrl={backendNeuroSanApiUrl}
         />
     )
