@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {LOGO} from "@cognizant-ai-lab/ui-common/const"
 import Box from "@mui/material/Box"
 import {styled} from "@mui/material/styles"
 import NextImage from "next/image"
@@ -24,6 +23,7 @@ import {FC, JSX as ReactJSX} from "react"
 
 import {CustomPageProps} from "./Types"
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
+import {LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 
 // #region: Styled Components

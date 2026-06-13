@@ -15,12 +15,11 @@ limitations under the License.
 */
 
 /*
-Tests for instrumentation.ts NextJS startup file.
+Tests for instrumentation.ts Next.js startup file.
  */
 
-import {authenticationEnabled} from "@cognizant-ai-lab/ui-common/const"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {authenticationEnabled} from "../../../../../packages/ui-common/const"
 import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
 jest.mock("../../../../../packages/ui-common/const")
