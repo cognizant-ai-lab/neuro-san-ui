@@ -324,7 +324,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 in MUI RichTreeView including the imperative API (https://mui.com/x/react-tree-view/rich-tree-view/selection/#imperative-api)
                 but couldn't get it to work so resorting to this for now.
                 */
-                const temporaryNetworkNode = document.querySelector(`[data-itemid="${firstItem}"]`)
+                const temporaryNetworkNode = document.querySelector(`[data-itemid="${CSS.escape(firstItem)}"]`)
                 if (temporaryNetworkNode) {
                     temporaryNetworkNode.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"})
                     temporaryNetworkNode.classList.add(SPARKLE_HIGHLIGHT_CLASS)

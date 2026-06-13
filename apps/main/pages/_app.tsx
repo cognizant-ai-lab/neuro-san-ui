@@ -29,19 +29,13 @@ import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
 
-import {
-    Auth,
-    ErrorBoundary,
-    Footer,
-    getTitleBase,
-    LoadingSpinner,
-    Navbar,
-    NavbarProps,
-    NeuroAIBreadcrumbs,
-    smartSignOut,
-    Snackbar,
-    useAuthentication,
-} from "../../../packages/ui-common"
+import {Auth} from "../../../packages/ui-common/components/Authentication/Auth"
+import {NeuroAIBreadcrumbs} from "../../../packages/ui-common/components/Common/Breadcrumbs"
+import {Footer} from "../../../packages/ui-common/components/Common/Footer"
+import {LoadingSpinner} from "../../../packages/ui-common/components/Common/LoadingSpinner"
+import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
+import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
+import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
@@ -50,6 +44,8 @@ import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
 import {CustomPageProps} from "./Types"
+import {smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
+import {getTitleBase} from "../../../packages/ui-common/utils/title"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 

@@ -1,7 +1,6 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
-import {UserEvent} from "@testing-library/user-event"
-import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
@@ -337,13 +336,13 @@ describe("SettingsDialog", () => {
 
         const zenModeToggle = screen.getByTestId("zen-mode-checkbox")
 
-        const checkBoxElement = within(zenModeToggle).getByRole("checkbox")
+        const checkboxElement = within(zenModeToggle).getByRole("checkbox")
 
-        expect(checkBoxElement).toBeChecked()
+        expect(checkboxElement).toBeChecked()
 
         // Click to disable Zen mode
-        await user.click(checkBoxElement)
-        expect(checkBoxElement).not.toBeChecked()
+        await user.click(checkboxElement)
+        expect(checkboxElement).not.toBeChecked()
 
         expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
     })

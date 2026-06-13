@@ -10,7 +10,7 @@
         "@testing-library/dom": "*",
         "eslint": "*",
         "eslint-config-prettier": "*",
-        "eslint-plugin-import": "*",
+        "eslint-plugin-import-x": "*",
         "eslint-plugin-jest": "*",
         "eslint-plugin-jest-dom": "*",
         "eslint-plugin-prefer-arrow-functions": "*",

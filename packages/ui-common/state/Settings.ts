@@ -17,7 +17,7 @@ import {merge} from "lodash-es"
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
-import {PaletteKey} from "../Theme/Palettes"
+import {PALETTES} from "../Theme/Palettes"
 
 /**
  * A utility type that makes all properties in T deeply optional, since TypeScript's built-in Partial<T>
@@ -61,7 +61,7 @@ interface Settings {
 /**
  * Zustand state store for user preferences/Settings
  */
-export interface SettingsStore {
+interface SettingsStore {
     readonly settings: Settings
     readonly updateSettings: (updates: DeepPartial<Settings>) => void
     readonly resetSettings: () => void
@@ -119,3 +119,23 @@ export const useSettingsStore = create<SettingsStore>()(
         }
     )
 )
+
+export type PaletteKey = keyof typeof PALETTES | "brand"
+
+/**
+ * Custom hook to get the current color palette based on user settings.
+ * If the user has selected custom branding, it will return the palette for that.
+ * Otherwise, it will return one of the predefined palettes from the PALETTES object based on the user's selection.
+ *
+ * @returns An array of color hex codes representing the current color palette.
+ */
+export const usePalette = () => {
+    const brandPalette = useSettingsStore((state: SettingsStore) => state.settings.branding.rangePalette)
+    const paletteKey = useSettingsStore((state: SettingsStore) => state.settings.appearance.rangePalette)
+
+    if (paletteKey === "brand" && brandPalette) {
+        return brandPalette
+    } else {
+        return PALETTES[paletteKey as keyof typeof PALETTES]
+    }
+}

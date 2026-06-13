@@ -32,8 +32,7 @@ import {FC, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
 import {DisplayAs} from "./const"
-import {useSettingsStore} from "../../state/Settings"
-import {usePalette} from "../../Theme/Palettes"
+import {usePalette, useSettingsStore} from "../../state/Settings"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
