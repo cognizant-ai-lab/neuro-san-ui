@@ -62,7 +62,7 @@ describe("Multi Agent Accelerator Page", () => {
 
         expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                userInfo: {userName: MOCK_USER, userImage: MOCK_IMAGE},
+                userName: MOCK_USER,
                 backendNeuroSanApiUrl: NEURO_SAN_SERVER_URL,
             })
         )
