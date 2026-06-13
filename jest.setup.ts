@@ -32,7 +32,7 @@ Object.defineProperties(globalThis, {
 
 // Use the Node.js TextEncoder for Jest, with a type cast to satisfy TypeScript
 global.TextEncoder = NodeTextEncoder as unknown as typeof global.TextEncoder
-global.TextDecoder = NodeTextDecoder as unknown as typeof global.TextDecoder
+global.TextDecoder = NodeTextDecoder
 
 // End of hack
 
@@ -77,14 +77,10 @@ global.DOMMatrixReadOnly = DOMMatrixReadOnly
 
 Object.defineProperties(global.HTMLElement.prototype, {
     offsetHeight: {
-        get() {
-            return parseFloat(this.style.height) || 1
-        },
+        get: () => 1,
     },
     offsetWidth: {
-        get() {
-            return parseFloat(this.style.width) || 1
-        },
+        get: () => 1,
     },
 })
 

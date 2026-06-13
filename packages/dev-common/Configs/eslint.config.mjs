@@ -1,11 +1,10 @@
 // @ts-check
 
-import {fixupPluginRules} from "@eslint/compat"
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
 import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
-import eslintPluginImport from "eslint-plugin-import"
+import {importX} from "eslint-plugin-import-x"
 import eslintJest from "eslint-plugin-jest"
 import jestDom from "eslint-plugin-jest-dom"
 import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
@@ -40,13 +39,8 @@ export default defineConfig([
 
     typescriptEslint.configs.all,
 
-    // Have to configure import plugin in the "legacy" way due to:
-    // https://github.com/import-js/eslint-plugin-import/issues/3227
-    {rules: {...eslintPluginImport.configs.recommended.rules}},
-    {
-        rules: {...eslintPluginImport.configs.typescript.rules},
-        settings: {...eslintPluginImport.configs.typescript.settings},
-    },
+    importX.flatConfigs.recommended,
+    importX.flatConfigs.typescript,
 
     eslintJest.configs["flat/recommended"],
     reactHooks.configs.flat.recommended,
@@ -64,9 +58,6 @@ export default defineConfig([
             "typescript-eslint": typescriptEslint.plugin,
             "jest-dom": jestDom,
             "@next/next": next,
-            // Have to configure import plugin in the "legacy" way due to:
-            // https://github.com/import-js/eslint-plugin-import/issues/3227
-            import: fixupPluginRules(eslintPluginImport),
             jest: eslintJest,
             react: eslintPluginReact,
             "testing-library": testingLibrary,
@@ -271,8 +262,8 @@ export default defineConfig([
             // See here for explanation: https://github.com/lydell/eslint-plugin-simple-import-sort?tab=readme-ov-file#why-sort-on-from
             // Note: there are other rules this plugin can enforce but not included in the default set. We may want to
             // look into enabling the ones we want later. Doc: https://github.com/import-js/eslint-plugin-import/tree/main
-            "import/no-deprecated": "error",
-            "import/order": [
+            "import-x/no-deprecated": "error",
+            "import-x/order": [
                 "error",
                 {
                     alphabetize: {
@@ -289,7 +280,7 @@ export default defineConfig([
                 },
             ],
 
-            "import/no-extraneous-dependencies": [
+            "import-x/no-extraneous-dependencies": [
                 "error",
                 {
                     includeInternal: true,
@@ -298,8 +289,8 @@ export default defineConfig([
                 },
             ],
 
-            "import/no-self-import": "error",
-            "import/no-useless-path-segments": "error",
+            "import-x/no-self-import": "error",
+            "import-x/no-useless-path-segments": "error",
             "no-restricted-imports": [
                 "error",
                 {
@@ -314,7 +305,9 @@ export default defineConfig([
                     patterns: [{regex: "^@mui/[^/]+$"}],
                 },
             ],
-            "import/no-unresolved": "error",
+            "import-x/no-unresolved": "error",
+            "import-x/no-commonjs": "error",
+            "import-x/no-cycle": "error",
 
             "sort-imports": [
                 "error",
@@ -350,9 +343,9 @@ export default defineConfig([
             "no-return-await": "off",
             // Not needed -- TypeScript handles these.
             // Reference: https://typescript-eslint.io/linting/troubleshooting/performance-troubleshooting/
-            "import/no-named-as-default-member": "off",
-            "import/default": "off",
-            "import/namespace": "off",
+            "import-x/no-named-as-default-member": "off",
+            "import-x/default": "off",
+            "import-x/namespace": "off",
 
             // End permanently off category
 
@@ -496,8 +489,12 @@ export default defineConfig([
             "unicorn/catch-error-name": "off",
             "unicorn/prefer-ternary": "off",
             "unicorn/consistent-function-scoping": "off",
+            // Conflicts with prettier's formatting of comments
+            "unicorn/no-manually-wrapped-comments": "off",
             "unicorn/no-negated-condition": "off",
             "unicorn/no-zero-fractions": "off",
+            // Too noisy for now
+            "unicorn/prefer-https": "off",
             "unicorn/prefer-number-properties": "off",
             "unicorn/prefer-global-this": "off",
             "unicorn/switch-case-braces": "off",
@@ -506,6 +503,9 @@ export default defineConfig([
             "unicorn/filename-case": "off",
             "unicorn/no-null": "off",
             "unicorn/prevent-abbreviations": "off",
+            // Too noisy and not necessarily bad code patterns -- probably should be policed in code reviews
+            // if we want to eventually enable this.
+            "unicorn/try-complexity": "off",
         },
     },
     {
@@ -581,7 +581,7 @@ export default defineConfig([
 
             "no-new-native-nonconstructor": "error",
             "no-class-assign": "error",
-            "import/no-anonymous-default-export": "error",
+            "import-x/no-anonymous-default-export": "error",
             "@typescript-eslint/no-empty-interface": "error",
         },
     },

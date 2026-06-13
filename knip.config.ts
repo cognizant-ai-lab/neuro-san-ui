@@ -25,14 +25,12 @@ import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 
 const config: KnipConfig = {
     ...baseConfig,
+
     ignore: [
         ...(baseConfig.ignore as string[]),
 
         // Used in a sneaky way by jest
         "babel.jest.config.cjs",
-
-        // Temporarily exclude for transition to monorepo (legit issue)
-        "packages/ui-common/components/AgentChat/Common/Types.ts",
 
         // Used by CommitCheck script
         "jest_quiet.config.ts",
@@ -67,7 +65,6 @@ const config: KnipConfig = {
         "ts-node",
 
         // Peer dependencies of @cognizant-ai-lab/dev-common; installed here because ESLint runs from the monorepo root
-        "@eslint/compat",
         "@eslint/js",
         "@next/eslint-plugin-next",
         "eslint-config-prettier",
@@ -80,7 +77,6 @@ const config: KnipConfig = {
         "eslint-plugin-unicorn",
         "typescript-eslint",
     ],
-
     workspaces: {
         "packages/dev-common": {
             ignore: ["Configs/eslint.config.d.mts"],
