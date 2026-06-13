@@ -41,14 +41,13 @@ describe("ThoughtBubbleOverlay", () => {
     ]
 
     const createMockEdge = (id: string, source: string, target: string, text: string): ThoughtBubbleEdgeShape => {
-        const edge: ThoughtBubbleEdgeShape = {
+        return {
             id,
             source,
             target,
             data: {text},
             type: "thoughtBubbleEdge",
         }
-        return edge
     }
 
     it("Should render nothing when showThoughtBubbles is false", () => {
@@ -619,7 +618,6 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle exiting bubbles that are not in current edges", () => {
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
-        const edges2: ThoughtBubbleEdgeShape[] = [] // Remove all edges
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
@@ -635,7 +633,8 @@ describe("ThoughtBubbleOverlay", () => {
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
-                edges={edges2}
+                // Remove all edges
+                edges={[]}
                 showThoughtBubbles={true}
             />
         )
@@ -653,6 +652,7 @@ describe("ThoughtBubbleOverlay", () => {
         Object.defineProperty(Element.prototype, "scrollHeight", {
             configurable: true,
             get() {
+                // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
                 return this.textContent?.includes("Long text") ? 150 : 50
             },
         })
@@ -844,9 +844,17 @@ describe("ThoughtBubbleOverlay", () => {
         // Spy on ResizeObserver.observe calls
         const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
         const observed: Element[] = []
-        function SpyRO(this: {__isSpy?: boolean}) {
-            // mark instance so it's not an empty constructor
-            this.__isSpy = true
+        class SpyRO {
+            __isSpy = true
+            observe(el: Element): void {
+                if (this.__isSpy) {
+                    observed.push(el)
+                }
+            }
+            disconnect(): void {
+                // accessing 'this' to satisfy ESLint
+                void this.__isSpy
+            }
         }
         SpyRO.prototype.observe = function (el: Element): void {
             observed.push(el)
@@ -1253,15 +1261,17 @@ describe("ThoughtBubbleOverlay", () => {
             setAttribute: (attrName: string, value: string) => void
         }
         proto.setAttribute = function (attrName: string, value: unknown) {
+            // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
             const tag = (this && (this as Element).tagName) || ""
             if (
                 typeof tag === "string" &&
                 tag.toLowerCase() === "line" &&
-                (attrName === "x1" || attrName === "y1" || attrName === "x2" || attrName === "y2")
+                ["x1", "y1", "x2", "y2"].includes(attrName)
             ) {
                 throw new Error("simulated setAttribute failure")
             }
 
+            // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
             return origSetAttr.call(this as Element, attrName, String(value))
         }
 

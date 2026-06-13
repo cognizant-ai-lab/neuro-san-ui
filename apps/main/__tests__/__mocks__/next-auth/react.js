@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// eslint-disable-next-line unicorn/prefer-module
+// eslint-disable-next-line import-x/no-commonjs,unicorn/prefer-module -- because Jest's module system is CommonJS
 module.exports = {signOut: jest.fn(), useSession: jest.fn(), SessionProvider: jest.fn(), signIn: jest.fn()}

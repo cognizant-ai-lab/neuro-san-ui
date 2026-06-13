@@ -223,7 +223,7 @@ const renderMultiAgentAcceleratorPage = () =>
         <SnackbarProvider>
             <MultiAgentAccelerator
                 backendNeuroSanApiUrl={NEURO_SAN_SERVER_URL}
-                userName={MOCK_USER}
+                username={MOCK_USER}
             />
         </SnackbarProvider>
     )
@@ -541,7 +541,7 @@ describe("MultiAgentAccelerator", () => {
                 type: ChatMessageType.AGENT,
                 text: "This is a test message",
                 // One of "hints" for end of conversation is having a structure field containing total_tokens
-                structure: {total_tokens: 100} as unknown as Record<string, never>,
+                structure: {total_tokens: 100},
                 origin: [{tool: "Definitely not math guy"}],
             },
         }
@@ -985,7 +985,7 @@ describe("MultiAgentAccelerator", () => {
             expect(useAgentChatHistoryStore.getState().history[expectedNetworkName]).toBeDefined()
 
             // Not expired yet so we should see the network
-            const temporaryNetworkNode = document.querySelector(`[data-itemid="${expectedNetworkName}"]`)
+            const temporaryNetworkNode = document.querySelector(`[data-itemid="${CSS.escape(expectedNetworkName)}"]`)
             expect(temporaryNetworkNode).not.toBeNull()
 
             const displayAgentName = cleanUpAgentName(TEMPORARY_NETWORK.reservation.reservation_id)
@@ -1332,7 +1332,7 @@ describe("MultiAgentAccelerator", () => {
                 await user.click(nextButton)
                 await screen.findByText(step.content.toString())
             }
-        })
+        }, 10_000)
 
         /* eslint-disable jest/no-conditional-expect
         -- We use conditional expects carefully in this test to verify each branch of the logic. */

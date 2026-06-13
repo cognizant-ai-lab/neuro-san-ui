@@ -24,13 +24,13 @@ import {CustomPageProps} from "../Types"
 // Main function.
 export const MultiAgentAcceleratorPage: FC & CustomPageProps = (): ReactJSX.Element => {
     // For access to logged-in session and current username
-    const userName = useAuthentication().data?.user?.name
+    const username = useAuthentication().data?.user?.name
 
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
     return (
         <MultiAgentAccelerator
-            userName={userName}
+            userName={username}
             backendNeuroSanApiUrl={backendNeuroSanApiUrl}
         />
     )

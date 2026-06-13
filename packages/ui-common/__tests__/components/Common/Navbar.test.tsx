@@ -144,7 +144,7 @@ describe("Navbar", () => {
     })
 
     it("does not display customer branding text when customer is whitespace only", async () => {
-        useSettingsStore.getState().updateSettings({branding: {customer: "   "}})
+        useSettingsStore.getState().updateSettings({branding: {customer: " ".repeat(3)}})
 
         renderNavbar()
 

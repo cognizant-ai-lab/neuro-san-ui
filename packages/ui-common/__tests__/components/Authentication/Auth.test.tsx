@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import {SessionContextValue, signIn, useSession} from "next-auth/react"
+import {signIn, useSession} from "next-auth/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Auth} from "../../../components/Authentication/Auth"
@@ -33,14 +33,14 @@ describe("Auth Component", () => {
     withStrictMocks()
 
     it("should render a spinner when status is loading", () => {
-        ;(useSession as jest.Mock).mockReturnValue({status: "loading"} as SessionContextValue)
+        ;(useSession as jest.Mock).mockReturnValue({status: "loading"})
         render(AUTH_ELEMENT)
 
         expect(screen.getByText("Loading... Please wait")).toBeInTheDocument()
     })
 
     it("should call signIn when user is not authenticated", () => {
-        ;(useSession as jest.Mock).mockReturnValue({data: {session: {user: undefined}}} as SessionContextValue)
+        ;(useSession as jest.Mock).mockReturnValue({data: {session: {user: undefined}}})
         render(AUTH_ELEMENT)
 
         expect(signIn).toHaveBeenCalledWith("auth0")
@@ -50,7 +50,7 @@ describe("Auth Component", () => {
         ;(useSession as jest.Mock).mockReturnValue({
             data: {user: {name: "Test User", email: "test@example.com"}},
             status: "authenticated",
-        } as SessionContextValue)
+        })
         render(AUTH_ELEMENT)
 
         expect(signIn).not.toHaveBeenCalled()

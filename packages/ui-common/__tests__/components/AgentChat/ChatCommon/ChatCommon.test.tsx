@@ -888,18 +888,18 @@ describe("ChatCommon", () => {
                 // Store the handlers so we can call them in tests
                 switch (event) {
                     case "result":
-                        mockSpeechRecognition.onresult = handler as (event: SpeechRecognitionEvent) => void
+                        mockSpeechRecognition.onresult = handler
                         break
                     case "start":
-                        mockSpeechRecognition.onstart = handler as () => void
+                        mockSpeechRecognition.onstart = handler
                         break
                     case "end":
-                        mockSpeechRecognition.onend = handler as () => void
+                        mockSpeechRecognition.onend = handler
                         break
                     case "error":
                         // Intentionally mocking it this way
                         // eslint-disable-next-line unicorn/prefer-add-event-listener
-                        mockSpeechRecognition.onerror = handler as (event: Event) => void
+                        mockSpeechRecognition.onerror = handler
                         break
                     default:
                         // Handle any other event types
@@ -1188,7 +1188,7 @@ describe("ChatCommon", () => {
         expect(sendButton).toBeDisabled()
 
         // Try with whitespace only
-        await user.type(userInput, "   ")
+        await user.type(userInput, " ".repeat(3))
         expect(sendButton).toBeDisabled()
 
         // Clear and add actual content

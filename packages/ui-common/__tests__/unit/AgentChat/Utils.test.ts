@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentErrorProps} from "../../../components/AgentChat/Common/Types"
 import {
     chatMessageFromChunk,
     checkError,
@@ -64,7 +63,7 @@ describe("AgentChat/Utils/checkError", () => {
             error: errorText,
             traceback: traceText,
             tool: toolText,
-        } as AgentErrorProps)
+        })
 
         expect(typeof result).toBe("string")
         expect(result).toContain("Error occurred")
