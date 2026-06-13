@@ -36,7 +36,7 @@ interface ErrorPageProps {
  * @param id HTML id for the <code>div</code> for this page
  * @param errorText Error text to be displayed
  */
-export const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactElement => {
+const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactElement => {
     const {auth0ClientId, auth0Domain, supportEmailAddress, logoServiceToken} = useEnvironmentStore()
 
     // Access Next.js router
