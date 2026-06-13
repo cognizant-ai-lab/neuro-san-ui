@@ -66,7 +66,7 @@ import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
 
 export interface MultiAgentAcceleratorProps {
-    readonly userInfo: {userName: string; userImage: string}
+    readonly userName: string
     readonly backendNeuroSanApiUrl: string
 }
 
@@ -110,7 +110,7 @@ const collectNetworksFromChunk = (
     }
 }
 
-/** Logs and notifies about a save error. Suppresses AbortError (user-cancelled). */
+/** Logs and notifies about a save error. Suppresses AbortError (user-canceled). */
 const notifySaveError = (agentName: string, e: unknown): void => {
     if (e instanceof DOMException && e.name === "AbortError") return
     console.error("Failed to submit agent network update:", e)
@@ -127,11 +127,11 @@ const notifySaveError = (agentName: string, e: unknown): void => {
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
  * @param backendNeuroSanApiUrl Initial URL of the backend Neuro-San API. User can change this in the UI.
  * @param darkMode Whether dark mode is enabled.
- * @param userInfo Information about the current user, including userName and userImage.
+ * @param userName User name to use for interactions with the backend (for personalization and tracking).
  */
 export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     backendNeuroSanApiUrl,
-    userInfo,
+    userName,
 }): ReactJSX.Element => {
     // MUI theme
     const theme = useTheme()
@@ -390,7 +390,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         const fetchAgentDetails = async () => {
             // It is a Neuro-san agent, so get the function and connectivity info
             try {
-                const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, userInfo.userName)
+                const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, userName)
                 setNetworkDescription(agentFunction?.function?.description || "")
 
                 const schema = agentFunction?.function?.sly_data_schema
@@ -426,7 +426,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         if (selectedNetwork && !isLegacyAgentType(selectedNetwork)) {
             void fetchAgentDetails()
         }
-    }, [neuroSanURL, selectedNetwork, userInfo.userName])
+    }, [neuroSanURL, selectedNetwork, userName])
 
     useEffect(() => {
         ;(async () => {
@@ -449,7 +449,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     const connectivity: ConnectivityResponse = await getConnectivity(
                         neuroSanURL,
                         selectedNetwork,
-                        userInfo.userName
+                        userName
                     )
                     const agentsInNetworkSorted: ConnectivityInfo[] = [...connectivity.connectivity_info].sort((a, b) =>
                         a?.origin.localeCompare(b?.origin)
@@ -476,7 +476,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setAgentsInNetwork([])
             }
         })()
-    }, [networkDisplayName, neuroSanURL, selectedNetwork, userInfo.userName])
+    }, [networkDisplayName, neuroSanURL, selectedNetwork, userName])
 
     useEffect(() => {
         ;(async () => {
@@ -635,7 +635,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     agentName,
                     updated,
                     agentNetworkName,
-                    userInfo.userName,
+                    userName,
                     (chunk) => {
                         newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
                     }
@@ -670,7 +670,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 notifySaveError(agentName, e)
             }
         },
-        [neuroSanURL, userInfo.userName, selectedNetwork]
+        [neuroSanURL, userName, selectedNetwork]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -819,7 +819,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             id="multi-agent-accelerator-agent-flow"
                             key="multi-agent-accelerator-agent-flow"
                             currentConversations={currentConversations}
-                            currentUser={userInfo.userName}
+                            currentUser={userName}
                             isAwaitingLlm={isAwaitingLlm}
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
@@ -863,7 +863,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             [AGENT_NETWORK_DESIGNER_ID]:
                                 "Describe in plain language the network you would like to build.",
                         }}
-                        currentUser={userInfo.userName}
+                        currentUser={userName}
                         customAgentGreetings={{
                             [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
                         }}

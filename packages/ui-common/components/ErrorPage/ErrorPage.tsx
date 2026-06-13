@@ -16,7 +16,7 @@ limitations under the License.
 
 import Box from "@mui/material/Box"
 import {useRouter} from "next/router.js"
-import {ReactElement} from "react"
+import {FC, ReactElement} from "react"
 
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/Environment"
@@ -36,10 +36,10 @@ interface ErrorPageProps {
  * @param id HTML id for the <code>div</code> for this page
  * @param errorText Error text to be displayed
  */
-export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement {
+export const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactElement => {
     const {auth0ClientId, auth0Domain, supportEmailAddress, logoServiceToken} = useEnvironmentStore()
 
-    // Access NextJS router
+    // Access Next.js router
     const router = useRouter()
 
     // Access user info store
@@ -130,3 +130,5 @@ export default function ErrorPage({id, errorText}: ErrorPageProps): ReactElement
         </>
     )
 }
+
+export default ErrorPage
