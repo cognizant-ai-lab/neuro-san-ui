@@ -16,22 +16,21 @@ limitations under the License.
 
 import {FC, JSX as ReactJSX} from "react"
 
-import {MultiAgentAccelerator, useAuthentication} from "../../../../packages/ui-common"
+import {MultiAgentAccelerator} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
+import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import {CustomPageProps} from "../Types"
 
 // Main function.
 export const MultiAgentAcceleratorPage: FC & CustomPageProps = (): ReactJSX.Element => {
     // For access to logged-in session and current username
-    const {
-        user: {image: userImage, name: userName},
-    } = useAuthentication().data
+    const userName = useAuthentication().data?.user?.name
 
     const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
     return (
         <MultiAgentAccelerator
-            userInfo={{userName, userImage}}
+            userName={userName}
             backendNeuroSanApiUrl={backendNeuroSanApiUrl}
         />
     )
