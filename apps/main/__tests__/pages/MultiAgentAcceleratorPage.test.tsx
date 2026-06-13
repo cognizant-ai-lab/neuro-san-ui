@@ -61,8 +61,8 @@ describe("Multi Agent Accelerator Page", () => {
         await screen.findByText(MAA_TEXT)
 
         expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                userName: MOCK_USER,
+            expect.objectContaining<MultiAgentAcceleratorProps>({
+                username: MOCK_USER,
                 backendNeuroSanApiUrl: NEURO_SAN_SERVER_URL,
             })
         )
