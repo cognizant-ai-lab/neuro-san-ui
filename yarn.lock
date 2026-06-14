@@ -1444,7 +1444,7 @@ __metadata:
     eslint-import-resolver-typescript: "npm:4.4.5"
     eslint-plugin-import-x: "npm:4.16.2"
     eslint-plugin-jest: "npm:29.15.2"
-    eslint-plugin-jest-dom-ya: "npm:^1.0.1"
+    eslint-plugin-jest-dom-ya: "npm:1.0.1"
     eslint-plugin-prefer-arrow-functions: "npm:3.9.1"
     eslint-plugin-react: "npm:7.37.5"
     eslint-plugin-react-hooks: "npm:7.1.1"
@@ -5967,7 +5967,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jest-dom-ya@npm:^1.0.1":
+"eslint-plugin-jest-dom-ya@npm:1.0.1":
   version: 1.0.1
   resolution: "eslint-plugin-jest-dom-ya@npm:1.0.1"
   dependencies:
