@@ -126,7 +126,6 @@ const notifySaveError = (agentName: string, e: unknown): void => {
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
  * @param backendNeuroSanApiUrl Initial URL of the backend Neuro-San API. User can change this in the UI.
- * @param darkMode Whether dark mode is enabled.
  * @param userName User name to use for interactions with the backend (for personalization and tracking).
  */
 export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({

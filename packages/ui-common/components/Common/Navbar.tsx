@@ -280,8 +280,9 @@ export const Navbar = ({
                         key="explore-neuro-san-studio"
                         component="a"
                         href="https://github.com/cognizant-ai-lab/neuro-san-studio"
-                        target="_blank"
+                        rel="noopener noreferrer"
                         sx={{...DISABLE_OUTLINE_PROPS}}
+                        target="_blank"
                     >
                         Neuro-san studio (examples)
                     </MenuItem>
@@ -290,8 +291,9 @@ export const Navbar = ({
                         key="explore-neuro-san"
                         component="a"
                         href="https://github.com/cognizant-ai-lab/neuro-san"
-                        target="_blank"
+                        rel="noopener noreferrer"
                         sx={{...DISABLE_OUTLINE_PROPS}}
+                        target="_blank"
                     >
                         Neuro-san (core)
                     </MenuItem>
@@ -331,8 +333,9 @@ export const Navbar = ({
                         key="user-guide"
                         component="a"
                         href="/UserGuide"
-                        target="_blank"
+                        rel="noopener noreferrer"
                         sx={{...DISABLE_OUTLINE_PROPS}}
+                        target="_blank"
                     >
                         User guide
                     </MenuItem>
