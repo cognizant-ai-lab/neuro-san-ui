@@ -133,105 +133,106 @@ const NeuroAIToolsContainer = styled(Box)({
 // #endregion: Styled Components
 
 // Main function.
-export const Index: FC & CustomPageProps = (): ReactJSX.Element => {
-    const router = useRouter()
+export const Index: FC & CustomPageProps = Object.assign(
+    (): ReactJSX.Element => {
+        const router = useRouter()
 
-    // Access environment info
-    const {supportEmailAddress} = useEnvironmentStore()
+        // Access environment info
+        const {supportEmailAddress} = useEnvironmentStore()
 
-    // Function to build the query string from the current route
-    const buildQueryString = () => {
-        const {query} = router
-        return Object.keys(query)
-            .map((key) => `${key}=${query[key]}`)
-            .join("&")
-    }
+        // Function to build the query string from the current route
+        const buildQueryString = () => {
+            const {query} = router
+            return Object.keys(query)
+                .map((key) => `${key}=${query[key]}`)
+                .join("&")
+        }
 
-    return (
-        <div
-            id="splash-page__container"
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-            }}
-        >
-            <OuterContainer id="outer-container">
-                <BodyContent id="body-content">
-                    <Navbar id="nav-bar">
-                        <>
-                            <NavbarLogo id="logo">
+        return (
+            <div
+                id="splash-page__container"
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                }}
+            >
+                <OuterContainer id="outer-container">
+                    <BodyContent id="body-content">
+                        <Navbar id="nav-bar">
+                            <>
+                                <NavbarLogo id="logo">
+                                    <Link
+                                        id="splash-logo-link"
+                                        href="https://www.cognizant.com/us/en"
+                                        target="_blank"
+                                    >
+                                        <NextImage
+                                            id="logo-img"
+                                            width={200}
+                                            height={45}
+                                            src="/cognizant-logo-white.svg"
+                                            alt="Cognizant Logo"
+                                        />
+                                    </Link>
+                                </NavbarLogo>
+                                <NavbarMiddleSection id="nav-bar-middle" />
+                            </>
+                        </Navbar>
+                        <div id="main-div">
+                            <HeaderLineOne id="header-line">
+                                <div
+                                    id="headline-eyebrow"
+                                    style={{marginBottom: "2rem"}}
+                                >
+                                    {LOGO}
+                                </div>
+                            </HeaderLineOne>
+
+                            <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
+                            <NeuroAIDescriptionBox id="neuro-ai-description-box">
+                                Low-code framework for rapidly agentifying your business.{" "}
+                                <ActionLink
+                                    id="explore-more-link"
+                                    href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Explore more.
+                                </ActionLink>
+                            </NeuroAIDescriptionBox>
+                            <NeuroAIToolsContainer id="multi-agent-accelerator-container">
                                 <Link
-                                    id="splash-logo-link"
-                                    href="https://www.cognizant.com/us/en"
-                                    target="_blank"
+                                    id="agent-network-link"
+                                    // Use the URL object form of `href` to pass along the query string
+                                    href={`/multiAgentAccelerator?${buildQueryString()}`}
+                                    /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                    legacyBehavior={true}
+                                    passHref
                                 >
-                                    <NextImage
-                                        id="logo-img"
-                                        width={200}
-                                        height={45}
-                                        src="/cognizant-logo-white.svg"
-                                        alt="Cognizant Logo"
-                                    />
+                                    <a
+                                        id="explore-agent-networks-link-anchor"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        href="#"
+                                    >
+                                        <LaunchButton id="neuro-san-button">Explore agent networks</LaunchButton>
+                                    </a>
                                 </Link>
-                            </NavbarLogo>
-                            <NavbarMiddleSection id="nav-bar-middle" />
-                        </>
-                    </Navbar>
-                    <div id="main-div">
-                        <HeaderLineOne id="header-line">
-                            <div
-                                id="headline-eyebrow"
-                                style={{marginBottom: "2rem"}}
-                            >
-                                {LOGO}
-                            </div>
-                        </HeaderLineOne>
-
-                        <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
-                        <NeuroAIDescriptionBox id="neuro-ai-description-box">
-                            Low-code framework for rapidly agentifying your business.{" "}
-                            <ActionLink
-                                id="explore-more-link"
-                                href="https://github.com/cognizant-ai-lab/neuro-san-studio"
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Explore more.
-                            </ActionLink>
-                        </NeuroAIDescriptionBox>
-                        <NeuroAIToolsContainer id="multi-agent-accelerator-container">
-                            <Link
-                                id="agent-network-link"
-                                // Use the URL object form of `href` to pass along the query string
-                                href={`/multiAgentAccelerator?${buildQueryString()}`}
-                                /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                legacyBehavior={true}
-                                passHref
-                            >
-                                <a
-                                    id="explore-agent-networks-link-anchor"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    href="#"
-                                >
-                                    <LaunchButton id="neuro-san-button">Explore agent networks</LaunchButton>
-                                </a>
-                            </Link>
-                        </NeuroAIToolsContainer>
-                    </div>
-                </BodyContent>
-                <Footer
-                    supportEmailAddress={supportEmailAddress}
-                    logoLinkUrl="https://www.cognizant.com/"
-                    logoUrl="/cognizant-logo-white.svg"
-                />
-            </OuterContainer>
-        </div>
-    )
-}
-
-// Explicitly want to leave this splash page open
-Index.authRequired = false
+                            </NeuroAIToolsContainer>
+                        </div>
+                    </BodyContent>
+                    <Footer
+                        supportEmailAddress={supportEmailAddress}
+                        logoLinkUrl="https://www.cognizant.com/"
+                        logoUrl="/cognizant-logo-white.svg"
+                    />
+                </OuterContainer>
+            </div>
+        )
+    },
+    // Explicitly want to leave this splash page open
+    {authRequired: false}
+)
 
 export default Index
