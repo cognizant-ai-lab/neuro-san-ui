@@ -49,7 +49,7 @@ describe("ErrorBoundary", () => {
             </ErrorBoundary>
         )
 
-        expect(screen.queryByText("There was an error")).toBeNull()
+        expect(screen.queryByText("There was an error")).not.toBeInTheDocument()
         expect(screen.getByTestId("mock-error")).toBeInTheDocument()
 
         // Remount the ErrorBoundary (change key) to reset its internal state and render child

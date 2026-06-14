@@ -292,8 +292,8 @@ describe("AgentNodePopup", () => {
                 target: {value: "Changed"},
             })
 
-            expect(screen.getByRole("button", {name: /^save$/iu})).not.toBeDisabled()
-            expect(screen.getByRole("button", {name: /cancel/iu})).not.toBeDisabled()
+            expect(screen.getByRole("button", {name: /^save$/iu})).toBeEnabled()
+            expect(screen.getByRole("button", {name: /cancel/iu})).toBeEnabled()
         })
 
         it("does not call onSave when the Save button is disabled (isSaving true)", () => {

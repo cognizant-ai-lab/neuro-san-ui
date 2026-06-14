@@ -61,7 +61,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.firstChild).toBeNull()
+        expect(container).toBeEmptyDOMElement()
     })
 
     it("Should render thought bubbles when showThoughtBubbles is true", () => {
@@ -337,7 +337,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Bubble should render but no SVG lines should be present for HUMAN type
-        expect(container.textContent).toContain("Human message")
+        expect(container).toHaveTextContent(/Human message/u)
         const lines = container.querySelectorAll("svg line")
         expect(lines.length).toBe(0)
 
@@ -360,7 +360,7 @@ describe("ThoughtBubbleOverlay", () => {
                 showThoughtBubbles={true}
             />
         )
-        expect(container.textContent).toContain("No agents")
+        expect(container).toHaveTextContent(/No agents/u)
         const lines = container.querySelectorAll("svg line")
         expect(lines.length).toBe(0)
     })
@@ -567,7 +567,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(screen.getByText("Test message")).toBeInTheDocument()
 
-        // Unmount should not crash and should cleanup timeouts
+        // Unmount should not crash and should clean up timeouts
         expect(() => unmount()).not.toThrow()
     })
 
@@ -759,8 +759,8 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Check that line has the correct stroke attributes for connecting line (uses CSS variable)
         const line = lines[0]
-        expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color)")
-        expect(line.getAttribute("stroke-width")).toBe("3")
+        expect(line).toHaveAttribute("stroke", "var(--thought-bubble-line-color)")
+        expect(line).toHaveAttribute("stroke-width", "3")
 
         agentEl.remove()
     })
@@ -1108,7 +1108,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         const bubble = container.querySelector('[data-bubble-id="edge-1"]')
         expect(bubble).not.toBeNull()
-        expect(container.textContent).toContain("Hello world")
+        expect(container).toHaveTextContent(/Hello world/u)
     })
 
     it("handles nodes with getConversations provider and streaming enabled", () => {
@@ -1326,7 +1326,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("No agents")
+        expect(container).toHaveTextContent(/No agents/u)
     })
 
     it("Should start streaming loop with no agent elements and not crash", async () => {
@@ -1397,7 +1397,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("Dup agents")
+        expect(container).toHaveTextContent(/Dup agents/u)
 
         consoleErrSpy.mockRestore()
 
@@ -1488,7 +1488,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Advance past the 400ms exit animation delay
         await act(async () => jest.advanceTimersByTime(450))
 
-        expect(container.textContent).not.toContain("Exit remove")
+        expect(container).not.toHaveTextContent(/Exit remove/u)
     })
 
     it("Should tolerate agent elements with no bounding rect (containerRect falsy)", () => {
@@ -1512,7 +1512,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("No rect")
+        expect(container).toHaveTextContent(/No rect/u)
 
         agentEl.remove()
     })
