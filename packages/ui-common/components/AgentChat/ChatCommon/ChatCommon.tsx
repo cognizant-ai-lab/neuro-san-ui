@@ -96,7 +96,7 @@ export interface ChatCommonProps {
     readonly selectedNetwork: string | null
 
     /**
-     * The network to send the request to.
+     * Setter for changing the selected network.
      */
     readonly setSelectedNetwork?: (network: string | null) => void
 
