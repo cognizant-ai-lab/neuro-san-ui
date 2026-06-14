@@ -1366,6 +1366,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@base-ui/utils@npm:^0.2.8":
+  version: 0.2.9
+  resolution: "@base-ui/utils@npm:0.2.9"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+    "@floating-ui/utils": "npm:^0.2.11"
+    reselect: "npm:^5.1.1"
+    use-sync-external-store: "npm:^1.6.0"
+  peerDependencies:
+    "@types/react": ^17 || ^18 || ^19
+    react: ^17 || ^18 || ^19
+    react-dom: ^17 || ^18 || ^19
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/169a67fb6a4d86d3ce9fb12bc1e8cb02a67ad3d16872c81798cd6a532c9277383c4066c88356a9813499a87b93b4bf255ea035ea3c6f7298c52adeb1e8e846ce
+  languageName: node
+  linkType: hard
+
 "@bcoe/v8-coverage@npm:^0.2.3":
   version: 0.2.3
   resolution: "@bcoe/v8-coverage@npm:0.2.3"
@@ -1392,7 +1411,7 @@ __metadata:
     eslint-config-prettier: "*"
     eslint-plugin-import-x: "*"
     eslint-plugin-jest: "*"
-    eslint-plugin-jest-dom: "*"
+    eslint-plugin-jest-dom-ya: "*"
     eslint-plugin-prefer-arrow-functions: "*"
     eslint-plugin-react: "*"
     eslint-plugin-react-hooks: "*"
@@ -1425,7 +1444,7 @@ __metadata:
     eslint-import-resolver-typescript: "npm:4.4.5"
     eslint-plugin-import-x: "npm:4.16.2"
     eslint-plugin-jest: "npm:29.15.2"
-    eslint-plugin-jest-dom: "npm:5.5.0"
+    eslint-plugin-jest-dom-ya: "npm:^1.0.1"
     eslint-plugin-prefer-arrow-functions: "npm:3.9.1"
     eslint-plugin-react: "npm:7.37.5"
     eslint-plugin-react-hooks: "npm:7.1.1"
@@ -1486,6 +1505,10 @@ __metadata:
     "@babel/preset-env": "catalog:default"
     "@dagrejs/dagre": "npm:1.0.4"
     "@langchain/core": "catalog:default"
+    "@mui/icons-material": "catalog:default"
+    "@mui/material": "catalog:default"
+    "@mui/system": "catalog:default"
+    "@mui/x-tree-view": "catalog:default"
     "@testing-library/dom": "catalog:default"
     "@testing-library/react": "catalog:default"
     "@testing-library/user-event": "catalog:default"
@@ -2840,6 +2863,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mui/icons-material@npm:9.0.1":
+  version: 9.0.1
+  resolution: "@mui/icons-material@npm:9.0.1"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+  peerDependencies:
+    "@mui/material": ^9.0.1
+    "@types/react": ^17.0.0 || ^18.0.0 || ^19.0.0
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/b638b21107ec11df731393baf215adad3c1bd0ed6fbffc73d8ae7c0c1888e8f0a89c8edcd1158cff072df6de49c39c20d6d9d11337263a61afb2e78770ab57b4
+  languageName: node
+  linkType: hard
+
 "@mui/material@npm:9.0.1":
   version: 9.0.1
   resolution: "@mui/material@npm:9.0.1"
@@ -2916,7 +2955,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mui/system@npm:^9.0.1":
+"@mui/system@npm:9.0.1, @mui/system@npm:^9.0.1":
   version: 9.0.1
   resolution: "@mui/system@npm:9.0.1"
   dependencies:
@@ -2958,6 +2997,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mui/utils@npm:9.0.0":
+  version: 9.0.0
+  resolution: "@mui/utils@npm:9.0.0"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+    "@mui/types": "npm:^9.0.0"
+    "@types/prop-types": "npm:^15.7.15"
+    clsx: "npm:^2.1.1"
+    prop-types: "npm:^15.8.1"
+    react-is: "npm:^19.2.4"
+  peerDependencies:
+    "@types/react": ^17.0.0 || ^18.0.0 || ^19.0.0
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/139ccbdc418dce45070def89f3644b9a42b4eef9a98e74338f83e0f74b715f484a047163708746bf18713da88aa0d8a9e4d0c3df51c93337e492dcebc953fde5
+  languageName: node
+  linkType: hard
+
 "@mui/utils@npm:^9.0.1":
   version: 9.0.1
   resolution: "@mui/utils@npm:9.0.1"
@@ -2975,6 +3034,48 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/be6d3c6ce7e5767a7d01583ff8780222f1bafa2f5ee8c549e3a25e7e283ba9fb7cb8c95d39ddbd9a57820722f5cfb5f5322cd37c580290d44d0f6e3a464cf23d
+  languageName: node
+  linkType: hard
+
+"@mui/x-internals@npm:^9.1.0":
+  version: 9.1.0
+  resolution: "@mui/x-internals@npm:9.1.0"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+    "@mui/utils": "npm:9.0.0"
+    reselect: "npm:^5.1.1"
+    use-sync-external-store: "npm:^1.6.0"
+  peerDependencies:
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/3494fb8794b11e3d10e17310dcfb4affa95e73be00908b6e27f6016f13569bd643bc41b02ac032e7bd2dbbe44c8ba211a348fff4110548d7af6450650814eb3e
+  languageName: node
+  linkType: hard
+
+"@mui/x-tree-view@npm:9.1.0":
+  version: 9.1.0
+  resolution: "@mui/x-tree-view@npm:9.1.0"
+  dependencies:
+    "@babel/runtime": "npm:^7.29.2"
+    "@base-ui/utils": "npm:^0.2.8"
+    "@mui/utils": "npm:9.0.0"
+    "@mui/x-internals": "npm:^9.1.0"
+    "@types/react-transition-group": "npm:^4.4.12"
+    clsx: "npm:^2.1.1"
+    prop-types: "npm:^15.8.1"
+    react-transition-group: "npm:^4.4.5"
+  peerDependencies:
+    "@emotion/react": ^11.9.0
+    "@emotion/styled": ^11.8.1
+    "@mui/material": ^7.3.0 || ^9.0.0
+    "@mui/system": ^7.3.0 || ^9.0.0
+    react: ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+  peerDependenciesMeta:
+    "@emotion/react":
+      optional: true
+    "@emotion/styled":
+      optional: true
+  checksum: 10c0/1423ac38e12998f325c37a8ae074cc0a3b40458211fec58130d7989083afdbba337bca52c20fa6895de67534fafb78f32e724dd358e463140c49426f6b69433f
   languageName: node
   linkType: hard
 
@@ -5866,19 +5967,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-jest-dom@npm:5.5.0":
-  version: 5.5.0
-  resolution: "eslint-plugin-jest-dom@npm:5.5.0"
+"eslint-plugin-jest-dom-ya@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "eslint-plugin-jest-dom-ya@npm:1.0.1"
   dependencies:
     "@babel/runtime": "npm:^7.16.3"
     requireindex: "npm:^1.2.0"
   peerDependencies:
     "@testing-library/dom": ^8.0.0 || ^9.0.0 || ^10.0.0
-    eslint: ^6.8.0 || ^7.0.0 || ^8.0.0 || ^9.0.0
+    eslint: ^6.8.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
   peerDependenciesMeta:
     "@testing-library/dom":
       optional: true
-  checksum: 10c0/3daa959ae2a14ae5b653637713f854b6bc53903a0d7da3b442bb69ae05a8fbc9abd79da63ae3f8a50863ddbfa6e6658b608b5576b84a4cba6a312300662a9b32
+  checksum: 10c0/94f8779b567177dbdbf9e70bc35d54348080b8451300855ebc02d7dde8d944ae9a1029e11c2d7d5fa34e39fd6d9d02ff19cea40591bf932a64f9316db55b29c3
   languageName: node
   linkType: hard
 
@@ -10369,6 +10470,13 @@ __metadata:
   version: 1.2.0
   resolution: "requireindex@npm:1.2.0"
   checksum: 10c0/7fb42aed73bf8de9acc4d6716cf07acc7fbe180e58729433bafcf702e76e7bb10e54f8266c06bfec62d752e0ac14d50e8758833de539e6f4e2cd642077866153
+  languageName: node
+  linkType: hard
+
+"reselect@npm:^5.1.1":
+  version: 5.2.0
+  resolution: "reselect@npm:5.2.0"
+  checksum: 10c0/d0a8497e404b25a769fe792eacae88b9b576c30870450cd243d76ec9427d91a59c4a2cc00d824d283448b444c4c698a8f961d771c8ae39c759313afb31950e2e
   languageName: node
   linkType: hard
 

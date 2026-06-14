@@ -370,7 +370,7 @@ describe("AgentFlow", () => {
         const agent2Div = container.querySelector('[data-id="agent2"]')
         expect(agent2Div).toBeInTheDocument()
         const agent2ChildDiv = agent2Div.firstElementChild as HTMLDivElement
-        expect(agent2ChildDiv.style.animation).toBe("")
+        expect(agent2ChildDiv).toHaveStyle({animation: ""})
     })
 
     it("Should handle an empty agent list", async () => {
