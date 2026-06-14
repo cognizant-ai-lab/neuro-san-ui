@@ -6,7 +6,7 @@ import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import {importX} from "eslint-plugin-import-x"
 import eslintJest from "eslint-plugin-jest"
-import jestDom from "eslint-plugin-jest-dom"
+import jestDom from "eslint-plugin-jest-dom-ya"
 import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
 import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
@@ -56,7 +56,6 @@ export default defineConfig([
     {
         plugins: {
             "typescript-eslint": typescriptEslint.plugin,
-            "jest-dom": jestDom,
             "@next/next": next,
             jest: eslintJest,
             react: eslintPluginReact,
@@ -520,9 +519,14 @@ export default defineConfig([
 
         // Pull in RTL plugin
         ...testingLibrary.configs["flat/react"],
+        plugins: {
+            "jest-dom-ya": jestDom,
+        },
         rules: {
             // Pull in RTL rules
             ...testingLibrary.configs["flat/react"].rules,
+
+            ...jestDom.configs["flat/all"].rules,
 
             // Indicate that the findBy calls are implicit assertions
             "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
