@@ -16,7 +16,7 @@ limitations under the License.
 
 import {Component, ErrorInfo, ReactNode} from "react"
 
-import ErrorPage from "./ErrorPage"
+import {default as ErrorPage} from "./ErrorPage"
 
 /**
  * Optional properties that should be present on the Error object if it's a real JavaScript error.

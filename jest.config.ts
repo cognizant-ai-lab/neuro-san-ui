@@ -42,6 +42,7 @@ const esmPackagesToTransform = [
     "parse-.*",
     "property-.*",
     "react-markdown",
+    "react-syntax-highlighter",
     "refractor",
     "rehype-.*",
     "remark-.*",

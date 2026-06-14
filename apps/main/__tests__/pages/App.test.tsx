@@ -26,7 +26,7 @@ import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/compon
 import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-import NeuroSanUI from "../../pages/_app"
+import {default as NeuroSanUI} from "../../pages/_app"
 
 const originalFetch = window.fetch
 
