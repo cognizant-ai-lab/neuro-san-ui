@@ -69,6 +69,7 @@ const config: KnipConfig = {
         "@next/eslint-plugin-next",
         "eslint-config-prettier",
         "eslint-plugin-jest",
+        "eslint-plugin-jest-dom-ya",
         "eslint-plugin-prefer-arrow-functions",
         "eslint-plugin-react",
         "eslint-plugin-react-hooks",
