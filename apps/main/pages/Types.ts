@@ -1,5 +1,5 @@
 export interface CustomPageProps {
-    authRequired?: boolean
-    pageContext?: string
-    withBreadcrumbs?: boolean
+    readonly authRequired?: boolean
+    readonly pageContext?: string
+    readonly withBreadcrumbs?: boolean
 }
