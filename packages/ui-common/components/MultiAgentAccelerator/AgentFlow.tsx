@@ -79,8 +79,8 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {usePalette} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {MUIAlert} from "../Common/MUIAlert"
@@ -132,7 +132,7 @@ type Layout = "radial" | "linear"
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
-// How long the dock'sstatus banner stays visible before auto-dismissing. Error banners persist until dismissed.
+// How long the dock's status banner stays visible before auto-dismissing. Error banners persist until dismissed.
 // Exported for tests.
 export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
@@ -364,11 +364,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         // Add any missing agents from bubbles as minimal ConnectivityInfo
         const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
         const missing = [...bubbleAgentIds].filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
-        const minimalAgents = missing.map((missingId) => ({
-            origin: missingId,
-            tools: [] as string[],
-            display_as: undefined as string | undefined,
-        }))
+        const minimalAgents = missing.map(
+            (missingId): ConnectivityInfo => ({
+                origin: missingId,
+                tools: [] as string[],
+                display_as: undefined,
+            })
+        )
         return [...agentsInNetwork, ...minimalAgents]
     }, [agentsInNetwork, bubbleAgentIds])
 
@@ -590,14 +592,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             }
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
-            if (!isAbort) {
+            if (isAbort) {
+                if (hasTimedOut) {
+                    showDockBanner({
+                        severity: "error",
+                        title: "Failed to apply network change.",
+                        detail: "The request timed out. Please try again.",
+                    })
+                }
+            } else {
                 showDockBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
-            } else if (hasTimedOut) {
-                showDockBanner({
-                    severity: "error",
-                    title: "Failed to apply network change.",
-                    detail: "The request timed out. Please try again.",
-                })
             }
         } finally {
             clearTimeout(timeoutId)

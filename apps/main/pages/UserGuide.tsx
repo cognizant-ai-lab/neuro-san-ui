@@ -27,51 +27,54 @@ import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
 const USER_GUIDE_PATH = "user_guide.md"
 
 // Main function.
-export const UserGuide: FC & CustomPageProps = (): ReactJSX.Element => {
-    const [userGuide, setUserGuide] = useState(null)
+export const UserGuide: FC & CustomPageProps = Object.assign(
+    (): ReactJSX.Element => {
+        const [userGuide, setUserGuide] = useState(null)
 
-    const getData = async () => {
-        try {
-            // fetch guide from server
-            const result = await fetch(USER_GUIDE_PATH, {
-                headers: {
-                    "Content-Type": "text/markdown",
-                    Accept: "text/markdown",
-                },
-            })
+        const getData = async () => {
+            try {
+                // fetch guide from server
+                const result = await fetch(USER_GUIDE_PATH, {
+                    headers: {
+                        "Content-Type": "text/markdown",
+                        Accept: "text/markdown",
+                    },
+                })
 
-            // Check if the request was successful
-            if (!result.ok) {
-                setUserGuide(`## Unable to load user guide. Internal error: http ${result.status} ${result.statusText}`)
-                return
+                // Check if the request was successful
+                if (!result.ok) {
+                    setUserGuide(
+                        `## Unable to load user guide. Internal error: http ${result.status} ${result.statusText}`
+                    )
+                    return
+                }
+
+                // Set user guide content
+                setUserGuide(await result.text())
+            } catch (e) {
+                setUserGuide(`## Unable to load user guide. Internal error: ${e}`)
             }
-
-            // Set user guide content
-            setUserGuide(await result.text())
-        } catch (e) {
-            setUserGuide(`## Unable to load user guide. Internal error: ${e}`)
         }
-    }
 
-    useEffect(() => {
-        void getData()
-    }, [])
+        useEffect(() => {
+            void getData()
+        }, [])
 
-    return (
-        <StyledMarkdownContainer
-            id="user-guide-container"
-            sx={{flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "1rem"}}
-        >
-            <ReactMarkdown
-                rehypePlugins={[rehypeRaw, rehypeSlug]}
-                remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
+        return (
+            <StyledMarkdownContainer
+                id="user-guide-container"
+                sx={{flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "1rem"}}
             >
-                {userGuide}
-            </ReactMarkdown>
-        </StyledMarkdownContainer>
-    )
-}
-
-UserGuide.authRequired = true
+                <ReactMarkdown
+                    rehypePlugins={[rehypeRaw, rehypeSlug]}
+                    remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
+                >
+                    {userGuide}
+                </ReactMarkdown>
+            </StyledMarkdownContainer>
+        )
+    },
+    {authRequired: true}
+)
 
 export default UserGuide

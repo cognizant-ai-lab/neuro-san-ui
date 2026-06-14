@@ -22,24 +22,27 @@ import {useAuthentication} from "../../../../packages/ui-common/utils/Authentica
 import {CustomPageProps} from "../Types"
 
 // Main function.
-export const MultiAgentAcceleratorPage: FC & CustomPageProps = (): ReactJSX.Element => {
-    // For access to logged-in session and current username
-    const userName = useAuthentication().data?.user?.name
+export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
+    (): ReactJSX.Element => {
+        // For access to logged-in session and current username
+        const username = useAuthentication().data?.user?.name
 
-    const {backendNeuroSanApiUrl} = useEnvironmentStore()
+        const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
-    return (
-        <MultiAgentAccelerator
-            userName={userName}
-            backendNeuroSanApiUrl={backendNeuroSanApiUrl}
-        />
-    )
-}
-
-MultiAgentAcceleratorPage.authRequired = true
-MultiAgentAcceleratorPage.pageContext = `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an
+        return (
+            <MultiAgentAccelerator
+                username={username}
+                backendNeuroSanApiUrl={backendNeuroSanApiUrl}
+            />
+        )
+    },
+    {
+        authRequired: true,
+        pageContext: `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an
     Agent Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
     connect and collaborate to complete tasks. A chat panel on the right allows users to ask questions and receive
-    answers.`
+    answers.`,
+    }
+)
 
 export default MultiAgentAcceleratorPage

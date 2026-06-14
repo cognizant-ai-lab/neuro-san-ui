@@ -18,5 +18,5 @@ limitations under the License.
  * Mocks CSS imports for Jest. As Jest doesn't understand CSS imports, we need to mock them out.
  */
 
-// eslint-disable-next-line unicorn/prefer-module
+// eslint-disable-next-line unicorn/prefer-module,import-x/no-commonjs -- because Jest's module system is CommonJS
 module.exports = {}

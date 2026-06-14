@@ -18,6 +18,7 @@ limitations under the License.
  * See main function description.
  */
 import {AIMessage, HumanMessage} from "@langchain/core/messages"
+import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import TuneIcon from "@mui/icons-material/Tune"
@@ -37,6 +38,7 @@ import {isEmpty} from "lodash-es"
 import {
     CSSProperties,
     Dispatch,
+    ReactNode,
     Ref,
     SetStateAction,
     useCallback,
@@ -61,6 +63,7 @@ import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSa
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {LLMProvider} from "../../../state/Settings"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -91,6 +94,11 @@ export interface ChatCommonProps {
      * The network to send the request to.
      */
     readonly selectedNetwork: string | null
+
+    /**
+     * Setter for changing the selected network.
+     */
+    readonly setSelectedNetwork?: (network: string | null) => void
 
     /**
      * Special endpoint for legacy agents since they do not have a single unified endpoint like Neuro-san agents.
@@ -214,10 +222,10 @@ export const MAX_TURNS = 50
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const {
-        customAgentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
+        customAgentGreetings = EMPTY,
         extraParams,
         extraSlyData,
         id,
@@ -232,9 +240,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         onStreamingComplete,
         onStreamingStarted,
         sampleQueries,
+        selectedNetwork,
         setIsAwaitingLlm,
         setPreviousResponse,
-        selectedNetwork,
+        setSelectedNetwork,
         title,
     } = props
     // MUI theme
@@ -369,7 +378,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         (chunk: string) => {
             currentResponse.current += chunk
 
-            if (!legacyTurnIdRef.current) {
+            if (legacyTurnIdRef.current) {
+                // We already have a turn for this response, so just update the text of that turn.
+                setTurns((prev) =>
+                    prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
+                )
+            } else {
                 // We don't yet have a turn for this response, so create one. On subsequent chunks, we'll just
                 // update the text of this turn.
                 legacyTurnIdRef.current = uuid()
@@ -379,11 +393,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     role: MessageRole.Agent,
                     text: currentResponse.current,
                 })
-            } else {
-                // We already have a turn for this response, so just update the text of that turn.
-                setTurns((prev) =>
-                    prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
-                )
             }
         },
         [addTurn]
@@ -514,7 +523,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
+                        const slyDataWithUsername = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
@@ -522,7 +531,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             selectedNetwork,
                             handleChunk,
                             agentChatHistory.chatContext,
-                            slyDataWithUserName,
+                            slyDataWithUsername,
                             currentUser,
                             StreamingUnit.Line
                         )
@@ -779,7 +788,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [handleStop, handleClearChat]
     )
 
-    const getErrorOverlay = (errorText: string) => (
+    const getErrorOverlay = (errorText: ReactNode) => (
         <Box
             id="chat-disabled-overlay"
             sx={{
@@ -1157,7 +1166,27 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                           `API key(s) required for: ${missingApiKeys.join(", ")}. ` +
                               "Please add the required key(s) in Settings to use this Network."
                       )
-                : getErrorOverlay("Please select a Network from the list to start the chat.")}
+                : getErrorOverlay(
+                      <>
+                          Please select a Network from the list to start the chat, or click
+                          <IconButton
+                              onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
+                              aria-label="select-network-designer"
+                              sx={{
+                                  verticalAlign: "-0.2em",
+                                  px: 0.5,
+                              }}
+                          >
+                              <AddBoxRounded
+                                  sx={{
+                                      color: "var(--bs-secondary)",
+                                      fontSize: "1.2rem",
+                                  }}
+                              />
+                          </IconButton>
+                          to design your own network!
+                      </>
+                  )}
         </Box>
     )
 }
