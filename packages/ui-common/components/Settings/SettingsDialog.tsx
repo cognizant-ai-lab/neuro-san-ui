@@ -31,7 +31,7 @@ const SettingsSectionTitleBase: FC<ComponentPropsWithoutRef<typeof Typography>> 
 )
 
 const SettingsSectionTitle = styled(SettingsSectionTitleBase)(({theme}) => ({
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(0.5),
 }))
 
 const Section = styled(Box)(({theme}) => ({
@@ -123,6 +123,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     // API keys
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
+
+    // Native names setting
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+    const nativeNamesCheckmark = useCheckmarkFade()
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -344,6 +348,57 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 </SubSectionBody>
             </SubSection>
         </Section>
+    )
+
+    const getNamingSubsection = () => (
+        <SubSection>
+            <SubsectionTitle variant="subtitle1">Agent names</SubsectionTitle>
+            <SubSectionBody>
+                <Box sx={{display: "flex", alignItems: "center", gap: 0.5}}>
+                    <FormLabel>Display as:</FormLabel>
+                    <ToggleButtonGroup
+                        aria-label="agent-name-format-selection"
+                        exclusive={true}
+                        onChange={(_, value) => {
+                            if (value !== null) {
+                                updateSettings({
+                                    appearance: {
+                                        useNativeNames: value === "native",
+                                    },
+                                })
+                                nativeNamesCheckmark.trigger()
+                            }
+                        }}
+                        size="small"
+                        sx={{marginRight: "1rem"}}
+                        value={useNativeNames ? "native" : "beautified"}
+                    >
+                        <ToggleButton value="native">Native</ToggleButton>
+                        <ToggleButton value="beautified">Beautified</ToggleButton>
+                    </ToggleButtonGroup>
+                    <FormLabel>Preview: </FormLabel>
+                    <FormLabel
+                        sx={{
+                            marginBottom: 0,
+                            border: "1px solid",
+                            borderRadius: 1,
+                            backgroundColor: "background.paper",
+                            px: 1,
+                            py: 0.25,
+                            lineHeight: 0,
+                            fontSize: "0.75rem",
+                        }}
+                    >
+                        <pre>
+                            {`category/some_agent_name → ${
+                                useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
+                            }`}
+                        </pre>
+                    </FormLabel>
+                    <FadingCheckmark show={nativeNamesCheckmark.show} />
+                </Box>
+            </SubSectionBody>
+        </SubSection>
     )
 
     const getBrandingSubsection = () => (
@@ -661,6 +716,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const getAppearanceSection = () => (
         <Section>
             <SettingsSectionTitle>Appearance</SettingsSectionTitle>
+            {getNamingSubsection()}
             {getBrandingSubsection()}
             {getNetworkDisplaySubsection()}
             {getNetworkAnimationSubsection()}

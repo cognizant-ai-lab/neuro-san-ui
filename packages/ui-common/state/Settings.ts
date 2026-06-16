@@ -42,6 +42,7 @@ interface Settings {
         readonly autoAgentIconColor: boolean
         readonly plasmaColor: string
         readonly rangePalette: PaletteKey
+        readonly useNativeNames: boolean
     }
     readonly branding: {
         readonly customer: string | null
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
         autoAgentIconColor: true,
         rangePalette: "blue",
         plasmaColor: "#2db81f",
+        useNativeNames: false,
     },
     branding: {
         background: null,
