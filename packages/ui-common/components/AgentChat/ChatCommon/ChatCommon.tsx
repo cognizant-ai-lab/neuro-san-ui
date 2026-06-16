@@ -1163,13 +1163,13 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 ? missingApiKeys?.length === 0
                     ? getChatBox()
                     : getErrorOverlay(
-                          <Typography>
+                          <Typography component="span">
                               {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
                               "Settings" to use this Network.`}
                           </Typography>
                       )
                 : getErrorOverlay(
-                      <Typography>
+                      <Typography component="span">
                           Please select a Network from the list to start the chat, or click
                           <IconButton
                               onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
@@ -1177,7 +1177,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                               sx={{
                                   px: 0.5,
                                   verticalAlign: "middle",
-                                  mb: "6px",
+                                  mb: "4px",
                               }}
                           >
                               <AddBoxRounded
