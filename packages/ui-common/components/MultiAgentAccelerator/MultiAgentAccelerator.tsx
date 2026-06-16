@@ -139,6 +139,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
@@ -171,7 +174,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
     const [networkDescription, setNetworkDescription] = useState<string>("")
 
-    const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
+    const networkDisplayName = useMemo(
+        () => (useNativeNames ? selectedNetwork : cleanUpAgentName(removeTrailingUuid(selectedNetwork))),
+        [selectedNetwork, useNativeNames]
+    )
 
     const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
 
@@ -823,8 +829,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={selectedNetwork || undefined}
-                            networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
+                            networkDisplayName={networkDisplayName || ""}
+                            networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
                             neuroSanURL={neuroSanURL}
                             onEnterEditMode={() => setIsEditingNetwork(true)}
                             onExitEditMode={() => setIsEditingNetwork(false)}
