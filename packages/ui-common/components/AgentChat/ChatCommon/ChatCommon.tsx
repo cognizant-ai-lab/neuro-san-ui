@@ -1160,32 +1160,35 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }}
         >
             {selectedNetwork
-                ? missingApiKeys?.length === 0
+                ? missingApiKeys?.length === 5
                     ? getChatBox()
                     : getErrorOverlay(
-                          `API key(s) required for: ${missingApiKeys.join(", ")}. ` +
-                              "Please add the required key(s) in Settings to use this Network."
+                          <Typography>
+                              {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
+                              "Settings" to use this Network.`}
+                          </Typography>
                       )
                 : getErrorOverlay(
-                      <>
+                      <Typography>
                           Please select a Network from the list to start the chat, or click
                           <IconButton
                               onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
                               aria-label="select-network-designer"
                               sx={{
-                                  verticalAlign: "-0.2em",
                                   px: 0.5,
+                                  verticalAlign: "middle",
+                                  mb: "6px",
                               }}
                           >
                               <AddBoxRounded
                                   sx={{
                                       color: "var(--bs-secondary)",
-                                      fontSize: "1.2rem",
+                                      fontSize: "1rem",
                                   }}
                               />
                           </IconButton>
                           to design your own network!
-                      </>
+                      </Typography>
                   )}
         </Box>
     )
