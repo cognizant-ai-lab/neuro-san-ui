@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import {UserEvent, default as userEvent} from "@testing-library/user-event"
+import {UserEvent, userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {SendButton} from "../../../../components/AgentChat/ChatCommon/SendButton"

@@ -16,7 +16,7 @@ limitations under the License.
 
 import type {EnvironmentResponse} from "../../pages/api/environment/Types"
 import {render, screen, waitFor} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {useRouter} from "next/router"
 import {ReactNode} from "react"
 
@@ -26,7 +26,7 @@ import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/compon
 import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-import {default as NeuroSanUI} from "../../pages/_app"
+import {NeuroSanUI} from "../../pages/_app"
 
 const originalFetch = window.fetch
 

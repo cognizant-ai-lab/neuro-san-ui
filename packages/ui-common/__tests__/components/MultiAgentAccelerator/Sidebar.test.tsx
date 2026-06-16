@@ -16,7 +16,7 @@ limitations under the License.
 
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {
     LEVEL_1_FOLDER,

@@ -16,7 +16,7 @@ limitations under the License.
 
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
