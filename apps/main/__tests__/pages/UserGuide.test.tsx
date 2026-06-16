@@ -17,7 +17,7 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
-import {default as UserGuide} from "../../pages/UserGuide"
+import {UserGuide} from "../../pages/UserGuide"
 
 const originalFetch = window.fetch
 

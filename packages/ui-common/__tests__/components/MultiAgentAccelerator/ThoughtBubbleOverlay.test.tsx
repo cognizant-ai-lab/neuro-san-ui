@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {act, render, screen} from "@testing-library/react"
-import {default as userEvent} from "@testing-library/user-event"
+import {userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"

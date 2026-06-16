@@ -20,7 +20,7 @@ import {useRouter} from "next/router"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {default as Index} from "../../pages"
+import {Index} from "../../pages"
 
 // Mock dependencies
 jest.mock("../../../../packages/ui-common/state/Environment", () => ({

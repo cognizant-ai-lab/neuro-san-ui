@@ -17,7 +17,7 @@ limitations under the License.
 import {HumanMessage} from "@langchain/core/messages"
 import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
 
