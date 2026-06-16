@@ -23,20 +23,21 @@ import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 
 //#region: Styled Components
-
 const SettingsSectionTitle = styled(Typography)(({theme}) => ({
     marginBottom: theme.spacing(1),
 }))
 
 const Section = styled(Box)(({theme}) => ({
+    display: "flex",
+    flexDirection: "column",
     marginBottom: theme.spacing(3),
 }))
 
 const SubsectionTitle = styled(Typography)(({theme}) => ({
     borderBottom: `1px solid ${theme.palette.divider}`,
     fontWeight: 600,
-    marginBottom: theme.spacing(2),
     paddingBottom: theme.spacing(0.5),
+    marginBottom: theme.spacing(2),
     width: "100%",
 }))
 
@@ -46,14 +47,32 @@ const SubSection = styled(Box)(() => ({
     flexDirection: "column",
 }))
 
+const SubSectionBody = styled(Box)(({theme}) => ({
+    display: "flex",
+    gap: 4,
+    flexDirection: "column",
+    alignContent: "center",
+    marginBottom: theme.spacing(1),
+    width: "100%",
+}))
 //#endregion: Styled Components
 
+//#region: Types and Interfaces
 interface SettingsDialogProps {
     readonly id: string
     readonly isOpen?: boolean
     readonly logoServiceToken?: string
     readonly onClose?: () => void
 }
+
+interface LLMProviderInputConfig {
+    vendor: LLMProvider
+    idSuffix: string
+    logo: string
+    onTest: (key: string) => Promise<boolean>
+    placeholder: string
+}
+//#endregion: Types and Interfaces
 
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
@@ -222,18 +241,19 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     }, [customer])
 
     const availablePalettes = customer && brandingRangePalette?.length > 0 ? {brand: brandingRangePalette} : PALETTES
-    const paletteKeys: PaletteKey[] = Object.keys(availablePalettes) as (keyof typeof availablePalettes)[]
+    const paletteKeys: PaletteKey[] = Object.keys(availablePalettes) as PaletteKey[]
 
-    const apiKeyConfigs = [
+    // Config for API key inputs, so we can easily add new providers in the future by just adding to this array
+    const apiKeyConfigs: LLMProviderInputConfig[] = [
         {
-            vendor: "OpenAI" as LLMProvider,
+            vendor: "OpenAI",
             idSuffix: "openai",
             logo: theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png",
             onTest: isOpenAIKeyValid,
             placeholder: "sk-...",
         },
         {
-            vendor: "Anthropic" as LLMProvider,
+            vendor: "Anthropic",
             idSuffix: "anthropic",
             logo: "/claude.png",
             onTest: isAnthropicKeyValid,
@@ -260,382 +280,366 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         />
     )
 
-    const getResetSettingsSection = () => (
-        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: "4px solid var(--bs-border-color)"}}>
-            <Button
-                variant="text"
-                startIcon={<RestoreIcon />}
-                onClick={() => {
-                    setResetToDefaultSettingsOpen(true)
-                }}
-                sx={{color: "var(--bs-secondary)"}}
-            >
-                Reset to defaults
-            </Button>
-        </SubSection>
-    )
-
     const getApiKeysSection = () => (
         <Section>
             <SettingsSectionTitle variant="h6">API Keys</SettingsSectionTitle>
-            <Box
-                id="a1"
-                sx={{display: "flex", flexDirection: "column", gap: 1.5}}
-            >
-                {apiKeyConfigs.map(({vendor, idSuffix, logo, onTest, placeholder}) => (
-                    <ApiKeyInput
-                        key={idSuffix}
-                        forgetKey={() => persistKey(vendor, "")}
-                        id={`${id}-${idSuffix}`}
-                        logo={logo}
-                        onSave={(key) => persistKey(vendor, key)}
-                        onTest={onTest}
-                        persistedValue={apiKeys[vendor]}
-                        placeholder={placeholder}
-                        vendor={vendor}
-                    />
-                ))}
-            </Box>
+            <SubSectionBody>
+                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
+                    {apiKeyConfigs.map(({vendor, idSuffix, logo, onTest, placeholder}) => (
+                        <ApiKeyInput
+                            key={idSuffix}
+                            forgetKey={() => persistKey(vendor, "")}
+                            id={`${id}-${idSuffix}`}
+                            logo={logo}
+                            onSave={(key) => persistKey(vendor, key)}
+                            onTest={onTest}
+                            persistedValue={apiKeys[vendor]}
+                            placeholder={placeholder}
+                            vendor={vendor}
+                        />
+                    ))}
+                </Box>
+            </SubSectionBody>
         </Section>
     )
 
     const getBehaviorSection = () => (
         <Section>
             <SettingsSectionTitle variant="h6">Behavior</SettingsSectionTitle>
-            <Box sx={{display: "flex", alignItems: "center"}}>
-                <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
-                <Tooltip
-                    title={
-                        "Hides most of the UI during agent network animations, " +
-                        "providing a more immersive experience."
-                    }
-                >
-                    <Checkbox
-                        checked={enableZenMode}
-                        data-testid="zen-mode-checkbox"
-                        onChange={(_, checked) => {
-                            updateSettings({behavior: {enableZenMode: checked}})
-                            enableZenModeCheckmark.trigger()
-                        }}
-                        size="small"
-                        sx={{py: 0}}
-                    />
-                </Tooltip>
-                <FadingCheckmark show={enableZenModeCheckmark.show} />
-            </Box>
+            <SubSection>
+                <SubsectionTitle variant="subtitle1">Zen mode</SubsectionTitle>
+                <SubSectionBody>
+                    <Box sx={{display: "flex", alignItems: "center", gap: 0.5}}>
+                        <FormLabel>Enable &quot;Zen&quot; mode:</FormLabel>
+                        <Tooltip
+                            title={
+                                "Hides most of the UI during agent network animations, " +
+                                "providing a more immersive experience."
+                            }
+                        >
+                            <Checkbox
+                                checked={enableZenMode}
+                                data-testid="zen-mode-checkbox"
+                                onChange={(_, checked) => {
+                                    updateSettings({behavior: {enableZenMode: checked}})
+                                    enableZenModeCheckmark.trigger()
+                                }}
+                            />
+                        </Tooltip>
+                        <FadingCheckmark show={enableZenModeCheckmark.show} />
+                    </Box>
+                </SubSectionBody>
+            </SubSection>
         </Section>
     )
 
     const getBrandingSubsection = () => (
         <SubSection>
             <SubsectionTitle variant="subtitle1">Branding</SubsectionTitle>
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 2,
-                    flexDirection: "column",
-                    alignContent: "center",
-                    marginBottom: "1rem",
-                    width: "100%",
-                }}
-            >
-                <Box
-                    sx={{
-                        alignItems: "center",
-                        display: "flex",
-                        flexDirection: "row",
-                        gap: 2,
-                    }}
-                >
-                    <FormLabel>Customer:</FormLabel>
-                    <TextField
-                        aria-label="branding-input"
-                        onChange={(e) => setCustomerInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && customerInput?.trim().length > 0) {
-                                void handleBrandingApply()
-                            }
-                        }}
-                        value={customerInput ?? ""}
-                        placeholder="Company or organization name"
-                        size="small"
-                        sx={{width: "100%"}}
-                        variant="outlined"
-                    />
-                    <Button
-                        disabled={
-                            customerInput?.trim().length === 0 || isBrandingApplying || customerInput === customer
-                        }
-                        variant="contained"
-                        size="small"
-                        onClick={handleBrandingApply}
-                        loading={isBrandingApplying}
-                        sx={{minWidth: "8rem"}}
-                    >
-                        Apply
-                    </Button>
-                    <FadingCheckmark show={brandingCheckmark.show} />
-                </Box>
-
-                <Box sx={{display: "flex", alignItems: "center"}}>
+            <SubSectionBody>
+                <Box sx={{display: "flex", flexDirection: "column", gap: 1.5}}>
                     <Box
                         sx={{
-                            display: "flex",
                             alignItems: "center",
+                            display: "flex",
+                            flexDirection: "row",
                             gap: 2,
-                            marginBottom: "1rem",
-                            width: "100%",
                         }}
                     >
-                        <FormLabel>Logo:</FormLabel>
-                        <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
-                            <span>
-                                <ToggleButtonGroup
-                                    aria-label="logo-selection"
-                                    disabled={!customer}
-                                    exclusive={true}
-                                    onChange={(_, value) => {
-                                        if (value !== null) {
-                                            updateSettings({
-                                                branding: {
-                                                    logoSource: value,
-                                                },
-                                            })
-                                            logoCheckmark.trigger()
-                                        }
-                                    }}
-                                    size="small"
-                                    sx={{marginRight: "1rem"}}
-                                    value={logoSource || "none"}
-                                >
-                                    <Tooltip title={customer && "No logo will be displayed"}>
-                                        <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
-                                            <ToggleButton value="none">None</ToggleButton>
-                                        </span>
-                                    </Tooltip>
-                                    <Tooltip
-                                        title={
-                                            customer &&
-                                            "Display a simple, anonymous generic logo based on a generic brand"
-                                        }
-                                    >
-                                        <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
-                                            <ToggleButton value="generic">Generic</ToggleButton>
-                                        </span>
-                                    </Tooltip>
-                                    <Tooltip
-                                        title={
-                                            customer &&
-                                            (logoServiceToken
-                                                ? "Use a service to attempt to automatically find a suitable " +
-                                                  "logo based on the customer name."
-                                                : "No Logo.dev token found, cannot use Auto logo source")
-                                        }
-                                    >
-                                        <span
-                                            style={{
-                                                cursor: customer && logoServiceToken ? "pointer" : "not-allowed",
-                                            }}
-                                        >
-                                            <ToggleButton
-                                                disabled={!logoServiceToken}
-                                                value="auto"
-                                            >
-                                                Auto
-                                            </ToggleButton>
-                                        </span>
-                                    </Tooltip>
-                                </ToggleButtonGroup>
-                            </span>
-                        </Tooltip>
-                        <FormLabel>Preview:</FormLabel>
-                        <CustomerLogo
-                            fallbackElement="(None)"
-                            logoServiceToken={logoServiceToken}
+                        <FormLabel>Customer:</FormLabel>
+                        <TextField
+                            aria-label="branding-input"
+                            onChange={(e) => setCustomerInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && customerInput?.trim().length > 0) {
+                                    void handleBrandingApply()
+                                }
+                            }}
+                            value={customerInput ?? ""}
+                            placeholder="Company or organization name"
+                            size="small"
+                            sx={{width: "100%"}}
+                            variant="outlined"
                         />
-                        <FadingCheckmark show={logoCheckmark.show} />
+                        <Button
+                            disabled={
+                                customerInput?.trim().length === 0 || isBrandingApplying || customerInput === customer
+                            }
+                            variant="contained"
+                            size="small"
+                            onClick={handleBrandingApply}
+                            loading={isBrandingApplying}
+                            sx={{minWidth: "8rem"}}
+                        >
+                            Apply
+                        </Button>
+                        <FadingCheckmark show={brandingCheckmark.show} />
+                    </Box>
+
+                    <Box sx={{display: "flex", alignItems: "center"}}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                marginBottom: "1rem",
+                                width: "100%",
+                            }}
+                        >
+                            <FormLabel>Logo:</FormLabel>
+                            <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
+                                <span>
+                                    <ToggleButtonGroup
+                                        aria-label="logo-selection"
+                                        disabled={!customer}
+                                        exclusive={true}
+                                        onChange={(_, value) => {
+                                            if (value !== null) {
+                                                updateSettings({
+                                                    branding: {
+                                                        logoSource: value,
+                                                    },
+                                                })
+                                                logoCheckmark.trigger()
+                                            }
+                                        }}
+                                        size="small"
+                                        sx={{marginRight: "1rem"}}
+                                        value={logoSource || "none"}
+                                    >
+                                        <Tooltip title={customer && "No logo will be displayed"}>
+                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
+                                                <ToggleButton value="none">None</ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip
+                                            title={
+                                                customer &&
+                                                "Display a simple, anonymous generic logo based on a generic brand"
+                                            }
+                                        >
+                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
+                                                <ToggleButton value="generic">Generic</ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip
+                                            title={
+                                                customer &&
+                                                (logoServiceToken
+                                                    ? "Use a service to attempt to automatically find a suitable " +
+                                                      "logo based on the customer name."
+                                                    : "No Logo.dev token found, cannot use Auto logo source")
+                                            }
+                                        >
+                                            <span
+                                                style={{
+                                                    cursor: customer && logoServiceToken ? "pointer" : "not-allowed",
+                                                }}
+                                            >
+                                                <ToggleButton
+                                                    disabled={!logoServiceToken}
+                                                    value="auto"
+                                                >
+                                                    Auto
+                                                </ToggleButton>
+                                            </span>
+                                        </Tooltip>
+                                    </ToggleButtonGroup>
+                                </span>
+                            </Tooltip>
+                            <FormLabel>Preview:</FormLabel>
+                            <CustomerLogo
+                                fallbackElement="(None)"
+                                logoServiceToken={logoServiceToken}
+                            />
+                            <FadingCheckmark show={logoCheckmark.show} />
+                        </Box>
                     </Box>
                 </Box>
-            </Box>
+            </SubSectionBody>
         </SubSection>
     )
 
     const getNetworkDisplaySubsection = () => (
         <SubSection>
             <SubsectionTitle variant="subtitle1">Network display</SubsectionTitle>
-            <Tooltip title={customer ? "Palette is locked when branding is applied" : ""}>
-                <Box sx={{display: "flex", flexDirection: "column", alignItems: "start", gap: 2}}>
-                    <FormLabel>Palette (heatmap and depth):</FormLabel>
-                    <ToggleButtonGroup
-                        aria-label="depth-heatmap-palette-selection"
-                        disabled={Boolean(customer)}
-                        exclusive={true}
-                        onChange={handlePaletteChange}
-                        size="small"
-                        sx={{
-                            cursor: customer ? "not-allowed" : "pointer",
-                            opacity: customer ? 0.5 : 1,
-                        }}
-                        value={paletteKey}
-                    >
-                        {paletteKeys.map((key) => {
-                            const palette = availablePalettes[key as keyof typeof availablePalettes]
-                            if (!palette || !Array.isArray(palette)) return null
+            <SubSectionBody>
+                <FormLabel sx={{marginBottom: 2}}>Palette (heatmap and depth):</FormLabel>
+                <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
+                    <Tooltip title={customer ? "Palette is locked when branding is applied" : ""}>
+                        {/* This span is required to ensure the tooltip works when the ToggleButtonGroup is disabled */}
+                        <span>
+                            <ToggleButtonGroup
+                                aria-label="depth-heatmap-palette-selection"
+                                disabled={Boolean(customer)}
+                                exclusive
+                                onChange={handlePaletteChange}
+                                size="small"
+                                sx={{
+                                    cursor: customer ? "not-allowed" : "pointer",
+                                    opacity: customer ? 0.5 : 1,
+                                }}
+                                value={paletteKey}
+                            >
+                                {paletteKeys.map((key) => {
+                                    const palette = availablePalettes[key as keyof typeof availablePalettes]
+                                    if (!palette || !Array.isArray(palette)) return null
 
-                            const paletteArray: string[] = palette
-
-                            return (
-                                <ToggleButton
-                                    aria-label={`${key}-palette-button`}
-                                    key={key}
-                                    value={key}
-                                >
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 0.5,
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="caption"
-                                            sx={{textTransform: "capitalize"}}
+                                    return (
+                                        <ToggleButton
+                                            aria-label={`${key}-palette-button`}
+                                            key={key}
+                                            value={key}
                                         >
-                                            {key}
-                                        </Typography>
-                                        <Box sx={{display: "flex", gap: 0.5}}>
-                                            {Array.from({length: 5}, (_, i) => {
-                                                const paletteLength = paletteArray.length
-                                                const index = Math.floor((i * paletteLength) / 5)
-                                                return paletteArray[index]
-                                            }).map((color) => (
-                                                <Box
-                                                    key={color}
-                                                    sx={{
-                                                        width: "0.75rem",
-                                                        height: "0.75rem",
-                                                        backgroundColor: color,
-                                                        border: "1px solid",
-                                                    }}
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Box>
-                                </ToggleButton>
-                            )
-                        })}
-                    </ToggleButtonGroup>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: 0.5,
+                                                    alignItems: "center",
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{textTransform: "capitalize"}}
+                                                >
+                                                    {key}
+                                                </Typography>
+                                                <Box sx={{display: "flex", gap: 0.5}}>
+                                                    {Array.from({length: 5}, (_, i) => (
+                                                        <Box
+                                                            key={`${key}-swatch-${i}`}
+                                                            sx={{
+                                                                width: "0.75rem",
+                                                                height: "0.75rem",
+                                                                backgroundColor:
+                                                                    palette[Math.floor((i * palette.length) / 5)],
+                                                                border: "1px solid",
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            </Box>
+                                        </ToggleButton>
+                                    )
+                                })}
+                            </ToggleButtonGroup>
+                        </span>
+                    </Tooltip>
+                    <FadingCheckmark show={rangePaletteCheckmark.show} />
                 </Box>
-            </Tooltip>
-            <FadingCheckmark show={rangePaletteCheckmark.show} />
+            </SubSectionBody>
         </SubSection>
     )
 
     const getNetworkAnimationSubsection = () => (
         <SubSection>
             <SubsectionTitle variant="subtitle1">Network animation</SubsectionTitle>
-            <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
-                <FormLabel>Plasma animation color:</FormLabel>
-                <Tooltip title={customer ? "Plasma color is locked when branding is applied" : ""}>
-                    <input
-                        aria-label="plasma-color-picker"
-                        disabled={Boolean(customer)}
-                        onChange={(e) =>
-                            updateSettings({
-                                appearance: {
-                                    plasmaColor: e.target.value,
-                                },
-                            })
-                        }
-                        style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
-                        type="color"
-                        value={plasmaColor}
-                    />
-                </Tooltip>
-                <FadingCheckmark show={plasmaColorCheckmark.show} />
-            </Box>
-            <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
-                <FormLabel>Agent node color:</FormLabel>
-                <Tooltip title={customer ? "Agent node color is locked when branding is applied" : ""}>
-                    <input
-                        aria-label="agent-node-color-picker"
-                        disabled={Boolean(customer)}
-                        onChange={(e) =>
-                            updateSettings({
-                                appearance: {
-                                    agentNodeColor: e.target.value,
-                                },
-                            })
-                        }
-                        style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
-                        type="color"
-                        value={agentNodeColor}
-                    />
-                </Tooltip>
-                <FadingCheckmark show={agentNodeColorCheckmark.show} />
-            </Box>
-            <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
-                <FormLabel>Agent icon color:</FormLabel>
-                <Tooltip title={customer ? "Agent icon color is locked when branding is applied" : ""}>
-                    <span>
-                        <ToggleButtonGroup
+            <SubSectionBody>
+                <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
+                    <FormLabel>Plasma animation color:</FormLabel>
+                    <Tooltip title={customer ? "Plasma color is locked when branding is applied" : ""}>
+                        <input
+                            aria-label="plasma-color-picker"
                             disabled={Boolean(customer)}
-                            exclusive
-                            value={autoAgentIconColor ? "auto" : "custom"}
-                            onChange={(_, value) => {
-                                if (value !== null) {
-                                    updateSettings({
-                                        appearance: {
-                                            autoAgentIconColor: value === "auto",
-                                        },
-                                    })
-                                    agentIconColorCheckmark.trigger()
-                                }
+                            onChange={(e) => {
+                                updateSettings({
+                                    appearance: {
+                                        plasmaColor: e.target.value,
+                                    },
+                                })
+                                plasmaColorCheckmark.trigger()
                             }}
-                            size="small"
-                            style={{
-                                cursor: customer ? "not-allowed" : "pointer",
-                                opacity: customer ? 0.5 : 1,
+                            style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
+                            type="color"
+                            value={plasmaColor}
+                        />
+                    </Tooltip>
+                    <FadingCheckmark show={plasmaColorCheckmark.show} />
+                </Box>
+                <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
+                    <FormLabel>Agent node color:</FormLabel>
+                    <Tooltip title={customer ? "Agent node color is locked when branding is applied" : ""}>
+                        <input
+                            aria-label="agent-node-color-picker"
+                            disabled={Boolean(customer)}
+                            onChange={(e) => {
+                                updateSettings({
+                                    appearance: {
+                                        agentNodeColor: e.target.value,
+                                    },
+                                })
+                                agentNodeColorCheckmark.trigger()
                             }}
-                        >
-                            <ToggleButton
-                                data-testid="auto-agent-icon-color-button"
-                                value="auto"
+                            style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
+                            type="color"
+                            value={agentNodeColor}
+                        />
+                    </Tooltip>
+                    <FadingCheckmark show={agentNodeColorCheckmark.show} />
+                </Box>
+                <Box sx={{display: "flex", alignItems: "center", gap: 2, marginTop: "1rem"}}>
+                    <FormLabel>Agent icon color:</FormLabel>
+                    <Tooltip title={customer ? "Agent icon color is locked when branding is applied" : ""}>
+                        <span>
+                            <ToggleButtonGroup
+                                disabled={Boolean(customer)}
+                                exclusive
+                                value={autoAgentIconColor ? "auto" : "custom"}
+                                onChange={(_, value) => {
+                                    if (value !== null) {
+                                        updateSettings({
+                                            appearance: {
+                                                autoAgentIconColor: value === "auto",
+                                            },
+                                        })
+                                        agentIconColorCheckmark.trigger()
+                                    }
+                                }}
+                                size="small"
+                                style={{
+                                    cursor: customer ? "not-allowed" : "pointer",
+                                    opacity: customer ? 0.5 : 1,
+                                }}
                             >
-                                Auto
-                            </ToggleButton>
-                            <ToggleButton value="custom">Custom</ToggleButton>
-                        </ToggleButtonGroup>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    title={
-                        customer
-                            ? "Agent icon color is locked when branding is applied"
-                            : autoAgentIconColor
-                              ? "Disabled when Auto is selected"
-                              : ""
-                    }
-                >
-                    <input
-                        aria-label="agent-icon-color-picker"
-                        disabled={Boolean(customer) || autoAgentIconColor}
-                        onChange={(e) => {
-                            updateSettings({
-                                appearance: {
-                                    agentIconColor: e.target.value,
-                                },
-                            })
-                            agentIconColorCheckmark.trigger()
-                        }}
-                        style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
-                        type="color"
-                        value={agentIconColor}
-                    />
-                </Tooltip>
-                <FadingCheckmark show={agentIconColorCheckmark.show} />
-            </Box>
+                                <ToggleButton
+                                    data-testid="auto-agent-icon-color-button"
+                                    value="auto"
+                                >
+                                    Auto
+                                </ToggleButton>
+                                <ToggleButton value="custom">Custom</ToggleButton>
+                            </ToggleButtonGroup>
+                        </span>
+                    </Tooltip>
+                    <Tooltip
+                        title={
+                            customer
+                                ? "Agent icon color is locked when branding is applied"
+                                : autoAgentIconColor
+                                  ? "Disabled when Auto is selected"
+                                  : ""
+                        }
+                    >
+                        <input
+                            aria-label="agent-icon-color-picker"
+                            disabled={Boolean(customer) || autoAgentIconColor}
+                            onChange={(e) => {
+                                updateSettings({
+                                    appearance: {
+                                        agentIconColor: e.target.value,
+                                    },
+                                })
+                                agentIconColorCheckmark.trigger()
+                            }}
+                            style={{cursor: customer ? "not-allowed" : "pointer", opacity: customer ? 0.5 : 1}}
+                            type="color"
+                            value={agentIconColor}
+                        />
+                    </Tooltip>
+                    <FadingCheckmark show={agentIconColorCheckmark.show} />
+                </Box>
+            </SubSectionBody>
         </SubSection>
     )
 
@@ -646,6 +650,23 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             {getNetworkDisplaySubsection()}
             {getNetworkAnimationSubsection()}
         </Section>
+    )
+
+    const getResetSettingsSection = () => (
+        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: "4px solid var(--bs-border-color)"}}>
+            <SubSectionBody>
+                <Button
+                    variant="text"
+                    startIcon={<RestoreIcon />}
+                    onClick={() => {
+                        setResetToDefaultSettingsOpen(true)
+                    }}
+                    sx={{color: "var(--bs-secondary)"}}
+                >
+                    Reset to defaults
+                </Button>
+            </SubSectionBody>
+        </SubSection>
     )
 
     /* Dev note:
