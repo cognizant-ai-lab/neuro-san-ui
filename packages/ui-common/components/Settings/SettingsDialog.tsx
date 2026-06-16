@@ -370,7 +370,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             }
                         }}
                         size="small"
-                        sx={{marginRight: "1rem"}}
+                        sx={{mx: 2}}
                         value={useNativeNames ? "native" : "beautified"}
                     >
                         <ToggleButton value="native">Native</ToggleButton>

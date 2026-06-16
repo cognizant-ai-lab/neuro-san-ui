@@ -22,7 +22,6 @@ import {createRef, Ref} from "react"
 import {
     MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
-    TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -35,11 +34,11 @@ import {
 } from "../../../../components/AgentChat/ChatCommon/ChatCommon"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
+import {useSettingsStore} from "../../../../state/Settings"
 
 // Mock agent API
 jest.mock("../../../../controller/agent/Agent")
@@ -51,7 +50,7 @@ jest.mock("../../../../controller/llm/LlmChat")
 jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
-const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`
+const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
 
 const MODAL_Z_INDEX = 11
 
@@ -126,11 +125,17 @@ describe("ChatCommon", () => {
         // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
         // that we know is relevant to these tests.
         useAgentChatHistoryStore.setState({history: {}})
+
+        useSettingsStore.getState().updateSettings({
+            appearance: {
+                useNativeNames: true,
+            },
+        })
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
         // locate user query input
-        const userQueryInput = screen.getByPlaceholderText(`Chat with ${cleanUpAgentName(agent)}`)
+        const userQueryInput = screen.getByPlaceholderText(`Chat with ${agent}`)
 
         // Type a query
         await user.type(userQueryInput, query)

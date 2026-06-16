@@ -154,16 +154,30 @@ const getEdgeProperties = (
     }
 }
 
-export const layoutRadial = (
-    agentCounts: Map<string, number>,
-    agentsInNetwork: ConnectivityInfo[],
-    currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
-    isAwaitingLlm: boolean,
-    isAgentNetworkDesignerMode: boolean,
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: AgentIconSuggestions = null,
-    isTemporaryNetwork = false
-): LayoutResult => {
+/** * Shared options for graph layout functions. */
+export type LayoutOptions = {
+    readonly agentCounts: Map<string, number>
+    readonly agentIconSuggestions?: AgentIconSuggestions | null
+    readonly agentsInNetwork: ConnectivityInfo[]
+    readonly currentConversations: AgentConversation[] | null
+    readonly isAgentNetworkDesignerMode: boolean
+    readonly isAwaitingLlm: boolean
+    readonly isTemporaryNetwork?: boolean
+    readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+    readonly useNativeNames: boolean
+}
+
+export const layoutRadial = ({
+    agentCounts,
+    agentIconSuggestions = null,
+    agentsInNetwork,
+    currentConversations,
+    isAgentNetworkDesignerMode,
+    isAwaitingLlm,
+    isTemporaryNetwork = false,
+    thoughtBubbleEdges,
+    useNativeNames,
+}: LayoutOptions): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
 
@@ -265,7 +279,7 @@ export const layoutRadial = (
                 type: AGENT_NODE_TYPE_NAME,
                 data: {
                     agentCounts,
-                    agentName: cleanUpAgentName(nodeId),
+                    agentName: useNativeNames ? nodeId : cleanUpAgentName(nodeId),
                     depth,
                     displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
                     // Use current conversations for node highlighting (cleared at end)
@@ -302,16 +316,17 @@ export const layoutRadial = (
     return {nodes: nodesInNetwork, edges: edgesInNetwork}
 }
 
-export const layoutLinear = (
-    agentCounts: Map<string, number>,
-    agentsInNetwork: ConnectivityInfo[],
-    currentConversations: AgentConversation[] | null, // For plasma edges (live) and node highlighting
-    isAwaitingLlm: boolean,
-    isAgentNetworkDesignerMode: boolean,
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    agentIconSuggestions: AgentIconSuggestions = null,
-    isTemporaryNetwork = false
-): LayoutResult => {
+export const layoutLinear = ({
+    agentCounts,
+    agentIconSuggestions = null,
+    agentsInNetwork,
+    currentConversations,
+    isAgentNetworkDesignerMode,
+    isAwaitingLlm,
+    isTemporaryNetwork = false,
+    thoughtBubbleEdges,
+    useNativeNames,
+}: LayoutOptions): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
     const edgesInNetwork: Edge[] = []
 
@@ -329,7 +344,7 @@ export const layoutLinear = (
             type: AGENT_NODE_TYPE_NAME,
             data: {
                 agentCounts,
-                agentName: cleanUpAgentName(nodeId),
+                agentName: useNativeNames ? nodeId : cleanUpAgentName(nodeId),
                 displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
                 // Use current conversations for node highlighting (cleared at end)
                 getConversations: () => currentConversations,

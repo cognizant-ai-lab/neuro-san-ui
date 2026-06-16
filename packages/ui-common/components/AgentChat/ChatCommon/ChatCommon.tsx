@@ -61,7 +61,7 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {LLMProvider} from "../../../state/Settings"
+import {LLMProvider, useSettingsStore} from "../../../state/Settings"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
@@ -292,6 +292,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // Access store for context items
     const updateChatContext = useAgentChatHistoryStore((state) => state.updateChatContext)
     const updateChatHistory = useAgentChatHistoryStore((state) => state.updateChatHistory)
@@ -333,7 +336,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
+    const networkDisplayName = useMemo(
+        () => (useNativeNames ? selectedNetwork : cleanUpAgentName(removeTrailingUuid(selectedNetwork))),
+        [selectedNetwork, useNativeNames]
+    )
 
     useEffect(() => {
         // Set up speech recognition
@@ -436,9 +442,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
                 // user. Agent name is the last tool in the origin array. If it's not there, use a default name.
                 const agentName =
-                    chatMessage.origin?.length > 0
-                        ? cleanUpAgentName(chatMessage.origin[chatMessage.origin.length - 1].tool)
-                        : "Agent"
+                    chatMessage.origin?.length > 0 ? chatMessage.origin[chatMessage.origin.length - 1].tool : "agent"
                 addTurn({
                     agentName,
                     id: uuid(),
@@ -769,7 +773,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
     const getPlaceholder = () =>
-        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${agentDisplayName}` : null
+        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}` : null
 
     const handleClearChat = useCallback(() => {
         setTurns([])
@@ -969,7 +973,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         sx={{fontWeight: 700}}
                         variant="inherit"
                     >
-                        {selectedNetwork}
+                        {networkDisplayName}
                         {networkDescription && ":"}
                     </Typography>
                     {networkDescription && (
@@ -1000,6 +1004,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     <Thinking
                         id={id}
                         turns={turns}
+                        useNativeNames={useNativeNames}
                     />
                 )}
                 {isAwaitingLlm && (
