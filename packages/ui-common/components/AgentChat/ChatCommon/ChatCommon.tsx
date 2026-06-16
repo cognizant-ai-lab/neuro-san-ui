@@ -1160,7 +1160,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }}
         >
             {selectedNetwork
-                ? missingApiKeys?.length === 5
+                ? missingApiKeys?.length === 0
                     ? getChatBox()
                     : getErrorOverlay(
                           <Typography>
