@@ -9,7 +9,7 @@ import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import {ComponentPropsWithoutRef, FC, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ApiKeyInput} from "./ApiKeyInput"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
@@ -23,18 +23,27 @@ import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 
 //#region: Styled Components
-const SettingsSectionTitle = styled(Typography)(({theme}) => ({
-    marginBottom: theme.spacing(1),
+const SettingsSectionTitleBase: FC<ComponentPropsWithoutRef<typeof Typography>> = (props) => (
+    <Typography
+        variant="h6"
+        {...props}
+    />
+)
+
+const SettingsSectionTitle = styled(SettingsSectionTitleBase)(({theme}) => ({
+    marginBottom: theme.spacing(2),
 }))
 
 const Section = styled(Box)(({theme}) => ({
     display: "flex",
     flexDirection: "column",
-    marginBottom: theme.spacing(3),
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(4),
 }))
 
 const SubsectionTitle = styled(Typography)(({theme}) => ({
     borderBottom: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.secondary,
     fontWeight: 600,
     paddingBottom: theme.spacing(0.5),
     marginBottom: theme.spacing(2),
@@ -47,12 +56,11 @@ const SubSection = styled(Box)(() => ({
     flexDirection: "column",
 }))
 
-const SubSectionBody = styled(Box)(({theme}) => ({
-    display: "flex",
-    gap: 4,
-    flexDirection: "column",
+const SubSectionBody = styled(Box)(() => ({
     alignContent: "center",
-    marginBottom: theme.spacing(1),
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
     width: "100%",
 }))
 //#endregion: Styled Components
@@ -74,6 +82,7 @@ interface LLMProviderInputConfig {
 }
 //#endregion: Types and Interfaces
 
+// eslint-disable-next-line react/no-multi-comp -- styled component shim is only used in this module
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
@@ -282,30 +291,33 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getApiKeysSection = () => (
         <Section>
-            <SettingsSectionTitle variant="h6">API Keys</SettingsSectionTitle>
-            <SubSectionBody>
-                <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
-                    {apiKeyConfigs.map(({vendor, idSuffix, logo, onTest, placeholder}) => (
-                        <ApiKeyInput
-                            key={idSuffix}
-                            forgetKey={() => persistKey(vendor, "")}
-                            id={`${id}-${idSuffix}`}
-                            logo={logo}
-                            onSave={(key) => persistKey(vendor, key)}
-                            onTest={onTest}
-                            persistedValue={apiKeys[vendor]}
-                            placeholder={placeholder}
-                            vendor={vendor}
-                        />
-                    ))}
-                </Box>
-            </SubSectionBody>
+            <SettingsSectionTitle>API Keys</SettingsSectionTitle>
+            <SubSection>
+                <SubsectionTitle variant="subtitle1">Providers</SubsectionTitle>
+                <SubSectionBody>
+                    <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
+                        {apiKeyConfigs.map(({vendor, idSuffix, logo, onTest, placeholder}) => (
+                            <ApiKeyInput
+                                key={idSuffix}
+                                forgetKey={() => persistKey(vendor, "")}
+                                id={`${id}-${idSuffix}`}
+                                logo={logo}
+                                onSave={(key) => persistKey(vendor, key)}
+                                onTest={onTest}
+                                persistedValue={apiKeys[vendor]}
+                                placeholder={placeholder}
+                                vendor={vendor}
+                            />
+                        ))}
+                    </Box>
+                </SubSectionBody>
+            </SubSection>
         </Section>
     )
 
     const getBehaviorSection = () => (
         <Section>
-            <SettingsSectionTitle variant="h6">Behavior</SettingsSectionTitle>
+            <SettingsSectionTitle>Behavior</SettingsSectionTitle>
             <SubSection>
                 <SubsectionTitle variant="subtitle1">Zen mode</SubsectionTitle>
                 <SubSectionBody>
@@ -324,6 +336,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                     updateSettings({behavior: {enableZenMode: checked}})
                                     enableZenModeCheckmark.trigger()
                                 }}
+                                sx={{p: 0.0}}
                             />
                         </Tooltip>
                         <FadingCheckmark show={enableZenModeCheckmark.show} />
@@ -467,12 +480,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 <FormLabel sx={{marginBottom: 2}}>Palette (heatmap and depth):</FormLabel>
                 <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
                     <Tooltip title={customer ? "Palette is locked when branding is applied" : ""}>
-                        {/* This span is required to ensure the tooltip works when the ToggleButtonGroup is disabled */}
                         <span>
                             <ToggleButtonGroup
                                 aria-label="depth-heatmap-palette-selection"
                                 disabled={Boolean(customer)}
-                                exclusive
+                                exclusive={true}
                                 onChange={handlePaletteChange}
                                 size="small"
                                 sx={{
@@ -484,6 +496,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 {paletteKeys.map((key) => {
                                     const palette = availablePalettes[key as keyof typeof availablePalettes]
                                     if (!palette || !Array.isArray(palette)) return null
+
+                                    const paletteArray: string[] = palette
 
                                     return (
                                         <ToggleButton
@@ -506,14 +520,17 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                                     {key}
                                                 </Typography>
                                                 <Box sx={{display: "flex", gap: 0.5}}>
-                                                    {Array.from({length: 5}, (_, i) => (
+                                                    {Array.from({length: 5}, (_, i) => {
+                                                        const paletteLength = paletteArray.length
+                                                        const index = Math.floor((i * paletteLength) / 5)
+                                                        return paletteArray[index]
+                                                    }).map((color) => (
                                                         <Box
-                                                            key={`${key}-swatch-${i}`}
+                                                            key={color}
                                                             sx={{
                                                                 width: "0.75rem",
                                                                 height: "0.75rem",
-                                                                backgroundColor:
-                                                                    palette[Math.floor((i * palette.length) / 5)],
+                                                                backgroundColor: color,
                                                                 border: "1px solid",
                                                             }}
                                                         />
@@ -645,7 +662,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getAppearanceSection = () => (
         <Section>
-            <SettingsSectionTitle variant="h6">Appearance</SettingsSectionTitle>
+            <SettingsSectionTitle>Appearance</SettingsSectionTitle>
             {getBrandingSubsection()}
             {getNetworkDisplaySubsection()}
             {getNetworkAnimationSubsection()}
@@ -670,7 +687,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     )
 
     /* Dev note:
-    Before you go removing the "useless" spans in code below that wrap MUI elements: they are required because
+    Before you go removing the "useless" spans in the code that wrap MUI elements: they are required because
     MUI's disabled state on certain components sets pointer-events: none, which prevents tooltips from working.
     Wrapping in a span allows the tooltip to still function while the inner component is disabled.
     See: https://github.com/mui/material-ui/issues/8416
@@ -685,7 +702,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 },
                 typography: {
                     // Default fonts are too large for the settings dialog, so we reduce the base font size
-                    fontSize: 10,
+                    fontSize: 12,
                 },
             })}
         >
