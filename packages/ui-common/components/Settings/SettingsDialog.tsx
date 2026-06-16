@@ -56,11 +56,11 @@ const SubSection = styled(Box)(() => ({
     flexDirection: "column",
 }))
 
-const SubSectionBody = styled(Box)(() => ({
+const SubSectionBody = styled(Box)(({theme}) => ({
     alignContent: "center",
     display: "flex",
     flexDirection: "column",
-    gap: 2,
+    gap: theme.spacing(2),
     width: "100%",
 }))
 //#endregion: Styled Components
@@ -350,123 +350,121 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         <SubSection>
             <SubsectionTitle variant="subtitle1">Branding</SubsectionTitle>
             <SubSectionBody>
-                <Box sx={{display: "flex", flexDirection: "column", gap: 1.5}}>
+                <Box
+                    sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        flexDirection: "row",
+                        gap: 2,
+                    }}
+                >
+                    <FormLabel>Customer:</FormLabel>
+                    <TextField
+                        aria-label="branding-input"
+                        onChange={(e) => setCustomerInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && customerInput?.trim().length > 0) {
+                                void handleBrandingApply()
+                            }
+                        }}
+                        value={customerInput ?? ""}
+                        placeholder="Company or organization name"
+                        size="small"
+                        sx={{width: "100%"}}
+                        variant="outlined"
+                    />
+                    <Button
+                        disabled={
+                            customerInput?.trim().length === 0 || isBrandingApplying || customerInput === customer
+                        }
+                        variant="contained"
+                        size="small"
+                        onClick={handleBrandingApply}
+                        loading={isBrandingApplying}
+                        sx={{minWidth: "8rem"}}
+                    >
+                        Apply
+                    </Button>
+                    <FadingCheckmark show={brandingCheckmark.show} />
+                </Box>
+
+                <Box sx={{display: "flex", alignItems: "center"}}>
                     <Box
                         sx={{
-                            alignItems: "center",
                             display: "flex",
-                            flexDirection: "row",
+                            alignItems: "center",
                             gap: 2,
+                            marginBottom: "1rem",
+                            width: "100%",
                         }}
                     >
-                        <FormLabel>Customer:</FormLabel>
-                        <TextField
-                            aria-label="branding-input"
-                            onChange={(e) => setCustomerInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && customerInput?.trim().length > 0) {
-                                    void handleBrandingApply()
-                                }
-                            }}
-                            value={customerInput ?? ""}
-                            placeholder="Company or organization name"
-                            size="small"
-                            sx={{width: "100%"}}
-                            variant="outlined"
-                        />
-                        <Button
-                            disabled={
-                                customerInput?.trim().length === 0 || isBrandingApplying || customerInput === customer
-                            }
-                            variant="contained"
-                            size="small"
-                            onClick={handleBrandingApply}
-                            loading={isBrandingApplying}
-                            sx={{minWidth: "8rem"}}
-                        >
-                            Apply
-                        </Button>
-                        <FadingCheckmark show={brandingCheckmark.show} />
-                    </Box>
-
-                    <Box sx={{display: "flex", alignItems: "center"}}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 2,
-                                marginBottom: "1rem",
-                                width: "100%",
-                            }}
-                        >
-                            <FormLabel>Logo:</FormLabel>
-                            <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
-                                <span>
-                                    <ToggleButtonGroup
-                                        aria-label="logo-selection"
-                                        disabled={!customer}
-                                        exclusive={true}
-                                        onChange={(_, value) => {
-                                            if (value !== null) {
-                                                updateSettings({
-                                                    branding: {
-                                                        logoSource: value,
-                                                    },
-                                                })
-                                                logoCheckmark.trigger()
-                                            }
-                                        }}
-                                        size="small"
-                                        sx={{marginRight: "1rem"}}
-                                        value={logoSource || "none"}
+                        <FormLabel>Logo:</FormLabel>
+                        <Tooltip title={customer ? null : "Set a customer name to enable logo options"}>
+                            <span>
+                                <ToggleButtonGroup
+                                    aria-label="logo-selection"
+                                    disabled={!customer}
+                                    exclusive={true}
+                                    onChange={(_, value) => {
+                                        if (value !== null) {
+                                            updateSettings({
+                                                branding: {
+                                                    logoSource: value,
+                                                },
+                                            })
+                                            logoCheckmark.trigger()
+                                        }
+                                    }}
+                                    size="small"
+                                    sx={{marginRight: "1rem"}}
+                                    value={logoSource || "none"}
+                                >
+                                    <Tooltip title={customer && "No logo will be displayed"}>
+                                        <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
+                                            <ToggleButton value="none">None</ToggleButton>
+                                        </span>
+                                    </Tooltip>
+                                    <Tooltip
+                                        title={
+                                            customer &&
+                                            "Display a simple, anonymous generic logo based on a generic brand"
+                                        }
                                     >
-                                        <Tooltip title={customer && "No logo will be displayed"}>
-                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
-                                                <ToggleButton value="none">None</ToggleButton>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip
-                                            title={
-                                                customer &&
-                                                "Display a simple, anonymous generic logo based on a generic brand"
-                                            }
+                                        <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
+                                            <ToggleButton value="generic">Generic</ToggleButton>
+                                        </span>
+                                    </Tooltip>
+                                    <Tooltip
+                                        title={
+                                            customer &&
+                                            (logoServiceToken
+                                                ? "Use a service to attempt to automatically find a suitable " +
+                                                  "logo based on the customer name."
+                                                : "No Logo.dev token found, cannot use Auto logo source")
+                                        }
+                                    >
+                                        <span
+                                            style={{
+                                                cursor: customer && logoServiceToken ? "pointer" : "not-allowed",
+                                            }}
                                         >
-                                            <span style={{cursor: customer ? "pointer" : "not-allowed"}}>
-                                                <ToggleButton value="generic">Generic</ToggleButton>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip
-                                            title={
-                                                customer &&
-                                                (logoServiceToken
-                                                    ? "Use a service to attempt to automatically find a suitable " +
-                                                      "logo based on the customer name."
-                                                    : "No Logo.dev token found, cannot use Auto logo source")
-                                            }
-                                        >
-                                            <span
-                                                style={{
-                                                    cursor: customer && logoServiceToken ? "pointer" : "not-allowed",
-                                                }}
+                                            <ToggleButton
+                                                disabled={!logoServiceToken}
+                                                value="auto"
                                             >
-                                                <ToggleButton
-                                                    disabled={!logoServiceToken}
-                                                    value="auto"
-                                                >
-                                                    Auto
-                                                </ToggleButton>
-                                            </span>
-                                        </Tooltip>
-                                    </ToggleButtonGroup>
-                                </span>
-                            </Tooltip>
-                            <FormLabel>Preview:</FormLabel>
-                            <CustomerLogo
-                                fallbackElement="(None)"
-                                logoServiceToken={logoServiceToken}
-                            />
-                            <FadingCheckmark show={logoCheckmark.show} />
-                        </Box>
+                                                Auto
+                                            </ToggleButton>
+                                        </span>
+                                    </Tooltip>
+                                </ToggleButtonGroup>
+                            </span>
+                        </Tooltip>
+                        <FormLabel>Preview:</FormLabel>
+                        <CustomerLogo
+                            fallbackElement="(None)"
+                            logoServiceToken={logoServiceToken}
+                        />
+                        <FadingCheckmark show={logoCheckmark.show} />
                     </Box>
                 </Box>
             </SubSectionBody>
