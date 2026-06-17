@@ -41,11 +41,11 @@ import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from 
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
-import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
-import {createAppTheme} from "../theme"
-import {CustomPageProps} from "./Types"
 import {smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
+import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
+import {createAppTheme} from "../theme"
+import {CustomPageProps} from "../Types/Types"
 
 type BaseComponent = AppProps extends {Component: infer C} ? C : never
 

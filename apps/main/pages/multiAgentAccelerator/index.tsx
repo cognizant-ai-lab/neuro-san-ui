@@ -19,7 +19,7 @@ import {FC, JSX as ReactJSX} from "react"
 import {MultiAgentAccelerator} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-import {CustomPageProps} from "../Types"
+import {CustomPageProps} from "../../Types/Types"
 
 // Main function.
 export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
