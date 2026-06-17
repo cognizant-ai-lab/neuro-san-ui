@@ -441,8 +441,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 // This is the normal happy path for an incoming message.
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
                 // user. Agent name is the last tool in the origin array. If it's not there, use a default name.
-                const agentName =
-                    chatMessage.origin?.length > 0 ? chatMessage.origin[chatMessage.origin.length - 1].tool : "agent"
+                const agentName = chatMessage.origin?.at(-1)?.tool ?? "agent"
                 addTurn({
                     agentName,
                     id: uuid(),
