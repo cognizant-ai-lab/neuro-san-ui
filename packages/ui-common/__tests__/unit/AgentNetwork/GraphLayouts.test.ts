@@ -521,7 +521,6 @@ describe("GraphLayouts", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockEdge2)
             thoughtBubbleEdgesMap.clear()
 
-            // const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
             const {edges} = layoutRadial({
                 ...defaultLayoutParams,
                 agentsInNetwork: threeAgentNetwork,
@@ -547,7 +546,6 @@ describe("GraphLayouts", () => {
             }
             addThoughtBubbleEdge(singleNodeMap, "conv-x", bubble)
 
-            // const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, false, singleNodeMap)
             const {edges} = layoutFunction({
                 ...defaultLayoutParams,
                 agentsInNetwork: [{origin: "A", tools: []}],
