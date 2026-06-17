@@ -18,6 +18,7 @@ limitations under the License.
  * See main function description.
  */
 import {AIMessage, HumanMessage} from "@langchain/core/messages"
+import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
 import TuneIcon from "@mui/icons-material/Tune"
@@ -32,12 +33,12 @@ import ListItemText from "@mui/material/ListItemText"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
 import {useTheme} from "@mui/material/styles"
-import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {isEmpty} from "lodash-es"
 import {
     CSSProperties,
     Dispatch,
+    ReactNode,
     Ref,
     SetStateAction,
     useCallback,
@@ -60,7 +61,9 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {LLMProvider} from "../../../state/Settings"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
@@ -78,11 +81,6 @@ export interface ChatCommonProps {
     readonly currentUser: string
 
     /**
-     * Path to image for user avatar
-     */
-    readonly userImage: string
-
-    /**
      * Function to set the state of the component to indicate whether we are awaiting a response from the LLM
      */
     readonly setIsAwaitingLlm: Dispatch<SetStateAction<boolean>>
@@ -93,9 +91,14 @@ export interface ChatCommonProps {
     readonly isAwaitingLlm: boolean
 
     /**
-     * The agent to send the request to.
+     * The network to send the request to.
      */
-    readonly targetAgent: string
+    readonly selectedNetwork: string | null
+
+    /**
+     * Setter for changing the selected network.
+     */
+    readonly setSelectedNetwork?: (network: string | null) => void
 
     /**
      * Special endpoint for legacy agents since they do not have a single unified endpoint like Neuro-san agents.
@@ -181,6 +184,11 @@ export interface ChatCommonProps {
      * Sample queries for the current network that the user can "click to send"
      */
     readonly sampleQueries?: string[]
+
+    /**
+     * Array of LLM providers for which API keys are required but missing. Only applies to BYOK networks.
+     */
+    readonly missingApiKeys?: LLMProvider[]
 }
 
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
@@ -214,15 +222,16 @@ export const MAX_TURNS = 50
  */
 export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
     const {
-        customAgentGreetings = EMPTY,
         agentPlaceholders = EMPTY,
         backgroundColor,
         currentUser,
+        customAgentGreetings = EMPTY,
         extraParams,
         extraSlyData,
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
+        missingApiKeys = [],
         networkDescription,
         neuroSanURL,
         onChunkReceived,
@@ -231,9 +240,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         onStreamingComplete,
         onStreamingStarted,
         sampleQueries,
+        selectedNetwork,
         setIsAwaitingLlm,
         setPreviousResponse,
-        targetAgent,
+        setSelectedNetwork,
         title,
     } = props
     // MUI theme
@@ -273,7 +283,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
-    const storedChatHistory = useAgentChatHistoryStore((state) => state?.history?.[targetAgent])
+    const storedChatHistory = useAgentChatHistoryStore((state) =>
+        selectedNetwork ? state?.history?.[selectedNetwork] : undefined
+    )
+
     const agentChatHistory = useMemo(
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
@@ -320,7 +333,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Keeps track of whether the agent completed its task
     const succeeded = useRef<boolean>(false)
 
-    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(targetAgent)), [targetAgent])
+    const agentDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
 
     useEffect(() => {
         // Set up speech recognition
@@ -365,7 +378,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         (chunk: string) => {
             currentResponse.current += chunk
 
-            if (!legacyTurnIdRef.current) {
+            if (legacyTurnIdRef.current) {
+                // We already have a turn for this response, so just update the text of that turn.
+                setTurns((prev) =>
+                    prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
+                )
+            } else {
                 // We don't yet have a turn for this response, so create one. On subsequent chunks, we'll just
                 // update the text of this turn.
                 legacyTurnIdRef.current = uuid()
@@ -375,11 +393,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     role: MessageRole.Agent,
                     text: currentResponse.current,
                 })
-            } else {
-                // We already have a turn for this response, so just update the text of that turn.
-                setTurns((prev) =>
-                    prev.map((t) => (t.id === legacyTurnIdRef.current ? {...t, text: currentResponse.current} : t))
-                )
             }
         },
         [addTurn]
@@ -397,14 +410,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             // Shallow merge existing slyData with incoming chatMessage.sly_data
             if (chatMessage.sly_data) {
-                updateSlyData(targetAgent, chatMessage.sly_data)
+                updateSlyData(selectedNetwork, chatMessage.sly_data)
             }
 
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
             if (chatMessage.type === ChatMessageType.AGENT_FRAMEWORK && chatMessage.chat_context) {
                 // Save the chat context, potentially overwriting any previous ones we received during this session.
                 // We only care about the last one received.
-                updateChatContext(targetAgent, chatMessage.chat_context)
+                updateChatContext(selectedNetwork, chatMessage.chat_context)
             }
 
             // Check if there is an error block in the "structure" field of the chat message.
@@ -417,7 +430,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     text: errorMessage,
                 })
                 succeeded.current = false
-            } else if (chatMessage?.text?.trim().length > 0 || chatMessage.structure) {
+            } else if (chatMessage?.text?.trim().length > 0 || !isEmpty(chatMessage.structure)) {
                 // Not an error, so output it if it has text or a structure.
                 // This is the normal happy path for an incoming message.
                 // The backend sometimes sends messages with no text content, and we don't want to display those to the
@@ -440,7 +453,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }
             }
         },
-        [addTurn, targetAgent, updateChatContext, updateSlyData]
+        [addTurn, selectedNetwork, updateChatContext, updateSlyData]
     )
 
     /**
@@ -452,14 +465,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             const onChunkReceivedResult = onChunkReceived?.(chunk) ?? true
             succeeded.current = succeeded.current || onChunkReceivedResult
 
-            if (isLegacyAgentType(targetAgent)) {
+            if (isLegacyAgentType(selectedNetwork)) {
                 // For legacy agents, we either get plain text or Markdown. Just output it as-is.
                 handleLegacyAgentChunk(chunk)
             } else {
                 handleNeuroSanAgentChunk(chunk)
             }
         },
-        [onChunkReceived, targetAgent, handleNeuroSanAgentChunk, handleLegacyAgentChunk]
+        [onChunkReceived, selectedNetwork, handleNeuroSanAgentChunk, handleLegacyAgentChunk]
     )
 
     /**
@@ -470,10 +483,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setIsAwaitingLlm(false)
         setChatInput("")
 
-        setPreviousResponse?.(targetAgent, currentResponse.current)
+        setPreviousResponse?.(selectedNetwork, currentResponse.current)
         currentResponse.current = ""
         legacyTurnIdRef.current = null
-    }, [setIsAwaitingLlm, setPreviousResponse, targetAgent])
+    }, [setIsAwaitingLlm, setPreviousResponse, selectedNetwork])
 
     /*
      * The main logic for sending a query to the server, with retries on errors.
@@ -491,7 +504,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     attemptNumber += 1
 
                     // Check which agent type we are dealing with
-                    if (isLegacyAgentType(targetAgent)) {
+                    if (isLegacyAgentType(selectedNetwork)) {
                         // It's a legacy agent (these go directly to the LLM and are different from
                         // the Neuro-san agents).
 
@@ -510,15 +523,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUserName = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
+                        const slyDataWithUsername = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
                             query,
-                            targetAgent,
+                            selectedNetwork,
                             handleChunk,
                             agentChatHistory.chatContext,
-                            slyDataWithUserName,
+                            slyDataWithUsername,
                             currentUser,
                             StreamingUnit.Line
                         )
@@ -552,7 +565,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             handleChunk,
             legacyAgentEndpoint,
             neuroSanURL,
-            targetAgent,
+            selectedNetwork,
         ]
     )
 
@@ -573,7 +586,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         )
 
         if (idx === -1) {
-            if (givesFinalAnswer(targetAgent)) {
+            if (givesFinalAnswer(selectedNetwork)) {
                 // This agent is supposed to give final answers, but didn't this time. An error.
                 setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
                 return
@@ -588,7 +601,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 )
 
                 // Save it to chat history
-                updateChatHistory(targetAgent, [new AIMessage({content: lastTurn.text, id: uuid()})])
+                updateChatHistory(selectedNetwork, [new AIMessage({content: lastTurn.text, id: uuid()})])
                 return
             }
         }
@@ -596,7 +609,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         const sourceTurn = currentTurns[idx]
 
         // Save item to chat history (same as original behavior)
-        updateChatHistory(targetAgent, [new AIMessage({content: sourceTurn.text, id: uuid()})])
+        updateChatHistory(selectedNetwork, [new AIMessage({content: sourceTurn.text, id: uuid()})])
 
         // Extract the final answer from the turn.
         const finalAnswer = extractFinalAnswer(sourceTurn.text)?.trim()
@@ -619,7 +632,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
             return updated
         })
-    }, [targetAgent, updateChatHistory])
+    }, [selectedNetwork, updateChatHistory])
 
     /**
      * Extract the final answer from the turns for a Neuro-san agent. For Neuro-san agents, we expect the final answer
@@ -645,25 +658,19 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         // Extract final answer from that turn
         const finalAnswerTurn = currentTurns[idx]
-        const hasFinalAnswer = finalAnswerTurn.text?.trim().length > 0 || !isEmpty(finalAnswerTurn.structure)
-        if (hasFinalAnswer) {
-            // Update relevant turn to be the final answer
-            setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
+        // Update relevant turn to be the final answer
+        setTurns((prev) => prev.map((turn, i) => (i === idx ? {...turn, role: MessageRole.FinalAnswer} : turn)))
 
-            // Save final answer to chat history
-            const finalAnswerContent = finalAnswerTurn.text || JSON.stringify(finalAnswerTurn.structure, null, 2)
-            updateChatHistory(targetAgent, [new AIMessage({content: finalAnswerContent, id: uuid()})])
-        } else {
-            // No final answer found, display error
-            setTurns((prev) => [...prev, getFinalAnswerErrorTurn()])
-        }
-    }, [targetAgent, updateChatHistory])
+        // Save final answer to chat history
+        const finalAnswerContent = finalAnswerTurn.text || JSON.stringify(finalAnswerTurn.structure, null, 2)
+        updateChatHistory(selectedNetwork, [new AIMessage({content: finalAnswerContent, id: uuid()})])
+    }, [selectedNetwork, updateChatHistory])
 
     const handleSend = useCallback(
         async (query: string) => {
             // Record user query in chat history. Discard anything beyond MAX_CHAT_HISTORY_ITEMS
             const userQueryMessage = new HumanMessage({content: query, id: uuid()})
-            updateChatHistory(targetAgent, [userQueryMessage])
+            updateChatHistory(selectedNetwork, [userQueryMessage])
 
             // Allow parent to intercept and modify the query before sending if needed
             const queryToSend = onSend?.(query) ?? query
@@ -699,7 +706,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 if (!wasAborted) {
                     if (succeeded.current) {
                         // Success: infer final answer depending on agent type
-                        if (isLegacyAgentType(targetAgent)) {
+                        if (isLegacyAgentType(selectedNetwork)) {
                             handleFinalAnswerLegacyAgent()
                         } else {
                             handleFinalAnswerNeuroSanAgent()
@@ -730,7 +737,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             onStreamingStarted,
             resetState,
             setIsAwaitingLlm,
-            targetAgent,
+            selectedNetwork,
             updateChatHistory,
         ]
     )
@@ -762,14 +769,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
     const getPlaceholder = () =>
-        !targetAgent ? null : agentPlaceholders[targetAgent] || `Chat with ${agentDisplayName}`
+        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${agentDisplayName}` : null
 
     const handleClearChat = useCallback(() => {
         setTurns([])
-        resetHistory(targetAgent)
+        resetHistory(selectedNetwork)
         setPreviousUserQuery("")
         currentResponse.current = ""
-    }, [resetHistory, targetAgent])
+    }, [resetHistory, selectedNetwork])
 
     // Expose the handleStop and handleClearChat methods to parent components via ref for external control
     useImperativeHandle(
@@ -781,26 +788,32 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [handleStop, handleClearChat]
     )
 
-    const getNoAgentOverlay = () => (
-        <Tooltip
-            title="Please select a Network from the list to start the chat."
-            placement="auto"
+    const getErrorOverlay = (errorText: ReactNode) => (
+        <Box
+            id="chat-disabled-overlay"
+            sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: theme.zIndex.modal - 1,
+                cursor: "not-allowed",
+                // Capture all pointer events to prevent interaction with the chat when no agent is selected
+                pointerEvents: "all",
+            }}
         >
-            <Box
-                id="chat-disabled-overlay"
+            <Typography
                 sx={{
                     position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: theme.zIndex.modal - 1,
-                    cursor: "not-allowed",
-                    // Capture all pointer events to prevent interaction with the chat when no agent is selected
-                    pointerEvents: "all",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
                 }}
-            />
-        </Tooltip>
+            >
+                {errorText}
+            </Typography>
+        </Box>
     )
 
     const getTitle = () => (
@@ -855,7 +868,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Box>
     )
 
-    const agentGreeting = customAgentGreetings[targetAgent] ?? "Hi, how can I help?"
+    const agentGreeting = customAgentGreetings[selectedNetwork] ?? "Hi, how can I help?"
 
     const handleOptionsMenuClose = () => {
         setOptionsMenuAnchorEl(null)
@@ -956,7 +969,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         sx={{fontWeight: 700}}
                         variant="inherit"
                     >
-                        {targetAgent}
+                        {selectedNetwork}
                         {networkDescription && ":"}
                     </Typography>
                     {networkDescription && (
@@ -978,7 +991,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 />
                 <Conversation
                     id={id}
-                    includeAgentMessages={!givesFinalAnswer(targetAgent)}
+                    includeAgentMessages={!givesFinalAnswer(selectedNetwork)}
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
@@ -1124,8 +1137,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 flexDirection: "column",
                 flexGrow: 1,
                 height: "100%",
-                opacity: targetAgent ? 1 : 0.4,
-                pointerEvents: targetAgent ? "auto" : "none",
+                opacity: selectedNetwork ? 1 : 0.4,
+                pointerEvents: selectedNetwork ? "auto" : "none",
                 position: "relative",
             }}
         >
@@ -1146,7 +1159,37 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 position: "relative",
             }}
         >
-            {targetAgent ? getChatBox() : getNoAgentOverlay()}
+            {selectedNetwork
+                ? missingApiKeys?.length === 0
+                    ? getChatBox()
+                    : getErrorOverlay(
+                          <Typography component="span">
+                              {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
+                              "Settings" to use this Network.`}
+                          </Typography>
+                      )
+                : getErrorOverlay(
+                      <Typography component="span">
+                          Please select a Network from the list to start the chat, or click
+                          <IconButton
+                              onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
+                              aria-label="select-network-designer"
+                              sx={{
+                                  px: 0.5,
+                                  verticalAlign: "middle",
+                                  mb: "4px",
+                              }}
+                          >
+                              <AddBoxRounded
+                                  sx={{
+                                      color: "var(--bs-secondary)",
+                                      fontSize: "1rem",
+                                  }}
+                              />
+                          </IconButton>
+                          to design your own network!
+                      </Typography>
+                  )}
         </Box>
     )
 }

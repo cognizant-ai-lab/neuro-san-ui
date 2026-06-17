@@ -1,6 +1,6 @@
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
-import {UserEvent} from "@testing-library/user-event"
-import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
@@ -10,6 +10,8 @@ import {DEFAULT_SETTINGS, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
 jest.mock("../../../components/Common/notification")
+
+const TEST_API_KEY = "test-api-key-123"
 
 describe("SettingsDialog", () => {
     withStrictMocks()
@@ -62,6 +64,149 @@ describe("SettingsDialog", () => {
         const closeButton = await screen.findByLabelText("close")
         await user.click(closeButton)
         expect(onCloseMock).toHaveBeenCalledTimes(1)
+    })
+
+    describe("API keys", () => {
+        it.each(["dark", "light"] satisfies PaletteMode[])("allows user to input and save API keys", async (mode) => {
+            global.fetch = mockFetch({}, true)
+
+            render(
+                <ThemeProvider theme={createTheme({palette: {mode}})}>
+                    <SettingsDialog
+                        id="settings-dialog"
+                        isOpen={true}
+                    />
+                </ThemeProvider>
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+            const testApiKey = TEST_API_KEY
+
+            await user.type(inputBox, testApiKey)
+
+            // Click "Test" button to (pretend) "test" the key
+            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            expect(testButton).toBeEnabled()
+            await user.click(testButton)
+
+            // Click "Save" to save the API key
+            const saveButton = await within(apiKeyInput).findByRole("button", {name: /Save/u})
+            expect(saveButton).toBeEnabled()
+
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(testApiKey)
+        })
+
+        it("allows user to test API keys", async () => {
+            global.fetch = mockFetch({}, true)
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+
+            await user.type(inputBox, TEST_API_KEY)
+
+            // Make sure we can clear the input
+            const clearButton = within(apiKeyInput).getByLabelText(/Clear input/u)
+            await user.click(clearButton)
+            expect(inputBox).toHaveValue("")
+
+            // Type the key again for testing
+            await user.type(inputBox, TEST_API_KEY)
+
+            // Click "Test" button to (pretend) "test" the key
+            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            expect(testButton).toBeEnabled()
+            await user.click(testButton)
+
+            within(apiKeyInput).getByTestId("CheckIcon")
+
+            // Now mock test failure and check that error icon appears
+            global.fetch = mockFetch({}, false)
+            await user.click(testButton)
+
+            within(apiKeyInput).getByTestId("ErrorIcon")
+        })
+
+        it("allows user request that API keys be forgotten", async () => {
+            // set an existing key value
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    OpenAI: TEST_API_KEY,
+                },
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const forgetButton = within(apiKeyInput).getByRole("button", {name: /Forget/u})
+            await user.click(forgetButton)
+
+            // First time, cancel
+            const cancelButton = await screen.findByText("Cancel")
+            await user.click(cancelButton)
+
+            // Key should still be there
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(TEST_API_KEY)
+
+            // Now click it again but this time confirm
+            await user.click(forgetButton)
+
+            const confirmButton = screen.getByText("Yes, forget key")
+            await user.click(confirmButton)
+
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBeFalsy()
+        })
+
+        it("allows a user to show/hide keys", async () => {
+            // set an existing key value
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    OpenAI: TEST_API_KEY,
+                },
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyContainer = screen.getByTestId("settings-dialog-openai-input")
+            const input = within(apiKeyContainer).getByPlaceholderText("sk-...")
+
+            // Assert initial state: masked
+            expect(input).toHaveAttribute("type", "password")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Click the toggle button
+            const showHideButton = within(apiKeyContainer).getByRole("button", {name: "toggle key visibility"})
+            await user.click(showHideButton)
+
+            // Now should be unmasked (regular text control)
+            expect(input).toHaveAttribute("type", "text")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Assert the Tooltip change
+            expect(screen.getByLabelText("Hide API key")).toBeInTheDocument()
+        })
     })
 
     it.each([
@@ -132,6 +277,25 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
     })
 
+    it("doesn't change palette if user clicks again on the existing option", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Find button to select "GrayScale" palette
+        const grayScaleButton = screen.getByRole("button", {name: /grayScale-palette-button/u})
+        await user.click(grayScaleButton)
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+
+        // Click the same button again
+        await user.click(grayScaleButton)
+
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+    })
+
     it("Allows selecting and unselecting auto agent icon color", async () => {
         // Set non-default value first
         useSettingsStore.getState().updateSettings({
@@ -172,13 +336,13 @@ describe("SettingsDialog", () => {
 
         const zenModeToggle = screen.getByTestId("zen-mode-checkbox")
 
-        const checkBoxElement = within(zenModeToggle).getByRole("checkbox")
+        const checkboxElement = within(zenModeToggle).getByRole("checkbox")
 
-        expect(checkBoxElement).toBeChecked()
+        expect(checkboxElement).toBeChecked()
 
         // Click to disable Zen mode
-        await user.click(checkBoxElement)
-        expect(checkBoxElement).not.toBeChecked()
+        await user.click(checkboxElement)
+        expect(checkboxElement).not.toBeChecked()
 
         expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
     })

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"

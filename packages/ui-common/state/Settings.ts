@@ -17,7 +17,7 @@ import {merge} from "lodash-es"
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
-import {PaletteKey} from "../Theme/Palettes"
+import {PALETTES} from "../Theme/Palettes"
 
 /**
  * A utility type that makes all properties in T deeply optional, since TypeScript's built-in Partial<T>
@@ -29,6 +29,8 @@ import {PaletteKey} from "../Theme/Palettes"
 type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
+
+export type LLMProvider = "OpenAI" | "Anthropic"
 
 /**
  * User preference settings
@@ -53,12 +55,13 @@ interface Settings {
     readonly behavior: {
         readonly enableZenMode: boolean
     }
+    readonly apiKeys: Partial<Record<LLMProvider, string>>
 }
 
 /**
  * Zustand state store for user preferences/Settings
  */
-export interface SettingsStore {
+interface SettingsStore {
     readonly settings: Settings
     readonly updateSettings: (updates: DeepPartial<Settings>) => void
     readonly resetSettings: () => void
@@ -88,6 +91,7 @@ export const DEFAULT_SETTINGS: Settings = {
     behavior: {
         enableZenMode: true,
     },
+    apiKeys: {},
 }
 
 /**
@@ -115,3 +119,23 @@ export const useSettingsStore = create<SettingsStore>()(
         }
     )
 )
+
+export type PaletteKey = keyof typeof PALETTES | "brand"
+
+/**
+ * Custom hook to get the current color palette based on user settings.
+ * If the user has selected custom branding, it will return the palette for that.
+ * Otherwise, it will return one of the predefined palettes from the PALETTES object based on the user's selection.
+ *
+ * @returns An array of color hex codes representing the current color palette.
+ */
+export const usePalette = () => {
+    const brandPalette = useSettingsStore((state: SettingsStore) => state.settings.branding.rangePalette)
+    const paletteKey = useSettingsStore((state: SettingsStore) => state.settings.appearance.rangePalette)
+
+    if (paletteKey === "brand" && brandPalette) {
+        return brandPalette
+    } else {
+        return PALETTES[paletteKey as keyof typeof PALETTES]
+    }
+}

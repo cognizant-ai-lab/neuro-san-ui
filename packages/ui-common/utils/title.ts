@@ -17,6 +17,6 @@ limitations under the License.
 // Miscellaneous utilities for dealing with browser tab title
 
 export const getTitleBase = (): string => {
-    const subdomain = window.location.host.split(".")[0]
+    const subdomain = window.location.host.split(".", 1)[0]
     return `${subdomain[0].toUpperCase()}${subdomain.slice(1)}`
 }

@@ -42,7 +42,7 @@ import {AgentNetworkDefinitionEntry} from "../const"
 
 export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".hocon", ".json"]
-const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(",")
+const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
 const TEMPORARY_FOLDER_DISPLAY = "Temporary"
 

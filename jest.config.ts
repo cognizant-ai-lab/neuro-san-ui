@@ -42,6 +42,7 @@ const esmPackagesToTransform = [
     "parse-.*",
     "property-.*",
     "react-markdown",
+    "react-syntax-highlighter",
     "refractor",
     "rehype-.*",
     "remark-.*",
@@ -94,10 +95,10 @@ const config: Config.InitialOptions = {
 
     coverageThreshold: {
         global: {
-            statements: -117,
-            branches: -170,
-            functions: -31,
-            lines: -87,
+            statements: -114,
+            branches: -162,
+            functions: -30,
+            lines: -86,
         },
     },
 

@@ -24,7 +24,6 @@ export const getCognizantLogoImage = () => (
         target="_blank"
         rel="noopener noreferrer"
     >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
             id="logo-img"
             width="200"
@@ -73,7 +72,6 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({fallbackElement, logoServic
             : null
 
     return logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
             src={logoUrl}
             alt={`${customer} Logo`}

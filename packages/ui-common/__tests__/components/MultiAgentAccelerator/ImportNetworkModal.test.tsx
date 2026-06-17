@@ -165,7 +165,7 @@ describe("ImportNetworkModal", () => {
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        expect(fileInput.accept).toBe(".hocon,.json")
+        expect(fileInput.accept).toBe(".hocon, .json")
     })
 
     it("should process a file chosen via the hidden file input", async () => {
@@ -225,8 +225,9 @@ describe("ImportNetworkModal", () => {
     })
 
     it("should show an error when the file cannot be read", async () => {
-        jest.spyOn(FileReader.prototype, "readAsText").mockImplementation(function readAsTextMock(this: FileReader) {
-            this.dispatchEvent(new Event("error"))
+        const readSpy = jest.spyOn(FileReader.prototype, "readAsText").mockImplementation(() => {
+            const reader = readSpy.mock.contexts.at(-1)
+            reader?.dispatchEvent(new Event("error"))
         })
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
@@ -266,7 +267,7 @@ describe("ImportNetworkModal", () => {
         await user.click(continueBtn)
         await screen.findByRole("button", {name: /Import network/u})
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("Ecommerce Support")
+        expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
     it("should navigate from step 3 all the way back to step 1 via Back", async () => {
@@ -293,7 +294,7 @@ describe("ImportNetworkModal", () => {
         // Step 2 -> step 3 again
         await user.click(await screen.findByRole("button", {name: /Continue/u}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("Ecommerce Support")
+        expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
     it("should show conflict warning and dismiss conflict warning when Replace is clicked", async () => {
@@ -316,7 +317,7 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("WarningAmberIcon")
         await user.click(screen.getByRole("button", {name: /Rename/u}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("Ecommerce Support (2)")
+        expect(nameInput).toHaveValue("Ecommerce Support (2)")
         expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
     })
 
@@ -346,11 +347,11 @@ describe("ImportNetworkModal", () => {
         dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
         await user.click(await screen.findByRole("button", {name: /Continue/u}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput.value).toBe("Ecommerce Support")
+        expect(nameInput).toHaveValue("Ecommerce Support")
 
         await user.clear(nameInput)
         await user.type(nameInput, "Renamed Network")
-        expect(nameInput.value).toBe("Renamed Network")
+        expect(nameInput).toHaveValue("Renamed Network")
     })
 
     it("should send the edited name (underscored) to onImport", async () => {
