@@ -21,10 +21,10 @@ import Link from "next/link"
 import {useRouter} from "next/router"
 import {FC, JSX as ReactJSX} from "react"
 
-import {CustomPageProps} from "./Types"
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
 import {LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
+import {CustomPageProps} from "../Types/Types"
 
 // #region: Styled Components
 const OuterContainer = styled("div")({

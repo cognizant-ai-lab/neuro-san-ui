@@ -20,8 +20,8 @@ import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 import remarkToc from "remark-toc"
 
-import {CustomPageProps} from "./Types"
 import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
+import {CustomPageProps} from "../Types/Types"
 
 // Path to user guide Markdown doc on the server
 const USER_GUIDE_PATH = "user_guide.md"
