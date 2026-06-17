@@ -29,7 +29,7 @@ import Stepper from "@mui/material/Stepper"
 import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
-import {jsonrepair} from "jsonrepair"
+import parseHocon from "hocon-parser"
 import startCase from "lodash-es/startCase.js"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
@@ -51,86 +51,64 @@ const TEMPORARY_FOLDER_DISPLAY = "Temporary"
 // #region: Helpers
 
 /**
- * Pre-processes HOCON content into a form jsonrepair can handle.
+ * Pre-process HOCON so the browser-only hocon-parser library can handle the constructs
+ * neuro-san network files use that it does not support natively: `include`s, `${...}`
+ * substitutions, value concatenation, and object merging.
  *
- * Handles:
- * - `include "file"` statements (stripped; external files aren't available in the browser)
- * - `"""triple-quoted"""` strings (converted to standard JSON strings)
- * - `${substitution}` variables (resolved from same-file triple-quoted definitions;
- *   variables from included files are expanded to empty string)
- * - HOCON string concatenation (`"part1" "part2"` on the same line → `"part1part2"`)
+ * Everything is kept in triple-quoted (`"""..."""`) form rather than converted to JSON,
+ * because the parser preserves triple-quoted content verbatim (real newlines included)
+ * but mangles backslash escapes inside ordinary double-quoted strings.
  */
-const preprocessHoconContent = (text: string): string => {
-    let s = text
-
-    // Step 1: Strip # comment lines (jsonrepair does not handle # as a comment
-    // delimiter; it tries to parse e.g. `# note here:` as a key–value pair and
-    // fails on the colon).
-    s = s.replaceAll(/^\s*#[^\n]*$/gmu, "")
-
-    // Step 2: Strip include statements (external files are not available in the browser).
-    // The trailing comma is optional — HOCON files that embed include inside an object
-    // often end the line with a comma (e.g. `include "llm_config.hocon",`).
-    s = s.replaceAll(/^\s*include\s+(?:required\s*)?"[^"]*"\s*,?\s*$/gmu, "")
-
-    // Step 3: Collect same-file variable definitions from triple-quoted strings.
-    // We read the raw content before converting so substitutions inside these
-    // strings get the original (unescaped) value.
+const preprocessHocon = (text: string): string => {
+    // 1. Strip include statements — the referenced files aren't available in the browser.
+    let s = text.replaceAll(/^\s*include\s+(?:required\s*)?"[^"]*"\s*,?\s*$/gmu, "")
+    // 2. Drop the substitution prefix of an object merge (`${aaosa_call}{...}` -> `{...}`);
+    //    the referenced object lives in an unavailable include, so we keep the literal object.
+    s = s.replaceAll(/\$\{[\w.]+\}(?<gap>\s*)\{/gu, "$<gap>{")
+    // 3. Collect in-file substitution values from triple-quoted definitions only. Plain-string
+    //    definitions are intentionally ignored: a reference to one (e.g. `${demo_mode}`) resolves
+    //    to "", which matches the network definition the backend already accepts.
     const subs = new Map<string, string>()
-    const tripleVarPat = /"?(?<varName>\w+)"?\s*[:=]\s*"{3}(?<content>[\S\s]*?)"{3}/gu
-    let m: RegExpExecArray | null
-    while ((m = tripleVarPat.exec(s)) !== null) {
-        subs.set(m[1], m[2])
+    for (const m of s.matchAll(/(?:"(?<keyQuoted>[\w.]+)"|(?<keyBare>[\w.]+))\s*[:=]\s*"""(?<content>[\S\s]*?)"""/gu)) {
+        const key = m.groups?.["keyQuoted"] ?? m.groups?.["keyBare"]
+        if (key !== undefined) subs.set(key, m.groups?.["content"] ?? "")
     }
-
-    // Step 4: Convert triple-quoted strings to standard JSON strings,
-    // expanding any ${var} found inside them first.
-    s = s.replaceAll(/"{3}(?<content>[\S\s]*?)"{3}/gu, (_match, content: string) => {
-        const expanded = content.replaceAll(
-            /\$\{(?<varName>[\w.]+)\}/gu,
-            (_m2, varName: string) => subs.get(varName.trim()) ?? ""
-        )
-        return JSON.stringify(expanded)
+    // 4. Expand ${var} inside triple-quoted strings (unknown reference -> "").
+    s = s.replaceAll(/"""(?<content>[\S\s]*?)"""/gu, (_m, content: string) => {
+        const expanded = content.replaceAll(/\$\{(?<v>[\w.]+)\}/gu, (_x, v: string) => subs.get(v) ?? "")
+        return `"""${expanded}"""`
     })
-
-    // Step 5: Substitute remaining standalone ${var} references (outside any string).
-    // Use JSON.stringify so the raw content is properly escaped.
-    s = s.replaceAll(/\$\{(?<varName>[\w.]+)\}/gu, (_match, varName: string) => {
-        const val = subs.get(varName.trim())
-        return val !== undefined ? JSON.stringify(val) : '""'
-    })
-
-    // Step 6: Merge adjacent JSON strings that arise from HOCON string concatenation
-    // (e.g. ${instructions_prefix} """more""").  Only merge when no actual newline
-    // character separates the two strings (i.e. they were on the same source line).
-    let prev: string
+    // 5. Replace any remaining standalone ${var} with a triple-quoted string of its value.
+    s = s.replaceAll(/\$\{(?<v>[\w.]+)\}/gu, (_x, v: string) => `"""${subs.get(v) ?? ""}"""`)
+    // 6. Merge adjacent triple-quoted strings (HOCON value concatenation) into one.
+    let previous: string
     do {
-        prev = s
-        s = s.replaceAll(/"(?<p1>(?:[^"\\]|\\.)*)"+\s*"(?<p2>(?:[^"\\]|\\.)*)"/gu, (full, p1: string, p2: string) => {
-            const gap = full.slice(2 + p1.length, full.length - 2 - p2.length)
-            return gap.includes("\n") ? full : `"${p1}${p2}"`
-        })
-    } while (s !== prev)
-
+        previous = s
+        s = s.replaceAll(
+            /"""(?<a>[\S\s]*?)"""\s*"""(?<b>[\S\s]*?)"""/gu,
+            (_m, a: string, b: string) => `"""${a}${b}"""`
+        )
+    } while (s !== previous)
     return s
 }
 
 /**
- * Parse and validate a network definition file (HOCON, CONF, or JSON).
+ * Parse and validate a network definition file (HOCON or JSON).
+ *
  * Returns the normalised JSON string on success, or an error message on failure.
  */
 export const parseNetworkFileContent = (
     text: string
 ): {success: true; json: string} | {success: false; error: string} => {
+    if (text.trim() === "") {
+        return {success: false, error: "The file is empty."}
+    }
     try {
-        // Pre-process HOCON constructs (includes, triple-quoted strings, substitutions)
-        // then let jsonrepair handle residual issues (comments, trailing commas, etc.).
-        const preprocessed = preprocessHoconContent(text)
-        const repaired = jsonrepair(preprocessed)
-        const parsed = JSON.parse(repaired) as unknown
+        const parsed = parseHocon(preprocessHocon(text))
         return {success: true, json: JSON.stringify(parsed, null, 2)}
     } catch (err) {
-        return {success: false, error: err instanceof Error ? err.message : String(err)}
+        // hocon-parser throws bare strings (e.g. "Already met seperator"), so normalise to a string.
+        return {success: false, error: String(err)}
     }
 }
 

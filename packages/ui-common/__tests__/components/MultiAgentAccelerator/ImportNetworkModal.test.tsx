@@ -208,7 +208,7 @@ describe("ImportNetworkModal", () => {
     it("should show parse error banner when file content is unparseable", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        // Empty content is genuinely unparseable (jsonrepair throws on an empty string).
+        // Empty content is treated as a parse error (an empty file is not a valid network).
         dropFile(dropZone, "bad.json", "")
         // The error banner appears and there is no Continue button to advance.
         await screen.findByText(/Parse error:/u)
@@ -376,51 +376,118 @@ describe("parseNetworkFileContent", () => {
         expect(JSON.parse((result as {success: true; json: string}).json)).toEqual({agents: {}})
     })
 
-    it("should parse HOCON with comments", () => {
+    it("should parse HOCON with // line comments", () => {
         const result = parseNetworkFileContent('// a comment\n{"agents": {}}')
         expect(result.success).toBe(true)
     })
 
-    it("should return error for completely invalid content", () => {
-        // jsonrepair can handle many things, but pure garbage should fail
-        // Use something that genuinely can't be repaired
+    it("should return a result object for completely invalid content", () => {
+        // hocon-parser throws on malformed input; parseNetworkFileContent catches it.
         const result = parseNetworkFileContent("::::: not json :::::")
-        // Accept either success or failure — jsonrepair is lenient
         expect(result).toHaveProperty("success")
     })
 
-    it("should fail on content that cannot be repaired", () => {
-        // An empty string is genuinely unparseable.
+    it("should fail on empty content", () => {
         const result = parseNetworkFileContent("")
         expect(result.success).toBe(false)
-        expect((result as {success: false; error: string}).error).toMatch(/Unexpected end/u)
+        expect((result as {success: false; error: string}).error).toMatch(/empty/iu)
     })
 
-    it("should pre-process HOCON: comments, includes, triple-quoted strings, and substitutions", () => {
-        const hocon = `# a comment line
+    it("should fail on whitespace-only content", () => {
+        const result = parseNetworkFileContent("   \n\t  \n")
+        expect(result.success).toBe(false)
+        expect((result as {success: false; error: string}).error).toMatch(/empty/iu)
+    })
+
+    it("should parse HOCON: comments, includes, triple-quoted strings, and substitutions", () => {
+        const hocon = `# a hash comment
+// a slash comment
 include "llm_config.hocon"
 {
     prefix = """Hello"""
     "agents": {
         "frontman": {
-            "instructions": """\${prefix} world \${unknown_inner}""",
-            "name": "foo" "bar"
+            "instructions": """You lead the team.
+Across multiple lines.""",
+            "alias": \${prefix},
+            "tools": ["helper_one", "helper_two"]
         }
     }
-    "leftover": \${prefix}
-    "missing": \${unknown_outer}
 }`
         const result = parseNetworkFileContent(hocon)
         expect(result.success).toBe(true)
         const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
+        // include "..." is stripped (external files aren't available in the browser),
+        // so no stray "include" key leaks into the parsed output.
+        expect(parsed).not.toHaveProperty("include")
         const agents = parsed["agents"] as Record<string, Record<string, unknown>>
-        // ${prefix} expanded inside the triple-quoted string; the unknown var expands to ""
-        expect(agents["frontman"]["instructions"]).toBe("Hello world ")
-        // Adjacent strings on the same line are concatenated
-        expect(agents["frontman"]["name"]).toBe("foobar")
-        // Standalone ${prefix} resolves; an unknown standalone var becomes an empty string
-        expect(parsed["leftover"]).toBe("Hello")
-        expect(parsed["missing"]).toBe("")
+        // Triple-quoted strings preserve their multiline content verbatim.
+        expect(agents["frontman"]["instructions"]).toBe("You lead the team.\nAcross multiple lines.")
+        // A standalone ${var} referencing a triple-quoted definition resolves to its value.
+        expect(agents["frontman"]["alias"]).toBe("Hello")
+        // Arrays parse as arrays.
+        expect(agents["frontman"]["tools"]).toEqual(["helper_one", "helper_two"])
+    })
+
+    it("should resolve object merges and value concatenations, dropping unresolved substitutions", () => {
+        // Mirrors a real neuro-san agent: `function` is an object merged onto ${aaosa_call}
+        // (from a stripped include), and `instructions` concatenates a same-file prefix, an
+        // inline block, and ${aaosa_instructions} (also from the stripped include).
+        const hocon = `include "aaosa.hocon"
+{
+    "instructions_prefix": """You lead."""
+    "tools": [{
+        "name": "frontman",
+        "function": \${aaosa_call}{
+            "description": """Top agent."""
+        },
+        "instructions": \${instructions_prefix} """
+Be helpful.""" \${aaosa_instructions}
+    }]
+}`
+        const result = parseNetworkFileContent(hocon)
+        expect(result.success).toBe(true)
+        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
+        const tool = (parsed["tools"] as Record<string, unknown>[])[0]
+        // The unresolved ${aaosa_call} prefix is dropped; the literal object is kept.
+        expect(tool["function"]).toEqual({description: "Top agent."})
+        // The prefix and inline block concatenate; unresolved ${aaosa_instructions} -> "".
+        expect(tool["instructions"]).toBe("You lead.\nBe helpful.")
+    })
+
+    it('should expand substitutions inside triple-quoted strings (known -> value, unknown -> "")', () => {
+        const hocon = `{
+    "intro": """Hi"""
+    "agents": {
+        "frontman": {
+            "instructions": """Lead. \${intro} done. \${missing} end."""
+        }
+    }
+}`
+        const result = parseNetworkFileContent(hocon)
+        expect(result.success).toBe(true)
+        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
+        const frontman = (parsed["agents"] as Record<string, Record<string, unknown>>)["frontman"]
+        // ${intro} resolves to its triple-quoted value; the unresolved ${missing} becomes "".
+        expect(frontman["instructions"]).toBe("Lead. Hi done.  end.")
+    })
+
+    it("should resolve an unresolved standalone substitution to an empty string", () => {
+        // ${aaosa_command} targets an included file that was stripped, so it is unresolvable
+        // and must become "" rather than leaking a literal `${...}` into the payload.
+        const hocon = `include "aaosa.hocon"
+{
+    "agents": {
+        "frontman": {
+            "command": \${aaosa_command}
+        }
+    }
+}`
+        const result = parseNetworkFileContent(hocon)
+        expect(result.success).toBe(true)
+        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
+        const frontman = (parsed["agents"] as Record<string, Record<string, unknown>>)["frontman"]
+        expect(frontman["command"]).toBe("")
     })
 })
 
