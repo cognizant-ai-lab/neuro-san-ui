@@ -41,12 +41,11 @@ import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} 
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentFunction,
-    getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
-    getNetworkIconSuggestions,
     sendNetworkDesignerUpdate,
 } from "../../controller/agent/Agent"
+import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
