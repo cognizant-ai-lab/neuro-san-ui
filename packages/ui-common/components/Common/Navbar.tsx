@@ -29,11 +29,9 @@ import MenuItem from "@mui/material/MenuItem"
 import {useColorScheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
+import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useState} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
-import {CustomerLogo, getCognizantLogoImage} from "./CustomerLogo"
-import {LoadingSpinner} from "./LoadingSpinner"
 import {
     authenticationEnabled,
     DEFAULT_USER_IMAGE,
@@ -43,6 +41,8 @@ import {
 import {useSettingsStore} from "../../state/Settings"
 import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
+import {getCognizantLogoImage} from "../Logo/Common"
+import {CustomerLogo} from "../Logo/CustomerLogo"
 import {SettingsDialog} from "../Settings/SettingsDialog"
 
 // Declare the Props Interface
@@ -118,14 +118,6 @@ export const Navbar = ({
     const {mode, setMode, systemMode} = useColorScheme()
     const darkMode = isDarkMode(mode, systemMode)
 
-    // Gate to make sure we only attempt to render after Next.js has completed its rehydration
-    const [hydrated, setHydrated] = useState(false)
-
-    useEffect(() => {
-        // Indicate that the component has been hydrated
-        setHydrated(true)
-    }, [])
-
     // Help menu wiring
     const [helpMenuAnchorEl, setHelpMenuAnchorEl] = useState<null | HTMLElement>(null)
     const helpMenuOpen = Boolean(helpMenuAnchorEl)
@@ -155,7 +147,11 @@ export const Navbar = ({
     const primary = useSettingsStore((state) => state.settings.branding.primary)
     const hasCustomer = customer?.trim().length > 0
 
-    return hydrated ? (
+    // Logo settings
+    const iconSuggestion = useSettingsStore((state) => state.settings.branding.iconSuggestion)
+    const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
+
+    return (
         <Grid
             id="nav-bar-container"
             container={true}
@@ -173,22 +169,37 @@ export const Navbar = ({
                     onClose={() => setSettingsDialogOpen(false)}
                 />
             )}
-            <Box sx={{display: "flex", alignItems: "center", gap: 2}}>
-                <CustomerLogo logoServiceToken={logoServiceToken} />
-                {hasCustomer && (
-                    <Typography
-                        data-testid="customer-branding"
-                        sx={{
-                            fontSize: "20px",
-                            fontWeight: "600",
-                            paddingLeft: "0.15rem",
-                            width: "200px",
-                            display: "flex",
-                            alignItems: "center",
-                        }}
-                    >
-                        {customer}
-                    </Typography>
+            <Box
+                sx={{
+                    alignItems: "center",
+                    display: "flex",
+                    gap: 2,
+                }}
+            >
+                {hasCustomer ? (
+                    <>
+                        <CustomerLogo
+                            customer={customer}
+                            iconSuggestion={iconSuggestion}
+                            logoServiceToken={logoServiceToken}
+                            logoSource={logoSource}
+                        />
+                        <Typography
+                            data-testid="customer-branding"
+                            sx={{
+                                fontSize: "20px",
+                                fontWeight: "600",
+                                paddingLeft: "0.15rem",
+                                width: "200px",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            {customer}
+                        </Typography>
+                    </>
+                ) : (
+                    getCognizantLogoImage()
                 )}
             </Box>
 
@@ -493,7 +504,5 @@ export const Navbar = ({
                 </Tooltip>
             )}
         </Grid>
-    ) : (
-        <LoadingSpinner id="navbar-loading-spinner" />
     )
 }

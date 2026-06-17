@@ -200,9 +200,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             <IconButton
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    if (isExpired) {
-                                                        return
-                                                    }
 
                                                     const fileName = `${toSafeFilename(labelString)}.hocon`
                                                     downloadFile(networkHocon, fileName)

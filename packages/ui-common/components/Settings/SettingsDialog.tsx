@@ -15,12 +15,12 @@ import {ApiKeyInput} from "./ApiKeyInput"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {getBrandingSuggestions} from "../../controller/agent/Agent"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
-import {LLMProvider, PaletteKey, useSettingsStore} from "../../state/Settings"
+import {DEFAULT_SETTINGS, LLMProvider, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
-import {CustomerLogo} from "../Common/CustomerLogo"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
+import {CustomerLogo} from "../Logo/CustomerLogo"
 
 //#region: Styled Components
 const SettingsSectionTitleBase: FC<ComponentPropsWithoutRef<typeof Typography>> = (props) => (
@@ -46,14 +46,16 @@ const SubsectionTitle = styled(Typography)(({theme}) => ({
     color: theme.palette.text.secondary,
     fontWeight: 600,
     paddingBottom: theme.spacing(0.5),
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(1.5),
     width: "100%",
 }))
 
-const SubSection = styled(Box)(() => ({
+const SubSection = styled(Box)(({theme}) => ({
     alignItems: "start",
     display: "flex",
     flexDirection: "column",
+    gap: theme.spacing(2),
+    marginBottom: theme.spacing(4),
 }))
 
 const SubSectionBody = styled(Box)(({theme}) => ({
@@ -116,6 +118,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const [customerInput, setCustomerInput] = useState<string>(customer)
     const [isBrandingApplying, setIsBrandingApplying] = useState<boolean>(false)
     const logoSource = useSettingsStore((state) => state.settings.branding.logoSource)
+    const iconSuggestion = useSettingsStore((state) => state.settings.branding.iconSuggestion)
 
     // Zen mode
     const enableZenMode = useSettingsStore((state) => state.settings.behavior.enableZenMode)
@@ -232,12 +235,22 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             updateSettings({
                 branding: {
                     iconSuggestion: brandingSuggestions["iconSuggestion"],
+                    logoSource: "auto",
                 },
             })
         }
 
         brandingCheckmark.trigger()
         setIsBrandingApplying(false)
+    }
+
+    const handleBrandingClear = () => {
+        updateSettings({
+            appearance: {
+                rangePalette: DEFAULT_SETTINGS.appearance.rangePalette,
+            },
+            branding: {...DEFAULT_SETTINGS.branding},
+        })
     }
 
     const persistKey = (vendor: LLMProvider, key: string) => {
@@ -383,10 +396,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             border: "1px solid",
                             borderRadius: 1,
                             backgroundColor: "background.paper",
+                            ml: 0.5,
                             px: 1,
                             py: 0.25,
                             lineHeight: 0,
-                            fontSize: "0.75rem",
+                            fontSize: "0.7rem",
+                            maxWidth: "100%",
                         }}
                     >
                         <pre>
@@ -436,14 +451,25 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         size="small"
                         onClick={handleBrandingApply}
                         loading={isBrandingApplying}
-                        sx={{minWidth: "8rem"}}
                     >
                         Apply
+                    </Button>
+                    <Button
+                        disabled={!customer || isBrandingApplying}
+                        variant="contained"
+                        size="small"
+                        onClick={handleBrandingClear}
+                        loading={isBrandingApplying}
+                    >
+                        Clear
                     </Button>
                     <FadingCheckmark show={brandingCheckmark.show} />
                 </Box>
 
-                <Box sx={{display: "flex", alignItems: "center"}}>
+                <Box
+                    aria-label="logo-options-container"
+                    sx={{display: "flex", alignItems: "center"}}
+                >
                     <Box
                         sx={{
                             display: "flex",
@@ -515,10 +541,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             </span>
                         </Tooltip>
                         <FormLabel>Preview:</FormLabel>
-                        <CustomerLogo
-                            fallbackElement="(None)"
-                            logoServiceToken={logoServiceToken}
-                        />
+                        <Box>
+                            {logoSource === "auto" || logoSource === "generic" ? (
+                                <CustomerLogo
+                                    logoServiceToken={logoServiceToken}
+                                    customer={customer}
+                                    logoSource={logoSource}
+                                    iconSuggestion={iconSuggestion}
+                                />
+                            ) : (
+                                "(None)"
+                            )}
+                        </Box>
                         <FadingCheckmark show={logoCheckmark.show} />
                     </Box>
                 </Box>

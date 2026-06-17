@@ -40,6 +40,7 @@ import {Sidebar, SidebarProps, SPARKLE_HIGHLIGHT_CLASS} from "../../../component
 import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../state/Environment"
+import {useSettingsStore} from "../../../state/Settings"
 import {downloadFile} from "../../../utils/File"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
@@ -131,6 +132,9 @@ describe("SideBar", () => {
     beforeEach(() => {
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
+
+        // Reset settings store
+        useSettingsStore.getState().resetSettings()
     })
 
     it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
@@ -176,6 +180,41 @@ describe("SideBar", () => {
         // Find the icon within the same parent container as the network text
         const networkContainer = networkElement.closest('[role="treeitem"]')
         within(networkContainer as HTMLElement).getByTestId("SettingsIcon")
+    })
+
+    it("should respect the 'use native names' setting", async () => {
+        useSettingsStore.getState().updateSettings({
+            appearance: {
+                useNativeNames: false,
+            },
+        })
+
+        renderSidebarComponent()
+
+        // click to expand networks
+        const header = screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // The display name should be the cleaned up version of the agent name, not the raw agent name
+        screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        expect(screen.queryByText(TEST_AGENT_MATH_GUY)).not.toBeInTheDocument()
+
+        // Now change to useNativeNames = true and check that the raw agent name is displayed
+        act(() =>
+            useSettingsStore.getState().updateSettings({
+                appearance: {
+                    useNativeNames: true,
+                },
+            })
+        )
+
+        // now the raw agent name should be displayed
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        screen.getByText(TEST_AGENTS_FOLDER)
+
+        // Beautified names should no longer be displayed
+        expect(screen.queryByText(TEST_AGENTS_FOLDER_DISPLAY)).not.toBeInTheDocument()
+        expect(screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).not.toBeInTheDocument()
     })
 
     it("Should handle invalid icon suggestions correctly", async () => {
@@ -310,6 +349,8 @@ describe("SideBar", () => {
         await screen.findByText(/Expired/u)
 
         setSelectedNetworkMock.mockClear()
+
+        screen.debug()
 
         // Clicking the expired network should have no effect
         await user.click(tempNetworkName)

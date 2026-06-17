@@ -6,12 +6,24 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
-import {DEFAULT_SETTINGS, useSettingsStore} from "../../../state/Settings"
+import {BrandingSuggestions} from "../../../controller/Types/Branding"
+import {DEFAULT_SETTINGS, LogoSource, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
 jest.mock("../../../components/Common/notification")
 
 const TEST_API_KEY = "test-api-key-123"
+
+const BRANDING_SUGGESTIONS_RESPONSE: BrandingSuggestions = {
+    background: "#AA0022",
+    iconSuggestion: "Add",
+    nodeColor: "#445566",
+    plasma: "#112233",
+    primary: "#778899",
+    // Generate a palette of 10 colors for testing
+    rangePalette: Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`),
+    secondary: "#AA0011",
+}
 
 describe("SettingsDialog", () => {
     withStrictMocks()
@@ -347,6 +359,31 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
     })
 
+    it("Allows toggling native agent names mode", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Default: mode should be disabled (meaning, we show beautified names)
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
+
+        // Locate the "beautified" toggle button
+        const beautifyToggle = screen.getByRole("button", {name: /Beautified/u})
+        await user.click(beautifyToggle)
+
+        // Should be no change since we're already on beautified mode
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
+
+        // Locate the "native" toggle button
+        const toggleButton = screen.getByRole("button", {name: /Native/u})
+        await user.click(toggleButton)
+
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(true)
+    })
+
     it("resets settings to default when reset button is confirmed", async () => {
         ;(sendNotification as jest.Mock).mockClear()
 
@@ -415,38 +452,20 @@ describe("SettingsDialog", () => {
         expect(settingsAfter.appearance.agentNodeColor).toBe(agentNodeColor)
     })
 
-    it("Applies customer branding when selected", async () => {
-        // Reset values first
-        useSettingsStore.getState().resetSettings()
-
-        // Generate a palette of 10 colors for testing
-        const palette = Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`)
-        const plasma = "#112233"
-        const nodeColor = "#445566"
-        const primary = "#778899"
-        const secondary = "#AA0011"
-        const background = "#AA0022"
-        const iconSuggestion = "Hourglass"
-
-        global.fetch = mockFetch(
-            {
-                background,
-                iconSuggestion,
-                nodeColor,
-                plasma,
-                primary,
-                rangePalette: palette,
-                secondary,
-            },
-            true
-        )
+    it("applies branding for requested customer", async () => {
+        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
 
         render(
             <SettingsDialog
                 id="settings-dialog"
                 isOpen={true}
+                logoServiceToken="test-logo-service-token-456"
             />
         )
+
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
@@ -457,29 +476,78 @@ describe("SettingsDialog", () => {
 
         expect(brandingSettings.customer).toBe(customerName)
         expect(appearanceSettings.rangePalette).toBe("brand")
-        expect(appearanceSettings.plasmaColor).toBe(plasma)
-        expect(appearanceSettings.agentNodeColor).toBe(nodeColor)
-        expect(brandingSettings.primary).toBe(primary)
-        expect(brandingSettings.secondary).toBe(secondary)
-        expect(brandingSettings.background).toBe(background)
-        expect(brandingSettings.rangePalette).toEqual(palette)
-        expect(brandingSettings.iconSuggestion).toBe(iconSuggestion)
+        expect(appearanceSettings.plasmaColor).toBe(BRANDING_SUGGESTIONS_RESPONSE.plasma)
+        expect(appearanceSettings.agentNodeColor).toBe(BRANDING_SUGGESTIONS_RESPONSE.nodeColor)
+        expect(brandingSettings.primary).toBe(BRANDING_SUGGESTIONS_RESPONSE.primary)
+        expect(brandingSettings.secondary).toBe(BRANDING_SUGGESTIONS_RESPONSE.secondary)
+        expect(brandingSettings.background).toBe(BRANDING_SUGGESTIONS_RESPONSE.background)
+        expect(brandingSettings.rangePalette).toEqual(BRANDING_SUGGESTIONS_RESPONSE.rangePalette)
+        expect(brandingSettings.iconSuggestion).toBe(BRANDING_SUGGESTIONS_RESPONSE.iconSuggestion)
 
         // Now try using Enter to submit a new customer name and check that it also applies branding
         const newCustomerName = "Acme 2"
         await enterCustomerName(newCustomerName, false)
         await user.keyboard("{Enter}")
 
+        // Check that the store was updated with the new customer name
         expect(useSettingsStore.getState().settings.branding.customer).toBe(newCustomerName)
+
+        // Successfully retrieving a customer name should update the logo source to "auto" to show the new logo
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
+
+        // Try different logo options
+        const logoNoneButton = within(logoOptionsContainer).getByRole("button", {name: /None/u})
+        await user.click(logoNoneButton)
+
+        // Logo source should be set to "none", meaning no logo will be shown even if we have suggestions
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        // Click the already-selected button
+        await user.click(logoNoneButton)
+
+        // Should still be "none"
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        // Preview should show the "(None)" text indicating no logo will be shown
+        within(logoOptionsContainer).getByText("(None)")
+
+        // Now click "generic"
+        const logoGenericButton = within(logoOptionsContainer).getByRole("button", {name: /Generic/u})
+        await user.click(logoGenericButton)
+
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("generic")
+
+        // Should show the generic icon suggestion (Add)
+        within(logoOptionsContainer).getByTestId("AddIcon")
+
+        // Now the "auto" option
+        const logoAutoButton = within(logoOptionsContainer).getByRole("button", {name: /Auto/u})
+        await user.click(logoAutoButton)
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
+
+        // Should show the logo from logo.dev with the correct URL (we can check for the img element and its src)
+        const logoImg = within(logoOptionsContainer).getByRole("img", {name: /Acme 2 Logo/u})
+        expect(logoImg).toBeInTheDocument()
+        expect(logoImg).toHaveAttribute(
+            "src",
+            expect.stringContaining(`https://img.logo.dev/name/${encodeURIComponent(newCustomerName)}`)
+        )
+
+        // Now clear branding
+        const clearBrandingButton = screen.getByRole("button", {name: "Clear"})
+        await user.click(clearBrandingButton)
+
+        // Relevant settings should be back to default values
+        expect(useSettingsStore.getState().settings.branding).toMatchObject(DEFAULT_SETTINGS.branding)
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe(
+            DEFAULT_SETTINGS.appearance.rangePalette
+        )
     })
 
     it("Handles missing branding values from server", async () => {
-        global.fetch = mockFetch(
-            {
-                // Simulate missing values by returning an empty object
-            },
-            true
-        )
+        global.fetch = mockFetch({
+            // Simulate missing values by returning an empty object
+        })
 
         render(
             <SettingsDialog
@@ -524,5 +592,28 @@ describe("SettingsDialog", () => {
             expect.stringMatching(new RegExp(`Failed to fetch branding suggestions.*"${customerName}"`, "u")),
             expect.objectContaining({message: networkError})
         )
+    })
+
+    it("Handles customer but no logo token", async () => {
+        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        await enterCustomerName("Acme", true)
+
+        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
+        const errorTooltip = within(logoOptionsContainer).getByLabelText(/No Logo.dev token found/u)
+
+        // Get span that wraps the button
+        const autoButtonSpan = within(logoOptionsContainer).getByRole("button", {name: /Auto/u}).parentElement
+
+        // Hover and make sure we get the tooltip
+        await user.hover(autoButtonSpan)
+        expect(errorTooltip).toBeVisible()
     })
 })
