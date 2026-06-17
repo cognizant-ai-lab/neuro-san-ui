@@ -350,8 +350,6 @@ describe("SideBar", () => {
 
         setSelectedNetworkMock.mockClear()
 
-        screen.debug()
-
         // Clicking the expired network should have no effect
         await user.click(tempNetworkName)
 
