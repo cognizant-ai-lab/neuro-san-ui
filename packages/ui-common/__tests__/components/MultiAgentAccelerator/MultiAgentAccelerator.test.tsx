@@ -54,13 +54,8 @@ import {
 } from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
-import {
-    getAgentFunction,
-    getAgentNetworks,
-    getConnectivity,
-    getNetworkIconSuggestions,
-    testConnection,
-} from "../../../controller/agent/Agent"
+import {getAgentFunction, getAgentNetworks, getConnectivity, testConnection} from "../../../controller/agent/Agent"
+import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
@@ -82,6 +77,7 @@ let setSelectedNetwork: (network: string) => void
 jest.mock("next-auth/react")
 
 jest.mock("../../../controller/agent/Agent")
+jest.mock("../../../controller/agent/IconSuggestions")
 
 jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
