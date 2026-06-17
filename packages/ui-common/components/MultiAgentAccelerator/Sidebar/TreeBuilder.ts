@@ -48,7 +48,6 @@ const addNetworkToTree = (
     uncategorized: TreeViewDefaultItemModelProperties,
     map: Map<string, TreeViewDefaultItemModelProperties>,
     nodeIndex: NodeIndex,
-    displayNameCounts: Map<string, number>,
     useNativeNames: boolean
 ): void => {
     const parts = network.agent_name.split("/")
@@ -76,12 +75,7 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    const cleanedName = useNativeNames ? part : cleanUpAgentName(removeTrailingUuid(part))
-
-                    // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3", etc.)
-                    const count = displayNameCounts.get(cleanedName) || 0
-                    displayNameCounts.set(cleanedName, count + 1)
-                    const displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+                    const displayName = useNativeNames ? part : cleanUpAgentName(removeTrailingUuid(part))
 
                     // Add the AgentInfo to the nodeIndex for quick lookup later, using the full path as the key
                     nodeIndex.set(nodeId, {agentInfo: network, displayName})
@@ -139,21 +133,11 @@ export const buildTreeViewItems = (
         children: [],
     }
 
-    const displayNameCounts = new Map<string, number>()
-
     // Build a tree structure from the flat list of networks.
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
     networks.forEach((network) =>
-        addNetworkToTree(
-            network,
-            treeViewItems,
-            uncategorized,
-            treeBuilderMap,
-            nodeIndex,
-            displayNameCounts,
-            useNativeNames
-        )
+        addNetworkToTree(network, treeViewItems, uncategorized, treeBuilderMap, nodeIndex, useNativeNames)
     )
 
     // Now handle temporary networks
@@ -164,7 +148,6 @@ export const buildTreeViewItems = (
             uncategorized,
             treeBuilderMap,
             nodeIndex,
-            displayNameCounts,
             useNativeNames
         )
     )
