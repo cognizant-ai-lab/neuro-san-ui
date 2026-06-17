@@ -31,6 +31,7 @@ type DeepPartial<T> = {
 }
 
 export type LLMProvider = "OpenAI" | "Anthropic"
+export type LogoSource = "none" | "generic" | "auto"
 
 /**
  * User preference settings
@@ -51,7 +52,7 @@ interface Settings {
         readonly background: string | null
         readonly rangePalette: string[] | null
         readonly iconSuggestion: string | null
-        readonly logoSource: "none" | "generic" | "auto" | null
+        readonly logoSource: LogoSource
     }
     readonly behavior: {
         readonly enableZenMode: boolean
@@ -85,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
         background: null,
         customer: null,
         iconSuggestion: null,
-        logoSource: null,
+        logoSource: "none",
         primary: null,
         rangePalette: null,
         secondary: null,
