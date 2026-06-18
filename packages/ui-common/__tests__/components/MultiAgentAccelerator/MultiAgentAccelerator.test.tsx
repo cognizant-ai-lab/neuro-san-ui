@@ -407,7 +407,9 @@ describe("MultiAgentAccelerator", () => {
         })
 
         await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('does not contain an "agents" object'))
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining("does not contain a valid network definition")
+            )
         })
         // The designer should never be contacted when the definition is empty
         expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
@@ -443,7 +445,7 @@ describe("MultiAgentAccelerator", () => {
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
 
-        // Not valid JSON — hoconJsonToNetworkDefinition's JSON.parse throws, exercising the catch branch.
+        // Not valid JSON — jsonToNetworkDefinition's JSON.parse throws, exercising the catch branch.
         await act(async () => {
             onImport("Broken Network", "this is not json")
         })

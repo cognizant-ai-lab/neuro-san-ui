@@ -1522,7 +1522,6 @@ __metadata:
     fake-indexeddb: "catalog:default"
     fix-esm-import-path: "npm:1.10.3"
     globals: "catalog:default"
-    hocon-parser: "catalog:default"
     http-status: "catalog:default"
     lodash-es: "catalog:default"
     notistack: "catalog:default"
@@ -6972,13 +6971,6 @@ __metadata:
   version: 1.0.0
   resolution: "highlightjs-vue@npm:1.0.0"
   checksum: 10c0/9be378c70b864ca5eee87b07859222e31c946a8ad176227e54f7006a498223974ebe19fcce6e38ad5eb3c1ed0e16a580c4edefdf2cb882b6dfab1c3866cc047a
-  languageName: node
-  linkType: hard
-
-"hocon-parser@npm:1.0.1":
-  version: 1.0.1
-  resolution: "hocon-parser@npm:1.0.1"
-  checksum: 10c0/5bef0c2baf71ec3fc6a9949e9f32fee8a09cc34bb5bfff04801714ee61c55176955d4b112c97dd1f6d6ceba6e2ce9a00c596ec47debdec9e857862f9f5a3a875
   languageName: node
   linkType: hard
 

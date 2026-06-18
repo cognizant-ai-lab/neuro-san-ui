@@ -17,7 +17,6 @@
         "@mui/system": "catalog:default",
         "@mui/x-tree-view": "catalog:default",
         "@xyflow/react": "catalog:default",
-        "hocon-parser": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",
         "notistack": "catalog:default",

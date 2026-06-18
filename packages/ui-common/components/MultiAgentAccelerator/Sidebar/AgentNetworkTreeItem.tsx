@@ -50,7 +50,7 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onEditNetwork?: (network: string) => void
     readonly networkIconSuggestions: Record<string, string>
     readonly temporaryNetworkExpirationTimes?: Record<string, Date>
-    readonly temporaryNetworkHoconStrings?: Record<string, string | null>
+    readonly temporaryNetworkJsonStrings?: Record<string, string | null>
 }
 
 /**
@@ -77,7 +77,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     onDeleteNetwork,
     onEditNetwork,
     temporaryNetworkExpirationTimes,
-    temporaryNetworkHoconStrings,
+    temporaryNetworkJsonStrings,
 }) => {
     const theme = useTheme()
 
@@ -113,7 +113,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkHocon = isTemporaryNetwork ? temporaryNetworkHoconStrings?.[itemId] : null
+    const networkJson = isTemporaryNetwork ? temporaryNetworkJsonStrings?.[itemId] : null
 
     const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
 
@@ -188,7 +188,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
-                                {networkHocon && (
+                                {networkJson && (
                                     <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                         <span>
                                             <IconButton
@@ -198,8 +198,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                         return
                                                     }
 
-                                                    const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                    downloadFile(networkHocon, fileName)
+                                                    const fileName = `${toSafeFilename(labelString)}.json`
+                                                    downloadFile(networkJson, fileName)
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"

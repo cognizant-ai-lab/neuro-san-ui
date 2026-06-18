@@ -22,11 +22,11 @@ import {
     filenameToNetworkName,
     findNonConflictingName,
     formatFileSize,
-    hoconJsonToNetworkDefinition,
     IMPORT_MODAL_ACCEPTED_EXTENSIONS,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
     ImportNetworkModal,
     ImportNetworkModalProps,
+    jsonToNetworkDefinition,
     parseNetworkFileContent,
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
@@ -78,7 +78,7 @@ describe("ImportNetworkModal", () => {
         expect(screen.getByText("Confirm")).toBeInTheDocument()
         expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
         expect(screen.getByRole("button", {name: /browse your files/iu})).toBeInTheDocument()
-        expect(screen.getByText(/Accepts \.hocon and \.json up to 5 MB\./u)).toBeInTheDocument()
+        expect(screen.getByText(/Accepts \.json up to 5 MB\./u)).toBeInTheDocument()
     })
 
     it("should show the first step as active", () => {
@@ -155,7 +155,7 @@ describe("ImportNetworkModal", () => {
     })
 
     it("should expose correct accepted extensions constant", () => {
-        expect(IMPORT_MODAL_ACCEPTED_EXTENSIONS).toEqual([".hocon", ".json"])
+        expect(IMPORT_MODAL_ACCEPTED_EXTENSIONS).toEqual([".json"])
     })
 
     it("should expose correct max file size constant (5 MB)", () => {
@@ -165,7 +165,7 @@ describe("ImportNetworkModal", () => {
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        expect(fileInput.accept).toBe(".hocon, .json")
+        expect(fileInput.accept).toBe(".json")
     })
 
     it("should process a file chosen via the hidden file input", async () => {
@@ -184,7 +184,7 @@ describe("ImportNetworkModal", () => {
     it("should show loading spinner after a file is dropped", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.hocon", '{"agents": {}}')
+        dropFile(dropZone, "my_network.json", '{"agents": {}}')
         await screen.findByRole("progressbar")
     })
 
@@ -262,7 +262,7 @@ describe("ImportNetworkModal", () => {
     it("should advance to step 3 after clicking Continue and should pre-fill network name from filename", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         await screen.findByRole("button", {name: /Import network/u})
@@ -287,7 +287,7 @@ describe("ImportNetworkModal", () => {
     it("should re-advance to step 3 after going back to step 2", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
         await user.click(await screen.findByRole("button", {name: /Continue/u}))
         // Step 3 -> step 2
         await user.click(await screen.findByRole("button", {name: /^Back$/u}))
@@ -300,7 +300,7 @@ describe("ImportNetworkModal", () => {
     it("should show conflict warning and dismiss conflict warning when Replace is clicked", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         await screen.findByTestId("WarningAmberIcon")
@@ -311,7 +311,7 @@ describe("ImportNetworkModal", () => {
     it("should show conflict warning and dismiss conflict warning / rename when Rename is clicked", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
         const continueBtn = await screen.findByRole("button", {name: /Continue/u})
         await user.click(continueBtn)
         await screen.findByTestId("WarningAmberIcon")
@@ -344,7 +344,7 @@ describe("ImportNetworkModal", () => {
     it("should let the user edit the network name on the confirm step", async () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.hocon", '{"agents": {}}')
+        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
         await user.click(await screen.findByRole("button", {name: /Continue/u}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput).toHaveValue("Ecommerce Support")
@@ -377,15 +377,21 @@ describe("parseNetworkFileContent", () => {
         expect(JSON.parse((result as {success: true; json: string}).json)).toEqual({agents: {}})
     })
 
-    it("should parse HOCON with // line comments", () => {
-        const result = parseNetworkFileContent('// a comment\n{"agents": {}}')
+    it("should parse a top-level JSON array (Temporary network export shape)", () => {
+        const result = parseNetworkFileContent('[{"origin": "frontman"}]')
         expect(result.success).toBe(true)
+        expect(JSON.parse((result as {success: true; json: string}).json)).toEqual([{origin: "frontman"}])
     })
 
-    it("should return a result object for completely invalid content", () => {
-        // hocon-parser throws on malformed input; parseNetworkFileContent catches it.
+    it("should return a failure result for non-JSON content", () => {
         const result = parseNetworkFileContent("::::: not json :::::")
-        expect(result).toHaveProperty("success")
+        expect(result.success).toBe(false)
+    })
+
+    it("should fail on HOCON-only constructs that are not valid JSON", () => {
+        // HOCON is no longer supported — an include statement is not valid JSON.
+        const result = parseNetworkFileContent('include "llm_config.hocon"\n{"agents": {}}')
+        expect(result.success).toBe(false)
     })
 
     it("should fail on empty content", () => {
@@ -399,97 +405,6 @@ describe("parseNetworkFileContent", () => {
         expect(result.success).toBe(false)
         expect((result as {success: false; error: string}).error).toMatch(/empty/iu)
     })
-
-    it("should parse HOCON: comments, includes, triple-quoted strings, and substitutions", () => {
-        const hocon = `# a hash comment
-// a slash comment
-include "llm_config.hocon"
-{
-    prefix = """Hello"""
-    "agents": {
-        "frontman": {
-            "instructions": """You lead the team.
-Across multiple lines.""",
-            "alias": \${prefix},
-            "tools": ["helper_one", "helper_two"]
-        }
-    }
-}`
-        const result = parseNetworkFileContent(hocon)
-        expect(result.success).toBe(true)
-        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
-        // include "..." is stripped (external files aren't available in the browser),
-        // so no stray "include" key leaks into the parsed output.
-        expect(parsed).not.toHaveProperty("include")
-        const agents = parsed["agents"] as Record<string, Record<string, unknown>>
-        // Triple-quoted strings preserve their multiline content verbatim.
-        expect(agents["frontman"]["instructions"]).toBe("You lead the team.\nAcross multiple lines.")
-        // A standalone ${var} referencing a triple-quoted definition resolves to its value.
-        expect(agents["frontman"]["alias"]).toBe("Hello")
-        // Arrays parse as arrays.
-        expect(agents["frontman"]["tools"]).toEqual(["helper_one", "helper_two"])
-    })
-
-    it("should resolve object merges and value concatenations, dropping unresolved substitutions", () => {
-        // Mirrors a real neuro-san agent: `function` is an object merged onto ${aaosa_call}
-        // (from a stripped include), and `instructions` concatenates a same-file prefix, an
-        // inline block, and ${aaosa_instructions} (also from the stripped include).
-        const hocon = `include "aaosa.hocon"
-{
-    "instructions_prefix": """You lead."""
-    "tools": [{
-        "name": "frontman",
-        "function": \${aaosa_call}{
-            "description": """Top agent."""
-        },
-        "instructions": \${instructions_prefix} """
-Be helpful.""" \${aaosa_instructions}
-    }]
-}`
-        const result = parseNetworkFileContent(hocon)
-        expect(result.success).toBe(true)
-        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
-        const tool = (parsed["tools"] as Record<string, unknown>[])[0]
-        // The unresolved ${aaosa_call} prefix is dropped; the literal object is kept.
-        expect(tool["function"]).toEqual({description: "Top agent."})
-        // The prefix and inline block concatenate; unresolved ${aaosa_instructions} -> "".
-        expect(tool["instructions"]).toBe("You lead.\nBe helpful.")
-    })
-
-    it('should expand substitutions inside triple-quoted strings (known -> value, unknown -> "")', () => {
-        const hocon = `{
-    "intro": """Hi"""
-    "agents": {
-        "frontman": {
-            "instructions": """Lead. \${intro} done. \${missing} end."""
-        }
-    }
-}`
-        const result = parseNetworkFileContent(hocon)
-        expect(result.success).toBe(true)
-        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
-        const frontman = (parsed["agents"] as Record<string, Record<string, unknown>>)["frontman"]
-        // ${intro} resolves to its triple-quoted value; the unresolved ${missing} becomes "".
-        expect(frontman["instructions"]).toBe("Lead. Hi done.  end.")
-    })
-
-    it("should resolve an unresolved standalone substitution to an empty string", () => {
-        // ${aaosa_command} targets an included file that was stripped, so it is unresolvable
-        // and must become "" rather than leaking a literal `${...}` into the payload.
-        const hocon = `include "aaosa.hocon"
-{
-    "agents": {
-        "frontman": {
-            "command": \${aaosa_command}
-        }
-    }
-}`
-        const result = parseNetworkFileContent(hocon)
-        expect(result.success).toBe(true)
-        const parsed = JSON.parse((result as {success: true; json: string}).json) as Record<string, unknown>
-        const frontman = (parsed["agents"] as Record<string, Record<string, unknown>>)["frontman"]
-        expect(frontman["command"]).toBe("")
-    })
 })
 
 describe("validateImportFile", () => {
@@ -500,13 +415,14 @@ describe("validateImportFile", () => {
     }
 
     it("should accept supported extensions within the size limit", () => {
-        expect(validateImportFile(fileWithSize("net.hocon", 1024))).toBeNull()
         expect(validateImportFile(fileWithSize("net.json", 1024))).toBeNull()
         // Extension match is case-insensitive
         expect(validateImportFile(fileWithSize("NET.JSON", 1024))).toBeNull()
     })
 
     it("should reject unsupported extensions", () => {
+        // HOCON is no longer accepted — only JSON.
+        expect(validateImportFile(fileWithSize("net.hocon", 1024))).toMatch(/Unsupported file type ".hocon"/u)
         expect(validateImportFile(fileWithSize("image.png", 1024))).toMatch(/Unsupported file type ".png"/u)
         expect(validateImportFile(fileWithSize("noextension", 1024))).toMatch(/Unsupported file type\./u)
     })
@@ -522,8 +438,38 @@ describe("validateImportFile", () => {
     })
 })
 
-describe("hoconJsonToNetworkDefinition", () => {
-    it("should convert the native HOCON tools[] format", () => {
+describe("jsonToNetworkDefinition", () => {
+    it("should pass through a top-level array of entries (Temporary network export shape)", () => {
+        const json = JSON.stringify([
+            {
+                origin: "frontman",
+                tools: ["helper"],
+                display_as: "llm_agent",
+                instructions: "Lead the team",
+                description: "The boss",
+            },
+            {origin: "helper", tools: [], display_as: "coded_tool"},
+        ])
+        expect(jsonToNetworkDefinition(json)).toEqual([
+            {
+                origin: "frontman",
+                tools: ["helper"],
+                display_as: "llm_agent",
+                instructions: "Lead the team",
+                description: "The boss",
+            },
+            {origin: "helper", tools: [], display_as: "coded_tool"},
+        ])
+    })
+
+    it("should drop array entries without a string origin", () => {
+        const json = JSON.stringify([{origin: "valid"}, {instructions: "no origin"}, null])
+        const result = jsonToNetworkDefinition(json)
+        expect(result).toHaveLength(1)
+        expect(result[0].origin).toBe("valid")
+    })
+
+    it("should convert the native tools[] format", () => {
         const json = JSON.stringify({
             tools: [
                 {
@@ -536,7 +482,7 @@ describe("hoconJsonToNetworkDefinition", () => {
                 },
             ],
         })
-        expect(hoconJsonToNetworkDefinition(json)).toEqual([
+        expect(jsonToNetworkDefinition(json)).toEqual([
             {
                 origin: "frontman",
                 tools: ["helper"],
@@ -550,19 +496,19 @@ describe("hoconJsonToNetworkDefinition", () => {
 
     it("should default display_as to llm_agent and omit metadata when absent in tools[] format", () => {
         const json = JSON.stringify({tools: [{name: "solo", instructions: "Work alone"}]})
-        const result = hoconJsonToNetworkDefinition(json)
+        const result = jsonToNetworkDefinition(json)
         expect(result[0]).toMatchObject({origin: "solo", display_as: "llm_agent", instructions: "Work alone"})
         expect(result[0]).not.toHaveProperty("metadata")
     })
 
     it("should skip tools[] entries without a string name", () => {
         const json = JSON.stringify({tools: [{name: "valid"}, {instructions: "no name"}]})
-        const result = hoconJsonToNetworkDefinition(json)
+        const result = jsonToNetworkDefinition(json)
         expect(result).toHaveLength(1)
         expect(result[0].origin).toBe("valid")
     })
 
-    it("should convert the exported agents{} dict format", () => {
+    it("should convert the agents{} dict format", () => {
         const json = JSON.stringify({
             agents: {
                 frontman: {
@@ -574,7 +520,7 @@ describe("hoconJsonToNetworkDefinition", () => {
                 },
             },
         })
-        expect(hoconJsonToNetworkDefinition(json)).toEqual([
+        expect(jsonToNetworkDefinition(json)).toEqual([
             {
                 origin: "frontman",
                 tools: ["helper"],
@@ -586,12 +532,12 @@ describe("hoconJsonToNetworkDefinition", () => {
         ])
     })
 
-    it("should return an empty array when neither tools[] nor agents{} are present", () => {
-        expect(hoconJsonToNetworkDefinition('{"something": "else"}')).toEqual([])
+    it("should return an empty array when neither an array, tools[], nor agents{} are present", () => {
+        expect(jsonToNetworkDefinition('{"something": "else"}')).toEqual([])
     })
 
     it("should return an empty array for an empty agents{} object", () => {
-        expect(hoconJsonToNetworkDefinition('{"agents": {}}')).toEqual([])
+        expect(jsonToNetworkDefinition('{"agents": {}}')).toEqual([])
     })
 })
 
@@ -609,7 +555,7 @@ describe("formatFileSize", () => {
 
 describe("filenameToNetworkName", () => {
     it("should convert underscore filename to spaced, capitalized name", () => {
-        expect(filenameToNetworkName("ecommerce_support.hocon")).toBe("Ecommerce Support")
+        expect(filenameToNetworkName("ecommerce_support.json")).toBe("Ecommerce Support")
     })
     it("should convert hyphenated filename", () => {
         expect(filenameToNetworkName("my-network.json")).toBe("My Network")
@@ -618,12 +564,12 @@ describe("filenameToNetworkName", () => {
         expect(filenameToNetworkName("mynetwork")).toBe("Mynetwork")
     })
     it("should strip trailing UUIDs from filenames", () => {
-        expect(filenameToNetworkName("autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.hocon")).toBe(
+        expect(filenameToNetworkName("autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.json")).toBe(
             "Autonomous Venture Studio Ops"
         )
     })
     it("should keep normal filenames unchanged aside from formatting", () => {
-        expect(filenameToNetworkName("my_network.hocon")).toBe("My Network")
+        expect(filenameToNetworkName("my_network.json")).toBe("My Network")
     })
 })
 

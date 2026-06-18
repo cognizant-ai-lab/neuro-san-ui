@@ -3,7 +3,10 @@
  */
 
 import {cleanUpAgentName} from "../../packages/ui-common/components/AgentChat/Common/Utils"
-import {TEMPORARY_NETWORK_FOLDER} from "../../packages/ui-common/components/MultiAgentAccelerator/const"
+import {
+    AgentNetworkDefinitionEntry,
+    TEMPORARY_NETWORK_FOLDER,
+} from "../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {TemporaryNetwork} from "../../packages/ui-common/state/TemporaryNetworks"
 
 // Define some test agents and associated display names
@@ -62,6 +65,11 @@ const TEMP_NETWORK_AGENT_INFO = {
     tags: ["tag1", "tag2", "tag3"],
 }
 
+export const TEMPORARY_NETWORK_DEFINITION: AgentNetworkDefinitionEntry[] = [
+    {origin: "frontman", tools: ["helper"], display_as: "llm_agent", instructions: "Lead the team"},
+    {origin: "helper", tools: [], display_as: "coded_tool"},
+]
+
 export const TEMPORARY_NETWORK: TemporaryNetwork = {
     reservation: {
         reservation_id: "temp-reservation-1",
@@ -71,6 +79,7 @@ export const TEMPORARY_NETWORK: TemporaryNetwork = {
     agentInfo: TEMP_NETWORK_AGENT_INFO,
     agentNetworkName: TEMPORARY_NETWORK_NAME,
     networkHocon: JSON.stringify(TEMP_NETWORK_AGENT_INFO, null, 2),
+    agentNetworkDefinition: TEMPORARY_NETWORK_DEFINITION,
 }
 
 const TEST_TOOL_SPOTIFY = "spotify_tool"

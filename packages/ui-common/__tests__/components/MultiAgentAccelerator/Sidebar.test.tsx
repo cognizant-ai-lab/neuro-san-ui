@@ -25,6 +25,7 @@ import {
     LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
     TEMPORARY_NETWORK,
+    TEMPORARY_NETWORK_DEFINITION,
     TEMPORARY_NETWORK_NAME,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
@@ -285,7 +286,10 @@ describe("SideBar", () => {
         const downloadButton = screen.getByTestId("DownloadIcon")
         await user.click(downloadButton)
 
-        expect(downloadFile).toHaveBeenCalledWith(TEMPORARY_NETWORK.networkHocon, `${TEMPORARY_NETWORK_NAME}.hocon`)
+        expect(downloadFile).toHaveBeenCalledWith(
+            JSON.stringify(TEMPORARY_NETWORK_DEFINITION, null, 2),
+            `${TEMPORARY_NETWORK_NAME}.json`
+        )
     })
 
     it("Should handle expired temporary networks correctly", async () => {

@@ -39,7 +39,7 @@ import {
     AgentNetworkDefinitionEntry,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
-import {hoconJsonToNetworkDefinition, ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
+import {ImportNetworkModal, jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
@@ -691,7 +691,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     )
 
     /**
-     * Handles an import from the ImportNetworkModal: converts the HOCON/JSON content to a
+     * Handles an import from the ImportNetworkModal: converts the JSON content to a
      * network definition, streams it through the network designer to obtain a reservation,
      * then upserts the result into the temporary-networks store and navigates to the new network.
      */
@@ -699,12 +699,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         async (agentNetworkName: string, content: string): Promise<void> => {
             setIsImporting(true)
             try {
-                const networkDef = hoconJsonToNetworkDefinition(content)
+                const networkDef = jsonToNetworkDefinition(content)
                 if (networkDef.length === 0) {
                     sendNotification(
                         NotificationType.error,
                         `Failed to import "${agentNetworkName}".`,
-                        'The file does not contain an "agents" object.'
+                        "The file does not contain a valid network definition."
                     )
                     return
                 }

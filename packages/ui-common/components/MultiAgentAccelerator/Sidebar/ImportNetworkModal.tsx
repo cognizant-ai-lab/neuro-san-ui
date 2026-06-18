@@ -17,7 +17,6 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined"
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
 import HourglassTopIcon from "@mui/icons-material/HourglassTop"
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
 import Box from "@mui/material/Box"
@@ -29,7 +28,6 @@ import Stepper from "@mui/material/Stepper"
 import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Typography from "@mui/material/Typography"
-import parseHocon from "hocon-parser"
 import startCase from "lodash-es/startCase.js"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
@@ -41,7 +39,7 @@ import {AgentNetworkDefinitionEntry} from "../const"
 // #region: Constants
 
 export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
-export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".hocon", ".json"]
+export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
 const TEMPORARY_FOLDER_DISPLAY = "Temporary"
@@ -51,49 +49,7 @@ const TEMPORARY_FOLDER_DISPLAY = "Temporary"
 // #region: Helpers
 
 /**
- * Pre-process HOCON so the browser-only hocon-parser library can handle the constructs
- * neuro-san network files use that it does not support natively: `include`s, `${...}`
- * substitutions, value concatenation, and object merging.
- *
- * Everything is kept in triple-quoted (`"""..."""`) form rather than converted to JSON,
- * because the parser preserves triple-quoted content verbatim (real newlines included)
- * but mangles backslash escapes inside ordinary double-quoted strings.
- */
-const preprocessHocon = (text: string): string => {
-    // 1. Strip include statements — the referenced files aren't available in the browser.
-    let s = text.replaceAll(/^\s*include\s+(?:required\s*)?"[^"]*"\s*,?\s*$/gmu, "")
-    // 2. Drop the substitution prefix of an object merge (`${aaosa_call}{...}` -> `{...}`);
-    //    the referenced object lives in an unavailable include, so we keep the literal object.
-    s = s.replaceAll(/\$\{[\w.]+\}(?<gap>\s*)\{/gu, "$<gap>{")
-    // 3. Collect in-file substitution values from triple-quoted definitions only. Plain-string
-    //    definitions are intentionally ignored: a reference to one (e.g. `${demo_mode}`) resolves
-    //    to "", which matches the network definition the backend already accepts.
-    const subs = new Map<string, string>()
-    for (const m of s.matchAll(/(?:"(?<keyQuoted>[\w.]+)"|(?<keyBare>[\w.]+))\s*[:=]\s*"""(?<content>[\S\s]*?)"""/gu)) {
-        const key = m.groups?.["keyQuoted"] ?? m.groups?.["keyBare"]
-        if (key !== undefined) subs.set(key, m.groups?.["content"] ?? "")
-    }
-    // 4. Expand ${var} inside triple-quoted strings (unknown reference -> "").
-    s = s.replaceAll(/"""(?<content>[\S\s]*?)"""/gu, (_m, content: string) => {
-        const expanded = content.replaceAll(/\$\{(?<v>[\w.]+)\}/gu, (_x, v: string) => subs.get(v) ?? "")
-        return `"""${expanded}"""`
-    })
-    // 5. Replace any remaining standalone ${var} with a triple-quoted string of its value.
-    s = s.replaceAll(/\$\{(?<v>[\w.]+)\}/gu, (_x, v: string) => `"""${subs.get(v) ?? ""}"""`)
-    // 6. Merge adjacent triple-quoted strings (HOCON value concatenation) into one.
-    let previous: string
-    do {
-        previous = s
-        s = s.replaceAll(
-            /"""(?<a>[\S\s]*?)"""\s*"""(?<b>[\S\s]*?)"""/gu,
-            (_m, a: string, b: string) => `"""${a}${b}"""`
-        )
-    } while (s !== previous)
-    return s
-}
-
-/**
- * Parse and validate a network definition file (HOCON or JSON).
+ * Parse and validate a network definition file. Imports are JSON only.
  *
  * Returns the normalised JSON string on success, or an error message on failure.
  */
@@ -104,28 +60,39 @@ export const parseNetworkFileContent = (
         return {success: false, error: "The file is empty."}
     }
     try {
-        const parsed = parseHocon(preprocessHocon(text))
+        const parsed = JSON.parse(text) as unknown
         return {success: true, json: JSON.stringify(parsed, null, 2)}
     } catch (err) {
-        // hocon-parser throws bare strings (e.g. "Already met seperator"), so normalise to a string.
-        return {success: false, error: String(err)}
+        return {success: false, error: err instanceof Error ? err.message : String(err)}
     }
 }
 
 /**
- * Converts a parsed network JSON (from a HOCON/JSON import file) into an array of
- * AgentNetworkDefinitionEntry objects suitable for sendNetworkDesignerUpsert.
+ * Converts a parsed network JSON import file into an array of AgentNetworkDefinitionEntry
+ * objects suitable for sendNetworkDesignerUpsert.
  *
- * Supports two neuro-san formats:
- * 1. Native HOCON `tools[]` array – each entry has `name`, `function.description`,
+ * Supports three formats:
+ * 1. Top-level array of AgentNetworkDefinitionEntry objects – the shape exported for a
+ *    Temporary network (each entry already has `origin`, `tools`, `display_as`, etc.).
+ * 2. Native neuro-san `tools[]` array – each entry has `name`, `function.description`,
  *    `instructions`, `tools`, and optional `display_as` / `metadata`.
- * 2. Exported `agents{}` dict – each key is the agent name, value has the same fields
+ * 3. `agents{}` dict – each key is the agent name, value has the same fields
  *    (minus the explicit `name` key).
  */
-export const hoconJsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
-    const parsed = JSON.parse(jsonString) as Record<string, unknown>
+export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
+    const parsedUnknown = JSON.parse(jsonString) as unknown
 
-    // --- Format 1: native HOCON tools[] array ---
+    // --- Format 1: top-level array of AgentNetworkDefinitionEntry (Temporary network export) ---
+    if (Array.isArray(parsedUnknown)) {
+        return parsedUnknown.filter(
+            (entry): entry is AgentNetworkDefinitionEntry =>
+                typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
+        )
+    }
+
+    const parsed = parsedUnknown as Record<string, unknown>
+
+    // --- Format 2: native neuro-san tools[] array ---
     const toolsArray = parsed["tools"] as Record<string, unknown>[] | undefined
     if (Array.isArray(toolsArray) && toolsArray.length > 0) {
         return toolsArray
@@ -144,7 +111,7 @@ export const hoconJsonToNetworkDefinition = (jsonString: string): AgentNetworkDe
             })
     }
 
-    // --- Format 2: agents{} dict (exported/converted JSON) ---
+    // --- Format 3: agents{} dict ---
     const agents = parsed["agents"] as Record<string, Record<string, unknown>> | undefined
     if (agents !== undefined && Object.keys(agents).length > 0) {
         return Object.entries(agents).map(([agentName, agentDef]) => ({
@@ -196,7 +163,7 @@ export const validateImportFile = (file: File): string | null => {
  *
  * Strips a trailing UUID in the form `_xxxxxxxx_xxxx_xxxx_xxxx_xxxxxxxxxxxx`
  * that neuro-san appends to exported filenames (e.g.
- * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.hocon` → `my network`).
+ * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.json` → `my network`).
  */
 export const filenameToNetworkName = (filename: string): string => {
     const {name: stem} = splitFilename(filename)
@@ -553,7 +520,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         variant="caption"
                         sx={{color: "text.secondary"}}
                     >
-                        Accepts .hocon and .json up to 5 MB.
+                        Accepts .json up to 5 MB.
                     </Typography>
                     <input
                         accept={ACCEPTED_MIME_TYPES}
@@ -668,37 +635,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     }}
                                 >
                                     {formatFileSize(file?.size ?? 0)}
-                                </Typography>
-                            </Box>
-                            {/* Info note */}
-                            <Box
-                                id="import-network-modal-hocon-note"
-                                sx={{
-                                    alignItems: "flex-start",
-                                    backgroundColor: "action.hover",
-                                    borderRadius: 2,
-                                    display: "flex",
-                                    gap: 1.5,
-                                    marginTop: 3,
-                                    padding: "14px 16px",
-                                }}
-                            >
-                                <InfoOutlinedIcon
-                                    fontSize="small"
-                                    sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
-                                />
-                                <Typography
-                                    variant="body2"
-                                    sx={{color: "text.secondary"}}
-                                >
-                                    Definitions are stored as JSON, so{" "}
-                                    <Box
-                                        component="span"
-                                        sx={{color: "text.primary", fontWeight: "bold"}}
-                                    >
-                                        comments in your HOCON will be removed
-                                    </Box>{" "}
-                                    on import. Keep the original file if you need them.
                                 </Typography>
                             </Box>
                         </Box>

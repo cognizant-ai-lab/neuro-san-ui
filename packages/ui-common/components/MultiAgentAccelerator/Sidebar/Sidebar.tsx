@@ -285,8 +285,12 @@ export const Sidebar: FC<SidebarProps> = ({
         {} as Record<string, Date>
     )
 
-    const temporaryNetworkHoconStrings = temporaryNetworks.reduce((acc: Record<string, string | null>, tempNetwork) => {
-        acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
+    // Temporary networks are downloaded as JSON, serialized from their structured
+    // agent network definition (the same shape the import modal reads back in).
+    const temporaryNetworkJsonStrings = temporaryNetworks.reduce((acc: Record<string, string | null>, tempNetwork) => {
+        acc[tempNetwork.agentInfo.agent_name] = tempNetwork.agentNetworkDefinition
+            ? JSON.stringify(tempNetwork.agentNetworkDefinition, null, 2)
+            : null
         return acc
     }, {})
 
@@ -432,7 +436,7 @@ export const Sidebar: FC<SidebarProps> = ({
                             onDeleteNetwork,
                             onEditNetwork: handleEditNetworkWithSelect,
                             temporaryNetworkExpirationTimes,
-                            temporaryNetworkHoconStrings,
+                            temporaryNetworkJsonStrings,
                         } as AgentNetworkNodeProps,
                     }}
                 />
