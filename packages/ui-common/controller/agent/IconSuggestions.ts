@@ -23,7 +23,7 @@ export const postJsonRequest = async <T>(endpoint: string, body: Record<string, 
 
     const jsonResponse = await response.json()
     if (!response.ok || jsonResponse.error) {
-        throw new Error(jsonResponse.error || response.statusText)
+        throw new Error(jsonResponse?.error || response?.statusText)
     }
 
     return jsonResponse
@@ -52,7 +52,9 @@ const getSuggestions = async (
     // Get the cached suggestions for the keys that are available in the cache
     const cachedSuggestions = keys.reduce<Suggestions>((acc, key) => {
         const cached = cache[key]
-        if (cached) acc[key] = cached
+        if (cached) {
+            acc[key] = cached
+        }
         return acc
     }, {})
 
