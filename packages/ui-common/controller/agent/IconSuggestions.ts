@@ -67,12 +67,13 @@ const getSuggestions = async (
     const fetched = await fetchSuggestions()
 
     // Write-through cache.
-    useIconSuggestionsStore.setState((state) => ({
-        [storeKey]: {
-            ...state[storeKey],
-            ...fetched,
-        },
-    }))
+    const state = useIconSuggestionsStore.getState()
+
+    if (storeKey === "agentIconSuggestions") {
+        state.setAgentIconSuggestions(fetched)
+    } else {
+        state.setNetworkIconSuggestions(fetched)
+    }
 
     return fetched
 }

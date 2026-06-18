@@ -21,7 +21,7 @@ import {AgentIconSuggestions} from "../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../controller/Types/NetworkIconSuggestions"
 
 // Store this many suggestions of each type before we start discarding the oldest ones.
-const MAX_SUGGESTIONS = 250
+export const MAX_SUGGESTIONS = 250
 
 /**
  * Zustand state store for temporary networks, such as vibe coded networks created by the user.
