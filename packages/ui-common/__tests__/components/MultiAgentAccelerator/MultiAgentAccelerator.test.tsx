@@ -44,14 +44,12 @@ import {
     AGENT_NETWORK_NAME_KEY,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
+    GRACE_PERIOD_MS,
+    SHOW_TOUR_DELAY_MS,
     TEMPORARY_NETWORK_FOLDER,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
-import {
-    GRACE_PERIOD_MS,
-    MultiAgentAccelerator,
-    SHOW_TOUR_DELAY_MS,
-} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {getAgentFunction, getAgentNetworks, getConnectivity, testConnection} from "../../../controller/agent/Agent"

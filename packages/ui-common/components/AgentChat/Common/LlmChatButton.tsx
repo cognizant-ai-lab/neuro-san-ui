@@ -17,26 +17,21 @@ limitations under the License.
 import Button from "@mui/material/Button"
 import {styled} from "@mui/material/styles"
 
-// #region: Types
+//#region: Types
 
 type LLMChatGroupConfigBtnProps = {
     disabled?: boolean
-    posRight?: number
-    posBottom?: number
 }
 
-// #endregion: Types
+//#endregion: Types
 
-export const LlmChatButton = styled(Button, {
-    shouldForwardProp: (prop) => !["posRight", "posBottom"].includes(String(prop)),
-})<LLMChatGroupConfigBtnProps>(({theme, disabled, posRight, posBottom}) => ({
-    background: `${theme.palette.primary.main} !important`,
+// In LlmChatButton.tsx
+export const LlmChatButton = styled(Button)<LLMChatGroupConfigBtnProps>(({disabled, theme}) => ({
+    backgroundColor: theme.palette.background.paper,
     borderRadius: "var(--bs-border-radius)",
-    bottom: posBottom !== undefined ? posBottom : 0,
-    cursor: disabled ? "default" : "pointer",
+    cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? "50%" : "100%",
-    right: posRight !== undefined ? posRight : 0,
-    position: "absolute",
+    padding: "0.5rem",
 }))
 
 export const SmallLlmChatButton = styled(LlmChatButton)({

@@ -51,6 +51,7 @@ import {
 import {v4 as uuid} from "uuid"
 
 import {ChatHistory} from "./ChatHistory"
+import {MAX_TURNS} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
@@ -63,12 +64,14 @@ import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSa
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../../state/Settings"
 import {hasOnlyWhitespace} from "../../../utils/text"
+import {getZIndex} from "../../../utils/zIndexLayers"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
 
+//#region Types and Interfaces
 export interface ChatCommonProps {
     /**
      * HTML id to use for the outer component
@@ -191,18 +194,22 @@ export interface ChatCommonProps {
     readonly missingApiKeys?: LLMProvider[]
 }
 
+// Type for forward ref to expose the handleStop and handleClearChat functions
+export type ChatCommonHandle = {
+    handleStop: () => void
+    handleClearChat: () => void
+}
+
+//#endregion
+
+//#region Constants
+
 // Define fancy EMPTY constant to avoid linter error about using object literals as default props
 const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 
 // How many times to retry the entire agent interaction process. Some networks have a well-defined success condition.
 // For others, it's just "whenever the stream is done".
 const MAX_AGENT_RETRIES = 3
-
-// Type for forward ref to expose the handleStop and handleClearChat functions
-export type ChatCommonHandle = {
-    handleStop: () => void
-    handleClearChat: () => void
-}
 
 /**
  * Extract the final answer from the response from a legacy agent
@@ -212,8 +219,7 @@ export type ChatCommonHandle = {
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
-// Maximum number of turns to save
-export const MAX_TURNS = 50
+//#endregion
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -800,7 +806,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 left: 0,
                 right: 0,
                 bottom: 0,
-                zIndex: theme.zIndex.modal - 1,
+                zIndex: getZIndex(2, theme),
                 cursor: "not-allowed",
                 // Capture all pointer events to prevent interaction with the chat when no agent is selected
                 pointerEvents: "all",
@@ -855,9 +861,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const getOptionsMenuButton = () => (
         <Box
             sx={{
+                backgroundColor: theme.palette.background.paper,
+                borderRadius: "var(--bs-border-radius)",
                 position: "absolute",
-                top: "0.25rem",
-                right: "0.0rem",
+                right: theme.spacing(2.5),
+                top: theme.spacing(1),
+                zIndex: getZIndex(2, theme),
             }}
         >
             <IconButton
@@ -866,7 +875,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     setOptionsMenuOpen(true)
                 }}
             >
-                <TuneIcon sx={{fontSize: "1.2rem"}} />
+                <TuneIcon fontSize="small" />
             </IconButton>
         </Box>
     )
@@ -927,6 +936,103 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Menu>
     )
 
+    const getNetworkIntro = () => (
+        <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>
+            <Typography
+                component="span"
+                sx={{fontWeight: 700}}
+                variant="inherit"
+            >
+                {networkDisplayName}
+                {networkDescription && ":"}
+            </Typography>
+            {networkDescription && (
+                <Typography
+                    component="span"
+                    sx={{ml: 0.5}}
+                    variant="inherit"
+                >
+                    {" "}
+                    {networkDescription}
+                </Typography>
+            )}
+        </Box>
+    )
+
+    const getChatHistory = () => (
+        <>
+            {agentChatHistory?.chatHistory?.length > 0 && (
+                <Box sx={{my: "0.5rem"}}>
+                    <ChatHistory
+                        id={id}
+                        messages={agentChatHistory.chatHistory}
+                    />
+                </Box>
+            )}
+        </>
+    )
+
+    const getAgentGreeting = () => <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>{agentGreeting}</Box>
+
+    const getControlButtons = () => (
+        <Box
+            sx={{
+                bottom: theme.spacing(3),
+                right: theme.spacing(3),
+                position: "absolute",
+                zIndex: getZIndex(2, theme),
+            }}
+        >
+            <ControlButtons
+                enableClearChatButton={enableClearChatButton}
+                handleClearChat={handleClearChat}
+                handleSend={handleSend}
+                handleStop={handleStop}
+                isAwaitingLlm={isAwaitingLlm}
+                previousUserQuery={previousUserQuery}
+                shouldEnableRegenerateButton={shouldEnableRegenerateButton}
+            />
+        </Box>
+    )
+
+    const getWorkingSpinner = () => (
+        <>
+            {isAwaitingLlm && (
+                <Box
+                    id="awaitingOutputContainer"
+                    sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                >
+                    <span
+                        id="working-span"
+                        style={{marginRight: "1rem"}}
+                    >
+                        Working...
+                    </span>
+                    <CircularProgress
+                        id="awaitingOutputSpinner"
+                        sx={{
+                            color: "var(--bs-primary)",
+                        }}
+                        size="1rem"
+                    />
+                </Box>
+            )}
+        </>
+    )
+
+    const getThinking = () => (
+        <>
+            {!isAwaitingLlm && turns.length > 0 && (
+                // Only show thinking once streaming is complete
+                <Thinking
+                    id={id}
+                    turns={turns}
+                    useNativeNames={useNativeNames}
+                />
+            )}
+        </>
+    )
+
     const getResponseBox = () => (
         <Box
             id="llm-response-div"
@@ -960,33 +1066,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             >
                 {getOptionsMenu()}
                 {getOptionsMenuButton()}
-                {agentChatHistory?.chatHistory?.length > 0 && (
-                    <ChatHistory
-                        id={id}
-                        messages={agentChatHistory.chatHistory}
-                    />
-                )}
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem", color: "var(--bs-gray)"}}>
-                    <Typography
-                        component="span"
-                        sx={{fontWeight: 700}}
-                        variant="inherit"
-                    >
-                        {networkDisplayName}
-                        {networkDescription && ":"}
-                    </Typography>
-                    {networkDescription && (
-                        <Typography
-                            component="span"
-                            sx={{ml: 0.5}}
-                            variant="inherit"
-                        >
-                            {" "}
-                            {networkDescription}
-                        </Typography>
-                    )}
-                </Box>
-                <Box sx={{marginBottom: "0.5rem", marginTop: "1rem"}}>{agentGreeting}</Box>
+                {getChatHistory()}
+                {getNetworkIntro()}
+                {getAgentGreeting()}
                 <SampleQueries
                     disabled={isAwaitingLlm}
                     handleSend={handleSend}
@@ -998,45 +1080,10 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     shouldWrapOutput={shouldWrapOutput}
                     turns={turns}
                 />
-                {!isAwaitingLlm && turns.length > 0 && (
-                    // Only show thinking once streaming is complete
-                    <Thinking
-                        id={id}
-                        turns={turns}
-                        useNativeNames={useNativeNames}
-                    />
-                )}
-                {isAwaitingLlm && (
-                    <Box
-                        id="awaitingOutputContainer"
-                        sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
-                    >
-                        <span
-                            id="working-span"
-                            style={{marginRight: "1rem"}}
-                        >
-                            Working...
-                        </span>
-                        <CircularProgress
-                            id="awaitingOutputSpinner"
-                            sx={{
-                                color: "var(--bs-primary)",
-                            }}
-                            size="1rem"
-                        />
-                    </Box>
-                )}
+                {getThinking()}
+                {getWorkingSpinner()}
+                {getControlButtons()}
             </Box>
-
-            <ControlButtons
-                enableClearChatButton={enableClearChatButton}
-                handleClearChat={handleClearChat}
-                handleSend={handleSend}
-                handleStop={handleStop}
-                isAwaitingLlm={isAwaitingLlm}
-                previousUserQuery={previousUserQuery}
-                shouldEnableRegenerateButton={shouldEnableRegenerateButton}
-            />
         </Box>
     )
 
@@ -1045,9 +1092,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             id="user-input-div"
             sx={{
                 ...divStyle,
+                alignItems: "center",
                 display: "flex",
                 margin: "10px",
-                alignItems: "flex-end",
                 position: "relative",
             }}
         >
@@ -1115,21 +1162,21 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 }
             />
 
-            {/* Microphone Button */}
-            <MicrophoneButton
-                isMicOn={isMicOn}
-                onMicToggle={setIsMicOn}
-                speechRecognitionRef={speechRecognitionRef}
-                voiceInputState={voiceInputState}
-                setVoiceInputState={setVoiceInputState}
-            />
+            <Box sx={{display: "flex", gap: "0.25rem", position: "relative", alignItems: "center"}}>
+                <MicrophoneButton
+                    isMicOn={isMicOn}
+                    onMicToggle={setIsMicOn}
+                    setVoiceInputState={setVoiceInputState}
+                    speechRecognitionRef={speechRecognitionRef}
+                    voiceInputState={voiceInputState}
+                />
 
-            {/* Send Button */}
-            <SendButton
-                enableSendButton={shouldEnableSendButton}
-                id="submit-query-button"
-                onClickCallback={() => handleSend(chatInput)}
-            />
+                <SendButton
+                    enableSendButton={shouldEnableSendButton}
+                    id="submit-query-button"
+                    onClickCallback={() => handleSend(chatInput)}
+                />
+            </Box>
         </Box>
     )
 
@@ -1152,48 +1199,51 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Box>
     )
 
+    const getSelectNetworkOverlayBody = () => (
+        <Typography component="span">
+            Please select a Network from the list to start the chat, or click
+            <IconButton
+                onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
+                aria-label="select-network-designer"
+                sx={{
+                    px: 0.5,
+                    verticalAlign: "middle",
+                    mb: "4px",
+                }}
+            >
+                <AddBoxRounded
+                    sx={{
+                        color: "var(--bs-secondary)",
+                        fontSize: "1rem",
+                    }}
+                />
+            </IconButton>
+            to design your own network!
+        </Typography>
+    )
+
+    const allApiKeysPresent = missingApiKeys?.length === 0
+
+    const getMissingApiKeysOverlayBody = () => (
+        <Typography component="span">
+            {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
+                              "Settings" to use this Network.`}
+        </Typography>
+    )
+
     return (
         <Box
             id={`llm-chat-${id}`}
             sx={{
-                display: "flex",
-                flexDirection: "column",
-                flexGrow: 1,
                 height: "100%",
                 position: "relative",
             }}
         >
             {selectedNetwork
-                ? missingApiKeys?.length === 0
+                ? allApiKeysPresent
                     ? getChatBox()
-                    : getErrorOverlay(
-                          <Typography component="span">
-                              {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
-                              "Settings" to use this Network.`}
-                          </Typography>
-                      )
-                : getErrorOverlay(
-                      <Typography component="span">
-                          Please select a Network from the list to start the chat, or click
-                          <IconButton
-                              onClick={() => setSelectedNetwork?.(AGENT_NETWORK_DESIGNER_ID)}
-                              aria-label="select-network-designer"
-                              sx={{
-                                  px: 0.5,
-                                  verticalAlign: "middle",
-                                  mb: "4px",
-                              }}
-                          >
-                              <AddBoxRounded
-                                  sx={{
-                                      color: "var(--bs-secondary)",
-                                      fontSize: "1rem",
-                                  }}
-                              />
-                          </IconButton>
-                          to design your own network!
-                      </Typography>
-                  )}
+                    : getErrorOverlay(getMissingApiKeysOverlayBody())
+                : getErrorOverlay(getSelectNetworkOverlayBody())}
         </Box>
     )
 }
