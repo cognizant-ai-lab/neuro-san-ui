@@ -16,8 +16,8 @@ limitations under the License.
 
 import httpStatus from "http-status"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 
 const mockFetch = (mockChunks: Uint8Array<ArrayBuffer>[]) => {
     let readIndex = 0
