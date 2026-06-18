@@ -17,11 +17,12 @@ limitations under the License.
 import DeleteOutlined from "@mui/icons-material/DeleteOutlined"
 import Loop from "@mui/icons-material/Loop"
 import StopCircle from "@mui/icons-material/StopCircle"
+import Box from "@mui/material/Box"
 import {FC} from "react"
 
 import {SmallLlmChatButton} from "../Common/LlmChatButton"
 
-// #region: Types
+//#region: Types
 interface ControlButtonsProps {
     handleClearChat: () => void
     enableClearChatButton: boolean
@@ -31,10 +32,10 @@ interface ControlButtonsProps {
     previousUserQuery: string
     shouldEnableRegenerateButton: boolean
 }
-// #endregion: Types
+//#endregion: Types
 
 /**
- * Generate the Control Buttons for a chat window.
+ * Generate the Control Buttons for a chat window (resend, clear chat, stop)
  * @returns A fragment containing the Control Buttons.
  */
 export const ControlButtons: FC<ControlButtonsProps> = ({
@@ -47,58 +48,47 @@ export const ControlButtons: FC<ControlButtonsProps> = ({
     shouldEnableRegenerateButton,
 }) => (
     <>
-        {/*Clear Chat button*/}
-        {!isAwaitingLlm && (
-            <SmallLlmChatButton
-                aria-label="Clear Chat"
-                disabled={!enableClearChatButton}
-                id="clear-chat-button"
-                onClick={handleClearChat}
-                posBottom={8}
-                posRight={65}
-            >
-                <DeleteOutlined
-                    fontSize="small"
-                    id="stop-button-icon"
-                    sx={{color: "var(--bs-white)"}}
-                />
-            </SmallLlmChatButton>
-        )}
-
-        {/*Stop Button*/}
-        {isAwaitingLlm && (
+        {isAwaitingLlm ? (
+            // Stop Button
             <SmallLlmChatButton
                 aria-label="Stop"
                 disabled={!isAwaitingLlm}
                 id="stop-output-button"
                 onClick={() => handleStop()}
-                posBottom={8}
-                posRight={23}
             >
                 <StopCircle
                     fontSize="small"
                     id="stop-button-icon"
-                    sx={{color: "var(--bs-white)"}}
                 />
             </SmallLlmChatButton>
-        )}
+        ) : (
+            <Box sx={{display: "flex", gap: 1}}>
+                {/*Clear Chat button*/}
+                <SmallLlmChatButton
+                    aria-label="Clear Chat"
+                    disabled={!enableClearChatButton}
+                    id="clear-chat-button"
+                    onClick={handleClearChat}
+                >
+                    <DeleteOutlined
+                        fontSize="small"
+                        id="stop-button-icon"
+                    />
+                </SmallLlmChatButton>
 
-        {/*Regenerate Button*/}
-        {!isAwaitingLlm && (
-            <SmallLlmChatButton
-                aria-label="Regenerate"
-                disabled={!shouldEnableRegenerateButton}
-                id="regenerate-output-button"
-                onClick={() => handleSend(previousUserQuery)}
-                posBottom={8}
-                posRight={23}
-            >
-                <Loop
-                    fontSize="small"
-                    id="generate-icon"
-                    sx={{color: "var(--bs-white)"}}
-                />
-            </SmallLlmChatButton>
+                {/*Regenerate Button*/}
+                <SmallLlmChatButton
+                    aria-label="Regenerate"
+                    disabled={!shouldEnableRegenerateButton}
+                    id="regenerate-output-button"
+                    onClick={() => handleSend(previousUserQuery)}
+                >
+                    <Loop
+                        fontSize="small"
+                        id="generate-icon"
+                    />
+                </SmallLlmChatButton>
+            </Box>
         )}
     </>
 )

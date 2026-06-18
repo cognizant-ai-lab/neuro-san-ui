@@ -22,7 +22,7 @@ import {Dispatch, FC, RefObject, SetStateAction} from "react"
 import {checkSpeechSupport, SpeechRecognitionState, toggleListening} from "./VoiceChat"
 import {LlmChatButton} from "../Common/LlmChatButton"
 
-// #region: Types
+//#region: Types
 export interface MicrophoneButtonProps {
     /**
      * Whether microphone/voice mode is currently enabled
@@ -49,7 +49,7 @@ export interface MicrophoneButtonProps {
      */
     setVoiceInputState: Dispatch<SetStateAction<SpeechRecognitionState>>
 }
-// #endregion: Types
+//#endregion: Types
 
 /**
  * Microphone button component for voice input functionality.
@@ -83,37 +83,45 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
     }
 
     const isDisabled = !speechSupported
-    const tooltipText = !speechSupported
-        ? "Voice input is only supported in Google Chrome on Mac or Windows."
-        : isMicOn
-          ? "Turn microphone off"
-          : "Turn microphone on"
+    const tooltipText = speechSupported
+        ? isMicOn
+            ? "Turn microphone off"
+            : "Turn microphone on"
+        : "Voice input is only supported in Google Chrome on Mac or Windows."
+
+    const isListeningActive = isMicOn && voiceInputState.isListening
 
     return (
-        <Tooltip title={tooltipText}>
-            <span style={{display: "inline-block", height: 50, width: 64}}>
+        <Tooltip
+            placement="top"
+            title={tooltipText}
+        >
+            {/*Span required so that tooltip is displayed when button is disabled. Known MUI issue.*/}
+            <span
+                style={{
+                    display: "inline-block",
+                    cursor: isDisabled ? "not-allowed" : "inherit",
+                }}
+            >
                 <LlmChatButton
                     data-testid="microphone-button"
                     disabled={isDisabled}
                     id="microphone-button"
                     onClick={handleClick}
                     sx={{
-                        padding: "0.5rem",
-                        right: 70,
-                        backgroundColor:
-                            isMicOn && voiceInputState.isListening ? "var(--bs-success)" : "var(--bs-secondary)",
+                        backgroundColor: isListeningActive ? "success.main" : "background.paper",
                     }}
                     tabIndex={0}
                 >
                     {voiceInputState.isListening ? (
                         <MicNoneIcon
-                            sx={{color: "var(--bs-white)"}}
                             data-testid="MicNoneIcon"
+                            fontSize="small"
                         />
                     ) : (
                         <MicOffIcon
-                            sx={{color: "var(--bs-white)"}}
                             data-testid="MicOffIcon"
+                            fontSize="small"
                         />
                     )}
                 </LlmChatButton>
