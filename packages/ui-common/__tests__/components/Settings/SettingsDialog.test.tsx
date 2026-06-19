@@ -594,6 +594,31 @@ describe("SettingsDialog", () => {
         )
     })
 
+    it("Handles null response when retrieving branding suggestions", async () => {
+        global.fetch = mockFetch(null)
+
+        const customer = "OldCustomer"
+
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                customer,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        // Customer name should be unchanged
+        expect(useSettingsStore.getState().settings.branding.customer).toBe(customer)
+    })
+
     it("Handles customer but no logo token", async () => {
         global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
 
