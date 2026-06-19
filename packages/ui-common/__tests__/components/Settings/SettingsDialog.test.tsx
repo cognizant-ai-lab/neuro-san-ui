@@ -583,12 +583,12 @@ describe("SettingsDialog", () => {
         )
 
         // Spy on console.warn to suppress output during test
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
             expect.stringMatching(new RegExp(`Failed to fetch branding suggestions.*"${customerName}"`, "u")),
             expect.objectContaining({message: networkError})
         )
