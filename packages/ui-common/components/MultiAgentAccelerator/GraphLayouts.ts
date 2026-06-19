@@ -23,7 +23,7 @@ import cloneDeep from "lodash-es/cloneDeep.js"
 
 import {AgentConversation} from "./AgentConversations"
 import {AgentNodeProps, FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "./const"
+import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, getFrontman, LEVEL_SPACING} from "./const"
 import {isEditableAgent} from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
@@ -111,27 +111,9 @@ const getParents = (node: string, parentAgents: ConnectivityInfo[]): string[] =>
     return parentAgents.filter((agent) => agent.tools.includes(node)).map((parentNode) => parentNode.origin)
 }
 
-// "Parent agents" are those that have tools, aka "child agents"
+// "Parent agents" are those that have tools, aka agents with "child agents"
 const getParentAgents = (agentsInNetwork: ConnectivityInfo[]): ConnectivityInfo[] =>
     agentsInNetwork.length === 1 ? agentsInNetwork : agentsInNetwork.filter((agent) => agent.tools?.length > 0)
-
-// "Child agents" are those that are declared as tools by other agents
-const getChildAgents = (parentAgents: ConnectivityInfo[]): Set<string> => {
-    const childAgentsSet = new Set<string>()
-    parentAgents.forEach((agent) => {
-        agent?.tools?.forEach((tool) => {
-            childAgentsSet.add(tool)
-        })
-    })
-    return childAgentsSet
-}
-
-// Frontman is defined as the agent that has no parent. There should be only one in the graph.
-// Frontman is one of the parent agents.
-// There is no explicit field that tells us which agent is the frontman, so we determine it by checking
-// which parent agent does not appear in the set of child agents.
-const getFrontman = (parentAgents: ConnectivityInfo[], childAgents: Set<string>): ConnectivityInfo =>
-    parentAgents.find((agent) => !childAgents.has(agent.origin))
 
 // Generates the properties for an edge in the graph.
 // Common for both radial and linear layouts.
@@ -172,9 +154,8 @@ export const layoutRadial = (
     const queue: {id: string; depth: number}[] = []
 
     const parentAgents = getParentAgents(agentsInNetwork)
-    const childAgents = getChildAgents(parentAgents)
 
-    const frontman = getFrontman(parentAgents, childAgents)
+    const frontman = getFrontman(agentsInNetwork)
     if (frontman) {
         // Add the frontman node to the network
         queue.push({id: frontman.origin, depth: 0})
@@ -317,8 +298,7 @@ export const layoutLinear = (
 
     // Do these calculations outside the loop for efficiency
     const parentAgents = getParentAgents(agentsInNetwork)
-    const childAgents = getChildAgents(parentAgents)
-    const frontman = getFrontman(parentAgents, childAgents)
+    const frontman = getFrontman(agentsInNetwork)
 
     agentsInNetwork.forEach(({origin: nodeId}) => {
         const parentIds = getParents(nodeId, parentAgents)

@@ -27,6 +27,7 @@ import StepLabel from "@mui/material/StepLabel"
 import Stepper from "@mui/material/Stepper"
 import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import startCase from "lodash-es/startCase.js"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
@@ -34,7 +35,7 @@ import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEff
 import {splitFilename} from "../../../utils/File"
 import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
-import {AgentNetworkDefinitionEntry} from "../const"
+import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman} from "../const"
 
 // #region: Constants
 
@@ -82,6 +83,26 @@ export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinit
         (entry): entry is AgentNetworkDefinitionEntry =>
             typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
     )
+}
+
+/** High-level counts shown on the review step so the user can sanity-check the import. */
+export interface NetworkSummary {
+    readonly agents: number
+    readonly codedTools: number
+    readonly externalAgents: number
+    readonly frontman: string
+}
+
+/** Summarises a parsed network definition (counts by `display_as`, plus the frontman). */
+export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEntry[]): NetworkSummary => {
+    const countOf = (displayAs: DisplayAs): number =>
+        networkDef.filter((entry) => entry.display_as === displayAs).length
+    return {
+        agents: countOf(DisplayAs.LLM_AGENT),
+        codedTools: countOf(DisplayAs.CODED_TOOL),
+        externalAgents: countOf(DisplayAs.EXTERNAL_AGENT),
+        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "—",
+    }
 }
 
 /** Format byte count to a human-readable string (e.g. "4.2 KB"). */
@@ -329,7 +350,12 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     // #endregion: Conflict resolution
 
-    const fileExt = file ? splitFilename(file.name).ext.toUpperCase() : ""
+    const {name: fileStem, ext: fileNameExt} = file ? splitFilename(file.name) : {name: "", ext: ""}
+    const fileExt = fileNameExt.toUpperCase()
+
+    // Summary shown on the review step. parsedJson is already-validated JSON, so this never throws.
+    const networkSummary =
+        parseState === "success" && parsedJson ? summarizeNetworkDefinition(jsonToNetworkDefinition(parsedJson)) : null
 
     const footer = (
         <>
@@ -568,32 +594,105 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     id="import-network-modal-file-icon"
                                     sx={{color: "text.secondary", fontSize: "2rem"}}
                                 />
-                                <Typography
-                                    id="import-network-modal-review-filename"
-                                    variant="body1"
-                                    sx={{
-                                        flex: 1,
-                                        fontFamily: "monospace",
-                                        fontSize: 16,
-                                        minWidth: 0,
-                                        wordBreak: "break-all",
-                                    }}
-                                >
-                                    {file?.name}
-                                </Typography>
+                                {/* Keep the filename on one line: truncate the stem with an ellipsis
+                                    but pin the extension so ".json" stays visible. The full name is
+                                    available on hover via the tooltip. */}
+                                <Tooltip title={file?.name ?? ""}>
+                                    <Box
+                                        id="import-network-modal-review-filename"
+                                        sx={{
+                                            display: "flex",
+                                            flex: 1,
+                                            fontFamily: "monospace",
+                                            fontSize: 15,
+                                            minWidth: 0,
+                                        }}
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}
+                                        >
+                                            {fileStem}
+                                        </Box>
+                                        {fileNameExt && (
+                                            <Box
+                                                component="span"
+                                                sx={{flexShrink: 0}}
+                                            >
+                                                {`.${fileNameExt}`}
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Tooltip>
                                 <Typography
                                     id="import-network-modal-review-filesize"
                                     variant="body2"
                                     sx={{
                                         color: "text.secondary",
                                         flexShrink: 0,
-                                        fontSize: 14,
+                                        fontSize: 15,
                                         whiteSpace: "nowrap",
                                     }}
                                 >
                                     {formatFileSize(file?.size ?? 0)}
                                 </Typography>
                             </Box>
+                            {/* Network summary */}
+                            {networkSummary && (
+                                <Box
+                                    id="import-network-modal-summary"
+                                    sx={{
+                                        border: "1px solid",
+                                        borderColor: "divider",
+                                        borderRadius: 2,
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        marginTop: 3,
+                                        overflow: "hidden",
+                                    }}
+                                >
+                                    {(
+                                        [
+                                            {label: "Agents", value: networkSummary.agents},
+                                            {label: "Coded tools", value: networkSummary.codedTools},
+                                            {label: "External agents", value: networkSummary.externalAgents},
+                                            {label: "Front man", value: networkSummary.frontman, isFrontman: true},
+                                        ] as const
+                                    ).map((stat, index) => (
+                                        <Box
+                                            key={stat.label}
+                                            sx={{
+                                                borderColor: "divider",
+                                                borderLeft: index % 2 === 1 ? "1px solid" : undefined,
+                                                borderTop: index >= 2 ? "1px solid" : undefined,
+                                                padding: "14px 16px",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    letterSpacing: "0.08em",
+                                                    textTransform: "uppercase",
+                                                }}
+                                            >
+                                                {stat.label}
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: "isFrontman" in stat ? "monospace" : undefined,
+                                                    fontSize: "isFrontman" in stat ? "0.75rem" : "1.25rem",
+                                                    lineHeight: 1.4,
+                                                    marginTop: 0.5,
+                                                    wordBreak: "break-word",
+                                                }}
+                                            >
+                                                {stat.value}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
                         </Box>
                     )}
                     {parseState === "error" && (

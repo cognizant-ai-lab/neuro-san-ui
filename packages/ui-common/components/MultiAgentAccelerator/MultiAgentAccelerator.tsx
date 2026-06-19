@@ -37,6 +37,7 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
+    getFrontman,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {ImportNetworkModal, jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
@@ -123,16 +124,6 @@ const notifySaveError = (agentName: string, e: unknown): void => {
             ? "The request timed out waiting for the server. Please try again."
             : String(e)
     sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
-}
-
-/**
- * Returns the frontman agent name: the agent that is not listed as a tool by any other agent.
- * Falls back to the first entry if every agent is referenced as a tool (unlikely but defensive).
- */
-const findFrontman = (networkDef: AgentNetworkDefinitionEntry[]): string => {
-    const allTools = new Set(networkDef.flatMap((entry) => entry.tools ?? []))
-    const frontman = networkDef.find((entry) => entry.origin && !allTools.has(entry.origin))
-    return frontman?.origin ?? networkDef[0]?.origin ?? "agent"
 }
 
 // #endregion: Agent-save helpers
@@ -708,7 +699,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     )
                     return
                 }
-                const frontman = findFrontman(networkDef)
+                const frontman = getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "agent"
                 const abortController = new AbortController()
                 let newNetworks: TemporaryNetwork[] = []
                 await sendNetworkDesignerUpsert(

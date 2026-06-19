@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {fireEvent, render, screen, waitFor} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -28,6 +28,7 @@ import {
     ImportNetworkModalProps,
     jsonToNetworkDefinition,
     parseNetworkFileContent,
+    summarizeNetworkDefinition,
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 
@@ -203,6 +204,30 @@ describe("ImportNetworkModal", () => {
         // CheckCircleOutlinedIcon appears in the success alert banner
         await screen.findByTestId("CheckCircleOutlinedIcon")
         await screen.findByRole("button", {name: /Continue/u})
+    })
+
+    it("should show the network summary (counts + frontman) on the review step", async () => {
+        renderModal()
+        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        const definition = JSON.stringify([
+            {origin: "lead", display_as: "llm_agent", tools: ["worker", "search"]},
+            {origin: "worker", display_as: "llm_agent", tools: []},
+            {origin: "search", display_as: "coded_tool", tools: []},
+        ])
+        dropFile(dropZone, "my_network.json", definition)
+
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
+        if (!summaryEl) throw new Error("Network summary was not rendered")
+        const summary = within(summaryEl)
+        // Labels render uppercased via CSS but the DOM text is the source-cased label.
+        expect(summary.getByText("Agents")).toBeInTheDocument()
+        expect(summary.getByText("Coded tools")).toBeInTheDocument()
+        expect(summary.getByText("External agents")).toBeInTheDocument()
+        expect(summary.getByText("Front man")).toBeInTheDocument()
+        // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = lead
+        expect(summary.getByText("2")).toBeInTheDocument()
+        expect(summary.getByText("lead")).toBeInTheDocument()
     })
 
     it("should show parse error banner when file content is unparseable", async () => {
@@ -477,6 +502,36 @@ describe("jsonToNetworkDefinition", () => {
 
     it("should return an empty array for an empty array", () => {
         expect(jsonToNetworkDefinition("[]")).toEqual([])
+    })
+})
+
+describe("summarizeNetworkDefinition", () => {
+    it("should count agents by display_as and resolve the frontman", () => {
+        const summary = summarizeNetworkDefinition([
+            {origin: "lead", display_as: "llm_agent", tools: ["manager", "search", "external"]},
+            {origin: "manager", display_as: "llm_agent", tools: []},
+            {origin: "search", display_as: "coded_tool", tools: []},
+            {origin: "fetch", display_as: "coded_tool", tools: []},
+            {origin: "external", display_as: "external_agent", tools: []},
+        ])
+        expect(summary).toEqual({agents: 2, codedTools: 2, externalAgents: 1, frontman: "lead"})
+    })
+
+    it("should report zero counts and a dash frontman for an empty definition", () => {
+        expect(summarizeNetworkDefinition([])).toEqual({
+            agents: 0,
+            codedTools: 0,
+            externalAgents: 0,
+            frontman: "—",
+        })
+    })
+
+    it("should fall back to the first entry as frontman when the network is fully cyclic", () => {
+        const summary = summarizeNetworkDefinition([
+            {origin: "alpha", display_as: "llm_agent", tools: ["beta"]},
+            {origin: "beta", display_as: "llm_agent", tools: ["alpha"]},
+        ])
+        expect(summary.frontman).toBe("alpha")
     })
 })
 
