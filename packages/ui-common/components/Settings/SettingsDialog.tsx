@@ -155,6 +155,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         let brandingSuggestions
         try {
             brandingSuggestions = await getBrandingSuggestions(customerInput)
+            setIsBrandingApplying(false)
         } catch (e) {
             console.warn(`Failed to fetch branding suggestions for customer "${customerInput}"`, e)
             sendNotification(
@@ -164,8 +165,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     "branding service."
             )
             return
-        } finally {
-            setIsBrandingApplying(false)
         }
 
         updateSettings({
