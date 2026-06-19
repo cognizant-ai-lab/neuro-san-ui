@@ -1096,10 +1096,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
                 <Box
                     sx={{
+                        backdropFilter: "blur(8px)",
+                        backgroundColor: alpha(theme.palette.background.paper, 0.2),
                         borderTop: `2px solid ${theme.palette.primary.main}`,
-                        backgroundColor: theme.palette.background.paper,
                         flexShrink: 0,
-
+                        position: "relative",
                         zIndex: getZIndex(2, theme),
                     }}
                 >
@@ -1122,8 +1123,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 alignItems: "center",
                                 // Frost the banner like the dock header, so the graph doesn't show through the
                                 // app's translucent paper background; keep a tinted, mostly opaque severity wash.
-                                backdropFilter: "blur(8px)",
-                                backgroundColor: alpha(theme.palette[dockBanner.severity].main, 0.2),
                                 "& .MuiAlert-action": {
                                     alignItems: "center",
                                     marginRight: 0,
