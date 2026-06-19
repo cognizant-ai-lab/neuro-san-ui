@@ -229,9 +229,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const handleBrandingApply = async () => {
         setIsBrandingApplying(true)
 
-        let brandingSuggestions
         try {
-            brandingSuggestions = await getBrandingSuggestions(customerInput)
+            const brandingSuggestions = await getBrandingSuggestions(customerInput)
             if (brandingSuggestions) {
                 updateBranding(brandingSuggestions)
                 brandingCheckmark.trigger()
