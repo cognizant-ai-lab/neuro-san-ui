@@ -152,12 +152,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const handleBrandingApply = async () => {
         setIsBrandingApplying(true)
 
-        updateSettings({
-            branding: {
-                customer: customerInput,
-            },
-        })
-
         let brandingSuggestions
         try {
             brandingSuggestions = await getBrandingSuggestions(customerInput)
@@ -170,7 +164,15 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     "branding service."
             )
             return
+        } finally {
+            setIsBrandingApplying(false)
         }
+
+        updateSettings({
+            branding: {
+                customer: customerInput,
+            },
+        })
 
         updateSettings({
             appearance: {
