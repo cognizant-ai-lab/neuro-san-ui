@@ -68,63 +68,20 @@ export const parseNetworkFileContent = (
 }
 
 /**
- * Converts a parsed network JSON import file into an array of AgentNetworkDefinitionEntry
- * objects suitable for sendNetworkDesignerUpsert.
+ * Converts an imported network JSON file into an array of AgentNetworkDefinitionEntry objects
+ * suitable for sendNetworkDesignerUpsert.
  *
- * Supports three formats:
- * 1. Top-level array of AgentNetworkDefinitionEntry objects – the shape exported for a
- *    Temporary network (each entry already has `origin`, `tools`, `display_as`, etc.).
- * 2. Native neuro-san `tools[]` array – each entry has `name`, `function.description`,
- *    `instructions`, `tools`, and optional `display_as` / `metadata`.
- * 3. `agents{}` dict – each key is the agent name, value has the same fields
- *    (minus the explicit `name` key).
+ * Imports are the top-level array shape exported for a Temporary network — each entry already
+ * carries `origin`, `tools`, `display_as`, etc. Entries without a string `origin` are dropped;
+ * anything that isn't an array yields an empty result.
  */
 export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
-    const parsedUnknown = JSON.parse(jsonString) as unknown
-
-    // --- Format 1: top-level array of AgentNetworkDefinitionEntry (Temporary network export) ---
-    if (Array.isArray(parsedUnknown)) {
-        return parsedUnknown.filter(
-            (entry): entry is AgentNetworkDefinitionEntry =>
-                typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
-        )
-    }
-
-    const parsed = parsedUnknown as Record<string, unknown>
-
-    // --- Format 2: native neuro-san tools[] array ---
-    const toolsArray = parsed["tools"] as Record<string, unknown>[] | undefined
-    if (Array.isArray(toolsArray) && toolsArray.length > 0) {
-        return toolsArray
-            .filter((tool) => typeof tool["name"] === "string")
-            .map((tool) => {
-                const fn = tool["function"] as Record<string, unknown> | undefined
-                const meta = tool["metadata"] as Record<string, unknown> | undefined
-                return {
-                    origin: tool["name"] as string,
-                    tools: tool["tools"] as string[] | undefined,
-                    display_as: (tool["display_as"] as string | undefined) ?? "llm_agent",
-                    ...(meta !== undefined ? {metadata: meta} : {}),
-                    instructions: tool["instructions"] as string | undefined,
-                    description: fn?.["description"] as string | undefined,
-                }
-            })
-    }
-
-    // --- Format 3: agents{} dict ---
-    const agents = parsed["agents"] as Record<string, Record<string, unknown>> | undefined
-    if (agents !== undefined && Object.keys(agents).length > 0) {
-        return Object.entries(agents).map(([agentName, agentDef]) => ({
-            origin: agentName,
-            tools: agentDef["tools"] as string[] | undefined,
-            display_as: agentDef["display_as"] as string | undefined,
-            metadata: agentDef["metadata"] as Record<string, unknown> | undefined,
-            instructions: agentDef["instructions"] as string | undefined,
-            description: agentDef["description"] as string | undefined,
-        }))
-    }
-
-    return []
+    const parsed = JSON.parse(jsonString) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+        (entry): entry is AgentNetworkDefinitionEntry =>
+            typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
+    )
 }
 
 /** Format byte count to a human-readable string (e.g. "4.2 KB"). */

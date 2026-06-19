@@ -469,75 +469,14 @@ describe("jsonToNetworkDefinition", () => {
         expect(result[0].origin).toBe("valid")
     })
 
-    it("should convert the native tools[] format", () => {
-        const json = JSON.stringify({
-            tools: [
-                {
-                    name: "frontman",
-                    function: {description: "The boss"},
-                    instructions: "Lead the team",
-                    tools: ["helper"],
-                    display_as: "llm_agent",
-                    metadata: {color: "blue"},
-                },
-            ],
-        })
-        expect(jsonToNetworkDefinition(json)).toEqual([
-            {
-                origin: "frontman",
-                tools: ["helper"],
-                display_as: "llm_agent",
-                metadata: {color: "blue"},
-                instructions: "Lead the team",
-                description: "The boss",
-            },
-        ])
-    })
-
-    it("should default display_as to llm_agent and omit metadata when absent in tools[] format", () => {
-        const json = JSON.stringify({tools: [{name: "solo", instructions: "Work alone"}]})
-        const result = jsonToNetworkDefinition(json)
-        expect(result[0]).toMatchObject({origin: "solo", display_as: "llm_agent", instructions: "Work alone"})
-        expect(result[0]).not.toHaveProperty("metadata")
-    })
-
-    it("should skip tools[] entries without a string name", () => {
-        const json = JSON.stringify({tools: [{name: "valid"}, {instructions: "no name"}]})
-        const result = jsonToNetworkDefinition(json)
-        expect(result).toHaveLength(1)
-        expect(result[0].origin).toBe("valid")
-    })
-
-    it("should convert the agents{} dict format", () => {
-        const json = JSON.stringify({
-            agents: {
-                frontman: {
-                    tools: ["helper"],
-                    display_as: "llm_agent",
-                    metadata: {color: "red"},
-                    instructions: "Lead",
-                    description: "Boss agent",
-                },
-            },
-        })
-        expect(jsonToNetworkDefinition(json)).toEqual([
-            {
-                origin: "frontman",
-                tools: ["helper"],
-                display_as: "llm_agent",
-                metadata: {color: "red"},
-                instructions: "Lead",
-                description: "Boss agent",
-            },
-        ])
-    })
-
-    it("should return an empty array when neither an array, tools[], nor agents{} are present", () => {
+    it("should return an empty array when the JSON is not a top-level array", () => {
+        expect(jsonToNetworkDefinition('{"agents": {}}')).toEqual([])
+        expect(jsonToNetworkDefinition('{"tools": [{"name": "frontman"}]}')).toEqual([])
         expect(jsonToNetworkDefinition('{"something": "else"}')).toEqual([])
     })
 
-    it("should return an empty array for an empty agents{} object", () => {
-        expect(jsonToNetworkDefinition('{"agents": {}}')).toEqual([])
+    it("should return an empty array for an empty array", () => {
+        expect(jsonToNetworkDefinition("[]")).toEqual([])
     })
 })
 

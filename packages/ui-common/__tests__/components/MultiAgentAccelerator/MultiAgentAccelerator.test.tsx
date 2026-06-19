@@ -370,16 +370,7 @@ describe("MultiAgentAccelerator", () => {
         await act(async () => {
             onImport(
                 "Santas Workshop Ops",
-                JSON.stringify({
-                    tools: [
-                        {
-                            name: "frontman",
-                            function: {description: "Frontman description"},
-                            instructions: "Do the thing",
-                            tools: [],
-                        },
-                    ],
-                })
+                JSON.stringify([{origin: "frontman", instructions: "Do the thing", tools: []}])
             )
         })
 
@@ -403,7 +394,7 @@ describe("MultiAgentAccelerator", () => {
         await screen.findByText("Agent Networks")
 
         await act(async () => {
-            onImport("Empty Network", JSON.stringify({agents: {}}))
+            onImport("Empty Network", JSON.stringify([]))
         })
 
         await waitFor(() => {
@@ -423,12 +414,7 @@ describe("MultiAgentAccelerator", () => {
         await screen.findByText("Agent Networks")
 
         await act(async () => {
-            onImport(
-                "Reservationless Network",
-                JSON.stringify({
-                    tools: [{name: "frontman", function: {description: "d"}, instructions: "i", tools: []}],
-                })
-            )
+            onImport("Reservationless Network", JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]))
         })
 
         await waitFor(() => {
@@ -470,12 +456,10 @@ describe("MultiAgentAccelerator", () => {
         await act(async () => {
             onImport(
                 "Two Agent Network",
-                JSON.stringify({
-                    agents: {
-                        boss: {tools: ["worker"], instructions: "lead"},
-                        worker: {instructions: "work"},
-                    },
-                })
+                JSON.stringify([
+                    {origin: "boss", tools: ["worker"], instructions: "lead"},
+                    {origin: "worker", instructions: "work"},
+                ])
             )
         })
 
@@ -497,12 +481,10 @@ describe("MultiAgentAccelerator", () => {
         await act(async () => {
             onImport(
                 "Cyclic Network",
-                JSON.stringify({
-                    agents: {
-                        alpha: {tools: ["beta"], instructions: "a"},
-                        beta: {tools: ["alpha"], instructions: "b"},
-                    },
-                })
+                JSON.stringify([
+                    {origin: "alpha", tools: ["beta"], instructions: "a"},
+                    {origin: "beta", tools: ["alpha"], instructions: "b"},
+                ])
             )
         })
 
