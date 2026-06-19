@@ -583,15 +583,40 @@ describe("SettingsDialog", () => {
         )
 
         // Spy on console.warn to suppress output during test
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
             expect.stringMatching(new RegExp(`Failed to fetch branding suggestions.*"${customerName}"`, "u")),
             expect.objectContaining({message: networkError})
         )
+    })
+
+    it("Handles null response when retrieving branding suggestions", async () => {
+        global.fetch = mockFetch(null)
+
+        const customer = "OldCustomer"
+
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                customer,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        // Customer name should be unchanged
+        expect(useSettingsStore.getState().settings.branding.customer).toBe(customer)
     })
 
     it("Handles customer but no logo token", async () => {

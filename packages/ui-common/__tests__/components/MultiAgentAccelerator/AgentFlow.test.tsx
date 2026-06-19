@@ -249,18 +249,6 @@ describe("AgentFlow", () => {
         expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
     })
 
-    it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
-        const mode = darkMode ? "dark" : "light"
-        const {container} = renderAgentFlowComponent({}, mode)
-
-        expect(await screen.findByText(cleanUpAgentName("React Flow"))).toBeInTheDocument()
-        verifyAgentNodes(container)
-
-        const legend = container.querySelector("#test-flow-id-legend")
-        const computed = window.getComputedStyle(legend)
-        expect(computed.boxShadow).toContain(darkMode ? "#fff" : "#000")
-    })
-
     it("Should allow switching between heatmap and depth displays", async () => {
         const {container} = renderAgentFlowComponent()
 

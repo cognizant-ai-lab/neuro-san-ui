@@ -15,6 +15,7 @@ import {ApiKeyInput} from "./ApiKeyInput"
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
 import {getBrandingSuggestions} from "../../controller/agent/Agent"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
+import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {DEFAULT_SETTINGS, LLMProvider, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
@@ -146,31 +147,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         rangePaletteCheckmark.trigger()
     }
 
-    /**
-     * Handle applying branding based on customer input. Calls backend to get colors then updates settings store.
-     */
-    const handleBrandingApply = async () => {
-        setIsBrandingApplying(true)
-
+    const updateBranding = (brandingSuggestions: BrandingSuggestions) => {
         updateSettings({
             branding: {
                 customer: customerInput,
             },
         })
-
-        let brandingSuggestions
-        try {
-            brandingSuggestions = await getBrandingSuggestions(customerInput)
-        } catch (e) {
-            console.warn(`Failed to fetch branding suggestions for customer "${customerInput}"`, e)
-            sendNotification(
-                NotificationType.error,
-                `Failed to fetch branding suggestions for "${customerInput}"`,
-                "Please check the name and try again. If the problem persists, there may be an issue with the " +
-                    "branding service."
-            )
-            return
-        }
 
         updateSettings({
             appearance: {
@@ -235,13 +217,35 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             updateSettings({
                 branding: {
                     iconSuggestion: brandingSuggestions["iconSuggestion"],
-                    logoSource: "auto",
+                    logoSource: logoServiceToken ? "auto" : "generic",
                 },
             })
         }
+    }
 
-        brandingCheckmark.trigger()
-        setIsBrandingApplying(false)
+    /**
+     * Handle applying branding based on customer input. Calls backend to get colors then updates settings store.
+     */
+    const handleBrandingApply = async () => {
+        setIsBrandingApplying(true)
+
+        try {
+            const brandingSuggestions = await getBrandingSuggestions(customerInput)
+            if (brandingSuggestions) {
+                updateBranding(brandingSuggestions)
+                brandingCheckmark.trigger()
+            }
+        } catch (e) {
+            console.error(`Failed to fetch branding suggestions for customer "${customerInput}"`, e)
+            sendNotification(
+                NotificationType.error,
+                `Failed to fetch branding suggestions for "${customerInput}"`,
+                "Please check the name and try again. If the problem persists, there may be an issue with the " +
+                    "branding service."
+            )
+        } finally {
+            setIsBrandingApplying(false)
+        }
     }
 
     const handleBrandingClear = () => {
