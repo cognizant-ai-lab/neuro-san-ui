@@ -49,6 +49,7 @@ const addNetworkToTree = (
     map: Map<string, TreeViewDefaultItemModelProperties>,
     nodeIndex: NodeIndex,
     displayNameCounts: Map<string, number>,
+    useNativeNames: boolean,
     overrideDisplayName?: string
 ): void => {
     const parts = network.agent_name.split("/")
@@ -56,7 +57,10 @@ const addNetworkToTree = (
     // If there's only one part, it means this network isn't in any folder, so we add it directly under "Uncategorized"
     if (parts.length === 1) {
         uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
-        nodeIndex.set(network.agent_name, {agentInfo: network, displayName: cleanUpAgentName(network.agent_name)})
+        nodeIndex.set(network.agent_name, {
+            agentInfo: network,
+            displayName: useNativeNames ? network.agent_name : cleanUpAgentName(network.agent_name),
+        })
     } else {
         // Otherwise, we need to build out the tree structure based on the parts of the agent_name. Some paths might
         // already exist if we've processed another network that shares the same parent folders,
@@ -73,16 +77,22 @@ const addNetworkToTree = (
                 node = {id: nodeId, label: part, children: []}
                 map.set(nodeId, node)
                 if (index === parts.length - 1) {
-                    // For temp networks, `part` is the raw reservation_id, which is canonicalized and may have
-                    // lost the word separators (_/-) that cleanUpAgentName relies on to produce a spaced label.
-                    // So prefer `overrideDisplayName` (the caller passes the temp network's agentNetworkName)
-                    // when one is given; otherwise fall back to stripping the trailing UUID off the path part.
-                    const cleanedName = cleanUpAgentName(overrideDisplayName ?? removeTrailingUuid(part))
+                    let displayName: string
+                    if (useNativeNames) {
+                        // Native mode shows the raw agent name part, unmodified.
+                        displayName = part
+                    } else {
+                        // For temp networks, `part` is the raw reservation_id, which is canonicalized and may have
+                        // lost the word separators (_/-) that cleanUpAgentName relies on to produce a spaced label.
+                        // So prefer `overrideDisplayName` (the caller passes the temp network's agentNetworkName)
+                        // when one is given; otherwise fall back to stripping the trailing UUID off the path part.
+                        const cleanedName = cleanUpAgentName(overrideDisplayName ?? removeTrailingUuid(part))
 
-                    // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3", etc.)
-                    const count = displayNameCounts.get(cleanedName) || 0
-                    displayNameCounts.set(cleanedName, count + 1)
-                    const displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+                        // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3")
+                        const count = displayNameCounts.get(cleanedName) || 0
+                        displayNameCounts.set(cleanedName, count + 1)
+                        displayName = count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+                    }
 
                     // Add the AgentInfo to the nodeIndex for quick lookup later, using the full path as the key
                     nodeIndex.set(nodeId, {agentInfo: network, displayName})
@@ -115,12 +125,14 @@ const addNetworkToTree = (
  * The tree structure is used by the RichTreeView component to display the networks
  * @param networks - Array of networks from the Neuro-san /list API
  * @param temporaryNetworks - Array of temporary networks (e.g. ones recently created by the user)
+ * @param useNativeNames - Whether to use the raw agent names from the API or to clean them up for display.
  * @returns Array of {@linkcode TreeViewDefaultItemModelProperties} objects representing the tree structure and an
  * index for rapid access
  */
 export const buildTreeViewItems = (
     networks: readonly AgentInfo[],
-    temporaryNetworks: readonly TemporaryNetwork[]
+    temporaryNetworks: readonly TemporaryNetwork[],
+    useNativeNames: boolean
 ): {treeViewItems: TreeViewDefaultItemModelProperties[]; nodeIndex: NodeIndex} => {
     // Map to keep track of created nodes in a tree structure
     const treeBuilderMap = new Map<string, TreeViewDefaultItemModelProperties>()
@@ -134,17 +146,26 @@ export const buildTreeViewItems = (
     // Special parent node for networks that aren't in any folder
     const uncategorized: TreeViewDefaultItemModelProperties = {
         id: "uncategorized",
-        label: "Uncategorized",
+        label: "uncategorized",
         children: [],
     }
 
+    // Tracks how many times each cleaned display name has been used, so duplicates can be disambiguated.
     const displayNameCounts = new Map<string, number>()
 
     // Build a tree structure from the flat list of networks.
     // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
     // structure from that.
     networks.forEach((network) =>
-        addNetworkToTree(network, treeViewItems, uncategorized, treeBuilderMap, nodeIndex, displayNameCounts)
+        addNetworkToTree(
+            network,
+            treeViewItems,
+            uncategorized,
+            treeBuilderMap,
+            nodeIndex,
+            displayNameCounts,
+            useNativeNames
+        )
     )
 
     // Now handle temporary networks
@@ -156,6 +177,7 @@ export const buildTreeViewItems = (
             treeBuilderMap,
             nodeIndex,
             displayNameCounts,
+            useNativeNames,
             temporaryNetwork.agentNetworkName
         )
     )

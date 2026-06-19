@@ -44,6 +44,7 @@ import {testConnection, TestConnectionResult} from "../../../controller/agent/Ag
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
+import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
@@ -192,6 +193,9 @@ export const Sidebar: FC<SidebarProps> = ({
     // Theming/Dark mode
     const darkMode = useTheme().palette.mode === "dark"
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
         // On open of Settings popover, reset the connection status to idle
         setConnectionStatus(CONNECTION_STATUS.IDLE)
@@ -276,7 +280,7 @@ export const Sidebar: FC<SidebarProps> = ({
         onEditNetwork?.(network)
     }
 
-    const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks)
+    const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks, useNativeNames)
     const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
         (acc, tempNetwork) => {
             acc[tempNetwork.agentInfo.agent_name] = new Date(tempNetwork.reservation.expiration_time_in_seconds * 1000)

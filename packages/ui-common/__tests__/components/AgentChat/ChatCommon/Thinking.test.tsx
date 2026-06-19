@@ -54,6 +54,7 @@ describe("Thinking", () => {
             <Thinking
                 id="test-thinking"
                 turns={TURNS}
+                useNativeNames={false}
             />
         )
 

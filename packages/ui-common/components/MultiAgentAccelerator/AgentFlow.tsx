@@ -79,7 +79,7 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {usePalette} from "../../state/Settings"
+import {usePalette, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
@@ -257,6 +257,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // Keep the ref current after every render.
     useEffect(() => {
         isStreamingRef.current = isStreaming
@@ -379,26 +382,28 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const layoutResult: LayoutResult = useMemo(
         () =>
             layout === "linear"
-                ? layoutLinear(
-                      isHeatmap ? agentCounts : undefined,
-                      mergedAgentsInNetwork,
-                      currentConversations,
-                      isAwaitingLlm,
-                      isAgentNetworkDesignerMode,
-                      thoughtBubbleEdges,
+                ? layoutLinear({
+                      agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      isTemporaryNetwork
-                  )
-                : layoutRadial(
-                      isHeatmap ? agentCounts : undefined,
-                      mergedAgentsInNetwork,
+                      agentsInNetwork: mergedAgentsInNetwork,
                       currentConversations,
-                      isAwaitingLlm,
                       isAgentNetworkDesignerMode,
+                      isAwaitingLlm,
+                      isTemporaryNetwork,
                       thoughtBubbleEdges,
+                      useNativeNames,
+                  })
+                : layoutRadial({
+                      agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      isTemporaryNetwork
-                  ),
+                      agentsInNetwork: mergedAgentsInNetwork,
+                      currentConversations,
+                      isAgentNetworkDesignerMode,
+                      isAwaitingLlm,
+                      isTemporaryNetwork,
+                      thoughtBubbleEdges,
+                      useNativeNames,
+                  }),
         [
             agentCounts,
             agentIconSuggestions,
@@ -410,6 +415,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             layout,
             mergedAgentsInNetwork,
             thoughtBubbleEdges,
+            useNativeNames,
         ]
     )
 
@@ -443,7 +449,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
     const [stopState, setStopState] = useState<"confirming" | null>(null)
 
-    // Inline status banner shown above the dock header after an apply succeeds, is cancelled, or fails.
+    // Inline status banner shown above the dock header after an apply succeeds, is canceled, or fails.
     const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -1108,7 +1114,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         flexShrink: 0,
                     }}
                 >
-                    {/* Status banner: shown after an apply succeeds, is cancelled, or fails */}
+                    {/* Status banner: shown after an apply succeeds, is canceled, or fails */}
                     {dockBanner && (
                         <MUIAlert
                             closeable

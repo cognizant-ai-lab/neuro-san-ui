@@ -18,6 +18,7 @@ limitations under the License.
  * Controller module for interacting with the Agent LLM API.
  */
 
+import {postJsonRequest} from "./IconSuggestions"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -40,9 +41,7 @@ import {
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest, StreamingUnit} from "../llm/LlmChat"
-import {AgentIconSuggestions} from "../Types/AgentIconSuggestions"
 import {BrandingSuggestions} from "../Types/Branding"
-import {NetworkIconSuggestions} from "../Types/NetworkIconSuggestions"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:
@@ -99,52 +98,6 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
         clearTimeout(timeout)
     }
 }
-
-/**
- * Utility function to send POST requests with JSON body and handle errors.
- * Used for getting LLM suggestions for icons and branding colors.
- * @template T The expected response type from the server.
- * @param endpoint The API endpoint to send the request to.
- * @param body The request body to send, which will be stringified to JSON.
- * @returns The response from the server parsed as JSON.
- * @throws An error if the request fails or the response is not ok.
- */
-const postJsonRequest = async <T>(endpoint: string, body: Record<string, unknown>): Promise<T> => {
-    const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-    })
-
-    const jsonResponse = await response.json()
-    if (!response.ok || jsonResponse.error) {
-        throw new Error(jsonResponse.error || response.statusText)
-    }
-
-    return jsonResponse
-}
-
-/**
- * Get LLM suggestions for network icons.
- * @param networks The list of networks to get icon suggestions for.
- * @returns A promise that resolves to a record mapping network names to icon names.
- */
-export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]): Promise<NetworkIconSuggestions> =>
-    postJsonRequest<Exclude<NetworkIconSuggestions, "error">>("/api/networkIconSuggestions", {networks})
-
-/**
- * Get LLM suggestions for agent icons based on their descriptions from Neuro-san
- * @param connectivity The connectivity information for the agents in the network, including their descriptions,
- * tools, and connections.
- * @return A promise that resolves to a record mapping agent names to suggested icon names.
- */
-export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse): Promise<AgentIconSuggestions> =>
-    postJsonRequest<AgentIconSuggestions>("/api/agentIconSuggestions", {
-        connectivity_info: connectivity.connectivity_info,
-        metadata: connectivity.metadata,
-    })
 
 /**
  * Get LLM suggestions for branding colors based on the company name. This is used to customize the UI colors
@@ -308,7 +261,7 @@ export const sendNetworkDesignerUpsert = async (
     await sendChatQuery(
         url,
         signal,
-        // Shouldn't have to pass a user message, but API behaves different without it
+        // Shouldn't have to pass a user message, but API behaves differently without it
         `Update instructions for agent "${agentName}"`,
         AGENT_NETWORK_DESIGNER_ID,
         onChunk,

@@ -22,6 +22,7 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {NodeIndex} from "./TreeBuilder"
+import {useSettingsStore} from "../../../state/Settings"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
 
@@ -81,9 +82,14 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
 }) => {
     const theme = useTheme()
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
-    const displayLabel = nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
+    const displayLabel = useNativeNames
+        ? labelString
+        : nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -194,9 +200,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             <IconButton
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    if (isExpired) {
-                                                        return
-                                                    }
 
                                                     const fileName = `${toSafeFilename(labelString)}.json`
                                                     downloadFile(networkJson, fileName)

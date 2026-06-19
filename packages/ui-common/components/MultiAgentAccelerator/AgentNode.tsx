@@ -213,6 +213,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
+    // Wrap the agent name with zero-width spaces to give the browser hints where to wrap.
     const wrappedAgentName = agentName
         // Allow wrap after underscore
         .replaceAll("_", `_${ZERO_WIDTH_SPACE}`)

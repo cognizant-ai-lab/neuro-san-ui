@@ -44,14 +44,12 @@ import {
     AGENT_NETWORK_NAME_KEY,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
+    GRACE_PERIOD_MS,
+    SHOW_TOUR_DELAY_MS,
     TEMPORARY_NETWORK_FOLDER,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
-import {
-    GRACE_PERIOD_MS,
-    MultiAgentAccelerator,
-    SHOW_TOUR_DELAY_MS,
-} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {ImportNetworkModalProps} from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
@@ -59,10 +57,10 @@ import {
     getAgentFunction,
     getAgentNetworks,
     getConnectivity,
-    getNetworkIconSuggestions,
     sendNetworkDesignerUpsert,
     testConnection,
 } from "../../../controller/agent/Agent"
+import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
@@ -85,6 +83,7 @@ let setSelectedNetwork: (network: string) => void
 jest.mock("next-auth/react")
 
 jest.mock("../../../controller/agent/Agent")
+jest.mock("../../../controller/agent/IconSuggestions")
 
 jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
     __esModule: true,
@@ -308,6 +307,27 @@ describe("MultiAgentAccelerator", () => {
             )
         }
     )
+
+    it("should render the component correctly with 'native names' option on or off", async () => {
+        useSettingsStore.getState().updateSettings({appearance: {useNativeNames: false}})
+        renderMultiAgentAcceleratorPage()
+
+        // click to expand networks
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // Ensure Math Guy (default network) element is rendered.
+        screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
+
+        // Now toggle the setting to use native names
+        act(() => {
+            useSettingsStore.getState().updateSettings({appearance: {useNativeNames: true}})
+        })
+
+        // Now the native agent names should be shown instead of the cleaned up display names
+        screen.getByText(TEST_AGENTS_FOLDER)
+        screen.getByText(TEST_AGENT_MATH_GUY)
+    })
 
     it("should handle a network with no sample queries", async () => {
         ;(getConnectivity as jest.Mock).mockResolvedValue({

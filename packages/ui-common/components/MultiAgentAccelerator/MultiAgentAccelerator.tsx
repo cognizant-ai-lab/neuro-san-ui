@@ -22,6 +22,7 @@ import Grid from "@mui/material/Grid"
 import Paper from "@mui/material/Paper"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
+import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
@@ -38,6 +39,8 @@ import {
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
     getFrontman,
+    GRACE_PERIOD_MS,
+    SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {ImportNetworkModal, jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
@@ -46,12 +49,11 @@ import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} 
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
     getAgentFunction,
-    getAgentIconSuggestions,
     getAgentNetworks,
     getConnectivity,
-    getNetworkIconSuggestions,
     sendNetworkDesignerUpsert,
 } from "../../controller/agent/Agent"
+import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
@@ -62,7 +64,7 @@ import {TourPromptState, useTourStore} from "../../state/Tour"
 import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
-import {SmallLlmChatButton} from "../AgentChat/Common/LlmChatButton"
+import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
@@ -78,17 +80,11 @@ export interface MultiAgentAcceleratorProps {
 // Check for expired networks every this many milliseconds
 const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000
 
-// Display expired temporary networks for this amount of time after they expire so users can see what happened
-export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
-
 // Animation time for the left and right panels to slide in or out when launching the animation
 const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
-// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
-export const SHOW_TOUR_DELAY_MS = 5000
 
 // #region: Agent-save helpers
 
@@ -144,6 +140,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
@@ -179,7 +178,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
     const [networkDescription, setNetworkDescription] = useState<string>("")
 
-    const networkDisplayName = useMemo(() => cleanUpAgentName(removeTrailingUuid(selectedNetwork)), [selectedNetwork])
+    const networkDisplayName = useMemo(
+        () => (useNativeNames ? selectedNetwork : cleanUpAgentName(removeTrailingUuid(selectedNetwork))),
+        [selectedNetwork, useNativeNames]
+    )
 
     const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
 
@@ -888,8 +890,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={selectedNetwork || undefined}
-                            networkId={isSelectedNetworkTemporary ? selectedNetwork : undefined}
+                            networkDisplayName={networkDisplayName || ""}
+                            networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
                             neuroSanURL={neuroSanURL}
                             onEnterEditMode={() => setIsEditingNetwork(true)}
                             onExitEditMode={() => setIsEditingNetwork(false)}
@@ -962,23 +964,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             position: "absolute",
                             bottom: "1rem",
                             right: "1rem",
-                            zIndex: 10,
+                            zIndex: getZIndex(2, theme),
                         }}
                     >
-                        <SmallLlmChatButton
-                            aria-label="Stop"
-                            disabled={!isAwaitingLlm}
-                            id="stop-output-button"
-                            onClick={handleExternalStop}
-                            posBottom={8}
-                            posRight={23}
-                        >
-                            <StopCircle
-                                fontSize="small"
-                                id="stop-button-icon"
-                                sx={{color: "var(--bs-white)"}}
-                            />
-                        </SmallLlmChatButton>
+                        <Tooltip title="Stop response (Esc)">
+                            <LlmChatButton
+                                aria-label="Stop"
+                                id="stop-output-button"
+                                onClick={handleExternalStop}
+                                sx={{
+                                    "&:hover": {
+                                        backgroundColor: "error.main",
+                                    },
+                                }}
+                            >
+                                <StopCircle
+                                    fontSize="large"
+                                    id="stop-button-icon"
+                                />
+                            </LlmChatButton>
+                        </Tooltip>
                     </Box>
                 )}
             </>

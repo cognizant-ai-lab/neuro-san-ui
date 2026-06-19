@@ -31,6 +31,7 @@ type DeepPartial<T> = {
 }
 
 export type LLMProvider = "OpenAI" | "Anthropic"
+export type LogoSource = "none" | "generic" | "auto"
 
 /**
  * User preference settings
@@ -42,6 +43,7 @@ interface Settings {
         readonly autoAgentIconColor: boolean
         readonly plasmaColor: string
         readonly rangePalette: PaletteKey
+        readonly useNativeNames: boolean
     }
     readonly branding: {
         readonly customer: string | null
@@ -50,7 +52,7 @@ interface Settings {
         readonly background: string | null
         readonly rangePalette: string[] | null
         readonly iconSuggestion: string | null
-        readonly logoSource: "none" | "generic" | "auto" | null
+        readonly logoSource: LogoSource
     }
     readonly behavior: {
         readonly enableZenMode: boolean
@@ -78,12 +80,13 @@ export const DEFAULT_SETTINGS: Settings = {
         autoAgentIconColor: true,
         rangePalette: "blue",
         plasmaColor: "#2db81f",
+        useNativeNames: false,
     },
     branding: {
         background: null,
         customer: null,
         iconSuggestion: null,
-        logoSource: null,
+        logoSource: "none",
         primary: null,
         rangePalette: null,
         secondary: null,
