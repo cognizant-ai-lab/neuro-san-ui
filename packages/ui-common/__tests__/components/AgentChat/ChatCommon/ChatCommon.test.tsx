@@ -26,12 +26,8 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {
-    ChatCommon,
-    ChatCommonHandle,
-    ChatCommonProps,
-    MAX_TURNS,
-} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {ChatCommon, ChatCommonHandle, ChatCommonProps} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {MAX_TURNS} from "../../../../components/AgentChat/ChatCommon/Const"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
@@ -39,6 +35,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
 import {useSettingsStore} from "../../../../state/Settings"
+import {getZIndex} from "../../../../utils/zIndexLayers"
 
 // Mock agent API
 jest.mock("../../../../controller/agent/Agent")
@@ -89,28 +86,29 @@ describe("ChatCommon", () => {
     const renderChatCommonComponent = (
         overrides: Partial<ChatCommonProps> & {ref?: Ref<ChatCommonHandle>} = {},
         mode: PaletteMode = "light"
-    ) =>
-        render(
-            <ThemeProvider
-                theme={createTheme({
-                    colorSchemes: {
-                        light: {palette: {text: {primary: "#112233"}}},
-                        dark: {palette: {text: {primary: "#445566"}}},
-                    },
-                    palette: {
-                        mode,
-                    },
-                    zIndex: {
-                        modal: MODAL_Z_INDEX,
-                    },
-                })}
-            >
-                <ChatCommon
-                    {...defaultProps}
-                    {...overrides}
-                />
-            </ThemeProvider>
-        )
+    ) => {
+        const theme = createTheme({
+            colorSchemes: {
+                light: {palette: {text: {primary: "#112233"}}},
+                dark: {palette: {text: {primary: "#445566"}}},
+            },
+            palette: {
+                mode,
+            },
+            zIndex: {modal: MODAL_Z_INDEX},
+        })
+        return {
+            render: render(
+                <ThemeProvider theme={theme}>
+                    <ChatCommon
+                        {...defaultProps}
+                        {...overrides}
+                    />
+                </ThemeProvider>
+            ),
+            theme,
+        }
+    }
 
     beforeEach(() => {
         user = userEvent.setup({delay: null})
@@ -582,7 +580,9 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly handle chat context", async () => {
-        const {rerender} = renderChatCommonComponent()
+        const {
+            render: {rerender},
+        } = renderChatCommonComponent()
 
         const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
@@ -613,7 +613,9 @@ describe("ChatCommon", () => {
     })
 
     it("Should not clear chat when a new agent is selected", async () => {
-        const {rerender} = renderChatCommonComponent()
+        const {
+            render: {rerender},
+        } = renderChatCommonComponent()
 
         // Make sure first agent greeting appears
         await screen.findByText(TEST_AGENT_MATH_GUY)
@@ -645,7 +647,7 @@ describe("ChatCommon", () => {
 
     it("Should refuse interaction when no target agent is set", async () => {
         const mockSendFunction = jest.fn()
-        renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
+        const {theme} = renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
 
         // Should be no "Chat with"
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
@@ -653,14 +655,14 @@ describe("ChatCommon", () => {
         const overlay = document.getElementById("chat-disabled-overlay")
         expect(overlay).toHaveStyle({
             position: "absolute",
-            zIndex: MODAL_Z_INDEX - 1,
+            zIndex: getZIndex(2, theme),
             cursor: "not-allowed",
             pointerEvents: "all",
         })
     })
 
     it("Should refuse interaction when API keys are required but not present", async () => {
-        renderChatCommonComponent({missingApiKeys: ["OpenAI"]})
+        const {theme} = renderChatCommonComponent({missingApiKeys: ["OpenAI"]})
 
         // Should be no "Chat with"
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
@@ -670,7 +672,7 @@ describe("ChatCommon", () => {
         const overlay = document.getElementById("chat-disabled-overlay")
         expect(overlay).toHaveStyle({
             position: "absolute",
-            zIndex: MODAL_Z_INDEX - 1,
+            zIndex: getZIndex(2, theme),
             cursor: "not-allowed",
             pointerEvents: "all",
         })

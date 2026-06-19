@@ -15,38 +15,47 @@ limitations under the License.
 */
 
 import SendIcon from "@mui/icons-material/Send"
+import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
 import {LlmChatButton} from "../Common/LlmChatButton"
 
-// #region: Types
+//#region: Types
 interface SendButtonProps {
     enableSendButton: boolean
     id: string
     onClickCallback: () => void
 }
-// #endregion: Types
+//#endregion: Types
 
 /**
  * Generate the Send Button for a chat window.
  * @returns The Send Button.
  */
 export const SendButton: FC<SendButtonProps> = ({enableSendButton, id, onClickCallback}) => (
-    <LlmChatButton
-        aria-label="Send"
-        disabled={!enableSendButton}
-        id={id}
-        onClick={onClickCallback}
-        sx={{
-            padding: "0.6rem",
-            position: "relative",
-        }}
-        tabIndex={0}
+    <Tooltip
+        placement="top"
+        title={enableSendButton ? "Send" : "Enter a message to enable the send button"}
     >
-        <SendIcon
-            fontSize="small"
-            id="stop-button-icon" // Could update this but it would impact QA
-            sx={{color: "var(--bs-white)"}}
-        />
-    </LlmChatButton>
+        {/*Span required so that tooltip is displayed when button is disabled. Known MUI issue.*/}
+        <span
+            style={{
+                display: "inline-block",
+                cursor: enableSendButton ? "inherit" : "not-allowed",
+            }}
+        >
+            <LlmChatButton
+                aria-label="Send"
+                disabled={!enableSendButton}
+                id={id}
+                onClick={onClickCallback}
+                tabIndex={0}
+            >
+                <SendIcon
+                    fontSize="small"
+                    id="stop-button-icon" // Could update this but it would impact QA
+                />
+            </LlmChatButton>
+        </span>
+    </Tooltip>
 )

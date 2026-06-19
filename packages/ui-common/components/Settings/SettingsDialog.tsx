@@ -235,7 +235,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             updateSettings({
                 branding: {
                     iconSuggestion: brandingSuggestions["iconSuggestion"],
-                    logoSource: "auto",
+                    logoSource: logoServiceToken ? "auto" : "generic",
                 },
             })
         }
