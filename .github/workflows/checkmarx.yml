@@ -1,7 +1,7 @@
 ---
 name: Checkmarx One
 
-"on":
+on:
     schedule:
         # M-F at 2:30 am UTC (offset from neuro-san to avoid contention)
         - cron: "30 2 * * 1-5"
