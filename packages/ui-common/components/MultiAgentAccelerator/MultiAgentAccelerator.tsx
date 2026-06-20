@@ -38,21 +38,22 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
-    getFrontman,
     GRACE_PERIOD_MS,
     SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
-import {ImportNetworkModal, jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
+import {ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {
-    getAgentFunction,
-    getAgentNetworks,
-    getConnectivity,
-    sendNetworkDesignerUpsert,
-} from "../../controller/agent/Agent"
+    extractTemporaryNetworksFromMessage,
+    IMPORT_FAILURE_DETAIL,
+    importNetworkFromJson,
+    isTemporaryNetwork,
+    notifySaveError,
+    streamNetworkDesignerUpsert,
+} from "./TemporaryNetworks"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
+import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
@@ -85,44 +86,6 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
-// #region: Agent-save helpers
-
-/**
- * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
- * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
- */
-const collectNetworksFromChunk = (
-    chunk: string,
-    updated: AgentNetworkDefinitionEntry[],
-    accumulated: TemporaryNetwork[]
-): TemporaryNetwork[] => {
-    try {
-        const chatMessage = chatMessageFromChunk(chunk)
-        if (!chatMessage) return accumulated
-
-        // Always use the user's edited definition as the authoritative value.
-        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
-        if (converted.length === 0) return accumulated
-        return mergeNetworks(accumulated, converted)
-    } catch (e: unknown) {
-        console.warn("Failed to process chunk from network designer:", e)
-        return accumulated
-    }
-}
-
-/** Logs and notifies about a save error. Suppresses AbortError (user-canceled). */
-const notifySaveError = (agentName: string, e: unknown): void => {
-    if (e instanceof DOMException && e.name === "AbortError") return
-    console.error("Failed to submit agent network update:", e)
-    const detail =
-        e instanceof DOMException && e.name === "TimeoutError"
-            ? "The request timed out waiting for the server. Please try again."
-            : String(e)
-    sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
-}
-
-// #endregion: Agent-save helpers
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -638,17 +601,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             signal: AbortSignal
         ): Promise<void> => {
             try {
-                let newNetworks: TemporaryNetwork[] = []
-                await sendNetworkDesignerUpsert(
+                const newNetworks = await streamNetworkDesignerUpsert(
                     neuroSanURL,
                     signal,
                     agentName,
                     updated,
                     agentNetworkName,
-                    username,
-                    (chunk) => {
-                        newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
-                    }
+                    username
                 )
 
                 if (newNetworks.length === 0) {
@@ -692,39 +651,19 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         async (agentNetworkName: string, content: string): Promise<void> => {
             setIsImporting(true)
             try {
-                const networkDef = jsonToNetworkDefinition(content)
-                if (networkDef.length === 0) {
+                const result = await importNetworkFromJson(content, agentNetworkName, neuroSanURL, username)
+                if ("failure" in result) {
                     sendNotification(
                         NotificationType.error,
                         `Failed to import "${agentNetworkName}".`,
-                        "The file does not contain a valid network definition."
+                        IMPORT_FAILURE_DETAIL[result.failure]
                     )
                     return
                 }
-                const frontman = getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "agent"
-                const abortController = new AbortController()
-                let newNetworks: TemporaryNetwork[] = []
-                await sendNetworkDesignerUpsert(
-                    neuroSanURL,
-                    abortController.signal,
-                    frontman,
-                    networkDef,
-                    agentNetworkName,
-                    username,
-                    (chunk) => {
-                        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
-                    }
-                )
-                if (newNetworks.length === 0) {
-                    sendNotification(
-                        NotificationType.error,
-                        `Failed to import "${agentNetworkName}".`,
-                        "The network designer did not return a reservation. Please try again."
-                    )
-                    return
-                }
-                useTempNetworksStore.getState().upsertTempNetworks(newNetworks)
-                const first = newNetworks[0]
+                useTempNetworksStore.getState().upsertTempNetworks(result.networks)
+                // An import defines a single network, so the designer returns one reservation. Highlight and
+                // navigate to it; any further entries (none expected) are still upserted above.
+                const [first] = result.networks
                 if (first) {
                     setNewlyAddedTemporaryNetworks(new Set([first.agentInfo.agent_name]))
                     changeSelectedNetwork(first.agentInfo.agent_name)
@@ -1028,6 +967,43 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         />
     )
 
+    // Blocking overlay shown while an imported network is being created on the backend.
+    const getImportBackdrop = () => (
+        <Backdrop
+            id="multi-agent-accelerator-import-backdrop"
+            data-testid="multi-agent-accelerator-import-backdrop"
+            open={isImporting}
+            sx={{zIndex: getZIndex(3, theme)}}
+        >
+            <Paper
+                elevation={6}
+                role="status"
+                aria-live="polite"
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    px: 4,
+                    py: 2.5,
+                    borderRadius: 2,
+                    maxWidth: 480,
+                }}
+            >
+                <CircularProgress
+                    id="multi-agent-accelerator-import-spinner"
+                    size={24}
+                />
+                <Typography
+                    id="multi-agent-accelerator-import-title"
+                    variant="body1"
+                    sx={{fontWeight: "bold"}}
+                >
+                    Importing network...
+                </Typography>
+            </Paper>
+        </Backdrop>
+    )
+
     const getTourModal = () =>
         tourModalOpen && (
             <MUIDialog
@@ -1150,37 +1126,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
             {getImportNetworkModal()}
-            <Backdrop
-                id="multi-agent-accelerator-import-backdrop"
-                data-testid="multi-agent-accelerator-import-backdrop"
-                open={isImporting}
-                sx={{zIndex: (t) => t.zIndex.modal + 1}}
-            >
-                <Paper
-                    elevation={6}
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        px: 4,
-                        py: 2.5,
-                        borderRadius: 2,
-                        maxWidth: 480,
-                    }}
-                >
-                    <CircularProgress
-                        id="multi-agent-accelerator-import-spinner"
-                        size={24}
-                    />
-                    <Typography
-                        id="multi-agent-accelerator-import-title"
-                        variant="body1"
-                        sx={{fontWeight: "bold"}}
-                    >
-                        Importing network...
-                    </Typography>
-                </Paper>
-            </Backdrop>
+            {getImportBackdrop()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

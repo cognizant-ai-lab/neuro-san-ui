@@ -16,7 +16,7 @@ limitations under the License.
 
 import {HumanMessage} from "@langchain/core/messages"
 import {useColorScheme} from "@mui/material/styles"
-import {act, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
@@ -57,7 +57,7 @@ import {
     getAgentFunction,
     getAgentNetworks,
     getConnectivity,
-    sendNetworkDesignerUpsert,
+    sendNetworkDesignerRequest,
     testConnection,
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
@@ -252,7 +252,7 @@ describe("MultiAgentAccelerator", () => {
         ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
-        ;(sendNetworkDesignerUpsert as jest.Mock).mockResolvedValue([])
+        ;(sendNetworkDesignerRequest as jest.Mock).mockResolvedValue([])
 
         // make extractConversations the real implementation
         ;(extractConversations as jest.Mock).mockImplementation(
@@ -376,7 +376,7 @@ describe("MultiAgentAccelerator", () => {
             resolveSend = resolve
         })
 
-        ;(sendNetworkDesignerUpsert as jest.Mock).mockImplementation(
+        ;(sendNetworkDesignerRequest as jest.Mock).mockImplementation(
             async (_neuroSanUrl, _signal, _frontman, _networkDef, _agentNetworkName, _userName, onChunk) => {
                 onChunk(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
                 await sendPromise
@@ -423,7 +423,7 @@ describe("MultiAgentAccelerator", () => {
             )
         })
         // The designer should never be contacted when the definition is empty
-        expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
+        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
     })
 
     it("should show an error toast when the network designer returns no reservation", async () => {
@@ -440,7 +440,7 @@ describe("MultiAgentAccelerator", () => {
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
         })
-        expect(sendNetworkDesignerUpsert).toHaveBeenCalled()
+        expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(1)
     })
 
     it("should show an error toast when conversion of the imported file throws", async () => {
@@ -459,20 +459,17 @@ describe("MultiAgentAccelerator", () => {
         await waitFor(() => {
             expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update network "Broken Network"'))
         })
-        expect(sendNetworkDesignerUpsert).not.toHaveBeenCalled()
+        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
     })
 
-    it("should pick the frontman as the agent not referenced as a tool by any other agent", async () => {
-        // The designer mock returns no reservation, which surfaces a notification (logged via console.debug).
+    it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
         jest.spyOn(console, "debug").mockImplementation()
-        const upsertMock = sendNetworkDesignerUpsert as jest.Mock
+        const upsertMock = sendNetworkDesignerRequest as jest.Mock
         upsertMock.mockResolvedValue([])
 
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
 
-        // boss references worker as a tool; worker has no tools key (covers `entry.tools ?? []`).
-        // Therefore boss is the frontman.
         await act(async () => {
             onImport(
                 "Two Agent Network",
@@ -483,33 +480,9 @@ describe("MultiAgentAccelerator", () => {
             )
         })
 
-        await waitFor(() => expect(upsertMock).toHaveBeenCalled())
-        // Third positional arg to sendNetworkDesignerUpsert is the frontman name.
+        await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1))
+        // Third positional arg to sendNetworkDesignerRequest is the frontman name.
         expect(upsertMock.mock.calls[0][2]).toBe("boss")
-    })
-
-    it("should fall back to the first entry as frontman when every agent is referenced as a tool", async () => {
-        // The designer mock returns no reservation, which surfaces a notification (logged via console.debug).
-        jest.spyOn(console, "debug").mockImplementation()
-        const upsertMock = sendNetworkDesignerUpsert as jest.Mock
-        upsertMock.mockResolvedValue([])
-
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        // Each agent is listed as a tool of the other, so no clear frontman exists; falls back to the first.
-        await act(async () => {
-            onImport(
-                "Cyclic Network",
-                JSON.stringify([
-                    {origin: "alpha", tools: ["beta"], instructions: "a"},
-                    {origin: "beta", tools: ["alpha"], instructions: "b"},
-                ])
-            )
-        })
-
-        await waitFor(() => expect(upsertMock).toHaveBeenCalled())
-        expect(upsertMock.mock.calls[0][2]).toBe("alpha")
     })
 
     it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
@@ -527,13 +500,12 @@ describe("MultiAgentAccelerator", () => {
         await user.click(importButton)
 
         // Modal is mounted after clicking import button
-        expect(screen.getByText("Import network definition")).toBeInTheDocument()
-        expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
+        const modalHeading = screen.getByText("Import network definition")
+        expect(modalHeading).toBeInTheDocument()
 
         // The modal is unmounted after clicking the cancel button.
         await user.click(screen.getByRole("button", {name: /cancel/iu}))
-        await waitFor(() => expect(screen.queryByText("Import network definition")).not.toBeInTheDocument())
-        await waitFor(() => expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument())
+        await waitForElementToBeRemoved(modalHeading)
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {

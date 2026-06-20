@@ -37,7 +37,7 @@ import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman} from "../const"
 
-// #region: Constants
+//#region: Constants
 
 export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
@@ -45,9 +45,9 @@ const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
 const TEMPORARY_FOLDER_DISPLAY = "Temporary"
 
-// #endregion: Constants
+//#endregion: Constants
 
-// #region: Helpers
+//#region: Helpers
 
 /**
  * Parse and validate a network definition file. Imports are JSON only.
@@ -70,19 +70,29 @@ export const parseNetworkFileContent = (
 
 /**
  * Converts an imported network JSON file into an array of AgentNetworkDefinitionEntry objects
- * suitable for sendNetworkDesignerUpsert.
+ * suitable for sendNetworkDesignerRequest.
  *
  * Imports are the top-level array shape exported for a Temporary network — each entry already
  * carries `origin`, `tools`, `display_as`, etc. Entries without a string `origin` are dropped;
  * anything that isn't an array yields an empty result.
+ *
+ * The editable text fields (`instructions`, `description`) are trimmed here so downstream
+ * consumers receive canonical values — e.g. HOCON triple-quoted blocks export with a leading
+ * newline after `"""`, which would otherwise surface as a stray blank line in the editor.
  */
 export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
     const parsed = JSON.parse(jsonString) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-        (entry): entry is AgentNetworkDefinitionEntry =>
-            typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
-    )
+    return parsed
+        .filter(
+            (entry): entry is AgentNetworkDefinitionEntry =>
+                typeof (entry as Record<string, unknown> | null)?.["origin"] === "string"
+        )
+        .map((entry) => ({
+            ...entry,
+            ...(entry.instructions !== undefined && {instructions: entry.instructions.trim()}),
+            ...(entry.description !== undefined && {description: entry.description.trim()}),
+        }))
 }
 
 /** High-level counts shown on the review step so the user can sanity-check the import. */
@@ -165,9 +175,9 @@ export const findNonConflictingName = (base: string, existingNames: readonly str
     return `${base} (${counter})`
 }
 
-// #endregion: Helpers
+//#endregion: Helpers
 
-// #region: Styled Components
+//#region: Styled Components
 
 const DropZone = styled(Box, {
     shouldForwardProp: (prop) => prop !== "isDragOver",
@@ -188,9 +198,9 @@ const DropZone = styled(Box, {
     transition: "border-color 0.2s ease",
 }))
 
-// #endregion: Styled Components
+//#endregion: Styled Components
 
-// #region: Types
+//#region: Types
 
 type ParseState = "loading" | "success" | "error"
 
@@ -201,7 +211,7 @@ export interface ImportNetworkModalProps {
     readonly onImport?: (name: string, content: string) => void
 }
 
-// #endregion: Types
+//#endregion: Types
 
 const EMPTY_NETWORK_NAMES: readonly string[] = []
 
@@ -236,15 +246,15 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         }
     }, [isOpen])
 
-    // #region: Conflict detection
+    //#region: Conflict detection
 
     const normalizedName = normalizeForComparison(networkName)
     const nameHasConflict = existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizedName)
     const showConflict = nameHasConflict && conflictAcknowledgedFor !== normalizedName
 
-    // #endregion: Conflict detection
+    //#endregion: Conflict detection
 
-    // #region: File processing
+    //#region: File processing
 
     const processFile = (selectedFile: File) => {
         setFile(selectedFile)
@@ -314,9 +324,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         event.target.value = ""
     }
 
-    // #endregion: File processing
+    //#endregion: File processing
 
-    // #region: Navigation
+    //#region: Navigation
 
     const handleBack = () => setActiveStep((prev) => prev - 1)
 
@@ -334,9 +344,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         onClose()
     }
 
-    // #endregion: Navigation
+    //#endregion: Navigation
 
-    // #region: Conflict resolution
+    //#region: Conflict resolution
 
     const handleReplace = () => {
         setConflictAcknowledgedFor(normalizedName)
@@ -348,7 +358,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         setConflictAcknowledgedFor(null)
     }
 
-    // #endregion: Conflict resolution
+    //#endregion: Conflict resolution
 
     const {name: fileStem, ext: fileNameExt} = file ? splitFilename(file.name) : {name: "", ext: ""}
     const fileExt = fileNameExt.toUpperCase()

@@ -245,11 +245,11 @@ export const getAgentFunction = async (url: string, agent: string, userId: strin
 }
 
 /**
- * Streams the Agent Network Designer endpoint with an updated agent definition.
- * Calls `onChunk` for each line received; callers are responsible for parsing
- * reservations / networks out of each chunk.
+ * Streams the Agent Network Designer endpoint with an agent definition, either updating an
+ * existing network or adding a fresh one. Calls `onChunk` for each line received; callers are
+ * responsible for parsing reservations / networks out of each chunk.
  */
-export const sendNetworkDesignerUpsert = async (
+export const sendNetworkDesignerRequest = async (
     url: string,
     signal: AbortSignal,
     agentName: string,

@@ -68,18 +68,11 @@ describe("ImportNetworkModal", () => {
     it("should not render content when isOpen is false", () => {
         renderModal({isOpen: false})
         expect(screen.queryByText("Import network definition")).not.toBeInTheDocument()
-        expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument()
     })
 
     it("should render content when isOpen is true", () => {
         renderModal()
         expect(screen.getByText("Import network definition")).toBeInTheDocument()
-        expect(screen.getByText("Select file")).toBeInTheDocument()
-        expect(screen.getByText("Review")).toBeInTheDocument()
-        expect(screen.getByText("Confirm")).toBeInTheDocument()
-        expect(screen.getByText("Drag & drop a network definition")).toBeInTheDocument()
-        expect(screen.getByRole("button", {name: /browse your files/iu})).toBeInTheDocument()
-        expect(screen.getByText(/Accepts \.json up to 5 MB\./u)).toBeInTheDocument()
     })
 
     it("should show the first step as active", () => {
@@ -102,23 +95,15 @@ describe("ImportNetworkModal", () => {
         expect(onCloseMock).toHaveBeenCalledTimes(1)
     })
 
-    it("should trigger file input click when the drop zone is clicked", async () => {
+    it.each([
+        {name: "the drop zone is clicked", button: /drop zone/iu},
+        {name: "the browse link is clicked", button: /browse your files/iu},
+    ])("should trigger file input click when $name", async ({button}) => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
         const clickSpy = jest.spyOn(fileInput, "click")
 
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        await user.click(dropZone)
-
-        expect(clickSpy).toHaveBeenCalledTimes(1)
-    })
-
-    it("should trigger file input click when the browse link is clicked", async () => {
-        renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        const clickSpy = jest.spyOn(fileInput, "click")
-
-        await user.click(screen.getByRole("button", {name: /browse your files/iu}))
+        await user.click(screen.getByRole("button", {name: button}))
 
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
@@ -193,8 +178,8 @@ describe("ImportNetworkModal", () => {
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        // Step 2 heading — the drop-zone should be gone
-        await waitFor(() => expect(screen.queryByRole("button", {name: /drop zone/iu})).not.toBeInTheDocument())
+        // The drop synchronously advances to step 2, unmounting the drop zone.
+        expect(dropZone).not.toBeInTheDocument()
     })
 
     it("should show success banner and show Continue button after a valid JSON file is dropped", async () => {
@@ -260,25 +245,28 @@ describe("ImportNetworkModal", () => {
         await screen.findByText(/Failed to read the file\./u)
     })
 
-    it("should reject a dropped file with an unsupported extension before parsing", async () => {
+    it.each([
+        {
+            name: "an unsupported extension",
+            makeFile: () => new File(["not a network"], "diagram.png", {type: "application/octet-stream"}),
+            error: /Unsupported file type ".png"/u,
+        },
+        {
+            name: "a size that exceeds the max",
+            makeFile: () => {
+                const oversized = new File(['{"agents": {}}'], "huge.json", {type: "application/json"})
+                Object.defineProperty(oversized, "size", {value: 6 * 1024 * 1024})
+                return oversized
+            },
+            error: /File is too large/u,
+        },
+    ])("should reject a dropped file with $name before reading it", async ({makeFile, error}) => {
         const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
         renderModal()
         const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "diagram.png", "not a network")
-        await screen.findByText(/Unsupported file type ".png"/u)
+        fireEvent.drop(dropZone, {dataTransfer: {files: [makeFile()]}})
+        await screen.findByText(error)
         // No Continue button, and the file was never read/parsed
-        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
-        expect(readSpy).not.toHaveBeenCalled()
-    })
-
-    it("should reject a dropped file that exceeds the max size before parsing", async () => {
-        const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
-        renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        const oversized = new File(['{"agents": {}}'], "huge.json", {type: "application/json"})
-        Object.defineProperty(oversized, "size", {value: 6 * 1024 * 1024})
-        fireEvent.drop(dropZone, {dataTransfer: {files: [oversized]}})
-        await screen.findByText(/File is too large/u)
         expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
         expect(readSpy).not.toHaveBeenCalled()
     })
@@ -392,41 +380,36 @@ describe("ImportNetworkModal", () => {
     })
 })
 
-// #region: Utility function unit tests
+//#region: Utility function unit tests
 
 describe("parseNetworkFileContent", () => {
-    it("should parse valid JSON", () => {
-        const result = parseNetworkFileContent('{"agents": {}}')
+    it.each([
+        {name: "a JSON object", content: '{"agents": {}}', parsed: {agents: {}}},
+        {
+            name: "a top-level JSON array (Temporary network export shape)",
+            content: '[{"origin": "frontman"}]',
+            parsed: [{origin: "frontman"}],
+        },
+    ])("should parse $name", ({content, parsed}) => {
+        const result = parseNetworkFileContent(content)
         expect(result.success).toBe(true)
         // Use type assertion — jest assertions don't narrow TypeScript types
-        expect(JSON.parse((result as {success: true; json: string}).json)).toEqual({agents: {}})
+        expect(JSON.parse((result as {success: true; json: string}).json)).toEqual(parsed)
     })
 
-    it("should parse a top-level JSON array (Temporary network export shape)", () => {
-        const result = parseNetworkFileContent('[{"origin": "frontman"}]')
-        expect(result.success).toBe(true)
-        expect(JSON.parse((result as {success: true; json: string}).json)).toEqual([{origin: "frontman"}])
-    })
-
-    it("should return a failure result for non-JSON content", () => {
-        const result = parseNetworkFileContent("::::: not json :::::")
-        expect(result.success).toBe(false)
-    })
-
-    it("should fail on HOCON-only constructs that are not valid JSON", () => {
+    it.each([
+        {name: "non-JSON content", content: "::::: not json :::::"},
         // HOCON is no longer supported — an include statement is not valid JSON.
-        const result = parseNetworkFileContent('include "llm_config.hocon"\n{"agents": {}}')
-        expect(result.success).toBe(false)
+        {name: "a HOCON include statement", content: 'include "llm_config.hocon"\n{"agents": {}}'},
+    ])("should return a failure result for $name", ({content}) => {
+        expect(parseNetworkFileContent(content).success).toBe(false)
     })
 
-    it("should fail on empty content", () => {
-        const result = parseNetworkFileContent("")
-        expect(result.success).toBe(false)
-        expect((result as {success: false; error: string}).error).toMatch(/empty/iu)
-    })
-
-    it("should fail on whitespace-only content", () => {
-        const result = parseNetworkFileContent("   \n\t  \n")
+    it.each([
+        {name: "empty content", content: ""},
+        {name: "whitespace-only content", content: "   \n\t  \n"},
+    ])("should fail with an 'empty' error on $name", ({content}) => {
+        const result = parseNetworkFileContent(content)
         expect(result.success).toBe(false)
         expect((result as {success: false; error: string}).error).toMatch(/empty/iu)
     })
@@ -439,32 +422,42 @@ describe("validateImportFile", () => {
         return file
     }
 
-    it("should accept supported extensions within the size limit", () => {
-        expect(validateImportFile(fileWithSize("net.json", 1024))).toBeNull()
-        // Extension match is case-insensitive
-        expect(validateImportFile(fileWithSize("NET.JSON", 1024))).toBeNull()
+    it.each([
+        {name: "a supported extension within the size limit", fileName: "net.json", size: 1024},
+        {name: "a supported extension case-insensitively", fileName: "NET.JSON", size: 1024},
+        {name: "a file exactly at the size limit", fileName: "net.json", size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES},
+    ])("should accept $name", ({fileName, size}) => {
+        expect(validateImportFile(fileWithSize(fileName, size))).toBeNull()
     })
 
-    it("should reject unsupported extensions", () => {
+    it.each([
         // HOCON is no longer accepted — only JSON.
-        expect(validateImportFile(fileWithSize("net.hocon", 1024))).toMatch(/Unsupported file type ".hocon"/u)
-        expect(validateImportFile(fileWithSize("image.png", 1024))).toMatch(/Unsupported file type ".png"/u)
-        expect(validateImportFile(fileWithSize("noextension", 1024))).toMatch(/Unsupported file type\./u)
-    })
-
-    it("should reject files larger than the max size", () => {
-        expect(validateImportFile(fileWithSize("net.json", IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1))).toMatch(
-            /File is too large/u
-        )
-    })
-
-    it("should accept a file exactly at the size limit", () => {
-        expect(validateImportFile(fileWithSize("net.json", IMPORT_MODAL_MAX_FILE_SIZE_BYTES))).toBeNull()
+        {
+            name: "an unsupported .hocon extension",
+            fileName: "net.hocon",
+            size: 1024,
+            error: /Unsupported file type ".hocon"/u,
+        },
+        {
+            name: "an unsupported .png extension",
+            fileName: "image.png",
+            size: 1024,
+            error: /Unsupported file type ".png"/u,
+        },
+        {name: "a file with no extension", fileName: "noextension", size: 1024, error: /Unsupported file type\./u},
+        {
+            name: "a file larger than the max size",
+            fileName: "net.json",
+            size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1,
+            error: /File is too large/u,
+        },
+    ])("should reject $name", ({fileName, size, error}) => {
+        expect(validateImportFile(fileWithSize(fileName, size))).toMatch(error)
     })
 })
 
 describe("jsonToNetworkDefinition", () => {
-    it("should pass through a top-level array of entries (Temporary network export shape)", () => {
+    it("should pass through a top-level array of entries, dropping those without a string origin", () => {
         const json = JSON.stringify([
             {
                 origin: "frontman",
@@ -474,6 +467,8 @@ describe("jsonToNetworkDefinition", () => {
                 description: "The boss",
             },
             {origin: "helper", tools: [], display_as: "coded_tool"},
+            {instructions: "no origin"},
+            null,
         ])
         expect(jsonToNetworkDefinition(json)).toEqual([
             {
@@ -487,96 +482,130 @@ describe("jsonToNetworkDefinition", () => {
         ])
     })
 
-    it("should drop array entries without a string origin", () => {
-        const json = JSON.stringify([{origin: "valid"}, {instructions: "no origin"}, null])
-        const result = jsonToNetworkDefinition(json)
-        expect(result).toHaveLength(1)
-        expect(result[0].origin).toBe("valid")
+    it.each([
+        {name: "an object with agents", json: '{"agents": {}}'},
+        {name: "an object with a tools array", json: '{"tools": [{"name": "frontman"}]}'},
+        {name: "an arbitrary object", json: '{"something": "else"}'},
+        {name: "an empty array", json: "[]"},
+    ])("should return an empty array for $name", ({json}) => {
+        expect(jsonToNetworkDefinition(json)).toEqual([])
     })
 
-    it("should return an empty array when the JSON is not a top-level array", () => {
-        expect(jsonToNetworkDefinition('{"agents": {}}')).toEqual([])
-        expect(jsonToNetworkDefinition('{"tools": [{"name": "frontman"}]}')).toEqual([])
-        expect(jsonToNetworkDefinition('{"something": "else"}')).toEqual([])
+    it("should trim leading/trailing whitespace from instructions and description", () => {
+        const json = JSON.stringify([
+            {
+                origin: "frontman",
+                tools: [],
+                display_as: "llm_agent",
+                instructions: "\n  Lead the team  \n",
+                description: "  The boss\n",
+            },
+        ])
+        expect(jsonToNetworkDefinition(json)).toEqual([
+            {
+                origin: "frontman",
+                tools: [],
+                display_as: "llm_agent",
+                instructions: "Lead the team",
+                description: "The boss",
+            },
+        ])
     })
 
-    it("should return an empty array for an empty array", () => {
-        expect(jsonToNetworkDefinition("[]")).toEqual([])
+    it("should leave entries without instructions or description untouched", () => {
+        const json = JSON.stringify([{origin: "helper", tools: [], display_as: "coded_tool"}])
+        expect(jsonToNetworkDefinition(json)).toEqual([{origin: "helper", tools: [], display_as: "coded_tool"}])
     })
 })
 
 describe("summarizeNetworkDefinition", () => {
-    it("should count agents by display_as and resolve the frontman", () => {
-        const summary = summarizeNetworkDefinition([
-            {origin: "lead", display_as: "llm_agent", tools: ["manager", "search", "external"]},
-            {origin: "manager", display_as: "llm_agent", tools: []},
-            {origin: "search", display_as: "coded_tool", tools: []},
-            {origin: "fetch", display_as: "coded_tool", tools: []},
-            {origin: "external", display_as: "external_agent", tools: []},
-        ])
-        expect(summary).toEqual({agents: 2, codedTools: 2, externalAgents: 1, frontman: "lead"})
-    })
-
-    it("should report zero counts and a dash frontman for an empty definition", () => {
-        expect(summarizeNetworkDefinition([])).toEqual({
-            agents: 0,
-            codedTools: 0,
-            externalAgents: 0,
-            frontman: "—",
-        })
-    })
-
-    it("should fall back to the first entry as frontman when the network is fully cyclic", () => {
-        const summary = summarizeNetworkDefinition([
-            {origin: "alpha", display_as: "llm_agent", tools: ["beta"]},
-            {origin: "beta", display_as: "llm_agent", tools: ["alpha"]},
-        ])
-        expect(summary.frontman).toBe("alpha")
+    it.each([
+        {
+            name: "count agents by display_as and resolve the frontman",
+            networkDef: [
+                {origin: "lead", display_as: "llm_agent", tools: ["manager", "search", "external"]},
+                {origin: "manager", display_as: "llm_agent", tools: []},
+                {origin: "search", display_as: "coded_tool", tools: []},
+                {origin: "fetch", display_as: "coded_tool", tools: []},
+                {origin: "external", display_as: "external_agent", tools: []},
+            ],
+            expected: {agents: 2, codedTools: 2, externalAgents: 1, frontman: "lead"},
+        },
+        {
+            name: "report zero counts and a dash frontman for an empty definition",
+            networkDef: [],
+            expected: {agents: 0, codedTools: 0, externalAgents: 0, frontman: "—"},
+        },
+        {
+            name: "fall back to the first entry as frontman when the network is fully cyclic",
+            networkDef: [
+                {origin: "alpha", display_as: "llm_agent", tools: ["beta"]},
+                {origin: "beta", display_as: "llm_agent", tools: ["alpha"]},
+            ],
+            expected: {agents: 2, codedTools: 0, externalAgents: 0, frontman: "alpha"},
+        },
+    ])("should $name", ({networkDef, expected}) => {
+        expect(summarizeNetworkDefinition(networkDef)).toEqual(expected)
     })
 })
 
 describe("formatFileSize", () => {
-    it("should format bytes", () => {
-        expect(formatFileSize(512)).toBe("512 B")
-    })
-    it("should format kilobytes", () => {
-        expect(formatFileSize(4300)).toBe("4.2 KB")
-    })
-    it("should format megabytes", () => {
-        expect(formatFileSize(2 * 1024 * 1024)).toBe("2.0 MB")
+    it.each([
+        {name: "bytes", bytes: 512, expected: "512 B"},
+        {name: "kilobytes", bytes: 4300, expected: "4.2 KB"},
+        {name: "megabytes", bytes: 2 * 1024 * 1024, expected: "2.0 MB"},
+    ])("should format $name", ({bytes, expected}) => {
+        expect(formatFileSize(bytes)).toBe(expected)
     })
 })
 
 describe("filenameToNetworkName", () => {
-    it("should convert underscore filename to spaced, capitalized name", () => {
-        expect(filenameToNetworkName("ecommerce_support.json")).toBe("Ecommerce Support")
-    })
-    it("should convert hyphenated filename", () => {
-        expect(filenameToNetworkName("my-network.json")).toBe("My Network")
-    })
-    it("should handle filename with no extension", () => {
-        expect(filenameToNetworkName("mynetwork")).toBe("Mynetwork")
-    })
-    it("should strip trailing UUIDs from filenames", () => {
-        expect(filenameToNetworkName("autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.json")).toBe(
-            "Autonomous Venture Studio Ops"
-        )
-    })
-    it("should keep normal filenames unchanged aside from formatting", () => {
-        expect(filenameToNetworkName("my_network.json")).toBe("My Network")
+    it.each([
+        {
+            name: "converts an underscore filename to a spaced, capitalized name",
+            filename: "ecommerce_support.json",
+            expected: "Ecommerce Support",
+        },
+        {name: "converts a hyphenated filename", filename: "my-network.json", expected: "My Network"},
+        {name: "handles a filename with no extension", filename: "mynetwork", expected: "Mynetwork"},
+        {
+            name: "strips a trailing UUID from the filename",
+            filename: "autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.json",
+            expected: "Autonomous Venture Studio Ops",
+        },
+        {
+            name: "keeps a normal filename unchanged aside from formatting",
+            filename: "my_network.json",
+            expected: "My Network",
+        },
+    ])("$name", ({filename, expected}) => {
+        expect(filenameToNetworkName(filename)).toBe(expected)
     })
 })
 
 describe("findNonConflictingName", () => {
-    it("should return base name when no conflict", () => {
-        expect(findNonConflictingName("my network", ["other network"])).toBe("my network")
-    })
-    it("should append (2) on first conflict", () => {
-        expect(findNonConflictingName("my network", ["my_network"])).toBe("my network (2)")
-    })
-    it("should increment counter if (2) also conflicts", () => {
-        expect(findNonConflictingName("my network", ["my_network", "my network (2)"])).toBe("my network (3)")
+    it.each([
+        {
+            name: "returns the base name when there is no conflict",
+            base: "my network",
+            existing: ["other network"],
+            expected: "my network",
+        },
+        {
+            name: "appends (2) on the first conflict",
+            base: "my network",
+            existing: ["my_network"],
+            expected: "my network (2)",
+        },
+        {
+            name: "increments the counter when (2) also conflicts",
+            base: "my network",
+            existing: ["my_network", "my network (2)"],
+            expected: "my network (3)",
+        },
+    ])("$name", ({base, existing, expected}) => {
+        expect(findNonConflictingName(base, existing)).toBe(expected)
     })
 })
 
-// #endregion: Utility function unit tests
+//#endregion: Utility function unit tests

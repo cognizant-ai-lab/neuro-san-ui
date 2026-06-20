@@ -507,10 +507,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setSelectedAgent({
                 agentId: node.id,
                 agentName: node.data.agentName,
-                // Trim leading/trailing whitespace — HOCON triple-quoted blocks typically open
-                // with a newline right after """, which otherwise shows as an extra blank line.
-                initialInstructions: found?.instructions?.trim() ?? "",
-                initialDescription: found?.description?.trim() ?? "",
+                initialInstructions: found?.instructions ?? "",
+                initialDescription: found?.description ?? "",
             })
             setIsPopupOpen(true)
         },
