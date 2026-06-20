@@ -1,3 +1,4 @@
+import Business from "@mui/icons-material/Business"
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -533,10 +534,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 <Box>
                     {logoSource === "auto" || logoSource === "generic" ? (
                         <CustomerLogo
-                            logoServiceToken={logoServiceToken}
                             customer={customer}
-                            logoSource={logoSource}
+                            fallbackIcon={Business}
                             iconSuggestion={iconSuggestion}
+                            logoServiceToken={logoServiceToken}
+                            logoSource={logoSource}
                         />
                     ) : (
                         "(None)"
