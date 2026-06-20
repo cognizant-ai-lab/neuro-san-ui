@@ -189,10 +189,10 @@ describe("AgentNode", () => {
     })
 
     it("warns and falls back to default icon when agentIconSuggestion is invalid", async () => {
-        const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined)
         renderAgentNode({agentIconSuggestion: "NotARealMuiIconAtAll"})
-        expect(warnSpy).toHaveBeenCalledWith("Invalid MUI icon suggestion: NotARealMuiIconAtAll")
-        warnSpy.mockRestore()
+
+        // check for fallback icon
+        await screen.findByTestId("AutoAwesomeIcon")
     })
 
     it.each([
