@@ -16,6 +16,9 @@ interface SettingsRowProps {
     readonly tooltip: ReactNode
 }
 
+/**
+ * Lightweight component to encapsulate a row in the Settings page.
+ */
 export const SettingsRow: FC<SettingsRowProps> = ({
     checkmark,
     children,
@@ -38,6 +41,7 @@ export const SettingsRow: FC<SettingsRowProps> = ({
                     opacity: disabled ? 0.5 : 1,
                     width: "100%",
                 },
+                // Can't spread sx directly because it can be an array or object
                 ...(sx ? (Array.isArray(sx) ? sx : [sx]) : []),
             ]}
         >
