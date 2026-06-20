@@ -30,6 +30,7 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
+    TEST_AGENT_MUSIC_NERD_DISPLAY,
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
     TEST_DEEP_AGENT,
@@ -249,7 +250,6 @@ describe("SideBar", () => {
     })
 
     it("Should handle invalid icon suggestions correctly", async () => {
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
         renderSidebarComponent({
             // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
             networkIconSuggestions: {
@@ -262,10 +262,9 @@ describe("SideBar", () => {
         const header = screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
         await user.click(header)
 
-        screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
-        expect(screen.queryByText("NonExistentIcon")).not.toBeInTheDocument()
-
-        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("NonExistentIcon"))
+        // Check for fallback to default icon
+        const treeItem = screen.getByText(TEST_AGENT_MUSIC_NERD_DISPLAY).closest('[role="treeitem"]')
+        within(treeItem as HTMLElement).getByTestId("HubIcon")
     })
 
     it("Should render the tags when user mouses over the icon", async () => {
