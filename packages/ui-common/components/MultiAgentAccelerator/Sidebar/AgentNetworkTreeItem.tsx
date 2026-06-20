@@ -112,13 +112,26 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
 
     const iconNameSuggestion = item.iconSuggestion
 
-    let muiIconElement = null
+    let muiIconElement
 
-    if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
-        const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
-        muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
-    } else if (iconNameSuggestion) {
-        console.warn(`Icon "${iconNameSuggestion}" not found in MUI icons library.`)
+    // If the item is a child (i.e., a network), we want to render an icon next to it.
+    if (isChild) {
+        if (iconNameSuggestion) {
+            if (MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
+                // If the icon name suggestion is valid, use it to render the icon
+                const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
+                muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
+            } else {
+                // If the icon name suggestion is not valid, use a default icon
+                muiIconElement = <MuiIcons.Hub sx={{fontSize: "1rem"}} />
+            }
+        } else {
+            // If no icon name suggestion is provided, use a default icon
+            muiIconElement = <MuiIcons.Hub sx={{fontSize: "1rem"}} />
+        }
+    } else {
+        // Use folder icon for parent items (i.e., folders)
+        muiIconElement = <MuiIcons.Folder sx={{fontSize: "1rem"}} />
     }
 
     return (
