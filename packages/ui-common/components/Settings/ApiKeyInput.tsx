@@ -126,6 +126,8 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                         endAdornment: (
                             <InputAdornment position="end">
                                 <Tooltip title={showKey ? "Hide API key" : "Show API key"}>
+                                    {/*"span" required for tooltip when child is disabled. See:*/}
+                                    {/*https://github.com/mui/material-ui/issues/8416*/}
                                     <span>
                                         <IconButton
                                             aria-label="toggle key visibility"
