@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {isEmpty} from "lodash-es"
-import startCase from "lodash-es/startCase.js"
+import startCase from "lodash-es/startCase"
 
 import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"

@@ -1,5 +1,5 @@
 /*
-Copyright 2025 Cognizant Technology Solutions Corp, www.cognizant.com.
+Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import startCase from "lodash-es/startCase.js"
+import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"

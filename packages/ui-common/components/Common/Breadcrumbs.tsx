@@ -18,7 +18,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight"
 import Breadcrumbs from "@mui/material/Breadcrumbs"
 import Grid from "@mui/material/Grid"
 import Typography from "@mui/material/Typography"
-import startCase from "lodash-es/startCase.js"
+import startCase from "lodash-es/startCase"
 import {JSX as ReactJSX} from "react"
 
 interface NeuroAIBreadcrumbsProps {
