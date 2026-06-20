@@ -41,7 +41,6 @@ export const isFinalMessage = (chatMessage: {
 export const createConversation = (agents: string[], text: string, type: ChatMessageType): AgentConversation => ({
     // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
     // solution for HTTP on localhost.
-    // eslint-disable-next-line newline-per-chained-call
     id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
     agents: new Set(agents),
     startedAt: new Date(),

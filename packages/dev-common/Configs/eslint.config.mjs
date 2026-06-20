@@ -222,7 +222,6 @@ export default defineConfig([
             "getter-return": "error",
             "grouped-accessor-pairs": ["error", "anyOrder", {enforceForTSTypes: true}],
             "max-depth": "error",
-            "newline-per-chained-call": "error",
             "no-alert": "error",
             "no-array-constructor": "error",
             "no-const-assign": "error",
@@ -565,8 +564,6 @@ export default defineConfig([
                     ignorePattern: "^import .*",
                 },
             ],
-
-            "newline-per-chained-call": "error",
 
             // Enforce double quotes (already handled by prettier) _and_ prevent backtick expressions with no
             // interpolation See: https://github.com/prettier/eslint-config-prettier "special rules" "quotes"
