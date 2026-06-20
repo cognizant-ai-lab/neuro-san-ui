@@ -1,83 +1,93 @@
 import {render, screen} from "@testing-library/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {CustomerLogo} from "../../../components/Common/CustomerLogo"
-import {useSettingsStore} from "../../../state/Settings"
+import {CustomerLogo, LOGO_DEV_URL} from "../../../components/Logo/CustomerLogo"
 
 describe("CustomerLogo", () => {
     withStrictMocks()
 
-    beforeEach(() => {
-        useSettingsStore.getState().resetSettings()
-    })
-    it("renders correctly with default props", () => {
-        render(<CustomerLogo />)
-        const logoImg = screen.getByAltText("Cognizant Logo")
-        expect(logoImg).toBeInTheDocument()
-        expect(logoImg).toHaveAttribute("src", "/cognizant-logo-white.svg")
-    })
+    it("Renders nothing when null props provided", () => {
+        render(
+            <CustomerLogo
+                customer={null}
+                logoSource={null}
+            />
+        )
 
-    it("Renders fallback element when logoSource is 'none'", () => {
-        useSettingsStore.getState().updateSettings({branding: {logoSource: "none"}})
-        const fallbackText = "No Logo"
-        render(<CustomerLogo fallbackElement={fallbackText} />)
-        screen.getByText(fallbackText)
+        // should not render anything when logoSource is null
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
     })
 
     it("Renders MUI icon when logoSource is 'generic' and iconSuggestion is valid", () => {
-        useSettingsStore.getState().updateSettings({
-            branding: {
-                logoSource: "generic",
-                iconSuggestion: "AcUnit", // Valid MUI icon name
-            },
-        })
-        render(<CustomerLogo />)
+        render(
+            <CustomerLogo
+                customer={null}
+                logoSource="generic"
+                iconSuggestion="AcUnit" // Valid MUI icon name
+            />
+        )
         screen.getByTestId("AcUnitIcon")
     })
 
-    it("Falls back to supplied fallbackText logoSource is 'generic' but iconSuggestion is invalid", () => {
-        useSettingsStore.getState().updateSettings({
-            branding: {
-                logoSource: "generic",
-                iconSuggestion: "InvalidIconName", // Invalid MUI icon name
-            },
-        })
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
-        const fallbackText = "No Logo"
-        render(<CustomerLogo fallbackElement={fallbackText} />)
-        screen.getByText(fallbackText)
-
-        expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("InvalidIconName"))
+    it("Renders nothing if iconSuggestion is invalid", () => {
+        render(
+            <CustomerLogo
+                customer="Test Customer"
+                logoSource="generic"
+                iconSuggestion="InvalidIconName" // Invalid MUI icon name
+            />
+        )
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
     })
 
     it("Renders logo from logo service when logoSource is 'auto' and token is provided", () => {
         const mockToken = "mock-logo-dev-token"
         const mockCustomerName = "Test Customer"
-        useSettingsStore.getState().updateSettings({
-            branding: {
-                logoSource: "auto",
-                customer: mockCustomerName,
-            },
-        })
-        render(<CustomerLogo logoServiceToken={mockToken} />)
+        render(
+            <CustomerLogo
+                customer={mockCustomerName}
+                logoServiceToken={mockToken}
+                logoSource="auto"
+            />
+        )
         const logoImg = screen.getByAltText(`${mockCustomerName} Logo`)
         expect(logoImg).toBeInTheDocument()
         expect(logoImg).toHaveAttribute(
             "src",
-            expect.stringMatching(new RegExp(`${encodeURIComponent(mockCustomerName)}.*${mockToken}`, "u"))
+            expect.stringMatching(
+                new RegExp(`${LOGO_DEV_URL}.*${encodeURIComponent(mockCustomerName)}.*${mockToken}`, "u")
+            )
         )
     })
 
-    it("Falls back to supplied fallbackText when logoSource is 'auto' but token is missing", () => {
-        const mockCustomerName = "Test Customer"
-        useSettingsStore.getState().updateSettings({
-            branding: {
-                logoSource: "auto",
-                customer: mockCustomerName,
-            },
-        })
-        const fallbackText = "No Logo"
-        render(<CustomerLogo fallbackElement={fallbackText} />)
-        screen.getByText(fallbackText)
+    it("Renders nothing if auto icon requested but no token provided", () => {
+        render(
+            <CustomerLogo
+                customer="Test Customer"
+                logoSource="auto"
+            />
+        )
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    })
+
+    it("Renders nothing if auto icon requested but no customer provided", () => {
+        render(
+            <CustomerLogo
+                customer={null}
+                logoSource="auto"
+            />
+        )
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    })
+
+    it("Renders nothing if 'none' logo source is requested", () => {
+        render(
+            <CustomerLogo
+                customer="Test Customer"
+                logoSource="none"
+                logoServiceToken="mock-logo-dev-token"
+            />
+        )
+        expect(screen.queryByRole("img")).not.toBeInTheDocument()
     })
 })

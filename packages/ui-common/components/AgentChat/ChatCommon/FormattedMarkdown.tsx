@@ -125,6 +125,10 @@ export const FormattedMarkdown = ({
         return `${hashString(node?.toString() || "")}-${index}`
     }
 
+    if (!nodesList || nodesList.length === 0) {
+        return null
+    }
+
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []

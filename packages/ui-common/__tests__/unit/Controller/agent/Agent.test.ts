@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/TestUtils"
-import {AgentNetworkDefinitionEntry, TEMPORARY_NETWORK_FOLDER} from "../../../components/MultiAgentAccelerator/const"
+import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
+import {AgentNetworkDefinitionEntry, TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
-    getAgentIconSuggestions,
     getAgentNetworks,
     getBrandingSuggestions,
     getConnectivity,
-    getNetworkIconSuggestions,
     sendChatQuery,
     sendNetworkDesignerUpdate,
     testConnection,
     TestConnectionResult,
-} from "../../../controller/agent/Agent"
-import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
+} from "../../../../controller/agent/Agent"
+import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../../../controller/agent/IconSuggestions"
+import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {
     ApiPaths,
     // eslint-disable-next-line camelcase
@@ -38,9 +37,9 @@ import {
     ChatHistory,
     ChatMessageType,
     ChatRequest,
-} from "../../../generated/neuro-san/NeuroSanClient"
+} from "../../../../generated/neuro-san/NeuroSanClient"
 
-jest.mock("../../../controller/llm/LlmChat")
+jest.mock("../../../../controller/llm/LlmChat")
 
 const NEURO_SAN_EXAMPLE_URL = "https://neuro-san.example.com"
 
@@ -139,7 +138,6 @@ describe("Controller/Agent/sendChatQuery", () => {
     const testQuery = "test query with special characters: !@#$%^&*()_+"
     const testUser = "test user"
     const chatContext = {chat_histories: [] as ChatHistory[]}
-    // TODO: ugly cast due to how openapi-typescript generates object types. What to do here?
     const slyData = {login: testUser}
 
     const expectedRequestParams: ChatRequest = {

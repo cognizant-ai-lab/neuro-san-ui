@@ -1,15 +1,29 @@
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
-import {UserEvent} from "@testing-library/user-event"
-import {default as userEvent} from "@testing-library/user-event/dist/cjs/index.js"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
-import {DEFAULT_SETTINGS, useSettingsStore} from "../../../state/Settings"
+import {BrandingSuggestions} from "../../../controller/Types/Branding"
+import {DEFAULT_SETTINGS, LogoSource, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
 jest.mock("../../../components/Common/notification")
+
+const TEST_API_KEY = "test-api-key-123"
+
+const BRANDING_SUGGESTIONS_RESPONSE: BrandingSuggestions = {
+    background: "#AA0022",
+    iconSuggestion: "Add",
+    nodeColor: "#445566",
+    plasma: "#112233",
+    primary: "#778899",
+    // Generate a palette of 10 colors for testing
+    rangePalette: Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`),
+    secondary: "#AA0011",
+}
 
 describe("SettingsDialog", () => {
     withStrictMocks()
@@ -62,6 +76,149 @@ describe("SettingsDialog", () => {
         const closeButton = await screen.findByLabelText("close")
         await user.click(closeButton)
         expect(onCloseMock).toHaveBeenCalledTimes(1)
+    })
+
+    describe("API keys", () => {
+        it.each(["dark", "light"] satisfies PaletteMode[])("allows user to input and save API keys", async (mode) => {
+            global.fetch = mockFetch({}, true)
+
+            render(
+                <ThemeProvider theme={createTheme({palette: {mode}})}>
+                    <SettingsDialog
+                        id="settings-dialog"
+                        isOpen={true}
+                    />
+                </ThemeProvider>
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+            const testApiKey = TEST_API_KEY
+
+            await user.type(inputBox, testApiKey)
+
+            // Click "Test" button to (pretend) "test" the key
+            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            expect(testButton).toBeEnabled()
+            await user.click(testButton)
+
+            // Click "Save" to save the API key
+            const saveButton = await within(apiKeyInput).findByRole("button", {name: /Save/u})
+            expect(saveButton).toBeEnabled()
+
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(testApiKey)
+        })
+
+        it("allows user to test API keys", async () => {
+            global.fetch = mockFetch({}, true)
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+
+            await user.type(inputBox, TEST_API_KEY)
+
+            // Make sure we can clear the input
+            const clearButton = within(apiKeyInput).getByLabelText(/Clear input/u)
+            await user.click(clearButton)
+            expect(inputBox).toHaveValue("")
+
+            // Type the key again for testing
+            await user.type(inputBox, TEST_API_KEY)
+
+            // Click "Test" button to (pretend) "test" the key
+            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            expect(testButton).toBeEnabled()
+            await user.click(testButton)
+
+            within(apiKeyInput).getByTestId("CheckIcon")
+
+            // Now mock test failure and check that error icon appears
+            global.fetch = mockFetch({}, false)
+            await user.click(testButton)
+
+            within(apiKeyInput).getByTestId("ErrorIcon")
+        })
+
+        it("allows user request that API keys be forgotten", async () => {
+            // set an existing key value
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    OpenAI: TEST_API_KEY,
+                },
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+
+            const forgetButton = within(apiKeyInput).getByRole("button", {name: /Forget/u})
+            await user.click(forgetButton)
+
+            // First time, cancel
+            const cancelButton = await screen.findByText("Cancel")
+            await user.click(cancelButton)
+
+            // Key should still be there
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(TEST_API_KEY)
+
+            // Now click it again but this time confirm
+            await user.click(forgetButton)
+
+            const confirmButton = screen.getByText("Yes, forget key")
+            await user.click(confirmButton)
+
+            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBeFalsy()
+        })
+
+        it("allows a user to show/hide keys", async () => {
+            // set an existing key value
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    OpenAI: TEST_API_KEY,
+                },
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyContainer = screen.getByTestId("settings-dialog-openai-input")
+            const input = within(apiKeyContainer).getByPlaceholderText("sk-...")
+
+            // Assert initial state: masked
+            expect(input).toHaveAttribute("type", "password")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Click the toggle button
+            const showHideButton = within(apiKeyContainer).getByRole("button", {name: "toggle key visibility"})
+            await user.click(showHideButton)
+
+            // Now should be unmasked (regular text control)
+            expect(input).toHaveAttribute("type", "text")
+            expect(input).toHaveValue(TEST_API_KEY)
+
+            // Assert the Tooltip change
+            expect(screen.getByLabelText("Hide API key")).toBeInTheDocument()
+        })
     })
 
     it.each([
@@ -132,6 +289,25 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
     })
 
+    it("doesn't change palette if user clicks again on the existing option", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Find button to select "GrayScale" palette
+        const grayScaleButton = screen.getByRole("button", {name: /grayScale-palette-button/u})
+        await user.click(grayScaleButton)
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+
+        // Click the same button again
+        await user.click(grayScaleButton)
+
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
+    })
+
     it("Allows selecting and unselecting auto agent icon color", async () => {
         // Set non-default value first
         useSettingsStore.getState().updateSettings({
@@ -172,15 +348,40 @@ describe("SettingsDialog", () => {
 
         const zenModeToggle = screen.getByTestId("zen-mode-checkbox")
 
-        const checkBoxElement = within(zenModeToggle).getByRole("checkbox")
+        const checkboxElement = within(zenModeToggle).getByRole("checkbox")
 
-        expect(checkBoxElement).toBeChecked()
+        expect(checkboxElement).toBeChecked()
 
         // Click to disable Zen mode
-        await user.click(checkBoxElement)
-        expect(checkBoxElement).not.toBeChecked()
+        await user.click(checkboxElement)
+        expect(checkboxElement).not.toBeChecked()
 
         expect(useSettingsStore.getState().settings.behavior.enableZenMode).toBe(false)
+    })
+
+    it("Allows toggling native agent names mode", async () => {
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Default: mode should be disabled (meaning, we show beautified names)
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
+
+        // Locate the "beautified" toggle button
+        const beautifyToggle = screen.getByRole("button", {name: /Beautified/u})
+        await user.click(beautifyToggle)
+
+        // Should be no change since we're already on beautified mode
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
+
+        // Locate the "native" toggle button
+        const toggleButton = screen.getByRole("button", {name: /Native/u})
+        await user.click(toggleButton)
+
+        expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(true)
     })
 
     it("resets settings to default when reset button is confirmed", async () => {
@@ -251,38 +452,20 @@ describe("SettingsDialog", () => {
         expect(settingsAfter.appearance.agentNodeColor).toBe(agentNodeColor)
     })
 
-    it("Applies customer branding when selected", async () => {
-        // Reset values first
-        useSettingsStore.getState().resetSettings()
-
-        // Generate a palette of 10 colors for testing
-        const palette = Array.from({length: 10}, (_, i) => `#${i.toString(16).padStart(6, "0")}`)
-        const plasma = "#112233"
-        const nodeColor = "#445566"
-        const primary = "#778899"
-        const secondary = "#AA0011"
-        const background = "#AA0022"
-        const iconSuggestion = "Hourglass"
-
-        global.fetch = mockFetch(
-            {
-                background,
-                iconSuggestion,
-                nodeColor,
-                plasma,
-                primary,
-                rangePalette: palette,
-                secondary,
-            },
-            true
-        )
+    it("applies branding for requested customer", async () => {
+        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
 
         render(
             <SettingsDialog
                 id="settings-dialog"
                 isOpen={true}
+                logoServiceToken="test-logo-service-token-456"
             />
         )
+
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
@@ -293,29 +476,78 @@ describe("SettingsDialog", () => {
 
         expect(brandingSettings.customer).toBe(customerName)
         expect(appearanceSettings.rangePalette).toBe("brand")
-        expect(appearanceSettings.plasmaColor).toBe(plasma)
-        expect(appearanceSettings.agentNodeColor).toBe(nodeColor)
-        expect(brandingSettings.primary).toBe(primary)
-        expect(brandingSettings.secondary).toBe(secondary)
-        expect(brandingSettings.background).toBe(background)
-        expect(brandingSettings.rangePalette).toEqual(palette)
-        expect(brandingSettings.iconSuggestion).toBe(iconSuggestion)
+        expect(appearanceSettings.plasmaColor).toBe(BRANDING_SUGGESTIONS_RESPONSE.plasma)
+        expect(appearanceSettings.agentNodeColor).toBe(BRANDING_SUGGESTIONS_RESPONSE.nodeColor)
+        expect(brandingSettings.primary).toBe(BRANDING_SUGGESTIONS_RESPONSE.primary)
+        expect(brandingSettings.secondary).toBe(BRANDING_SUGGESTIONS_RESPONSE.secondary)
+        expect(brandingSettings.background).toBe(BRANDING_SUGGESTIONS_RESPONSE.background)
+        expect(brandingSettings.rangePalette).toEqual(BRANDING_SUGGESTIONS_RESPONSE.rangePalette)
+        expect(brandingSettings.iconSuggestion).toBe(BRANDING_SUGGESTIONS_RESPONSE.iconSuggestion)
 
         // Now try using Enter to submit a new customer name and check that it also applies branding
         const newCustomerName = "Acme 2"
         await enterCustomerName(newCustomerName, false)
         await user.keyboard("{Enter}")
 
+        // Check that the store was updated with the new customer name
         expect(useSettingsStore.getState().settings.branding.customer).toBe(newCustomerName)
+
+        // Successfully retrieving a customer name should update the logo source to "auto" to show the new logo
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
+
+        // Try different logo options
+        const logoNoneButton = within(logoOptionsContainer).getByRole("button", {name: /None/u})
+        await user.click(logoNoneButton)
+
+        // Logo source should be set to "none", meaning no logo will be shown even if we have suggestions
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        // Click the already-selected button
+        await user.click(logoNoneButton)
+
+        // Should still be "none"
+        expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
+
+        // Preview should show the "(None)" text indicating no logo will be shown
+        within(logoOptionsContainer).getByText("(None)")
+
+        // Now click "generic"
+        const logoGenericButton = within(logoOptionsContainer).getByRole("button", {name: /Generic/u})
+        await user.click(logoGenericButton)
+
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("generic")
+
+        // Should show the generic icon suggestion (Add)
+        within(logoOptionsContainer).getByTestId("AddIcon")
+
+        // Now the "auto" option
+        const logoAutoButton = within(logoOptionsContainer).getByRole("button", {name: /Auto/u})
+        await user.click(logoAutoButton)
+        expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
+
+        // Should show the logo from logo.dev with the correct URL (we can check for the img element and its src)
+        const logoImg = within(logoOptionsContainer).getByRole("img", {name: /Acme 2 Logo/u})
+        expect(logoImg).toBeInTheDocument()
+        expect(logoImg).toHaveAttribute(
+            "src",
+            expect.stringContaining(`https://img.logo.dev/name/${encodeURIComponent(newCustomerName)}`)
+        )
+
+        // Now clear branding
+        const clearBrandingButton = screen.getByRole("button", {name: "Clear"})
+        await user.click(clearBrandingButton)
+
+        // Relevant settings should be back to default values
+        expect(useSettingsStore.getState().settings.branding).toMatchObject(DEFAULT_SETTINGS.branding)
+        expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe(
+            DEFAULT_SETTINGS.appearance.rangePalette
+        )
     })
 
     it("Handles missing branding values from server", async () => {
-        global.fetch = mockFetch(
-            {
-                // Simulate missing values by returning an empty object
-            },
-            true
-        )
+        global.fetch = mockFetch({
+            // Simulate missing values by returning an empty object
+        })
 
         render(
             <SettingsDialog
@@ -351,14 +583,62 @@ describe("SettingsDialog", () => {
         )
 
         // Spy on console.warn to suppress output during test
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
             expect.stringMatching(new RegExp(`Failed to fetch branding suggestions.*"${customerName}"`, "u")),
             expect.objectContaining({message: networkError})
         )
+    })
+
+    it("Handles null response when retrieving branding suggestions", async () => {
+        global.fetch = mockFetch(null)
+
+        const customer = "OldCustomer"
+
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                customer,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+
+        // Customer name should be unchanged
+        expect(useSettingsStore.getState().settings.branding.customer).toBe(customer)
+    })
+
+    it("Handles customer but no logo token", async () => {
+        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        await enterCustomerName("Acme", true)
+
+        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
+        const errorTooltip = within(logoOptionsContainer).getByLabelText(/No Logo.dev token found/u)
+
+        // Get span that wraps the button
+        const autoButtonSpan = within(logoOptionsContainer).getByRole("button", {name: /Auto/u}).parentElement
+
+        // Hover and make sure we get the tooltip
+        await user.hover(autoButtonSpan)
+        expect(errorTooltip).toBeVisible()
     })
 })

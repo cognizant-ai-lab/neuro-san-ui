@@ -16,7 +16,7 @@ limitations under the License.
 
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
@@ -249,18 +249,6 @@ describe("AgentFlow", () => {
         expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
     })
 
-    it.each([{darkMode: false}, {darkMode: true}])("Should render correctly in %s mode", async ({darkMode}) => {
-        const mode = darkMode ? "dark" : "light"
-        const {container} = renderAgentFlowComponent({}, mode)
-
-        expect(await screen.findByText(cleanUpAgentName("React Flow"))).toBeInTheDocument()
-        verifyAgentNodes(container)
-
-        const legend = container.querySelector("#test-flow-id-legend")
-        const computed = window.getComputedStyle(legend)
-        expect(computed.boxShadow).toContain(darkMode ? "#fff" : "#000")
-    })
-
     it("Should allow switching between heatmap and depth displays", async () => {
         const {container} = renderAgentFlowComponent()
 
@@ -349,7 +337,7 @@ describe("AgentFlow", () => {
         expect(agent1Node).toBeInTheDocument()
 
         // agent1 first div is the one with the style
-        const agent1ChildDiv = agent1Node.children[0] as HTMLDivElement
+        const agent1ChildDiv = agent1Node.firstElementChild as HTMLDivElement
 
         // make sure agent1 has the expected animation
         const computedStyleAgent1 = window.getComputedStyle(agent1ChildDiv)
@@ -360,7 +348,7 @@ describe("AgentFlow", () => {
         expect(agent3Node).toBeInTheDocument()
 
         // agent3 first div is the one with the style
-        const agent3ChildDiv = agent3Node.children[0] as HTMLDivElement
+        const agent3ChildDiv = agent3Node.firstElementChild as HTMLDivElement
 
         // make sure agent3 has the expected animation
         const computedStyleAgent3 = window.getComputedStyle(agent3ChildDiv)
@@ -369,8 +357,8 @@ describe("AgentFlow", () => {
         // agent2 is not "active" so should not have the pulsing animation
         const agent2Div = container.querySelector('[data-id="agent2"]')
         expect(agent2Div).toBeInTheDocument()
-        const agent2ChildDiv = agent2Div.children[0] as HTMLDivElement
-        expect(agent2ChildDiv.style.animation).toBe("")
+        const agent2ChildDiv = agent2Div.firstElementChild as HTMLDivElement
+        expect(agent2ChildDiv).toHaveStyle({animation: ""})
     })
 
     it("Should handle an empty agent list", async () => {

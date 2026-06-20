@@ -12,6 +12,10 @@
     "dependencies": {
         "@dagrejs/dagre": "1.0.4",
         "@langchain/core": "catalog:default",
+        "@mui/icons-material": "catalog:default",
+        "@mui/material": "catalog:default",
+        "@mui/system": "catalog:default",
+        "@mui/x-tree-view": "catalog:default",
         "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",

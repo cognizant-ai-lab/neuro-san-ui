@@ -20,7 +20,7 @@ limitations under the License.
 
 import {createTheme, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Navbar} from "../../../components/Common/Navbar"
@@ -144,7 +144,7 @@ describe("Navbar", () => {
     })
 
     it("does not display customer branding text when customer is whitespace only", async () => {
-        useSettingsStore.getState().updateSettings({branding: {customer: "   "}})
+        useSettingsStore.getState().updateSettings({branding: {customer: " ".repeat(3)}})
 
         renderNavbar()
 

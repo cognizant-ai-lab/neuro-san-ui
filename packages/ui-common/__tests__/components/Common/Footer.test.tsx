@@ -1,5 +1,5 @@
 import {render, screen, within} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Footer} from "../../../components/Common/Footer"

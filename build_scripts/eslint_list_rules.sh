@@ -24,6 +24,7 @@ set -o nounset
 set -o pipefail
 
 FILE_TYPES=("js" "ts" "tsx" "mjs" "cjs")
+TEST_FILE_TYPES=("js" "ts" "tsx")
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
@@ -33,9 +34,13 @@ fi
 
 echo "{"
 first=true
-for ext in "${FILE_TYPES[@]}"; do
+
+process_file_type() {
+    local file_path=$1
+    local json_key=$2
+
     # The inline function fed to jq sorts the keys of the JSON object recursively, to reduce diff noise when comparing.
-    config=$(yarn eslint --print-config "dummy.$ext" | jq '."rules" | def sortkeys_recursive:
+    config=$(yarn eslint --print-config "$file_path" | jq '."rules" | def sortkeys_recursive:
                                                             . as $in |
                                                             if type == "object" then
                                                               to_entries | sort_by(.key) | map({ (.key): (.value | sortkeys_recursive) }) | add
@@ -51,8 +56,17 @@ for ext in "${FILE_TYPES[@]}"; do
         else
             echo ","
         fi
-        printf '  "%s": %s' "$ext" "$config"
+        printf '  "%s": %s' "$json_key" "$config"
     fi
+}
+
+for ext in "${FILE_TYPES[@]}"; do
+    process_file_type "dummy.$ext" "$ext"
 done
+
+for ext in "${TEST_FILE_TYPES[@]}"; do
+    process_file_type "__tests__/dummy.test.$ext" "test-$ext"
+done
+
 echo ""
 echo "}"

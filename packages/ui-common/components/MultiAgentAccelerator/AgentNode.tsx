@@ -32,8 +32,7 @@ import {FC, useState} from "react"
 
 import {AgentConversation} from "./AgentConversations"
 import {DisplayAs} from "./const"
-import {useSettingsStore} from "../../state/Settings"
-import {usePalette} from "../../Theme/Palettes"
+import {usePalette, useSettingsStore} from "../../state/Settings"
 import {isLightColor} from "../../Theme/Theme"
 import {getZIndex} from "../../utils/zIndexLayers"
 
@@ -214,6 +213,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
+    // Wrap the agent name with zero-width spaces to give the browser hints where to wrap.
     const wrappedAgentName = agentName
         // Allow wrap after underscore
         .replaceAll("_", `_${ZERO_WIDTH_SPACE}`)

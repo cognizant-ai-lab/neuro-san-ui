@@ -25,7 +25,7 @@ import {EnvironmentResponse} from "./Types"
  * @param _req Request -- not used
  * @param res Response -- the response object. It is used to send the environment settings to the client.
  */
-export default function handler(_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>) {
+const handler = (_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>) => {
     res.setHeader("Content-Type", "application/json")
 
     const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
@@ -42,3 +42,5 @@ export default function handler(_req: NextApiRequest, res: NextApiResponse<Envir
         logoServiceToken,
     })
 }
+
+export default handler

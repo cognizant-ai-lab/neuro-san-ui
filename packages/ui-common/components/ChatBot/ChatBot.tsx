@@ -34,11 +34,6 @@ interface ChatBotProps {
     readonly id: string
 
     /**
-     * Path to image for user avatar
-     */
-    readonly userAvatar: string
-
-    /**
      * Text about current page to help the LLM respond intelligently
      */
     readonly pageContext: string
@@ -48,7 +43,7 @@ interface ChatBotProps {
  * Site-wide Chatbot component.
  */
 // Temporarily disabled but will be used once we migrated the backend to use Neuro-san RAG.
-export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
+export const ChatBot: FC<ChatBotProps> = ({id, pageContext}) => {
     const [chatOpen, setChatOpen] = useState<boolean>(false)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState<boolean>(false)
     const {
@@ -93,8 +88,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, userAvatar, pageContext}) => {
                         currentUser={currentUser}
                         setIsAwaitingLlm={setIsAwaitingLlm}
                         isAwaitingLlm={isAwaitingLlm}
-                        targetAgent={LegacyAgentType.ChatBot}
-                        userImage={userAvatar}
+                        selectedNetwork={LegacyAgentType.ChatBot}
                         legacyAgentEndpoint={CHATBOT_ENDPOINT}
                         extraParams={{pageContext}}
                         backgroundColor={darkMode ? "var(--bs-gray-dark)" : "var(--bs-tertiary-blue)"}

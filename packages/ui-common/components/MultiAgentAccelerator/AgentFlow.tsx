@@ -79,8 +79,8 @@ import {StreamingUnit} from "../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {usePalette, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {usePalette} from "../../Theme/Palettes"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {MUIAlert} from "../Common/MUIAlert"
@@ -135,7 +135,7 @@ const DOCK_STREAM_TIMEOUT_MS = 120_000
 
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
-// How long the dock'sstatus banner stays visible before auto-dismissing. Error banners persist until dismissed.
+// How long the dock's status banner stays visible before auto-dismissing. Error banners persist until dismissed.
 // Exported for tests.
 export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
@@ -264,6 +264,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
 
+    // Display option for agent/network names
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+
     // Keep the ref current after every render.
     useEffect(() => {
         isStreamingRef.current = isStreaming
@@ -326,7 +329,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         })
     }, [currentConversations, showThoughtBubbles, setThoughtBubbleEdges])
 
-    // Cleanup expired thought bubble edges — created once on mount, reads isStreaming via ref.
+    // Clean up expired thought bubble edges — created once on mount, reads isStreaming via ref.
     useEffect(() => {
         const cleanupInterval = setInterval(() => {
             if (!isStreamingRef.current) return
@@ -349,9 +352,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [setThoughtBubbleEdges]) // mount/unmount only
 
-    // Shadow color for icon
-    const isDarkMode = theme.palette.mode === "dark"
-    const foregroundColor = isDarkMode ? theme.palette.common.white : theme.palette.common.black
     const isHeatmap = coloringOption === "heatmap"
 
     const palette = usePalette()
@@ -371,11 +371,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         // Add any missing agents from bubbles as minimal ConnectivityInfo
         const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
         const missing = [...bubbleAgentIds].filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
-        const minimalAgents = missing.map((missingId) => ({
-            origin: missingId,
-            tools: [] as string[],
-            display_as: undefined as string | undefined,
-        }))
+        const minimalAgents = missing.map(
+            (missingId): ConnectivityInfo => ({
+                origin: missingId,
+                tools: [] as string[],
+                display_as: undefined,
+            })
+        )
         return [...agentsInNetwork, ...minimalAgents]
     }, [agentsInNetwork, bubbleAgentIds])
 
@@ -384,26 +386,28 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const layoutResult: LayoutResult = useMemo(
         () =>
             layout === "linear"
-                ? layoutLinear(
-                      isHeatmap ? agentCounts : undefined,
-                      mergedAgentsInNetwork,
-                      currentConversations,
-                      isAwaitingLlm,
-                      isAgentNetworkDesignerMode,
-                      thoughtBubbleEdges,
+                ? layoutLinear({
+                      agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      isTemporaryNetwork
-                  )
-                : layoutRadial(
-                      isHeatmap ? agentCounts : undefined,
-                      mergedAgentsInNetwork,
+                      agentsInNetwork: mergedAgentsInNetwork,
                       currentConversations,
-                      isAwaitingLlm,
                       isAgentNetworkDesignerMode,
+                      isAwaitingLlm,
+                      isTemporaryNetwork,
                       thoughtBubbleEdges,
+                      useNativeNames,
+                  })
+                : layoutRadial({
+                      agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      isTemporaryNetwork
-                  ),
+                      agentsInNetwork: mergedAgentsInNetwork,
+                      currentConversations,
+                      isAgentNetworkDesignerMode,
+                      isAwaitingLlm,
+                      isTemporaryNetwork,
+                      thoughtBubbleEdges,
+                      useNativeNames,
+                  }),
         [
             agentCounts,
             agentIconSuggestions,
@@ -415,6 +419,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             layout,
             mergedAgentsInNetwork,
             thoughtBubbleEdges,
+            useNativeNames,
         ]
     )
 
@@ -434,7 +439,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
-    // True while the agent-edit request is in-flight so we can disable the Save button.
+    // True, while the agent-edit request is in-flight so we can disable the Save button.
     const [isSavingAgent, setIsSavingAgent] = useState<boolean>(false)
 
     // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
@@ -448,7 +453,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
     const [stopState, setStopState] = useState<"confirming" | null>(null)
 
-    // Inline status banner shown above the dock header after an apply succeeds, is cancelled, or fails.
+    // Inline status banner shown above the dock header after an "apply" succeeds, is canceled, or fails.
     const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -550,7 +555,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return true
             }
 
-            // Reservations came back but none matched the current network — surface this in the dock banner.
+            // Reservations came back, but none matched the current network — surface this in the dock banner.
             showDockBanner({
                 severity: "error",
                 title: "Failed to apply network change.",
@@ -597,14 +602,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             }
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
-            if (!isAbort) {
+            if (isAbort) {
+                if (hasTimedOut) {
+                    showDockBanner({
+                        severity: "error",
+                        title: "Failed to apply network change.",
+                        detail: "The request timed out. Please try again.",
+                    })
+                }
+            } else {
                 showDockBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
-            } else if (hasTimedOut) {
-                showDockBanner({
-                    severity: "error",
-                    title: "Failed to apply network change.",
-                    detail: "The request timed out. Please try again.",
-                })
             }
         } finally {
             clearTimeout(timeoutId)
@@ -705,8 +712,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
             setNodes((currentNodes) =>
                 applyNodeChanges<RFNode<AgentNodeProps>>(
-                    // For now, we only allow dragging, no updates. In agent network designer mode, doesn't make sense
-                    // to allow position changes since the user isn't actually manipulating a real network
+                    // For now, we only allow dragging, no updates. In agent network designer mode, it doesn't make
+                    // sense to allow position changes since the user isn't actually manipulating a real network
                     changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
                     currentNodes
                 )
@@ -783,14 +790,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             <Box
                 id={`${id}-legend`}
                 sx={{
-                    position: "absolute",
-                    top: "1.5rem",
-                    right: "10px",
-                    padding: "5px",
-                    borderRadius: "5px",
-                    boxShadow: `0 0 5px color-mix(in srgb, ${foregroundColor} 30%, transparent)`,
-                    display: "flex",
                     alignItems: "center",
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.text.primary, 0.18)}`,
+                    borderRadius: "5px",
+                    display: "flex",
+                    padding: theme.spacing(0.5),
+                    position: "absolute",
+                    right: theme.spacing(2),
+                    top: theme.spacing(4),
                     zIndex: getZIndex(2, theme),
                 }}
             >
@@ -799,26 +808,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     <Box
                         id={`${id}-legend-depth-${i}`}
                         key={i}
-                        style={{
+                        sx={{
                             alignItems: "center",
                             backgroundColor: palette[i],
                             borderRadius: "50%",
                             color: theme.palette.getContrastText(palette[i]),
                             display: "flex",
-                            height: "15px",
+                            fontSize: "0.5rem",
                             justifyContent: "center",
-                            marginLeft: "5px",
+                            marginLeft: theme.spacing(0.75),
                             width: "15px",
                         }}
                     >
-                        <Typography
-                            id={`${id}-legend-depth-${i}-text`}
-                            sx={{
-                                fontSize: "8px",
-                            }}
-                        >
-                            {i}
-                        </Typography>
+                        {i}
                     </Box>
                 ))}
                 <ToggleButtonGroup
@@ -830,48 +832,48 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             setColoringOption(newValue)
                         }
                     }}
-                    sx={{
-                        fontSize: "2rem",
-                        zIndex: 10,
-                        marginLeft: "0.5rem",
-                    }}
                     size="small"
+                    sx={{
+                        marginLeft: theme.spacing(2),
+                        "& .MuiToggleButton-root": {
+                            backgroundColor: theme.palette.background.paper,
+                            borderColor: theme.palette.divider,
+                            color: theme.palette.text.primary,
+                            minHeight: 22,
+                            px: 1,
+                            "&:hover": {
+                                backgroundColor: theme.palette.action.hover,
+                            },
+                            "&.Mui-selected": {
+                                backgroundColor: theme.palette.action.selected,
+                                borderColor: theme.palette.text.primary,
+                            },
+                            "&.Mui-selected:hover": {
+                                backgroundColor: theme.palette.action.selected,
+                                borderColor: theme.palette.text.primary,
+                            },
+                        },
+                    }}
                 >
                     <ToggleButton
                         id={`${id}-depth-toggle`}
-                        size="small"
                         value="depth"
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
                         }}
                     >
-                        <Typography
-                            id={`${id}-depth-label`}
-                            sx={{
-                                fontSize: "10px",
-                            }}
-                        >
-                            Depth
-                        </Typography>
+                        Depth
                     </ToggleButton>
                     <ToggleButton
                         id={`${id}-heatmap-toggle`}
-                        size="small"
                         value="heatmap"
                         sx={{
                             fontSize: "0.5rem",
                             height: "1rem",
                         }}
                     >
-                        <Typography
-                            id={`${id}-heatmap-label`}
-                            sx={{
-                                fontSize: "10px",
-                            }}
-                        >
-                            Heatmap
-                        </Typography>
+                        Heatmap
                     </ToggleButton>
                 </ToggleButtonGroup>
             </Box>
@@ -880,10 +882,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Get the background color for the control buttons based on the layout and dark mode setting
     const getControlButtonBackgroundColor = (isActive: boolean) => {
-        if (!isActive) {
-            return undefined
-        }
-        return isDarkMode ? theme.palette.grey[800] : theme.palette.grey[200]
+        return isActive ? theme.palette.action.selected : undefined
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
@@ -1115,12 +1114,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             {isEditMode && isTemporaryNetwork && !isAwaitingLlm && (
                 <Box
                     sx={{
+                        backdropFilter: "blur(8px)",
+                        backgroundColor: alpha(theme.palette.background.paper, 0.2),
                         borderTop: `2px solid ${theme.palette.primary.main}`,
-                        backgroundColor: theme.palette.background.paper,
                         flexShrink: 0,
+                        position: "relative",
+                        zIndex: getZIndex(2, theme),
                     }}
                 >
-                    {/* Status banner: shown after an apply succeeds, is cancelled, or fails */}
+                    {/* Status banner: shown after an "apply" succeeds, is canceled, or fails */}
                     {dockBanner && (
                         <MUIAlert
                             closeable
@@ -1137,13 +1139,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 // vertically with the header's close X below it.
                                 paddingRight: 0.5,
                                 alignItems: "center",
-                                // Frost the banner like the dock header so the graph doesn't show through the
-                                // app's translucent paper background; keep a tinted, mostly-opaque severity wash.
-                                backdropFilter: "blur(8px)",
-                                backgroundColor: alpha(
-                                    theme.palette[dockBanner.severity].main,
-                                    isDarkMode ? 0.28 : 0.16
-                                ),
+                                // Frost the banner like the dock header, so the graph doesn't show through the
+                                // app's translucent paper background; keep a tinted, mostly opaque severity wash.
                                 "& .MuiAlert-action": {
                                     alignItems: "center",
                                     marginRight: 0,

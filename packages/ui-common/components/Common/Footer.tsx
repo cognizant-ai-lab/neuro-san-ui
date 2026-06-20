@@ -89,7 +89,6 @@ export const Footer: FC<FooterProps> = ({logoLinkUrl, logoUrl, supportEmailAddre
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         id="logo-img"
                         width={200}

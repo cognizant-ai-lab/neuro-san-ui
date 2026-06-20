@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {act, render, screen} from "@testing-library/react"
-import {default as userEvent} from "@testing-library/user-event"
+import {userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
@@ -41,14 +41,13 @@ describe("ThoughtBubbleOverlay", () => {
     ]
 
     const createMockEdge = (id: string, source: string, target: string, text: string): ThoughtBubbleEdgeShape => {
-        const edge: ThoughtBubbleEdgeShape = {
+        return {
             id,
             source,
             target,
             data: {text},
             type: "thoughtBubbleEdge",
         }
-        return edge
     }
 
     it("Should render nothing when showThoughtBubbles is false", () => {
@@ -62,7 +61,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.firstChild).toBeNull()
+        expect(container).toBeEmptyDOMElement()
     })
 
     it("Should render thought bubbles when showThoughtBubbles is true", () => {
@@ -338,7 +337,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Bubble should render but no SVG lines should be present for HUMAN type
-        expect(container.textContent).toContain("Human message")
+        expect(container).toHaveTextContent(/Human message/u)
         const lines = container.querySelectorAll("svg line")
         expect(lines.length).toBe(0)
 
@@ -361,7 +360,7 @@ describe("ThoughtBubbleOverlay", () => {
                 showThoughtBubbles={true}
             />
         )
-        expect(container.textContent).toContain("No agents")
+        expect(container).toHaveTextContent(/No agents/u)
         const lines = container.querySelectorAll("svg line")
         expect(lines.length).toBe(0)
     })
@@ -568,7 +567,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(screen.getByText("Test message")).toBeInTheDocument()
 
-        // Unmount should not crash and should cleanup timeouts
+        // Unmount should not crash and should clean up timeouts
         expect(() => unmount()).not.toThrow()
     })
 
@@ -619,7 +618,6 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle exiting bubbles that are not in current edges", () => {
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
-        const edges2: ThoughtBubbleEdgeShape[] = [] // Remove all edges
 
         const {rerender} = render(
             <ThoughtBubbleOverlay
@@ -635,7 +633,8 @@ describe("ThoughtBubbleOverlay", () => {
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
-                edges={edges2}
+                // Remove all edges
+                edges={[]}
                 showThoughtBubbles={true}
             />
         )
@@ -653,6 +652,7 @@ describe("ThoughtBubbleOverlay", () => {
         Object.defineProperty(Element.prototype, "scrollHeight", {
             configurable: true,
             get() {
+                // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
                 return this.textContent?.includes("Long text") ? 150 : 50
             },
         })
@@ -759,8 +759,8 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Check that line has the correct stroke attributes for connecting line (uses CSS variable)
         const line = lines[0]
-        expect(line.getAttribute("stroke")).toBe("var(--thought-bubble-line-color)")
-        expect(line.getAttribute("stroke-width")).toBe("3")
+        expect(line).toHaveAttribute("stroke", "var(--thought-bubble-line-color)")
+        expect(line).toHaveAttribute("stroke-width", "3")
 
         agentEl.remove()
     })
@@ -844,9 +844,17 @@ describe("ThoughtBubbleOverlay", () => {
         // Spy on ResizeObserver.observe calls
         const OriginalRO = (global as unknown as {ResizeObserver?: unknown}).ResizeObserver
         const observed: Element[] = []
-        function SpyRO(this: {__isSpy?: boolean}) {
-            // mark instance so it's not an empty constructor
-            this.__isSpy = true
+        class SpyRO {
+            __isSpy = true
+            observe(el: Element): void {
+                if (this.__isSpy) {
+                    observed.push(el)
+                }
+            }
+            disconnect(): void {
+                // accessing 'this' to satisfy ESLint
+                void this.__isSpy
+            }
         }
         SpyRO.prototype.observe = function (el: Element): void {
             observed.push(el)
@@ -1100,7 +1108,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         const bubble = container.querySelector('[data-bubble-id="edge-1"]')
         expect(bubble).not.toBeNull()
-        expect(container.textContent).toContain("Hello world")
+        expect(container).toHaveTextContent(/Hello world/u)
     })
 
     it("handles nodes with getConversations provider and streaming enabled", () => {
@@ -1253,15 +1261,17 @@ describe("ThoughtBubbleOverlay", () => {
             setAttribute: (attrName: string, value: string) => void
         }
         proto.setAttribute = function (attrName: string, value: unknown) {
+            // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
             const tag = (this && (this as Element).tagName) || ""
             if (
                 typeof tag === "string" &&
                 tag.toLowerCase() === "line" &&
-                (attrName === "x1" || attrName === "y1" || attrName === "x2" || attrName === "y2")
+                ["x1", "y1", "x2", "y2"].includes(attrName)
             ) {
                 throw new Error("simulated setAttribute failure")
             }
 
+            // eslint-disable-next-line unicorn/no-this-outside-of-class -- unavoidable here
             return origSetAttr.call(this as Element, attrName, String(value))
         }
 
@@ -1316,7 +1326,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("No agents")
+        expect(container).toHaveTextContent(/No agents/u)
     })
 
     it("Should start streaming loop with no agent elements and not crash", async () => {
@@ -1387,7 +1397,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("Dup agents")
+        expect(container).toHaveTextContent(/Dup agents/u)
 
         consoleErrSpy.mockRestore()
 
@@ -1478,7 +1488,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Advance past the 400ms exit animation delay
         await act(async () => jest.advanceTimersByTime(450))
 
-        expect(container.textContent).not.toContain("Exit remove")
+        expect(container).not.toHaveTextContent(/Exit remove/u)
     })
 
     it("Should tolerate agent elements with no bounding rect (containerRect falsy)", () => {
@@ -1502,7 +1512,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        expect(container.textContent).toContain("No rect")
+        expect(container).toHaveTextContent(/No rect/u)
 
         agentEl.remove()
     })

@@ -16,7 +16,8 @@ limitations under the License.
 
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
+import {ComponentProps} from "react"
 
 import {
     LEVEL_1_FOLDER,
@@ -33,14 +34,19 @@ import {
     TEST_AGENTS_FOLDER_DISPLAY,
     TEST_DEEP_AGENT,
     TEST_DEEP_AGENT_DISPLAY,
-} from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
-import {Sidebar, SidebarProps, SPARKLE_HIGHLIGHT_CLASS} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
-import {testConnection} from "../../../controller/agent/Agent"
-import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
-import {useEnvironmentStore} from "../../../state/Environment"
-import {downloadFile} from "../../../utils/File"
+} from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
+import {
+    Sidebar,
+    SidebarProps,
+    SPARKLE_HIGHLIGHT_CLASS,
+} from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
+import {testConnection} from "../../../../controller/agent/Agent"
+import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
+import {useEnvironmentStore} from "../../../../state/Environment"
+import {useSettingsStore} from "../../../../state/Settings"
+import {downloadFile} from "../../../../utils/File"
 
 const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
 const AGENT_SERVER_ADDRESS = "Agent server address"
@@ -51,9 +57,33 @@ const EDIT_EXAMPLE_URL = "https://edit.example.com"
 const TEST_EXAMPLE_URL = "https://test.example.com"
 const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
 
-jest.mock("../../../controller/agent/Agent")
-jest.mock("../../../utils/File", () => ({
-    ...jest.requireActual("../../../utils/File"),
+// mock MUI TreeView so we can generate normally impossible values
+let mockSelectedTreeItemId: string | null | undefined
+jest.mock("@mui/x-tree-view/RichTreeView", () => {
+    const OriginalModule = jest.requireActual("@mui/x-tree-view/RichTreeView")
+
+    return {
+        ...OriginalModule,
+        RichTreeView: (props: ComponentProps<typeof OriginalModule.RichTreeView>) => {
+            const OriginalRichTreeView = OriginalModule.RichTreeView
+
+            return (
+                <>
+                    <OriginalRichTreeView {...props} />
+                    <button
+                        type="button"
+                        data-testid="force-tree-selection"
+                        onClick={() => props.onSelectedItemsChange?.(null, mockSelectedTreeItemId ?? null)}
+                    />
+                </>
+            )
+        },
+    }
+})
+
+jest.mock("../../../../controller/agent/Agent")
+jest.mock("../../../../utils/File", () => ({
+    ...jest.requireActual("../../../../utils/File"),
     downloadFile: jest.fn(),
 }))
 
@@ -129,8 +159,13 @@ describe("SideBar", () => {
     })
 
     beforeEach(() => {
+        mockSelectedTreeItemId = undefined
+
         user = userEvent.setup()
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
+
+        // Reset settings store
+        useSettingsStore.getState().resetSettings()
     })
 
     it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
@@ -176,6 +211,41 @@ describe("SideBar", () => {
         // Find the icon within the same parent container as the network text
         const networkContainer = networkElement.closest('[role="treeitem"]')
         within(networkContainer as HTMLElement).getByTestId("SettingsIcon")
+    })
+
+    it("should respect the 'use native names' setting", async () => {
+        useSettingsStore.getState().updateSettings({
+            appearance: {
+                useNativeNames: false,
+            },
+        })
+
+        renderSidebarComponent()
+
+        // click to expand networks
+        const header = screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // The display name should be the cleaned-up version of the agent name, not the raw agent name
+        screen.getByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        expect(screen.queryByText(TEST_AGENT_MATH_GUY)).not.toBeInTheDocument()
+
+        // Now change to useNativeNames = true and check that the raw agent name is displayed
+        act(() =>
+            useSettingsStore.getState().updateSettings({
+                appearance: {
+                    useNativeNames: true,
+                },
+            })
+        )
+
+        // now the raw agent name should be displayed
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        screen.getByText(TEST_AGENTS_FOLDER)
+
+        // Beautified names should no longer be displayed
+        expect(screen.queryByText(TEST_AGENTS_FOLDER_DISPLAY)).not.toBeInTheDocument()
+        expect(screen.queryByText(TEST_AGENT_MATH_GUY_DISPLAY)).not.toBeInTheDocument()
     })
 
     it("Should handle invalid icon suggestions correctly", async () => {
@@ -403,7 +473,7 @@ describe("SideBar", () => {
             onEditNetwork: onEditNetworkMock,
         })
 
-        // First select the network by clicking its label
+        // First, select the network by clicking its label
         const networkLabel = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
         await user.click(networkLabel)
 
@@ -419,6 +489,18 @@ describe("SideBar", () => {
         expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         // Should still have called onEditNetwork
         expect(onEditNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name)
+    })
+
+    it("Should handle invalid items in select handler", async () => {
+        renderSidebarComponent()
+
+        mockSelectedTreeItemId = null
+        await user.click(screen.getByTestId("force-tree-selection"))
+
+        mockSelectedTreeItemId = "not-a-real-tree-item"
+        await user.click(screen.getByTestId("force-tree-selection"))
+
+        expect(setSelectedNetworkMock).not.toHaveBeenCalled()
     })
 
     it("should disable the Settings button when isAwaitingLlm is true", async () => {
@@ -558,7 +640,7 @@ describe("SideBar", () => {
         // Simulate clicking outside the popover (triggers onClose)
         await user.click(document.body)
 
-        // Popover should close and input should reset to customURLLocalStorage
+        // Popover should close, and input should reset to customURLLocalStorage
         // Can't use document.body due to MuiBackdrop
         await user.click(document.querySelector(".MuiBackdrop-root"))
 
@@ -684,7 +766,7 @@ describe("SideBar", () => {
         // Fake timers make the 50ms callback fire deterministically.
         jest.useFakeTimers()
 
-        // Render with empty networks so there are NO treeitem elements in the DOM.
+        // Render with empty networks, so there are NO treeitem elements in the DOM.
         // When the 50ms timer fires, querySelector returns null → covers the false
         // arm of `if (selectedNode)` in the highlight callback.
         renderSidebarComponent({

@@ -67,3 +67,9 @@ export const TEMPORARY_NETWORK_FOLDER = "temporary"
 
 // The event name that needs to be fired for the app tour to start
 export const TRIGGER_APP_TOUR_EVENT_NAME = "trigger-app-tour"
+
+// Display expired temporary networks for this amount of time after they expire so users can see what happened
+export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+
+// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
+export const SHOW_TOUR_DELAY_MS = 5000

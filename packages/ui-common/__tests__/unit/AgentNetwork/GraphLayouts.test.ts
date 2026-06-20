@@ -22,12 +22,25 @@ import {
     addThoughtBubbleEdge,
     getThoughtBubbleEdges,
     layoutLinear,
+    LayoutOptions,
     layoutRadial,
     MAX_GLOBAL_THOUGHT_BUBBLES,
     removeThoughtBubbleEdge,
 } from "../../../components/MultiAgentAccelerator/GraphLayouts"
 import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+
+const defaultLayoutParams: LayoutOptions = {
+    agentCounts: new Map(),
+    agentIconSuggestions: undefined,
+    agentsInNetwork: [],
+    currentConversations: [],
+    isAgentNetworkDesignerMode: false,
+    isAwaitingLlm: false,
+    isTemporaryNetwork: false,
+    thoughtBubbleEdges: new Map(),
+    useNativeNames: false,
+}
 
 describe("GraphLayouts", () => {
     withStrictMocks()
@@ -71,7 +84,10 @@ describe("GraphLayouts", () => {
     ]
 
     it("Should generate a linear layout", () => {
-        const {nodes, edges} = layoutLinear(new Map(), threeAgentNetwork, null, false, false, new Map())
+        const {nodes, edges} = layoutLinear({
+            ...defaultLayoutParams,
+            agentsInNetwork: threeAgentNetwork,
+        })
 
         expect(nodes).toHaveLength(3)
         expect(edges).toHaveLength(2)
@@ -97,7 +113,10 @@ describe("GraphLayouts", () => {
     })
 
     it("Should generate a radial layout", () => {
-        const {nodes, edges} = layoutRadial(new Map(), sevenAgentNetwork, null, false, false, new Map())
+        const {nodes, edges} = layoutRadial({
+            ...defaultLayoutParams,
+            agentsInNetwork: sevenAgentNetwork,
+        })
 
         expect(nodes).toHaveLength(7)
         expect(edges).toHaveLength(6)
@@ -162,7 +181,10 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle cycles in the graph", () => {
-        const {nodes, edges} = layoutRadial(new Map(), networkWithCycles, null, false, false, new Map())
+        const {nodes, edges} = layoutRadial({
+            ...defaultLayoutParams,
+            agentsInNetwork: networkWithCycles,
+        })
 
         expect(nodes).toHaveLength(4)
 
@@ -189,7 +211,10 @@ describe("GraphLayouts", () => {
     })
 
     it("Should handle direct and transitive dependencies in the graph", async () => {
-        const {nodes, edges} = layoutRadial(new Map(), transitiveGraph, null, false, false, new Map())
+        const {nodes, edges} = layoutRadial({
+            ...defaultLayoutParams,
+            agentsInNetwork: transitiveGraph,
+        })
 
         // Check nodes
         expect(nodes).toHaveLength(3)
@@ -229,8 +254,13 @@ describe("GraphLayouts", () => {
             },
         ]
 
-        const params: Parameters<typeof layoutLinear> = [agentCounts, agents, conversations, true, false, new Map()]
-        const {edges} = layoutLinear(...params)
+        const {edges} = layoutLinear({
+            ...defaultLayoutParams,
+            agentCounts,
+            agentsInNetwork: agents,
+            currentConversations: conversations,
+            isAwaitingLlm: true,
+        })
 
         // There should be at least one edge in the array since a->b is a conversation agent edge
         expect(edges).toEqual(expect.arrayContaining([expect.objectContaining({source: "a", target: "b"})]))
@@ -247,7 +277,12 @@ describe("GraphLayouts", () => {
         ]
 
         // Should include all edges from a->b and a->c since we're simulating Agent Network Designer mode
-        const {edges} = layoutFunction(new Map(), agents, null, true, true, new Map())
+        const {edges} = layoutFunction({
+            ...defaultLayoutParams,
+            agentsInNetwork: agents,
+            isAgentNetworkDesignerMode: true,
+            isAwaitingLlm: true,
+        })
         expect(edges).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({source: "a", target: "b"}),
@@ -282,7 +317,13 @@ describe("GraphLayouts", () => {
                     },
                 ]
 
-                const {edges} = layoutFunction(agentCounts, agents, conversations, true, false, new Map())
+                const {edges} = layoutFunction({
+                    ...defaultLayoutParams,
+                    agentCounts,
+                    agentsInNetwork: agents,
+                    currentConversations: conversations,
+                    isAwaitingLlm: true,
+                })
 
                 // Expect an animated/plasma edge to exist for the conversation between a -> b
                 expect(edges.some((e) => e.source === "a" && e.target === "b" && e.type === "plasmaEdge")).toBeTruthy()
@@ -312,7 +353,13 @@ describe("GraphLayouts", () => {
                 },
             ]
 
-            const {edges} = layoutFunction(agentCounts, agents, conversations, true, false, new Map())
+            const {edges} = layoutFunction({
+                ...defaultLayoutParams,
+                agentCounts,
+                agentsInNetwork: agents,
+                currentConversations: conversations,
+                isAwaitingLlm: true,
+            })
 
             // Since HUMAN is omitted from KNOWN_MESSAGE_TYPES_FOR_PLASMA, there should be no plasma edge
             expect(edges.some((e) => e.type === "plasmaEdge")).toBeFalsy()
@@ -326,7 +373,10 @@ describe("GraphLayouts", () => {
         {layoutFunction: layoutRadial, name: "radial"},
         {layoutFunction: layoutLinear, name: "linear"},
     ])("Should handle a degenerate single-node graph in $name layout", async ({layoutFunction}) => {
-        const {nodes, edges} = layoutFunction(new Map(), singleNodeNetwork, null, false, false, new Map())
+        const {nodes, edges} = layoutFunction({
+            ...defaultLayoutParams,
+            agentsInNetwork: singleNodeNetwork,
+        })
 
         expect(nodes).toHaveLength(1)
         expect(edges).toHaveLength(0)
@@ -340,7 +390,10 @@ describe("GraphLayouts", () => {
     ])("Should handle a disconnected graph in $name layout", ({layoutFunction}) => {
         // We don't really support this case; "should never happen". This test is to make sure we at least
         // don't crash. This also exercises the (invalid) "multiple frontmen" case
-        const {nodes, edges} = layoutFunction(new Map(), disconnectedGraph, null, false, false, new Map())
+        const {nodes, edges} = layoutFunction({
+            ...defaultLayoutParams,
+            agentsInNetwork: disconnectedGraph,
+        })
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
@@ -372,7 +425,12 @@ describe("GraphLayouts", () => {
         it("Should add and retrieve global thought bubble edges", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial({
+                ...defaultLayoutParams,
+                agentsInNetwork: threeAgentNetwork,
+                isAgentNetworkDesignerMode: true,
+                thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            })
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(1)
@@ -389,7 +447,12 @@ describe("GraphLayouts", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
             removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1")
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial({
+                ...defaultLayoutParams,
+                agentsInNetwork: threeAgentNetwork,
+                isAwaitingLlm: true,
+                thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            })
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)
@@ -408,7 +471,12 @@ describe("GraphLayouts", () => {
                 addThoughtBubbleEdge(thoughtBubbleEdgesMap, `conv${i}`, mockEdgeMultiple)
             }
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial({
+                ...defaultLayoutParams,
+                agentsInNetwork: threeAgentNetwork,
+                isAwaitingLlm: true,
+                thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            })
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(5)
@@ -453,7 +521,12 @@ describe("GraphLayouts", () => {
             addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv2", mockEdge2)
             thoughtBubbleEdgesMap.clear()
 
-            const {edges} = layoutRadial(new Map(), threeAgentNetwork, null, true, false, thoughtBubbleEdgesMap)
+            const {edges} = layoutRadial({
+                ...defaultLayoutParams,
+                agentsInNetwork: threeAgentNetwork,
+                isAwaitingLlm: true,
+                thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            })
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(0)
@@ -473,7 +546,12 @@ describe("GraphLayouts", () => {
             }
             addThoughtBubbleEdge(singleNodeMap, "conv-x", bubble)
 
-            const {edges} = layoutFunction(new Map(), [{origin: "A", tools: []}], null, true, false, singleNodeMap)
+            const {edges} = layoutFunction({
+                ...defaultLayoutParams,
+                agentsInNetwork: [{origin: "A", tools: []}],
+                isAwaitingLlm: true,
+                thoughtBubbleEdges: singleNodeMap,
+            })
             const bubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
             expect(bubbleEdges).toHaveLength(1)
             expect(bubbleEdges[0].id).toBe("tb1")
@@ -498,7 +576,11 @@ describe("GraphLayouts", () => {
                 {origin: "agent2", tools: []},
             ]
 
-            const {edges} = layoutFunction(new Map(), agents, null, false, false, tbMap)
+            const {edges} = layoutFunction({
+                ...defaultLayoutParams,
+                agentsInNetwork: agents,
+                thoughtBubbleEdges: tbMap,
+            })
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
             expect(thoughtBubbleEdges).toHaveLength(1)
             expect(thoughtBubbleEdges[0].id).toBe("should-add")
@@ -524,7 +606,11 @@ describe("GraphLayouts", () => {
                     {origin: "B", tools: []},
                 ]
 
-                const {edges} = layoutFunction(new Map(), agents, null, false, false, tbMap)
+                const {edges} = layoutFunction({
+                    ...defaultLayoutParams,
+                    agentsInNetwork: agents,
+                    thoughtBubbleEdges: tbMap,
+                })
 
                 const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
                 expect(thoughtBubbleEdges).toHaveLength(0)

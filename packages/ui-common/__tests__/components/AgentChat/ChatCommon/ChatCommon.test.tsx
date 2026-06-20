@@ -16,30 +16,26 @@ limitations under the License.
 
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
-import {default as userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
 
 import {
     MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
-    TEST_AGENT_MATH_GUY_DISPLAY,
     TEST_AGENT_MUSIC_NERD,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {
-    ChatCommon,
-    ChatCommonHandle,
-    ChatCommonProps,
-    MAX_TURNS,
-} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {ChatCommon, ChatCommonHandle, ChatCommonProps} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {MAX_TURNS} from "../../../../components/AgentChat/ChatCommon/Const"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
+import {useSettingsStore} from "../../../../state/Settings"
+import {getZIndex} from "../../../../utils/zIndexLayers"
 
 // Mock agent API
 jest.mock("../../../../controller/agent/Agent")
@@ -51,7 +47,7 @@ jest.mock("../../../../controller/llm/LlmChat")
 jest.mock("../../../../components/Common/notification")
 
 const TEST_USER = "testUser"
-const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY_DISPLAY}`
+const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
 
 const MODAL_Z_INDEX = 11
 
@@ -84,35 +80,35 @@ describe("ChatCommon", () => {
         onSend: jest.fn(),
         sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
         setIsAwaitingLlm: jest.fn(),
-        targetAgent: TEST_AGENT_MATH_GUY,
-        userImage: "",
+        selectedNetwork: TEST_AGENT_MATH_GUY,
     }
 
     const renderChatCommonComponent = (
         overrides: Partial<ChatCommonProps> & {ref?: Ref<ChatCommonHandle>} = {},
         mode: PaletteMode = "light"
-    ) =>
-        render(
-            <ThemeProvider
-                theme={createTheme({
-                    colorSchemes: {
-                        light: {palette: {text: {primary: "#112233"}}},
-                        dark: {palette: {text: {primary: "#445566"}}},
-                    },
-                    palette: {
-                        mode,
-                    },
-                    zIndex: {
-                        modal: MODAL_Z_INDEX,
-                    },
-                })}
-            >
-                <ChatCommon
-                    {...defaultProps}
-                    {...overrides}
-                />
-            </ThemeProvider>
-        )
+    ) => {
+        const theme = createTheme({
+            colorSchemes: {
+                light: {palette: {text: {primary: "#112233"}}},
+                dark: {palette: {text: {primary: "#445566"}}},
+            },
+            palette: {
+                mode,
+            },
+            zIndex: {modal: MODAL_Z_INDEX},
+        })
+        return {
+            render: render(
+                <ThemeProvider theme={theme}>
+                    <ChatCommon
+                        {...defaultProps}
+                        {...overrides}
+                    />
+                </ThemeProvider>
+            ),
+            theme,
+        }
+    }
 
     beforeEach(() => {
         user = userEvent.setup({delay: null})
@@ -127,11 +123,17 @@ describe("ChatCommon", () => {
         // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
         // that we know is relevant to these tests.
         useAgentChatHistoryStore.setState({history: {}})
+
+        useSettingsStore.getState().updateSettings({
+            appearance: {
+                useNativeNames: true,
+            },
+        })
     })
 
     const sendQuery = async (agent: CombinedAgentType, query: string) => {
         // locate user query input
-        const userQueryInput = screen.getByPlaceholderText(`Chat with ${cleanUpAgentName(agent)}`)
+        const userQueryInput = screen.getByPlaceholderText(`Chat with ${agent}`)
 
         // Type a query
         await user.type(userQueryInput, query)
@@ -332,7 +334,10 @@ describe("ChatCommon", () => {
         const testResponseText1 = "Response text 1 from LLM"
         const testResponseText2 = "Response text 2 from LLM"
 
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DataGenerator})
+        renderChatCommonComponent({
+            onChunkReceived: onChunkReceivedMock,
+            selectedNetwork: LegacyAgentType.DataGenerator,
+        })
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText1)
             callback(testResponseText2)
@@ -353,7 +358,7 @@ describe("ChatCommon", () => {
         const finalAnswerText = "Sample final answer from LLM"
         const testResponseText = `Final Answer: ${finalAnswerText}`
 
-        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, targetAgent: LegacyAgentType.DMSChat})
+        renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, selectedNetwork: LegacyAgentType.DMSChat})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
             callback(testResponseText)
         })
@@ -390,7 +395,7 @@ describe("ChatCommon", () => {
         expect(givesFinalAnswer(LegacyAgentType.OpportunityFinder)).toBe(false)
         renderChatCommonComponent({
             onChunkReceived: onChunkReceivedMock,
-            targetAgent: LegacyAgentType.OpportunityFinder,
+            selectedNetwork: LegacyAgentType.OpportunityFinder,
         })
         screen.getByText(LegacyAgentType.OpportunityFinder)
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
@@ -411,7 +416,7 @@ describe("ChatCommon", () => {
         expect(givesFinalAnswer(LegacyAgentType.DMSChat)).toBe(true)
         renderChatCommonComponent({
             onChunkReceived: onChunkReceivedMock,
-            targetAgent: LegacyAgentType.DMSChat,
+            selectedNetwork: LegacyAgentType.DMSChat,
         })
 
         screen.getByText(LegacyAgentType.DMSChat)
@@ -427,7 +432,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle error thrown while fetching", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new Error("Sample error from fetch")
         })
@@ -443,7 +448,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle non-error type thrown while fetching", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
         jest.spyOn(console, "error").mockImplementation()
 
@@ -462,7 +467,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle an abort error correctly", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
             throw new (class extends Error {
                 constructor(message?: string) {
@@ -483,7 +488,7 @@ describe("ChatCommon", () => {
     })
 
     it("Should handle other types of errors than AbortError correctly", async () => {
-        renderChatCommonComponent({targetAgent: LegacyAgentType.OpportunityFinder})
+        renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
         jest.spyOn(console, "error").mockImplementation()
         ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
@@ -575,7 +580,9 @@ describe("ChatCommon", () => {
     })
 
     it("Should correctly handle chat context", async () => {
-        const {rerender} = renderChatCommonComponent()
+        const {
+            render: {rerender},
+        } = renderChatCommonComponent()
 
         const responseMessage = getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "Sample AI response")
 
@@ -606,7 +613,9 @@ describe("ChatCommon", () => {
     })
 
     it("Should not clear chat when a new agent is selected", async () => {
-        const {rerender} = renderChatCommonComponent()
+        const {
+            render: {rerender},
+        } = renderChatCommonComponent()
 
         // Make sure first agent greeting appears
         await screen.findByText(TEST_AGENT_MATH_GUY)
@@ -614,7 +623,7 @@ describe("ChatCommon", () => {
         rerender(
             <ChatCommon
                 {...defaultProps}
-                targetAgent={TEST_AGENT_MUSIC_NERD}
+                selectedNetwork={TEST_AGENT_MUSIC_NERD}
             />
         )
 
@@ -638,7 +647,7 @@ describe("ChatCommon", () => {
 
     it("Should refuse interaction when no target agent is set", async () => {
         const mockSendFunction = jest.fn()
-        renderChatCommonComponent({onSend: mockSendFunction, targetAgent: null})
+        const {theme} = renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
 
         // Should be no "Chat with"
         expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
@@ -646,7 +655,24 @@ describe("ChatCommon", () => {
         const overlay = document.getElementById("chat-disabled-overlay")
         expect(overlay).toHaveStyle({
             position: "absolute",
-            zIndex: MODAL_Z_INDEX - 1,
+            zIndex: getZIndex(2, theme),
+            cursor: "not-allowed",
+            pointerEvents: "all",
+        })
+    })
+
+    it("Should refuse interaction when API keys are required but not present", async () => {
+        const {theme} = renderChatCommonComponent({missingApiKeys: ["OpenAI"]})
+
+        // Should be no "Chat with"
+        expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
+
+        screen.getByText(/API key\(s\) required/u)
+
+        const overlay = document.getElementById("chat-disabled-overlay")
+        expect(overlay).toHaveStyle({
+            position: "absolute",
+            zIndex: getZIndex(2, theme),
             cursor: "not-allowed",
             pointerEvents: "all",
         })
@@ -790,7 +816,22 @@ describe("ChatCommon", () => {
 
         // No final answer from a Neuro-san agent; this is an error
         const alertItem = screen.getByRole("alert")
-        within(alertItem).getByText(/final answer/u)
+        within(alertItem).getByText(/did not provide a final answer/u)
+    })
+
+    it("Should handle when Neuro-san agents fail to send a final answer", async () => {
+        renderChatCommonComponent()
+
+        screen.getByText(TEST_AGENT_MATH_GUY)
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(JSON.stringify(getResponseMessage(ChatMessageType.AGENT, "response")))
+        })
+
+        await sendQuery(TEST_AGENT_MATH_GUY, "Sample test query final answer test")
+
+        // No final answer from a Neuro-san agent; this is an error
+        const alertItem = screen.getByRole("alert")
+        within(alertItem).getByText(/did not provide a final answer/u)
     })
 
     it("Should handle 'show thinking' section correctly", async () => {
@@ -854,18 +895,18 @@ describe("ChatCommon", () => {
                 // Store the handlers so we can call them in tests
                 switch (event) {
                     case "result":
-                        mockSpeechRecognition.onresult = handler as (event: SpeechRecognitionEvent) => void
+                        mockSpeechRecognition.onresult = handler
                         break
                     case "start":
-                        mockSpeechRecognition.onstart = handler as () => void
+                        mockSpeechRecognition.onstart = handler
                         break
                     case "end":
-                        mockSpeechRecognition.onend = handler as () => void
+                        mockSpeechRecognition.onend = handler
                         break
                     case "error":
                         // Intentionally mocking it this way
                         // eslint-disable-next-line unicorn/prefer-add-event-listener
-                        mockSpeechRecognition.onerror = handler as (event: Event) => void
+                        mockSpeechRecognition.onerror = handler
                         break
                     default:
                         // Handle any other event types
@@ -1154,7 +1195,7 @@ describe("ChatCommon", () => {
         expect(sendButton).toBeDisabled()
 
         // Try with whitespace only
-        await user.type(userInput, "   ")
+        await user.type(userInput, " ".repeat(3))
         expect(sendButton).toBeDisabled()
 
         // Clear and add actual content
@@ -1251,7 +1292,7 @@ describe("ChatCommon", () => {
         }
 
         renderChatCommonComponent({
-            targetAgent: LegacyAgentType.DataGenerator,
+            selectedNetwork: LegacyAgentType.DataGenerator,
             extraParams: testExtraParams,
         })
         ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
@@ -1278,7 +1319,7 @@ describe("ChatCommon", () => {
         const testEndpoint = "custom-legacy-endpoint"
 
         renderChatCommonComponent({
-            targetAgent: LegacyAgentType.OpportunityFinder,
+            selectedNetwork: LegacyAgentType.OpportunityFinder,
             legacyAgentEndpoint: testEndpoint,
         })
 
