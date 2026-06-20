@@ -19,6 +19,7 @@ limitations under the License.
  */
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
+import Business from "@mui/icons-material/Business"
 import DarkModeIcon from "@mui/icons-material/DarkMode"
 import SettingsIcon from "@mui/icons-material/Settings"
 import Box from "@mui/material/Box"
@@ -180,6 +181,7 @@ export const Navbar = ({
                     <>
                         <CustomerLogo
                             customer={customer}
+                            fallbackIcon={Business}
                             iconSuggestion={iconSuggestion}
                             logoServiceToken={logoServiceToken}
                             logoSource={logoSource}
