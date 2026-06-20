@@ -663,10 +663,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 useTempNetworksStore.getState().upsertTempNetworks(result.networks)
                 // An import defines a single network, so the designer returns one reservation. Highlight and
                 // navigate to it; any further entries (none expected) are still upserted above.
-                const [first] = result.networks
-                if (first) {
-                    setNewlyAddedTemporaryNetworks(new Set([first.agentInfo.agent_name]))
-                    changeSelectedNetwork(first.agentInfo.agent_name)
+                const newNetworkName = result.networks[0]?.agentInfo.agent_name
+                if (newNetworkName) {
+                    setNewlyAddedTemporaryNetworks(new Set([newNetworkName]))
+                    changeSelectedNetwork(newNetworkName)
                 }
             } catch (e: unknown) {
                 notifySaveError(agentNetworkName, e)

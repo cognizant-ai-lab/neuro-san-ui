@@ -81,6 +81,19 @@ describe("convertReservationsToNetworks", () => {
         expect(convertReservationsToNetworks([], null)).toEqual([])
     })
 
+    it("drops un-vetted reservations that lack a usable reservation_id", () => {
+        const valid = makeReservation("good-1")
+        // reservation_id is typed as a string, but it is echoed from un-vetted backend data and may be
+        // missing or empty at runtime; such entries must not produce a "temporary/undefined" network.
+        const missingId = {...makeReservation("ignored"), reservation_id: undefined} as unknown as AgentReservation
+        const emptyId = makeReservation("")
+
+        const networks = convertReservationsToNetworks([missingId, valid, emptyId], null)
+
+        expect(networks).toHaveLength(1)
+        expect(networks[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/good-1`)
+    })
+
     it("forwards the agentNetworkDefinition to each network", () => {
         const res = makeReservation("r1")
         const definition = [{origin: "agent1", tools: [] as string[]}]

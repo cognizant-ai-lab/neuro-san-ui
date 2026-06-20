@@ -80,17 +80,23 @@ export const convertReservationsToNetworks = (
     agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
     agentNetworkName?: string
 ): TemporaryNetwork[] => {
-    return agentReservations.map((reservation) => ({
-        reservation,
-        agentInfo: {
-            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
-        },
-        // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
-        // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
-        agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
-        networkHocon,
-        agentNetworkDefinition,
-    }))
+    return (
+        agentReservations
+            // reservation_id is typed as required but is echoed from un-vetted backend data; skip entries
+            // missing it rather than build a "temporary/undefined" network.
+            .filter((reservation) => Boolean(reservation?.reservation_id))
+            .map((reservation) => ({
+                reservation,
+                agentInfo: {
+                    agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+                },
+                // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
+                // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
+                agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
+                networkHocon,
+                agentNetworkDefinition,
+            }))
+    )
 }
 
 export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
