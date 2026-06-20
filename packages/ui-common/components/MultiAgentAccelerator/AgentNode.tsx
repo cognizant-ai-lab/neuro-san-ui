@@ -157,49 +157,56 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
     // Determine which icon to display based on the agent type whether it is Frontman or not
     const getDisplayAsIcon = () => {
         const id = `${agentId}-icon`
-        if (agentIconSuggestion && MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]) {
-            const IconComponent = MuiIcons[agentIconSuggestion as keyof typeof MuiIcons]
-            return <IconComponent sx={{fontSize: AGENT_ICON_SIZE}} />
-        } else {
-            if (agentIconSuggestion) {
-                console.warn(`Invalid MUI icon suggestion: ${agentIconSuggestion}`)
-            }
-            if (isFrontman) {
+
+        // Check for valid MUI icon suggestion from the LLM suggestion service
+        const SuggestedIcon = agentIconSuggestion ? MuiIcons[agentIconSuggestion as keyof typeof MuiIcons] : undefined
+
+        // If the LLM provided a valid icon suggestion, use it. Otherwise, fall back to default icons based on
+        // agent type.
+        if (SuggestedIcon) {
+            return (
+                <SuggestedIcon
+                    id={id}
+                    sx={{fontSize: AGENT_ICON_SIZE}}
+                />
+            )
+        }
+
+        if (isFrontman) {
+            return (
+                // Use special icon and larger size for Frontman
+                <PersonIcon
+                    id={id}
+                    sx={{fontSize: FRONTMAN_ICON_SIZE}}
+                />
+            )
+        }
+
+        switch (displayAs) {
+            case DisplayAs.EXTERNAL_AGENT:
                 return (
-                    // Use special icon and larger size for Frontman
-                    <PersonIcon
+                    <TravelExploreIcon
                         id={id}
-                        sx={{fontSize: FRONTMAN_ICON_SIZE}}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
                     />
                 )
-            } else {
-                switch (displayAs) {
-                    case DisplayAs.EXTERNAL_AGENT:
-                        return (
-                            <TravelExploreIcon
-                                id={id}
-                                sx={{fontSize: AGENT_ICON_SIZE}}
-                            />
-                        )
-                    // This should be a supported type but we're not seeing it?
-                    case DisplayAs.LANGCHAIN_TOOL:
-                    case DisplayAs.CODED_TOOL:
-                        return (
-                            <HandymanIcon
-                                id={id}
-                                sx={{fontSize: AGENT_ICON_SIZE}}
-                            />
-                        )
-                    case DisplayAs.LLM_AGENT:
-                    default:
-                        return (
-                            <AutoAwesomeIcon
-                                id={id}
-                                sx={{fontSize: AGENT_ICON_SIZE}}
-                            />
-                        )
-                }
-            }
+            // This should be a supported type but we're not seeing it?
+            case DisplayAs.LANGCHAIN_TOOL:
+            case DisplayAs.CODED_TOOL:
+                return (
+                    <HandymanIcon
+                        id={id}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
+                    />
+                )
+            case DisplayAs.LLM_AGENT:
+            default:
+                return (
+                    <AutoAwesomeIcon
+                        id={id}
+                        sx={{fontSize: AGENT_ICON_SIZE}}
+                    />
+                )
         }
     }
 
@@ -213,7 +220,7 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
 
     const [isHovered, setIsHovered] = useState(false)
 
-    // Wrap the agent name with zero-width spaces to give the browser hints where to wrap.
+    // Insert zero-width spaces into the agent name to give the browser hints where to wrap.
     const wrappedAgentName = agentName
         // Allow wrap after underscore
         .replaceAll("_", `_${ZERO_WIDTH_SPACE}`)
