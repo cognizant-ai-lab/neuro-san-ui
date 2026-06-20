@@ -66,6 +66,7 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({
             )
         }
         case "none":
+            return null
         default:
             return fallback
     }
