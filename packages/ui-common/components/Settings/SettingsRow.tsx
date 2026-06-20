@@ -1,63 +1,74 @@
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import Box from "@mui/material/Box"
 import FormLabel from "@mui/material/FormLabel"
-import {SxProps, Theme} from "@mui/material/styles"
-import Tooltip from "@mui/material/Tooltip"
+import {SxProps, Theme, useTheme} from "@mui/material/styles"
 import {FC, ReactNode} from "react"
 
 import {FadingCheckmark, useCheckmarkFade} from "./FadingCheckmark"
+import InfoTip from "./InfoTip"
 
 interface SettingsRowProps {
-    readonly label: ReactNode
-    readonly children: ReactNode
     readonly checkmark?: ReturnType<typeof useCheckmarkFade>
-    readonly tooltip: ReactNode
+    readonly children: ReactNode
     readonly disabled?: boolean
+    readonly label: ReactNode
+    readonly labelWidth?: string | number
     readonly sx?: SxProps<Theme>
+    readonly tooltip: ReactNode
 }
 
-export const SettingsRow: FC<SettingsRowProps> = ({label, children, checkmark, tooltip, disabled = false, sx}) => (
-    <Box
-        sx={[
-            {
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                opacity: disabled ? 0.5 : 1,
-            },
-            ...(Array.isArray(sx) ? sx : [sx]),
-        ]}
-    >
-        <Box
-            sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-            }}
-        >
-            <FormLabel>{label}</FormLabel>
-        </Box>
+export const SettingsRow: FC<SettingsRowProps> = ({
+    checkmark,
+    children,
+    disabled = false,
+    label,
+    labelWidth = "8rem",
+    sx,
+    tooltip,
+}) => {
+    const theme = useTheme()
 
+    return (
         <Box
-            sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-            }}
+            sx={[
+                {
+                    alignItems: "center",
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: theme.spacing(2),
+                    opacity: disabled ? 0.5 : 1,
+                    width: "100%",
+                },
+                ...(sx ? (Array.isArray(sx) ? sx : [sx]) : []),
+            ]}
         >
-            {children}
-            {checkmark ? <FadingCheckmark show={checkmark.show} /> : null}
-        </Box>
-        <Tooltip title={tooltip}>
-            <InfoOutlinedIcon
-                aria-label="setting information"
-                fontSize="small"
+            {label ? (
+                <Box
+                    sx={{
+                        alignItems: "center",
+                        display: "flex",
+                        flexBasis: labelWidth,
+                        flexShrink: 0,
+                    }}
+                >
+                    <FormLabel>{label}</FormLabel>
+                </Box>
+            ) : null}
+
+            <Box
                 sx={{
-                    color: "text.secondary",
-                    cursor: "help",
-                    fontSize: "0.9rem",
+                    alignItems: "center",
+                    display: "flex",
+                    flex: 1,
+                    gap: theme.spacing(2),
+                    minWidth: 0,
                 }}
-            />
-        </Tooltip>
-    </Box>
-)
+            >
+                {children}
+                {checkmark ? <FadingCheckmark show={checkmark.show} /> : null}
+            </Box>
+            <Box sx={{flexShrink: 0}}>
+                <InfoTip title={tooltip} />
+            </Box>
+        </Box>
+    )
+}

@@ -63,6 +63,26 @@ describe("SettingsDialog", () => {
         await screen.findByText("Settings")
     })
 
+    it("handles nullish logoSource", async () => {
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                logoSource: null,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Should render without crashing and show the "(None)" option as selected by default
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"})
+        const noneButton = within(logoOptionsContainer).getByRole("button", {name: /None/u})
+        expect(noneButton).toHaveAttribute("aria-pressed", "true")
+    })
+
     it("triggers onClose when the dialog is closed", async () => {
         const onCloseMock = jest.fn()
         render(
@@ -333,6 +353,12 @@ describe("SettingsDialog", () => {
 
         // Now should be true
         expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
+
+        // Click it again
+        await user.click(autoColorCheckbox)
+
+        // Should not have changed value
+        expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
     })
 
     it("Allows toggling Zen mode", async () => {
@@ -465,7 +491,7 @@ describe("SettingsDialog", () => {
 
         expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
 
-        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"}).closest("span").closest("div")
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
@@ -631,8 +657,9 @@ describe("SettingsDialog", () => {
 
         await enterCustomerName("Acme", true)
 
-        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
-        const errorTooltip = within(logoOptionsContainer).getByLabelText(/No Logo.dev token found/u)
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"})
+
+        const errorTooltip = within(logoOptionsContainer).getByLabelText(/Cannot use Auto logo source/u)
 
         // Get span that wraps the button
         const autoButtonSpan = within(logoOptionsContainer).getByRole("button", {name: /Auto/u}).parentElement
