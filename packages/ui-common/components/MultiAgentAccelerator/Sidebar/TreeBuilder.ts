@@ -4,161 +4,262 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
 
-export type NodeIndex = Map<string, {agentInfo: AgentInfo; displayName: string}>
+//#region Types and Interfaces
 
 /**
- * Iteratively sort all children of tree nodes using a queue-based approach
- * @param nodes - Array of tree nodes to sort
- * @param nodeIndex - Index mapping node IDs to their AgentInfo and display names, used for sorting by display name
+ * Represents either a category (folder) or a network (leaf) in the tree view.
+ * Note that we omit the `children` property from the parent as we want to use read-only semantics
  */
-const sortTreeNodes = (nodes: TreeViewDefaultItemModelProperties[], nodeIndex: NodeIndex): void => {
-    // Sort the top level nodes first. We sort by displayName because that's what the user sees
-    nodes.sort((a, b) => {
-        const aDisplayName = nodeIndex.get(a.id)?.displayName ?? a.label
-        const bDisplayName = nodeIndex.get(b.id)?.displayName ?? b.label
-        return aDisplayName.localeCompare(bDisplayName)
-    })
+export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModelProperties, "children"> {
+    readonly children?: readonly AgentNetworkTreeItemModel[]
+    readonly displayName: string
+    readonly iconSuggestion?: string
+    readonly isNetwork: boolean
+    readonly tags?: readonly string[]
+    readonly temporaryNetworkExpirationTime?: Date
+    readonly temporaryNetworkHocon?: string | null
+}
 
-    // Use a queue for breadth-first traversal to avoid recursion
-    const queue: TreeViewDefaultItemModelProperties[] = [...nodes]
-    let index = 0
+interface NetworkTreeItemMetadata {
+    readonly iconSuggestion?: string
+    readonly temporaryNetworkExpirationTime?: Date
+    readonly temporaryNetworkHocon?: string | null
+}
 
-    // For each node in the queue, sort its children and add them to the end of the queue
-    while (index < queue.length) {
-        const node = queue[index]
-        index += 1
+interface TreeBuildState {
+    readonly categorizedItems: readonly AgentNetworkTreeItemModel[]
+    readonly uncategorizedItems: readonly AgentNetworkTreeItemModel[]
+}
 
-        if (node.children && node.children.length > 0) {
-            node.children.sort((a, b) => {
-                const aDisplayName = nodeIndex.get(a.id)?.displayName ?? a.label
-                const bDisplayName = nodeIndex.get(b.id)?.displayName ?? b.label
-                return aDisplayName.localeCompare(bDisplayName)
-            })
-            queue.push(...node.children)
+//#endregion
+
+/**
+ * Recursively searches for a tree item with the specified ID within the given list of tree items.
+ * @param items - The list of tree items to search through
+ * @param itemId - The ID of the tree item to find
+ * @returns The tree item with the matching ID, or undefined if not found
+ *
+ * @note Short-circuiting is used to avoid unnecessary searches once a match is found (compared to e.g., `flatMap()`)
+ */
+export const findTreeItemById = (
+    items: readonly AgentNetworkTreeItemModel[],
+    itemId: string
+): AgentNetworkTreeItemModel | undefined => {
+    for (const item of items) {
+        if (item.id === itemId) {
+            return item
+        }
+
+        const childMatch = item.children ? findTreeItemById(item.children, itemId) : undefined
+        if (childMatch) {
+            return childMatch
         }
     }
+
+    return undefined
 }
 
 /**
- * Add a single AgentInfo entry into the tree structure
+ * Converts a raw agent name into a display name for the tree view, respecting the user's preference for native
+ * vs cleaned names.
+ * @param itemName - The raw agent name from the API
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @returns The display name to show in the tree view
  */
-const addNetworkToTree = (
+const toDisplayName = (itemName: string, useNativeNames: boolean): string =>
+    useNativeNames ? itemName : cleanUpAgentName(removeTrailingUuid(itemName))
+
+/**
+ * Converts an AgentInfo object into a tree item model representing a network (leaf node).
+ * @param network - The AgentInfo object containing details about the network
+ * @param label - The label to use for the tree item (usually derived from the agent name)
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
+ * @returns An AgentNetworkTreeItemModel representing the network as a leaf node in the tree
+ */
+const toNetworkLeaf = (
     network: AgentInfo,
-    result: TreeViewDefaultItemModelProperties[],
-    uncategorized: TreeViewDefaultItemModelProperties,
-    map: Map<string, TreeViewDefaultItemModelProperties>,
-    nodeIndex: NodeIndex,
-    useNativeNames: boolean
-): void => {
+    label: string,
+    useNativeNames: boolean,
+    metadata: NetworkTreeItemMetadata = {}
+): AgentNetworkTreeItemModel => ({
+    id: network.agent_name,
+    label,
+    displayName: toDisplayName(label, useNativeNames),
+    iconSuggestion: metadata.iconSuggestion,
+    isNetwork: true,
+    tags: network.tags,
+    temporaryNetworkExpirationTime: metadata.temporaryNetworkExpirationTime,
+    temporaryNetworkHocon: metadata.temporaryNetworkHocon,
+})
+
+/**
+ * Recursively sort tree nodes and their children by display name
+ * @param nodes - Array of tree nodes to sort
+ * @returns New array of tree nodes sorted by display name, with children also sorted
+ */
+const toSortedTreeNodes = (nodes: readonly AgentNetworkTreeItemModel[]): AgentNetworkTreeItemModel[] =>
+    [...nodes]
+        .sort((a, b) => a.displayName.localeCompare(b.displayName))
+        .map((node) => ({
+            ...node,
+            children: node.children ? toSortedTreeNodes(node.children) : undefined,
+        }))
+
+/**
+ * Creates a tree item model representing a category (folder node) in the tree view.
+ * @param id - The unique ID for the folder node, typically derived from the category path
+ * @param label - The label to use for the tree item (usually derived from the category name)
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @returns An AgentNetworkTreeItemModel representing the category as a folder node in the tree
+ */
+const toFolderNode = (id: string, label: string, useNativeNames: boolean): AgentNetworkTreeItemModel => ({
+    id,
+    label,
+    displayName: toDisplayName(label, useNativeNames),
+    isNetwork: false,
+    children: [],
+})
+
+/**
+ * Recursively adds a network to the categorized tree structure based on its agent name parts.
+ * @param nodes - The current list of tree nodes at this level of the hierarchy
+ * @param network - The AgentInfo object representing the network to add
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
+ * @param parts - The parts of the agent name split by "/", used to determine the category hierarchy
+ * @param depth - The current depth in the category hierarchy, used to determine which part of the agent name to use
+ * for this level. For example, if the agent name is "category/subcategory/network", then at depth 0 we use "category",
+ * at depth 1 we use "subcategory", and at depth 2 we use "network".
+ */
+const withCategorizedNetworkAdded = (
+    nodes: readonly AgentNetworkTreeItemModel[],
+    network: AgentInfo,
+    useNativeNames: boolean,
+    metadata: NetworkTreeItemMetadata,
+    parts: readonly string[],
+    depth = 0
+): AgentNetworkTreeItemModel[] => {
+    const label = parts[depth]
+
+    // The node ID is constructed from the parts up to the current depth, analogous to a file path.
+    const nodeId = parts.slice(0, depth + 1).join("/")
+
+    // It's a network (leaf node) if we're at the last part of the agent name, otherwise it's a category (folder node)
+    const isNetwork = depth === parts.length - 1
+
+    // Check if a node with this ID already exists at the current level
+    const existingIndex = nodes.findIndex((node) => node.id === nodeId)
+
+    // If it's a network, we create a leaf node. If it's a category, we either create a new folder node or
+    // update the existing one with the new child.
+    const nextNode: AgentNetworkTreeItemModel = isNetwork
+        ? toNetworkLeaf(network, label, useNativeNames, metadata)
+        : {
+              ...(existingIndex >= 0 ? nodes[existingIndex] : toFolderNode(nodeId, label, useNativeNames)),
+              children: withCategorizedNetworkAdded(
+                  existingIndex >= 0 ? (nodes[existingIndex].children ?? []) : [],
+                  network,
+                  useNativeNames,
+                  metadata,
+                  parts,
+                  depth + 1
+              ),
+          }
+
+    // If the node doesn't already exist, we add it to the list. If it does exist, we replace it with the updated node.
+    if (existingIndex < 0) {
+        return [...nodes, nextNode]
+    }
+
+    // Return a new array with the existing node replaced by the updated node
+    return nodes.map((node, index) => (index === existingIndex ? nextNode : node))
+}
+
+/**
+ * Adds a network to the tree build state, either as an uncategorized item if its agent name has no "/"
+ * or as a categorized item
+ * @param state - The current state of the tree build, containing categorized and uncategorized items
+ * @param network - The AgentInfo object representing the network to add to the tree
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
+ */
+const withNetworkAdded = (
+    state: TreeBuildState,
+    network: AgentInfo,
+    useNativeNames: boolean,
+    metadata: NetworkTreeItemMetadata
+): TreeBuildState => {
+    // Split the agent name into parts based on "/", which indicates category hierarchy. For example, an agent name
     const parts = network.agent_name.split("/")
 
-    // If there's only one part, it means this network isn't in any folder, so we add it directly under "Uncategorized"
+    // If there are no "/" in the agent name, we consider it uncategorized and add it to the uncategorized items list.
     if (parts.length === 1) {
-        uncategorized.children.push({id: network.agent_name, label: network.agent_name, children: []})
-        nodeIndex.set(network.agent_name, {
-            agentInfo: network,
-            displayName: useNativeNames ? network.agent_name : cleanUpAgentName(network.agent_name),
-        })
-    } else {
-        // Otherwise, we need to build out the tree structure based on the parts of the agent_name. Some paths might
-        // already exist if we've processed another network that shares the same parent folders,
-        // so we check the map to avoid duplicating nodes.
-        let currentLevel = result
+        return {
+            ...state,
+            uncategorizedItems: [
+                ...state.uncategorizedItems,
+                toNetworkLeaf(network, network.agent_name, useNativeNames, metadata),
+            ],
+        }
+    }
 
-        parts.forEach((part, index) => {
-            // Build the full path ID by joining all parts up to the current position
-            const nodeId = parts.slice(0, index + 1).join("/")
-            let node = map.get(nodeId)
-
-            if (!node) {
-                // If we haven't created a node for this path yet, create it and add it to the map
-                node = {id: nodeId, label: part, children: []}
-                map.set(nodeId, node)
-                if (index === parts.length - 1) {
-                    const displayName = useNativeNames ? part : cleanUpAgentName(removeTrailingUuid(part))
-
-                    // Add the AgentInfo to the nodeIndex for quick lookup later, using the full path as the key
-                    nodeIndex.set(nodeId, {agentInfo: network, displayName})
-                }
-
-                // If this is a top-level node (index 0), add it directly to the result.
-                // Otherwise, find its parent and add it there.
-                if (index === 0) {
-                    // Top-level node, add directly to result
-                    currentLevel.push(node)
-                } else {
-                    // Not a top-level node, find parent and add to its children
-                    const parentId = parts.slice(0, index).join("/")
-                    const parentNode = map.get(parentId)
-                    if (parentNode) {
-                        parentNode.children.push(node)
-                    }
-                }
-            }
-
-            // Move down to the next level of the tree for the next iteration
-            currentLevel = node.children
-        })
+    // Return the updated state with the network added to the categorized items
+    return {
+        ...state,
+        categorizedItems: withCategorizedNetworkAdded(state.categorizedItems, network, useNativeNames, metadata, parts),
     }
 }
 
 /**
  * Build a tree view structure from a flat list of networks.
  * The list of networks comes from a call to the Neuro-san /list API
- * The tree structure is used by the RichTreeView component to display the networks
- * @param networks - Array of networks from the Neuro-san /list API
- * @param temporaryNetworks - Array of temporary networks (e.g. ones recently created by the user)
+ * The tree structure is used by the RichTreeView component to display the networks.
+ *
  * @param useNativeNames - Whether to use the raw agent names from the API or to clean them up for display.
- * @returns Array of {@linkcode TreeViewDefaultItemModelProperties} objects representing the tree structure and an
- * index for rapid access
+ * @param regularNetworks - Array of networks from the Neuro-san /list API
+ * @param temporaryNetworks - Array of temporary networks (e.g., ones recently created by the user)
+ * @param iconSuggestions
+ * @returns Array of {@linkcode AgentNetworkTreeItemModel} objects representing the tree structure
  */
 export const buildTreeViewItems = (
-    networks: readonly AgentInfo[],
-    temporaryNetworks: readonly TemporaryNetwork[],
-    useNativeNames: boolean
-): {treeViewItems: TreeViewDefaultItemModelProperties[]; nodeIndex: NodeIndex} => {
-    // Map to keep track of created nodes in a tree structure
-    const treeBuilderMap = new Map<string, TreeViewDefaultItemModelProperties>()
-
-    // Index to quickly look up AgentInfo by node ID without having to traverse the tree
-    const nodeIndex: NodeIndex = new Map()
-
-    // Resulting tree view items, ready for consumption by RichTreeView
-    const treeViewItems: TreeViewDefaultItemModelProperties[] = []
-
-    // Special parent node for networks that aren't in any folder
-    const uncategorized: TreeViewDefaultItemModelProperties = {
-        id: "uncategorized",
-        label: "uncategorized",
-        children: [],
+    useNativeNames: boolean,
+    regularNetworks: readonly AgentInfo[] = [],
+    temporaryNetworks: readonly TemporaryNetwork[] = [],
+    iconSuggestions: Record<string, string> = {}
+): AgentNetworkTreeItemModel[] => {
+    let tree: TreeBuildState = {
+        categorizedItems: [],
+        uncategorizedItems: [],
     }
 
-    // Build a tree structure from the flat list of networks.
-    // The networks come in as a series of "paths" like "industry/retail/macys" and we need to build a tree
-    // structure from that.
-    networks.forEach((network) =>
-        addNetworkToTree(network, treeViewItems, uncategorized, treeBuilderMap, nodeIndex, useNativeNames)
-    )
-
-    // Now handle temporary networks
-    temporaryNetworks?.forEach((temporaryNetwork) =>
-        addNetworkToTree(
-            temporaryNetwork.agentInfo,
-            treeViewItems,
-            uncategorized,
-            treeBuilderMap,
-            nodeIndex,
-            useNativeNames
-        )
-    )
-
-    // Add "Uncategorized" to the result if there are any such networks
-    if (uncategorized.children.length > 0) {
-        treeViewItems.push(uncategorized)
+    for (const network of regularNetworks) {
+        tree = withNetworkAdded(tree, network, useNativeNames, {
+            iconSuggestion: iconSuggestions[network.agent_name],
+        })
     }
 
-    // Sort all nodes in the tree
-    sortTreeNodes(treeViewItems, nodeIndex)
+    for (const temporaryNetwork of temporaryNetworks) {
+        tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, {
+            iconSuggestion: "HourglassTop",
+            temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
+            temporaryNetworkHocon: temporaryNetwork.networkHocon,
+        })
+    }
 
-    return {treeViewItems, nodeIndex}
+    const treeViewItems: readonly AgentNetworkTreeItemModel[] =
+        tree.uncategorizedItems.length > 0
+            ? [
+                  ...tree.categorizedItems,
+                  {
+                      id: "uncategorized",
+                      label: "uncategorized",
+                      displayName: toDisplayName("uncategorized", useNativeNames),
+                      isNetwork: false,
+                      children: tree.uncategorizedItems,
+                  },
+              ]
+            : tree.categorizedItems
+
+    return toSortedTreeNodes(treeViewItems)
 }

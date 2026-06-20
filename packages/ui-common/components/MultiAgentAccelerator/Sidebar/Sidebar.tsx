@@ -38,7 +38,7 @@ import {
 } from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
-import {buildTreeViewItems} from "./TreeBuilder"
+import {buildTreeViewItems, findTreeItemById} from "./TreeBuilder"
 import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -228,7 +228,7 @@ export const Sidebar: FC<SidebarProps> = ({
         if (tempUrl && !tempUrl.startsWith("http://") && !tempUrl.startsWith("https://")) {
             tempUrl = `https://${tempUrl}`
         }
-        // Call setSelectedNetwork(null) otherwise it can cause issues when switching agent networks (i.e. for Save)
+        // Call setSelectedNetwork(null) otherwise it can cause issues when switching agent networks (i.e., for Save)
         setSelectedNetwork(null)
         handleSettingsClose()
         customURLCallback(tempUrl)
@@ -277,33 +277,25 @@ export const Sidebar: FC<SidebarProps> = ({
         onEditNetwork?.(network)
     }
 
-    const {treeViewItems, nodeIndex} = buildTreeViewItems(networks, temporaryNetworks, useNativeNames)
-    const temporaryNetworkExpirationTimes = temporaryNetworks.reduce(
-        (acc, tempNetwork) => {
-            acc[tempNetwork.agentInfo.agent_name] = new Date(tempNetwork.reservation.expiration_time_in_seconds * 1000)
-            return acc
-        },
-        {} as Record<string, Date>
-    )
-
-    const temporaryNetworkHoconStrings = temporaryNetworks.reduce((acc: Record<string, string | null>, tempNetwork) => {
-        acc[tempNetwork.agentInfo.agent_name] = tempNetwork.networkHocon
-        return acc
-    }, {})
+    const treeViewItems = buildTreeViewItems(useNativeNames, networks, temporaryNetworks, networkIconSuggestions)
 
     const handleSelectedItemsChange = (_event: unknown, itemId: string | null) => {
         if (!itemId) {
             return
         }
 
-        // Only select leaf nodes (items in nodeIndex) as networks
-        const isLeafNode = nodeIndex.has(itemId)
-        if (!isLeafNode) {
+        const treeItem = findTreeItemById(treeViewItems, itemId)
+        if (!treeItem) {
+            return
+        }
+
+        // Only allow selecting child nodes (i.e., actual networks), not parent nodes (folders).
+        if (!treeItem.isNetwork) {
             return
         }
 
         // Don't allow selecting expired temporary networks
-        const expirationTime = temporaryNetworkExpirationTimes[itemId]
+        const expirationTime = treeItem?.temporaryNetworkExpirationTime
         if (expirationTime && expirationTime < new Date()) {
             return
         }
@@ -396,29 +388,17 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Box>
                 </SidebarHeading>
                 <RichTreeView
-                    key={Object.keys(networkIconSuggestions || {}).length} // Force remount when suggestions change
-                    items={treeViewItems}
+                    disableSelection={isAwaitingLlm}
                     expandedItems={expandedItems}
-                    onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+                    items={treeViewItems}
                     multiSelect={false}
+                    onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
                     onSelectedItemsChange={handleSelectedItemsChange}
                     selectedItems={selectedItem}
-                    disableSelection={isAwaitingLlm}
-                    slots={{
-                        item: AgentNetworkTreeItem as RichTreeViewSlots["item"],
-                    }}
-                    // Pass custom props to tree items via slotProps.
-                    // Reference: https://github.com/mui/mui-x/issues/13351
                     slotProps={{
-                        item: {
-                            networkIconSuggestions,
-                            nodeIndex,
-                            onDeleteNetwork,
-                            onEditNetwork: handleEditNetworkWithSelect,
-                            temporaryNetworkExpirationTimes,
-                            temporaryNetworkHoconStrings,
-                        } as AgentNetworkNodeProps,
+                        item: {onDeleteNetwork, onEditNetwork: handleEditNetworkWithSelect} as AgentNetworkNodeProps,
                     }}
+                    slots={{item: AgentNetworkTreeItem as RichTreeViewSlots["item"]}}
                 />
             </SidebarAside>
             <Popover
