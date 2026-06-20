@@ -33,9 +33,9 @@ import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"
-import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
-import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman} from "../const"
+import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman, TEMPORARY_NETWORK_FOLDER} from "../const"
 
 //#region: Constants
 
@@ -43,9 +43,28 @@ export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
-const TEMPORARY_FOLDER_DISPLAY = "Temporary"
+const TEMPORARY_FOLDER_DISPLAY = cleanUpAgentName(TEMPORARY_NETWORK_FOLDER)
 
 //#endregion: Constants
+
+//#region: Types
+
+/** Outcome of validating a selected file against the advertised constraints. */
+export enum ImportFileValidation {
+    VALID = "valid",
+    UNSUPPORTED_TYPE = "unsupported_type",
+    TOO_LARGE = "too_large",
+}
+
+/** High-level counts shown on the review step so the user can sanity-check the import. */
+export interface NetworkSummary {
+    readonly agents: number
+    readonly codedTools: number
+    readonly externalAgents: number
+    readonly frontman: string
+}
+
+//#endregion: Types
 
 //#region: Helpers
 
@@ -54,9 +73,7 @@ const TEMPORARY_FOLDER_DISPLAY = "Temporary"
  *
  * Returns the normalised JSON string on success, or an error message on failure.
  */
-export const parseNetworkFileContent = (
-    text: string
-): {success: true; json: string} | {success: false; error: string} => {
+export const parseNetworkFileContent = (text: string): {success: boolean; json?: string; error?: string} => {
     if (text.trim() === "") {
         return {success: false, error: "The file is empty."}
     }
@@ -95,14 +112,6 @@ export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinit
         }))
 }
 
-/** High-level counts shown on the review step so the user can sanity-check the import. */
-export interface NetworkSummary {
-    readonly agents: number
-    readonly codedTools: number
-    readonly externalAgents: number
-    readonly frontman: string
-}
-
 /** Summarises a parsed network definition (counts by `display_as`, plus the frontman). */
 export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEntry[]): NetworkSummary => {
     const countOf = (displayAs: DisplayAs): number =>
@@ -131,20 +140,37 @@ export const formatFileSize = (bytes: number): string => {
  * fed into the synchronous parsing/regex pass and freeze the UI; the server imposes
  * no such limit.
  *
- * Returns a human-readable error message on rejection, or null if the file is acceptable.
+ * Returns a status the caller can branch on; rendering a message is left to the caller
+ * (see `importFileValidationMessage`).
  */
-export const validateImportFile = (file: File): string | null => {
+export const validateImportFile = (file: File): ImportFileValidation => {
     const {ext} = splitFilename(file.name)
     const normalizedExt = `.${ext.toLowerCase()}`
     if (!IMPORT_MODAL_ACCEPTED_EXTENSIONS.includes(normalizedExt)) {
-        const accepted = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(" and ")
-        return `Unsupported file type${ext ? ` ".${ext}"` : ""}. Accepts ${accepted}.`
+        return ImportFileValidation.UNSUPPORTED_TYPE
     }
     if (file.size > IMPORT_MODAL_MAX_FILE_SIZE_BYTES) {
-        const max = formatFileSize(IMPORT_MODAL_MAX_FILE_SIZE_BYTES)
-        return `File is too large (${formatFileSize(file.size)}). Maximum size is ${max}.`
+        return ImportFileValidation.TOO_LARGE
     }
-    return null
+    return ImportFileValidation.VALID
+}
+
+/** Human-readable explanation for a non-VALID validation status, or null if the file is acceptable. */
+export const importFileValidationMessage = (validation: ImportFileValidation, file: File): string | null => {
+    switch (validation) {
+        case ImportFileValidation.UNSUPPORTED_TYPE: {
+            const {ext} = splitFilename(file.name)
+            const accepted = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(" and ")
+            return `Unsupported file type${ext ? ` ".${ext}"` : ""}. Accepts ${accepted}.`
+        }
+        case ImportFileValidation.TOO_LARGE: {
+            const max = formatFileSize(IMPORT_MODAL_MAX_FILE_SIZE_BYTES)
+            return `File is too large (${formatFileSize(file.size)}). Maximum size is ${max}.`
+        }
+        case ImportFileValidation.VALID:
+        default:
+            return null
+    }
 }
 
 /** Convert a filename stem to a display-friendly network name.
@@ -221,13 +247,13 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     onClose,
     onImport,
 }) => {
-    const [activeStep, setActiveStep] = useState(0)
-    const [isDragOver, setIsDragOver] = useState(false)
+    const [activeStep, setActiveStep] = useState<number>(0)
+    const [isDragOver, setIsDragOver] = useState<boolean>(false)
     const [file, setFile] = useState<File | null>(null)
     const [parseState, setParseState] = useState<ParseState | null>(null)
     const [parseError, setParseError] = useState<string | null>(null)
     const [parsedJson, setParsedJson] = useState<string | null>(null)
-    const [networkName, setNetworkName] = useState("")
+    const [networkName, setNetworkName] = useState<string>("")
     // Track which (normalised) name the user consciously chose to replace
     const [conflictAcknowledgedFor, setConflictAcknowledgedFor] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -246,29 +272,21 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         }
     }, [isOpen])
 
-    //#region: Conflict detection
-
-    const normalizedName = normalizeForComparison(networkName)
-    const nameHasConflict = existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizedName)
-    const showConflict = nameHasConflict && conflictAcknowledgedFor !== normalizedName
-
-    //#endregion: Conflict detection
-
-    //#region: File processing
-
-    const processFile = (selectedFile: File) => {
-        setFile(selectedFile)
-        setActiveStep(1)
-        setParsedJson(null)
+    // Read and parse the selected file. Driven by an effect so the read is owned by the component
+    // lifecycle: the cleanup aborts an in-flight FileReader (discarding its load/error listeners) if
+    // the modal closes or a new file is selected before this read finishes, preventing a stale read
+    // from updating state out from under a newer one.
+    useEffect(() => {
+        if (!file) return undefined
 
         // Validate extension + size before reading. The <input accept> filter only
         // hints the picker and is bypassed by drag/drop, so unsupported or oversized
         // files would otherwise be fed straight into the parser.
-        const validationError = validateImportFile(selectedFile)
-        if (validationError) {
+        const validation = validateImportFile(file)
+        if (validation !== ImportFileValidation.VALID) {
             setParseState("error")
-            setParseError(validationError)
-            return
+            setParseError(importFileValidationMessage(validation, file))
+            return undefined
         }
 
         setParseState("loading")
@@ -285,7 +303,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             }
             setParsedJson(result.json)
             setParseState("success")
-            setNetworkName(filenameToNetworkName(selectedFile.name))
+            setNetworkName(filenameToNetworkName(file.name))
             setConflictAcknowledgedFor(null)
         })
         reader.addEventListener("error", () => {
@@ -293,7 +311,28 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             setParseError("Failed to read the file.")
         })
         // eslint-disable-next-line unicorn/prefer-blob-reading-methods
-        reader.readAsText(selectedFile)
+        reader.readAsText(file)
+
+        return () => reader.abort()
+    }, [file])
+
+    //#region: Conflict detection
+
+    const normalizedName = normalizeForComparison(networkName)
+    const nameHasConflict = existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizedName)
+    const showConflict = nameHasConflict && conflictAcknowledgedFor !== normalizedName
+
+    //#endregion: Conflict detection
+
+    //#region: File processing
+
+    const processFile = (selectedFile: File) => {
+        setActiveStep(1)
+        setParsedJson(null)
+        setConflictAcknowledgedFor(null)
+        // Setting the file kicks off the read effect below, which owns reading/parsing and
+        // cleans up its own FileReader.
+        setFile(selectedFile)
     }
 
     const handleDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
@@ -691,7 +730,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                             <Typography
                                                 sx={{
                                                     fontFamily: "isFrontman" in stat ? "monospace" : undefined,
-                                                    fontSize: "isFrontman" in stat ? "0.75rem" : "1.25rem",
+                                                    fontSize: "isFrontman" in stat ? 15 : 18,
                                                     lineHeight: 1.4,
                                                     marginTop: 0.5,
                                                     wordBreak: "break-word",

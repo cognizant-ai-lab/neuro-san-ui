@@ -24,6 +24,8 @@ import {
     formatFileSize,
     IMPORT_MODAL_ACCEPTED_EXTENSIONS,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
+    ImportFileValidation,
+    importFileValidationMessage,
     ImportNetworkModal,
     ImportNetworkModalProps,
     jsonToNetworkDefinition,
@@ -427,7 +429,9 @@ describe("validateImportFile", () => {
         {name: "a supported extension case-insensitively", fileName: "NET.JSON", size: 1024},
         {name: "a file exactly at the size limit", fileName: "net.json", size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES},
     ])("should accept $name", ({fileName, size}) => {
-        expect(validateImportFile(fileWithSize(fileName, size))).toBeNull()
+        const file = fileWithSize(fileName, size)
+        expect(validateImportFile(file)).toBe(ImportFileValidation.VALID)
+        expect(importFileValidationMessage(ImportFileValidation.VALID, file)).toBeNull()
     })
 
     it.each([
@@ -436,23 +440,34 @@ describe("validateImportFile", () => {
             name: "an unsupported .hocon extension",
             fileName: "net.hocon",
             size: 1024,
+            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
             error: /Unsupported file type ".hocon"/u,
         },
         {
             name: "an unsupported .png extension",
             fileName: "image.png",
             size: 1024,
+            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
             error: /Unsupported file type ".png"/u,
         },
-        {name: "a file with no extension", fileName: "noextension", size: 1024, error: /Unsupported file type\./u},
+        {
+            name: "a file with no extension",
+            fileName: "noextension",
+            size: 1024,
+            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
+            error: /Unsupported file type\./u,
+        },
         {
             name: "a file larger than the max size",
             fileName: "net.json",
             size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1,
+            expectedValidation: ImportFileValidation.TOO_LARGE,
             error: /File is too large/u,
         },
-    ])("should reject $name", ({fileName, size, error}) => {
-        expect(validateImportFile(fileWithSize(fileName, size))).toMatch(error)
+    ])("should reject $name", ({fileName, size, expectedValidation, error}) => {
+        const file = fileWithSize(fileName, size)
+        expect(validateImportFile(file)).toBe(expectedValidation)
+        expect(importFileValidationMessage(expectedValidation, file)).toMatch(error)
     })
 })
 
