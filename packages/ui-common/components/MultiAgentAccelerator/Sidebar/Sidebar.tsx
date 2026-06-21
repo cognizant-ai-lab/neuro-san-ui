@@ -14,39 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined"
-import ClearIcon from "@mui/icons-material/Clear"
-import HighlightOff from "@mui/icons-material/HighlightOff"
-import SettingsIcon from "@mui/icons-material/Settings"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
-import IconButton from "@mui/material/IconButton"
-import InputAdornment from "@mui/material/InputAdornment"
-import Popover from "@mui/material/Popover"
-import {keyframes, styled, useTheme} from "@mui/material/styles"
-import TextField from "@mui/material/TextField"
-import Tooltip from "@mui/material/Tooltip"
+import {keyframes, styled} from "@mui/material/styles"
+import Tooltip, {tooltipClasses, TooltipProps} from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {RichTreeView, RichTreeViewSlots} from "@mui/x-tree-view/RichTreeView"
-import {
-    FC,
-    ChangeEvent as ReactChangeEvent,
-    KeyboardEvent as ReactKeyboardEvent,
-    MouseEvent as ReactMouseEvent,
-    useEffect,
-    useState,
-} from "react"
+import httpStatus from "http-status"
+import {FC, useEffect, useState} from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
 import {buildTreeViewItems, findTreeItemById} from "./TreeBuilder"
-import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
+import {testConnection} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {useEnvironmentStore} from "../../../state/Environment"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
+
+//#region Constants
 
 // Animation for the sparkle effect when a new temporary network is added.
 const sparkle = keyframes`
@@ -83,16 +70,17 @@ const sparkle = keyframes`
         opacity: 0.25;
     }
 `
-
-// #region: Styled Components
-
-const PrimaryButton = styled(Button)({
-    marginLeft: "0.5rem",
-    marginTop: "2px",
-})
-
 // Name for sparkle animation CSS class
 export const SPARKLE_HIGHLIGHT_CLASS = "sparkle-highlight"
+
+const EMPTY_ARRAY: TemporaryNetwork[] = []
+
+// Interval for pinging the Neuro-san server to check if it's online, in milliseconds
+const NEURO_SAN_PING_INTERVAL_MS = 10_000
+
+//#endregion: Constants
+
+//#region: Styled Components
 
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
@@ -130,142 +118,99 @@ const SidebarHeading = styled("h2")(({theme}) => ({
     zIndex: getZIndex(1, theme),
 }))
 
-// #endregion: Styled Components
+// For showing server status which can be lengthy
+const ServerStatusTooltip = styled(({className, ...props}: TooltipProps) => (
+    <Tooltip
+        describeChild
+        {...props}
+        classes={{popper: className}}
+    />
+))({
+    [`& .${tooltipClasses.tooltip}`]: {
+        backgroundColor: "rgba(97, 97, 97, 1)",
+        maxWidth: 500,
+        opacity: 1,
+    },
+})
+//#endregion: Styled Components
 
-// #region: Types
+//#region: Types
 
-enum CONNECTION_STATUS {
-    IDLE = "idle",
-    SUCCESS = "success",
-    ERROR = "error",
-}
-
+type CONNECTION_STATUS = "online" | "offline" | "unknown"
 export interface SidebarProps {
-    readonly customURLCallback: (url: string) => void
-    readonly customURLLocalStorage?: string
     readonly id: string
     readonly isAwaitingLlm: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
-    readonly onEditNetwork?: (network: string) => void
+    readonly neuroSanServerURL: string
+    readonly newlyAddedTemporaryNetworks?: Set<string>
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
+    readonly onEditNetwork?: (network: string) => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
-    readonly newlyAddedTemporaryNetworks?: Set<string>
 }
 
-// #endregion: Types
-
-const EMPTY_ARRAY: TemporaryNetwork[] = []
+//#endregion: Types
 
 export const Sidebar: FC<SidebarProps> = ({
-    customURLCallback,
-    customURLLocalStorage,
     id,
     isAwaitingLlm,
     networkIconSuggestions,
     networks,
+    neuroSanServerURL,
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
     onEditNetwork,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
-    // Get default URL from the environment store.
-    const {backendNeuroSanApiUrl} = useEnvironmentStore()
-    const [urlInput, setUrlInput] = useState<string>(customURLLocalStorage || backendNeuroSanApiUrl)
-    const [connectionStatus, setConnectionStatus] = useState<CONNECTION_STATUS>(CONNECTION_STATUS.IDLE)
-    const [testConnectionResult, setTestConnectionResult] = useState<TestConnectionResult | null>(null)
-    const connectionStatusSuccess = connectionStatus === CONNECTION_STATUS.SUCCESS
-    const connectionStatusError = connectionStatus === CONNECTION_STATUS.ERROR
-    const isDefaultUrl = urlInput === backendNeuroSanApiUrl
-    const saveEnabled = urlInput && (connectionStatusSuccess || (isDefaultUrl && !connectionStatusError))
-    const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLButtonElement | null>(null)
-    const settingsPopoverOpen = Boolean(settingsAnchorEl)
-
     const [expandedItems, setExpandedItems] = useState<string[]>([])
 
     const [selectedItem, setSelectedItem] = useState<string | null>(null)
 
-    // Theming/Dark mode
-    const darkMode = useTheme().palette.mode === "dark"
-
     // Display option for agent/network names
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
 
-    const handleSettingsClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
-        // On open of Settings popover, reset the connection status to idle
-        setConnectionStatus(CONNECTION_STATUS.IDLE)
-        setSettingsAnchorEl(event.currentTarget)
-    }
+    const [neuroSanServerStatus, setNeuroSanServerStatus] = useState<{
+        error?: string
+        httpStatus?: number
+        onlineStatus: CONNECTION_STATUS
+        version: string | null
+    }>({onlineStatus: "unknown", version: null})
 
-    const handleSettingsClose = (cancel: boolean = false) => {
-        setSettingsAnchorEl(null)
-        // If the user cancels, reset the custom URL input to the local storage value, or the default URL
-        if (cancel) {
-            setUrlInput(customURLLocalStorage || backendNeuroSanApiUrl)
-        }
-    }
-
-    const handleURLChange = (event: ReactChangeEvent<HTMLInputElement>) => {
-        setUrlInput(event.target.value)
-        // Reset connection check since URL input was changed
-        setConnectionStatus(CONNECTION_STATUS.IDLE)
-    }
-
-    const handleDefaultSettings = () => {
-        // Clear input but don't close the popover
-        setUrlInput(backendNeuroSanApiUrl)
-        // Reset connection check since URL input was cleared
-        setConnectionStatus(CONNECTION_STATUS.IDLE)
-    }
-
-    const handleSaveSettings = () => {
-        let tempUrl = urlInput
-        if (tempUrl.endsWith("/")) {
-            tempUrl = tempUrl.slice(0, -1)
-        }
-        if (tempUrl && !tempUrl.startsWith("http://") && !tempUrl.startsWith("https://")) {
-            tempUrl = `https://${tempUrl}`
-        }
-        // Call setSelectedNetwork(null) otherwise it can cause issues when switching agent networks (i.e., for Save)
-        setSelectedNetwork(null)
-        handleSettingsClose()
-        customURLCallback(tempUrl)
-    }
-
-    const handleSettingsSaveEnterKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-        if (event.key === "Enter" && saveEnabled) {
-            handleSaveSettings()
-        }
-    }
-
-    const handleTestConnection = async () => {
-        const result: TestConnectionResult = await testConnection(urlInput)
-        setTestConnectionResult(result)
-        if (result.success) {
-            setConnectionStatus(CONNECTION_STATUS.SUCCESS)
-        } else {
-            setConnectionStatus(CONNECTION_STATUS.ERROR)
-        }
-    }
-
-    const handleClearInput = () => {
-        setUrlInput("")
-        setConnectionStatus(CONNECTION_STATUS.IDLE)
-    }
-
-    // Fetch Neuro-san version on load and whenever the saved URL changes
     useEffect(() => {
-        const fetchVersion = async () => {
-            // We aren't really trying to test the connection here, just getting the version.
-            const result: TestConnectionResult = await testConnection(customURLLocalStorage || backendNeuroSanApiUrl)
-            if (result.success) {
-                setTestConnectionResult(result)
+        let isMounted = true
+
+        const checkStatus = async () => {
+            try {
+                const result = await testConnection(neuroSanServerURL)
+
+                if (!isMounted) {
+                    return
+                }
+                setNeuroSanServerStatus(
+                    result.success
+                        ? {onlineStatus: "online", version: result.version}
+                        : {error: result.status, httpStatus: result.httpStatus, onlineStatus: "offline", version: null}
+                )
+            } catch (error) {
+                console.debug("Error testing connection to Neuro-san server:", error)
+                if (isMounted) {
+                    const errorString = error instanceof Error ? error.message : String(error)
+                    setNeuroSanServerStatus({error: errorString, onlineStatus: "offline", version: null})
+                }
             }
         }
-        void fetchVersion()
-    }, [customURLLocalStorage, backendNeuroSanApiUrl])
+
+        void checkStatus()
+
+        const intervalId = setInterval(checkStatus, NEURO_SAN_PING_INTERVAL_MS)
+
+        return () => {
+            isMounted = false
+            clearInterval(intervalId)
+        }
+    }, [neuroSanServerURL])
 
     // When the edit pencil is clicked, select the network first (if not already selected) so the network loads
     // before entering edit mode — the user shouldn't have to click the network and then click the pencil separately.
@@ -337,209 +282,99 @@ export const Sidebar: FC<SidebarProps> = ({
         }
     }, [newlyAddedTemporaryNetworks])
 
+    const getNeuroSanServerStatusColor = () => {
+        switch (neuroSanServerStatus.onlineStatus) {
+            case "online":
+                return "var(--bs-green)"
+            case "offline":
+                return "var(--bs-red)"
+            case "unknown":
+            default:
+                return "var(--bs-gray)"
+        }
+    }
     return (
-        <>
-            <SidebarAside id={`${id}-sidebar`}>
-                <SidebarHeading id={`${id}-heading`}>
-                    Agent Networks
-                    <Box sx={{display: "flex"}}>
-                        <Button
-                            aria-label="Add New Network"
-                            disabled={isAwaitingLlm}
-                            id="add-network-btn"
-                            onClick={() => {
-                                setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
-                                setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
-                            }}
-                            sx={{display: "inline-block", minWidth: "40px"}}
-                        >
-                            <Tooltip
-                                title="Create your own agent network"
-                                placement="top"
-                            >
-                                <AddBoxRounded
-                                    id="add-network-icon"
-                                    sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
-                                />
-                            </Tooltip>
-                        </Button>
-                        <Button
-                            aria-label="Agent Network Settings"
-                            disabled={isAwaitingLlm}
-                            id="agent-network-settings-btn"
-                            onClick={handleSettingsClick}
-                            sx={{display: "inline-block", minWidth: "40px"}}
-                        >
-                            <Tooltip
-                                id="agent-network-settings-tooltip"
-                                placement="top"
-                                title={`${customURLLocalStorage || backendNeuroSanApiUrl}\nversion: ${
-                                    testConnectionResult?.version || "unknown"
-                                }`}
-                            >
-                                <SettingsIcon
-                                    id="agent-network-settings-icon"
-                                    sx={{
-                                        color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)",
-                                    }}
-                                />
-                            </Tooltip>
-                        </Button>
-                    </Box>
-                </SidebarHeading>
-                <RichTreeView
-                    disableSelection={isAwaitingLlm}
-                    expandedItems={expandedItems}
-                    items={treeViewItems}
-                    multiSelect={false}
-                    onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-                    onSelectedItemsChange={handleSelectedItemsChange}
-                    selectedItems={selectedItem}
-                    slotProps={{
-                        item: {onDeleteNetwork, onEditNetwork: handleEditNetworkWithSelect} as AgentNetworkNodeProps,
-                    }}
-                    slots={{item: AgentNetworkTreeItem as RichTreeViewSlots["item"]}}
-                />
-            </SidebarAside>
-            <Popover
-                id="agent-network-settings-popover"
-                open={settingsPopoverOpen}
-                anchorEl={settingsAnchorEl}
-                onClose={() => handleSettingsClose(true)}
-                anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                }}
-                slotProps={{
-                    paper: {
-                        sx: {
-                            paddingTop: "0.75rem",
-                            paddingLeft: "0.5rem",
-                            paddingRight: "0.5rem",
-                            paddingBottom: "0.2rem",
-                        },
-                    },
-                }}
-            >
-                <TextField
-                    autoComplete="off"
-                    label="Agent server address"
-                    id="agent-network-settings-url"
-                    onChange={handleURLChange}
-                    onKeyUp={handleSettingsSaveEnterKey}
-                    placeholder="https://my_server_address:port"
-                    size="small"
-                    sx={{marginBottom: "0.5rem", minWidth: "400px"}}
-                    type="url"
-                    variant="outlined"
-                    value={urlInput}
-                    slotProps={{
-                        input: {
-                            endAdornment:
-                                urlInput && urlInput !== backendNeuroSanApiUrl ? (
-                                    <InputAdornment
-                                        id="clear-input-adornment"
-                                        position="end"
-                                    >
-                                        <IconButton
-                                            id="clear-input-icon-button"
-                                            edge="end"
-                                            onClick={handleClearInput}
-                                            size="small"
-                                            aria-label="Clear input"
-                                        >
-                                            <ClearIcon
-                                                fontSize="small"
-                                                id="clear-input-icon"
-                                            />
-                                        </IconButton>
-                                    </InputAdornment>
-                                ) : undefined,
-                        },
-                    }}
-                />
-                <PrimaryButton
-                    disabled={!urlInput}
-                    id="agent-network-settings-test-btn"
-                    onClick={handleTestConnection}
-                    variant="contained"
-                >
-                    Test
-                </PrimaryButton>
-                <PrimaryButton
-                    disabled={!saveEnabled}
-                    id="agent-network-settings-save-btn"
-                    onClick={handleSaveSettings}
-                    variant="contained"
-                >
-                    Save
-                </PrimaryButton>
-                <PrimaryButton
-                    id="agent-network-settings-cancel-btn"
-                    onClick={() => handleSettingsClose(true)}
-                    variant="contained"
-                >
-                    Cancel
-                </PrimaryButton>
-                <Button
-                    id="agent-network-settings-default-btn"
-                    onClick={handleDefaultSettings}
-                    sx={{
-                        marginLeft: "0.35rem",
-                        marginTop: "2px",
-                        color: darkMode ? "var(--bs-dark-mode-link)" : undefined,
-                    }}
-                    variant="text"
-                >
-                    Default
-                </Button>
-                {(connectionStatusSuccess || connectionStatusError) && (
-                    <Box
-                        id="connection-status-box"
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            marginLeft: "0.25rem",
-                            marginBottom: "0.5rem",
-                        }}
+        <SidebarAside id={`${id}-sidebar`}>
+            <SidebarHeading id={`${id}-heading`}>
+                <Box sx={{display: "flex", alignItems: "center", gap: (theme) => theme.spacing(1.5)}}>
+                    <ServerStatusTooltip
+                        title={
+                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
+                                <Typography variant="body2">
+                                    <strong>Status:</strong> {neuroSanServerStatus.onlineStatus}
+                                </Typography>
+                                <Typography variant="body2">
+                                    <strong>Version:</strong> {neuroSanServerStatus.version ?? "unknown"}
+                                </Typography>
+                                <Typography variant="body2">
+                                    <strong>URL:</strong> {neuroSanServerURL || "unknown"}
+                                </Typography>
+                                {neuroSanServerStatus.error && (
+                                    <>
+                                        <Typography variant="body2">
+                                            <strong>Error:</strong> {neuroSanServerStatus.error}
+                                        </Typography>
+                                        {neuroSanServerStatus.httpStatus && (
+                                            <Typography variant="body2">
+                                                <strong>HTTP status:</strong>{" "}
+                                                {`${neuroSanServerStatus.httpStatus} ` +
+                                                    `(${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
+                                            </Typography>
+                                        )}
+                                    </>
+                                )}
+                            </Box>
+                        }
+                        placement="top"
                     >
-                        {connectionStatusSuccess && (
-                            <>
-                                <CheckCircleOutlinedIcon
-                                    id="connection-status-success-icon"
-                                    sx={{color: "var(--bs-green)", fontSize: "1.2rem", marginRight: "0.25rem"}}
-                                />
-                                <Typography
-                                    id="connection-status-success-msg"
-                                    variant="body2"
-                                    sx={{
-                                        color: "var(--bs-green)",
-                                    }}
-                                >
-                                    Connected successfully
-                                </Typography>
-                            </>
-                        )}
-                        {connectionStatusError && (
-                            <>
-                                <HighlightOff
-                                    id="connection-status-error-icon"
-                                    sx={{color: "var(--bs-red)", fontSize: "1.2rem", marginRight: "0.25rem"}}
-                                />
-                                <Typography
-                                    id="connection-status-failed-msg"
-                                    variant="body2"
-                                    sx={{
-                                        color: "var(--bs-red)",
-                                    }}
-                                >
-                                    {`Connection failed: "${testConnectionResult?.status || "unknown error"}"`}
-                                </Typography>
-                            </>
-                        )}
-                    </Box>
-                )}
-            </Popover>
-        </>
+                        <Box
+                            sx={{
+                                backgroundColor: getNeuroSanServerStatusColor(),
+                                borderRadius: "50%",
+                                display: "inline-block",
+                                minWidth: "0.75rem",
+                                minHeight: "0.75rem",
+                            }}
+                        />
+                    </ServerStatusTooltip>
+                    Agent Networks
+                </Box>
+                <Box sx={{display: "flex"}}>
+                    <Button
+                        aria-label="Add New Network"
+                        disabled={isAwaitingLlm}
+                        id="add-network-btn"
+                        onClick={() => {
+                            setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
+                            setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+                        }}
+                        sx={{display: "inline-block", minWidth: "40px"}}
+                    >
+                        <Tooltip
+                            title="Create your own agent network"
+                            placement="top"
+                        >
+                            <AddBoxRounded
+                                id="add-network-icon"
+                                sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                            />
+                        </Tooltip>
+                    </Button>
+                </Box>
+            </SidebarHeading>
+            <RichTreeView
+                disableSelection={isAwaitingLlm}
+                expandedItems={expandedItems}
+                items={treeViewItems}
+                multiSelect={false}
+                onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+                onSelectedItemsChange={handleSelectedItemsChange}
+                selectedItems={selectedItem}
+                slotProps={{
+                    item: {onDeleteNetwork, onEditNetwork: handleEditNetworkWithSelect} as AgentNetworkNodeProps,
+                }}
+                slots={{item: AgentNetworkTreeItem as RichTreeViewSlots["item"]}}
+            />
+        </SidebarAside>
     )
 }

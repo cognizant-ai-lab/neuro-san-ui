@@ -208,14 +208,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
-    const customURLCallback = useCallback(
-        (url: string) => {
-            setNeuroSanURL(url || backendNeuroSanApiUrl)
-            setCustomURLLocalStorage(url === "" ? null : url)
-        },
-        [backendNeuroSanApiUrl, setCustomURLLocalStorage]
-    )
-
     // Memoized key for agent names to trigger icon suggestion updates when the set of agents changes, not just
     // when sorting/other operations on the agents list
     const agentNamesKey = useMemo(
@@ -774,15 +766,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     }}
                 >
                     <Sidebar
-                        customURLLocalStorage={customURLLocalStorage}
-                        customURLCallback={customURLCallback}
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
-                        networks={networks}
                         networkIconSuggestions={networkIconSuggestions}
+                        networks={networks}
+                        neuroSanServerURL={neuroSanURL}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                        onEditNetwork={handleEditNetwork}
                         onDeleteNetwork={handleDeleteNetwork}
+                        onEditNetwork={handleEditNetwork}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
