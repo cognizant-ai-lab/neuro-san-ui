@@ -32,7 +32,7 @@ export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
         return (
             <MultiAgentAccelerator
                 username={username}
-                backendNeuroSanApiUrl={backendNeuroSanApiUrl}
+                defaultNeuroSanUrl={backendNeuroSanApiUrl}
             />
         )
     },

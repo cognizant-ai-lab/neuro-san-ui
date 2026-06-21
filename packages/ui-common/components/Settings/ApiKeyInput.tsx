@@ -1,6 +1,4 @@
-import CheckIcon from "@mui/icons-material/Check"
 import ClearIcon from "@mui/icons-material/Clear"
-import ErrorIcon from "@mui/icons-material/Error"
 import Visibility from "@mui/icons-material/Visibility"
 import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import Box from "@mui/material/Box"
@@ -13,6 +11,7 @@ import Tooltip from "@mui/material/Tooltip"
 import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
 
 import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {StatusLight} from "../Common/StatusLight"
 
 interface ApiKeyInputProps {
     readonly forgetKey: () => void
@@ -67,6 +66,11 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
     }, [persistedValue])
+
+    const handleClearInput = () => {
+        setInputValue("")
+        setKeyValidated(null)
+    }
 
     return (
         <Box
@@ -147,7 +151,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                                 <IconButton
                                     aria-label="Clear input"
                                     edge="end"
-                                    onClick={() => setInputValue("")}
+                                    onClick={handleClearInput}
                                     size="small"
                                 >
                                     <ClearIcon fontSize="small" />
@@ -162,19 +166,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 value={inputValue}
                 variant="outlined"
             />
-            <Box
-                sx={{
-                    width: 24,
-                    height: 24,
-                    color: (theme) => (keyValidated ? theme.palette.success.main : theme.palette.error.main),
-                }}
-            >
-                {keyValidated === null ? null : keyValidated ? (
-                    <CheckIcon fontSize="small" />
-                ) : (
-                    <ErrorIcon fontSize="small" />
-                )}
-            </Box>
+            <StatusLight statusValue={keyValidated === null ? "unknown" : keyValidated ? "green" : "red"} />
             <Button
                 disabled={disableActions}
                 loading={isValidating}

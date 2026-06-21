@@ -56,7 +56,6 @@ import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
-import {useLocalStorage} from "../../utils/useLocalStorage"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
 import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
@@ -69,7 +68,7 @@ import {MUIDialog} from "../Common/MUIDialog"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
-    readonly backendNeuroSanApiUrl: string
+    readonly defaultNeuroSanUrl: string
 }
 
 // Check for expired networks every this many milliseconds
@@ -125,7 +124,7 @@ const notifySaveError = (agentName: string, e: unknown): void => {
  * @param username Identifier to use for interactions with the backend (for personalization and tracking).
  */
 export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
-    backendNeuroSanApiUrl,
+    defaultNeuroSanUrl,
     username,
 }): ReactJSX.Element => {
     // MUI theme
@@ -177,12 +176,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
 
-    const [customURLLocalStorage, setCustomURLLocalStorage] = useLocalStorage("customAgentNetworkURL", null)
-
-    // An extra set of quotes is making it in the string in local storage.
-    const [neuroSanURL, setNeuroSanURL] = useState<string>(
-        customURLLocalStorage?.replaceAll('"', "") || backendNeuroSanApiUrl
-    )
+    const neuroSanURL = useSettingsStore((state) => state.settings.services.neuroSanUrl) ?? defaultNeuroSanUrl
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())
