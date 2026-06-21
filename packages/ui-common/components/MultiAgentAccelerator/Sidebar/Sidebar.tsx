@@ -31,6 +31,7 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {StatusLight} from "../../Common/StatusLight"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
 
 //#region Constants
@@ -76,7 +77,7 @@ export const SPARKLE_HIGHLIGHT_CLASS = "sparkle-highlight"
 const EMPTY_ARRAY: TemporaryNetwork[] = []
 
 // Interval for pinging the Neuro-san server to check if it's online, in milliseconds
-const NEURO_SAN_PING_INTERVAL_MS = 10_000
+const NEURO_SAN_PING_INTERVAL_MS = 30_000
 
 //#endregion: Constants
 
@@ -282,17 +283,18 @@ export const Sidebar: FC<SidebarProps> = ({
         }
     }, [newlyAddedTemporaryNetworks])
 
-    const getNeuroSanServerStatusColor = () => {
+    const toStatusColor = () => {
         switch (neuroSanServerStatus.onlineStatus) {
             case "online":
-                return "var(--bs-green)"
+                return "green"
             case "offline":
-                return "var(--bs-red)"
+                return "red"
             case "unknown":
             default:
-                return "var(--bs-gray)"
+                return "unknown"
         }
     }
+
     return (
         <SidebarAside id={`${id}-sidebar`}>
             <SidebarHeading id={`${id}-heading`}>
@@ -317,25 +319,20 @@ export const Sidebar: FC<SidebarProps> = ({
                                         {neuroSanServerStatus.httpStatus && (
                                             <Typography variant="body2">
                                                 <strong>HTTP status:</strong>{" "}
-                                                {`${neuroSanServerStatus.httpStatus} ` +
-                                                    `(${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
+                                                {/* eslint-disable-next-line max-len -- feels unnatural to break it */}
+                                                {`${neuroSanServerStatus.httpStatus} (${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
                                             </Typography>
                                         )}
                                     </>
                                 )}
                             </Box>
                         }
-                        placement="top"
+                        placement="right"
                     >
-                        <Box
-                            sx={{
-                                backgroundColor: getNeuroSanServerStatusColor(),
-                                borderRadius: "50%",
-                                display: "inline-block",
-                                minWidth: "0.75rem",
-                                minHeight: "0.75rem",
-                            }}
-                        />
+                        {/*For forwarding tooltip events*/}
+                        <span>
+                            <StatusLight statusValue={toStatusColor()} />
+                        </span>
                     </ServerStatusTooltip>
                     Agent Networks
                 </Box>

@@ -216,7 +216,7 @@ const renderMultiAgentAcceleratorPage = () =>
     render(
         <SnackbarProvider>
             <MultiAgentAccelerator
-                backendNeuroSanApiUrl={NEURO_SAN_SERVER_URL}
+                defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
                 username={MOCK_USER}
             />
         </SnackbarProvider>
