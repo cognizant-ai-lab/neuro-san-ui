@@ -371,6 +371,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         setNeuroSanUrlValidated(null)
     }
 
+    const handleNeuroSanUrlBlur = () => {
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+    }
+
+    const handleResetNeuroSanUrl = () => {
+        const normalized = normalizeNeuroSanUrlInput(defaultNeuroSanUrl, "https")
+        setNeuroSanUrlInput(normalized.host)
+        setNeuroSanProtocol(normalized.protocol)
+    }
+
     // Effect to keep input in sync with state store
     useEffect(() => {
         setCustomerInput(customer ?? "")
@@ -418,82 +430,86 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         />
     )
 
-    const getNeuroSanSubsection = () => (
-        <SettingsSubsection title="Neuro SAN">
-            <SettingsRow
-                id={`${id}-neuro-san-server-url-row`}
-                checkmark={neuroSanURLCheckmark}
-                key={`${id}-neuro-san-server-url`}
-                label=""
-                tooltip="URL for the Neuro SAN server."
-            >
-                <Select<Protocol>
-                    aria-label="neuro-san-server-url-protocol-select"
-                    onChange={handleNeuroSanProtocolChange}
-                    size="small"
-                    sx={{minWidth: 100, flexShrink: 0}}
-                    value={neuroSanProtocol}
+    const getNeuroSanSubsection = () => {
+        return (
+            <SettingsSubsection title="Neuro SAN">
+                <SettingsRow
+                    id={`${id}-neuro-san-server-url-row`}
+                    checkmark={neuroSanURLCheckmark}
+                    key={`${id}-neuro-san-server-url`}
+                    label=""
+                    tooltip="URL for the Neuro SAN server."
                 >
-                    <MenuItem value="https">https://</MenuItem>
-                    <MenuItem value="http">http://</MenuItem>
-                </Select>
-                <TextField
-                    aria-label="neuro-san-server-url-host-input"
-                    onChange={handleNeuroSanUrlChange}
-                    placeholder="example.com:1234"
-                    size="small"
-                    slotProps={{
-                        input: {
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label="Clear input"
-                                        edge="end"
-                                        size="small"
-                                        onClick={() => {
-                                            setNeuroSanUrlInput("")
-                                            setNeuroSanUrlValidated(null)
-                                        }}
-                                    >
-                                        <ClearIcon fontSize="small" />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        },
-                    }}
-                    sx={{flex: 1}}
-                    value={neuroSanUrlInput}
-                />
-                <StatusLight
-                    statusValue={neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"}
-                />
-                <Button
-                    disabled={neuroSanUrlInput.trim().length === 0}
-                    onClick={handleTestConnection}
-                    size="small"
-                    variant="contained"
-                >
-                    Test
-                </Button>
-                <Button
-                    disabled={neuroSanUrlInput.trim().length === 0 || neuroSanUrlInput === neuroSanUrlNoProtocol}
-                    onClick={handleSaveNeuroSanUrl}
-                    size="small"
-                    variant="contained"
-                >
-                    Save
-                </Button>
-                <Button
-                    disabled={neuroSanUrlInput === neuroSanUrlNoProtocol}
-                    onClick={() => setNeuroSanUrlInput(neuroSanUrlNoProtocol)}
-                    size="small"
-                    variant="contained"
-                >
-                    Default
-                </Button>
-            </SettingsRow>
-        </SettingsSubsection>
-    )
+                    <Select<Protocol>
+                        aria-label="protocol-select"
+                        onChange={handleNeuroSanProtocolChange}
+                        size="small"
+                        sx={{minWidth: 100, flexShrink: 0}}
+                        value={neuroSanProtocol}
+                    >
+                        <MenuItem value="https">https://</MenuItem>
+                        <MenuItem value="http">http://</MenuItem>
+                    </Select>
+                    <TextField
+                        aria-label="neuro-san-server-url-host-input"
+                        onBlur={handleNeuroSanUrlBlur}
+                        onChange={handleNeuroSanUrlChange}
+                        placeholder="example.com:1234"
+                        size="small"
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="Clear input"
+                                            edge="end"
+                                            size="small"
+                                            onClick={() => {
+                                                setNeuroSanUrlInput("")
+                                                setNeuroSanUrlValidated(null)
+                                            }}
+                                        >
+                                            <ClearIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        sx={{flex: 1}}
+                        value={neuroSanUrlInput}
+                    />
+                    <StatusLight
+                        id={`${id}-status-light`}
+                        statusValue={neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"}
+                    />
+                    <Button
+                        disabled={neuroSanUrlInput.trim().length === 0}
+                        onClick={handleTestConnection}
+                        size="small"
+                        variant="contained"
+                    >
+                        Test
+                    </Button>
+                    <Button
+                        disabled={neuroSanUrlInput.trim().length === 0 || neuroSanUrlInput === neuroSanUrlNoProtocol}
+                        onClick={handleSaveNeuroSanUrl}
+                        size="small"
+                        variant="contained"
+                    >
+                        Save
+                    </Button>
+                    <Button
+                        disabled={neuroSanUrlInput === defaultNeuroSanUrl}
+                        onClick={handleResetNeuroSanUrl}
+                        size="small"
+                        variant="contained"
+                    >
+                        Default
+                    </Button>
+                </SettingsRow>
+            </SettingsSubsection>
+        )
+    }
 
     const getServicesSection = () => (
         <Section>
