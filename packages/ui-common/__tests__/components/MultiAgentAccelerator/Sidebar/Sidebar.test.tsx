@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
-import {act, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ComponentProps} from "react"
 
@@ -49,14 +49,7 @@ import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
 import {downloadFile} from "../../../../utils/File"
 
-const AGENT_NETWORK_SETTINGS_NAME = {name: /Agent Network Settings/u}
-const AGENT_SERVER_ADDRESS = "Agent server address"
-const CLEAR_INPUT = {name: /Clear input/u}
 const DEFAULT_EXAMPLE_URL = "https://default.example.com"
-const EDIT_EXAMPLE_URL = "https://edit.example.com"
-
-const TEST_EXAMPLE_URL = "https://test.example.com"
-const TOOLTIP_EXAMPLE_URL = "https://tooltip.example.com"
 
 // mock MUI TreeView so we can generate normally impossible values
 let mockSelectedTreeItemId: string | null | undefined
@@ -100,7 +93,10 @@ const onDeleteNetworkMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
-    customURLCallback: jest.fn(),
+    neuroSanServerURL: "",
+    newlyAddedTemporaryNetworks: undefined,
+    onEditNetwork: jest.fn(),
+    temporaryNetworks: [],
     id: "test-flow-id",
     isAwaitingLlm: false,
     networks: LIST_NETWORKS_RESPONSE,
@@ -137,24 +133,6 @@ describe("SideBar", () => {
         return props
     }
 
-    /**
-     * This function opens the Settings popover, clears the URL input and then optionally types a value into that input
-     * @param url The URL to add to the URL input
-     * @return An object with these elements: {settingsButton, urlInput}
-     */
-    const openPopoverAndTypeInInput = async (url?: string) => {
-        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
-        // Open Settings Popover
-        await user.click(settingsButton)
-        const urlInput = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
-        await user.clear(urlInput)
-
-        if (url) {
-            await user.type(urlInput, url)
-        }
-        return {settingsButton, urlInput}
-    }
-
     beforeAll(() => {
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(DEFAULT_EXAMPLE_URL)
     })
@@ -179,9 +157,6 @@ describe("SideBar", () => {
         const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
         await user.click(header)
 
-        // Ensure the settings button is rendered
-        await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
-
         // Clicking on a network should call the setSelectedNetwork function
         const network = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         await user.click(network)
@@ -189,15 +164,6 @@ describe("SideBar", () => {
         // setSelectedNetwork should be called
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
-
-        // Mousing over the cog should show the tooltip with the version and URL
-        const settingsButton = await screen.findByRole("button", {name: /Agent Network Settings/u})
-
-        // Hover over the settings button to show the tooltip
-        await user.hover(settingsButton)
-
-        // Check if the tooltip is displayed with the correct URL and version
-        await screen.findByLabelText((label) => label.includes(DEFAULT_EXAMPLE_URL) && label.includes(TEST_VERSION))
     })
 
     it("Should display suggested network icons correctly", async () => {
@@ -468,226 +434,6 @@ describe("SideBar", () => {
         expect(setSelectedNetworkMock).not.toHaveBeenCalled()
     })
 
-    it("should disable the Settings button when isAwaitingLlm is true", async () => {
-        renderSidebarComponent({isAwaitingLlm: true})
-        const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
-        expect(settingsButton).toBeDisabled()
-    })
-
-    it("should display tooltip with customURLLocalStorage if provided", async () => {
-        renderSidebarComponent({customURLLocalStorage: TOOLTIP_EXAMPLE_URL})
-        const settingsButton = await screen.findByRole("button", AGENT_NETWORK_SETTINGS_NAME)
-        await user.hover(settingsButton)
-        // Query the SVG element by its aria-label
-        await screen.findByLabelText((label) => label.startsWith(TOOLTIP_EXAMPLE_URL))
-        await user.unhover(settingsButton)
-        await waitFor(() => expect(screen.queryByText(new RegExp(TOOLTIP_EXAMPLE_URL, "u"))).not.toBeInTheDocument())
-    })
-
-    it("Should open the popover, validate buttons, update the URL field, and close the popup on Save", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true})
-        const {customURLCallback} = renderSidebarComponent()
-
-        const settingsButton = screen.getByRole("button", AGENT_NETWORK_SETTINGS_NAME)
-
-        // Check that Settings popover is not open
-        expect(screen.queryByLabelText(AGENT_SERVER_ADDRESS)).not.toBeInTheDocument()
-
-        // Open Settings popover
-        await user.click(settingsButton)
-        await screen.findByLabelText(AGENT_SERVER_ADDRESS)
-
-        const urlInput = screen.getByLabelText(AGENT_SERVER_ADDRESS)
-        // Ensure the input value is set to the default
-        expect(urlInput).toHaveValue(DEFAULT_EXAMPLE_URL)
-
-        const testButton = screen.getByRole("button", {name: /Test/u})
-        const saveButton = screen.getByRole("button", {name: /Save/u})
-        const defaultButton = screen.getByRole("button", {name: /Default/u})
-
-        // Clear the URL input, similar to user manually clearing it (without using the clear input adornment)
-        await user.clear(urlInput)
-
-        // Test and Save buttons should be disabled until the user types a URL
-        expect(testButton).toBeDisabled()
-        expect(saveButton).toBeDisabled()
-
-        // Type in the URL input
-        await user.type(urlInput, EDIT_EXAMPLE_URL)
-
-        // Ensure the input value is updated
-        expect(urlInput).toHaveValue(EDIT_EXAMPLE_URL)
-
-        // Test and Default buttons should be enabled once the user types a URL
-        expect(testButton).toBeEnabled()
-        expect(defaultButton).toBeEnabled()
-
-        // Make sure the Save button is still disabled, until Test button is clicked
-        expect(saveButton).toBeDisabled()
-
-        // Click the Test button
-        await user.click(testButton)
-
-        // Make sure the Save button is now enabled, after the Test button was clicked
-        expect(saveButton).toBeEnabled()
-
-        await user.click(saveButton)
-
-        // Ensure the popover is closed after saving
-        expect(screen.queryByText("Custom Agent Network URL")).not.toBeInTheDocument()
-
-        // Open the Settings popover again to check if the URL is saved
-        await user.click(settingsButton)
-        await screen.findByDisplayValue(EDIT_EXAMPLE_URL)
-
-        // onCustomUrlChange should be called
-        expect(customURLCallback).toHaveBeenCalledTimes(1)
-    })
-
-    it("should show success message when Test button is clicked and connection succeeds", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true})
-        renderSidebarComponent()
-
-        await openPopoverAndTypeInInput(EDIT_EXAMPLE_URL)
-        await user.click(screen.getByRole("button", {name: /Test/u}))
-
-        // Check if Success icon is displayed
-        await screen.findByTestId("CheckCircleOutlinedIcon")
-
-        // Type in URL input again
-        const urlInput = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
-        await user.type(urlInput, TEST_EXAMPLE_URL)
-
-        // Check that Success icon is not displayed
-        expect(screen.queryByTestId("CheckCircleOutlinedIcon")).not.toBeInTheDocument()
-    })
-
-    it("should show error message when Test button is clicked and connection fails", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: false})
-        renderSidebarComponent()
-
-        await openPopoverAndTypeInInput(EDIT_EXAMPLE_URL)
-        await user.click(screen.getByRole("button", {name: /Test/u}))
-
-        // Check if Error icon is displayed
-        await screen.findByTestId("HighlightOffIcon")
-
-        // Type in URL input again
-        const urlInput = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
-        await user.type(urlInput, TEST_EXAMPLE_URL)
-
-        // Check that Error icon is not displayed
-        expect(screen.queryByTestId("HighlightOffIcon")).not.toBeInTheDocument()
-    })
-
-    it("Should allow Save after resetting to default URL, without Test", async () => {
-        renderSidebarComponent()
-
-        await openPopoverAndTypeInInput(EDIT_EXAMPLE_URL)
-
-        const defaultButton = screen.getByRole("button", {name: /Default/u})
-        const saveButton = screen.getByRole("button", {name: /Save/u})
-
-        // Save should be disabled since user typed in the URL input but did not test it
-        expect(saveButton).toBeDisabled()
-
-        // Click the Default button to reset the input to the default URL
-        await user.click(defaultButton)
-
-        await waitFor(() => expect(saveButton).toBeEnabled())
-    })
-
-    it("should close the popover and reset input when Cancel (outside click) is triggered", async () => {
-        renderSidebarComponent({customURLLocalStorage: EDIT_EXAMPLE_URL})
-
-        const {settingsButton} = await openPopoverAndTypeInInput(TOOLTIP_EXAMPLE_URL)
-
-        // Simulate clicking outside the popover (triggers onClose)
-        await user.click(document.body)
-
-        // Popover should close, and input should reset to customURLLocalStorage
-        // Can't use document.body due to MuiBackdrop
-        await user.click(document.querySelector(".MuiBackdrop-root"))
-
-        // Open again to check input value is reset
-        await user.click(settingsButton)
-        const urlInputAgain = await screen.findByLabelText(AGENT_SERVER_ADDRESS)
-        expect(urlInputAgain).toHaveValue(EDIT_EXAMPLE_URL)
-    })
-
-    it("should allow saving with Enter key when Save is enabled", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true})
-        const {customURLCallback} = renderSidebarComponent()
-
-        const {urlInput} = await openPopoverAndTypeInInput(EDIT_EXAMPLE_URL)
-
-        // Test connection to enable Save
-        await user.click(screen.getByRole("button", {name: /Test/u}))
-        const saveButton = screen.getByRole("button", {name: /Save/u})
-        expect(saveButton).toBeEnabled()
-
-        // Click in URL input to bring focus to it
-        await user.click(urlInput)
-
-        // Press Enter key
-        await user.keyboard("{Enter}")
-
-        // Popover should close
-        await waitFor(() => expect(screen.queryByLabelText(AGENT_SERVER_ADDRESS)).not.toBeInTheDocument())
-        expect(customURLCallback).toHaveBeenCalled()
-    })
-
-    it("should format URL before saving (add https:// if missing, remove trailing slash)", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true})
-        const {customURLCallback} = renderSidebarComponent()
-
-        await openPopoverAndTypeInInput("example.com/")
-
-        // Test connection to enable Save
-        await user.click(screen.getByRole("button", {name: /Test/u}))
-        await user.click(await screen.findByRole("button", {name: /Save/u}))
-
-        // Should call with formatted URL
-        expect(customURLCallback).toHaveBeenCalledWith("https://example.com")
-    })
-
-    it("should handle the Cancel button correctly", async () => {
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true})
-        const {customURLCallback} = renderSidebarComponent()
-
-        await openPopoverAndTypeInInput("example.com/")
-
-        // Click the Cancel button
-        const cancelButton = screen.getByRole("button", {name: /Cancel/u})
-        await user.click(cancelButton)
-        expect(customURLCallback).not.toHaveBeenCalled()
-    })
-
-    it("should clear the input when Clear button is clicked", async () => {
-        renderSidebarComponent()
-
-        await openPopoverAndTypeInInput(EDIT_EXAMPLE_URL)
-
-        const clearInput = screen.getByRole("button", CLEAR_INPUT)
-        await user.click(clearInput)
-
-        const urlInput = screen.getByLabelText(AGENT_SERVER_ADDRESS)
-        expect(urlInput).toHaveValue("")
-
-        const testButton = screen.getByRole("button", {name: /Test/u})
-        const saveButton = screen.getByRole("button", {name: /Save/u})
-
-        // Test and Save buttons should be disabled after user clears the URL input
-        expect(testButton).toBeDisabled()
-        expect(saveButton).toBeDisabled()
-
-        // Check that Success icon is not displayed
-        expect(screen.queryByTestId("CheckCircleOutlinedIcon")).not.toBeInTheDocument()
-
-        // Check that Error icon is not displayed
-        expect(screen.queryByTestId("HighlightOffIcon")).not.toBeInTheDocument()
-    })
-
     it("should not break if networks is empty", async () => {
         renderSidebarComponent({networks: []})
         await screen.findByText("Agent Networks")
@@ -714,7 +460,7 @@ describe("SideBar", () => {
         // runOnlyPendingTimers fires only timers already in the queue, so the
         // 5000ms sparkle-remove timer registered inside the callback won't fire here.
         act(() => {
-            jest.runOnlyPendingTimers()
+            jest.advanceTimersByTime(50)
         })
 
         expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
@@ -744,7 +490,7 @@ describe("SideBar", () => {
 
         // Fire the 50ms timer — selectedNode is null, so the callback is a no-op.
         act(() => {
-            jest.runOnlyPendingTimers()
+            jest.advanceTimersByTime(50)
         })
 
         expect(screen.queryByRole("treeitem")).not.toBeInTheDocument()

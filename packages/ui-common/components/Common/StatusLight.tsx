@@ -2,9 +2,10 @@ import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactElement} from "react"
 
-export type Status = "green" | "red" | "unknown"
+type Status = "green" | "red" | "unknown"
 
 interface StatusLightProps {
+    readonly id?: string
     readonly statusValue: Status
     readonly tooltip?: ReactElement
 }
@@ -21,12 +22,15 @@ const statusToColor = (statusValue: Status) => {
     }
 }
 
-export const StatusLight: FC<StatusLightProps> = ({statusValue, tooltip}) => (
+export const StatusLight: FC<StatusLightProps> = ({id, statusValue, tooltip}) => (
     <Tooltip
         title={tooltip}
         placement="top"
     >
         <Box
+            id={id}
+            data-testid={id}
+            data-status={statusValue}
             sx={{
                 backgroundColor: statusToColor(statusValue),
                 borderRadius: "50%",

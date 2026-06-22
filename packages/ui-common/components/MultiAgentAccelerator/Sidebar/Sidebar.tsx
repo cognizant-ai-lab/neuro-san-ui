@@ -185,7 +185,6 @@ export const Sidebar: FC<SidebarProps> = ({
         const checkStatus = async () => {
             try {
                 const result = await testConnection(neuroSanServerURL)
-
                 if (!isMounted) {
                     return
                 }
@@ -195,7 +194,6 @@ export const Sidebar: FC<SidebarProps> = ({
                         : {error: result.status, httpStatus: result.httpStatus, onlineStatus: "offline", version: null}
                 )
             } catch (error) {
-                console.debug("Error testing connection to Neuro-san server:", error)
                 if (isMounted) {
                     const errorString = error instanceof Error ? error.message : String(error)
                     setNeuroSanServerStatus({error: errorString, onlineStatus: "offline", version: null})
@@ -331,7 +329,10 @@ export const Sidebar: FC<SidebarProps> = ({
                     >
                         {/*For forwarding tooltip events*/}
                         <span>
-                            <StatusLight statusValue={toStatusColor()} />
+                            <StatusLight
+                                id={`${id}-agent-network-status-light`}
+                                statusValue={toStatusColor()}
+                            />
                         </span>
                     </ServerStatusTooltip>
                     Agent Networks

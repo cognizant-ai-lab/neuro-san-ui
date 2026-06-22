@@ -161,13 +161,16 @@ describe("SettingsDialog", () => {
             expect(testButton).toBeEnabled()
             await user.click(testButton)
 
-            within(apiKeyInput).getByTestId("CheckIcon")
+            // Make sure status light is green
+            const statusLight = within(apiKeyInput).getByTestId("settings-dialog-openai-status-light")
+            expect(statusLight).toHaveAttribute("data-status", "green")
 
             // Now mock test failure and check that error icon appears
             global.fetch = mockFetch({}, false)
             await user.click(testButton)
 
-            within(apiKeyInput).getByTestId("ErrorIcon")
+            // Now status light should be red
+            expect(statusLight).toHaveAttribute("data-status", "red")
         })
 
         it("allows user request that API keys be forgotten", async () => {

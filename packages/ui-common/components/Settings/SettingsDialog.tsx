@@ -178,14 +178,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         3) The current state value, from the user's input
      */
     const {backendNeuroSanApiUrl: defaultNeuroSanUrl} = useEnvironmentStore()
-    console.debug("Default Neuro SAN URL from environment store:", defaultNeuroSanUrl)
     const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.services.neuroSanUrl)
-    console.debug("Persisted Neuro SAN URL from settings store:", persistedNeuroSanUrl)
-
     const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl || ""
-    console.debug("Effective Neuro SAN URL used in settings dialog:", effectiveNeuroSanUrl)
     const neuroSanUrlNoProtocol = effectiveNeuroSanUrl.replace(/https?:\/\//u, "") ?? ""
-    console.debug("Effective Neuro SAN URL with protocol stripped:", neuroSanUrlNoProtocol)
+
     const [neuroSanUrlInput, setNeuroSanUrlInput] = useState<string>(neuroSanUrlNoProtocol)
     const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocols>(
         effectiveNeuroSanUrl.startsWith("http://") ? "http" : "https"
@@ -342,7 +338,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const handleNeuroSanProtocolChange = (e: SelectChangeEvent<Protocols>) => {
         const newProtocol = e.target.value
-        console.debug("Neuro SAN protocol changed to:", newProtocol)
         setNeuroSanProtocol(newProtocol)
         setNeuroSanUrlValidated(null)
     }
