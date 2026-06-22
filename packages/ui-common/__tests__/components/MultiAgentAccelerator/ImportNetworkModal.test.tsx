@@ -42,6 +42,17 @@ const DEFAULT_PROPS: ImportNetworkModalProps = {
     onClose: onCloseMock,
 }
 
+// Accessible-name matchers for the buttons exercised across the modal's three steps.
+const DROP_ZONE = /drop zone/iu
+const BROWSE_LINK = /browse your files/iu
+const CANCEL_BUTTON = /cancel/iu
+const CLOSE_BUTTON = /close/iu
+const CONTINUE_BUTTON = /continue/iu
+const BACK_BUTTON = /^back$/iu
+const IMPORT_BUTTON = /import network/iu
+const REPLACE_BUTTON = /replace/iu
+const RENAME_BUTTON = /rename/iu
+
 // Helper: create a mock File and simulate FileReader loading it
 const dropFile = (dropZone: HTMLElement, filename: string, content: string, type = "application/octet-stream") => {
     const file = new File([content], filename, {type})
@@ -63,6 +74,18 @@ describe("ImportNetworkModal", () => {
         )
     }
 
+    const getDropZone = () => screen.getByRole("button", {name: DROP_ZONE})
+
+    // Drop a file onto the modal, synchronously advancing from step 1 to the review step (step 2).
+    const dropFileOnModal = (filename = "my_network.json", content = '{"agents": {}}') =>
+        dropFile(getDropZone(), filename, content)
+
+    // Drop a file then click Continue, advancing all the way to the confirm step (step 3).
+    const advanceToConfirmStep = async (filename = "my_network.json", content = '{"agents": {}}') => {
+        dropFileOnModal(filename, content)
+        await user.click(await screen.findByRole("button", {name: CONTINUE_BUTTON}))
+    }
+
     beforeEach(() => {
         user = userEvent.setup()
     })
@@ -77,29 +100,25 @@ describe("ImportNetworkModal", () => {
         expect(screen.getByText("Import network definition")).toBeInTheDocument()
     })
 
-    it("should show the first step as active", () => {
+    it("should render the three-step stepper", () => {
         renderModal()
-        // Step 1 label should be rendered with an active/completed state indicator
         const stepper = screen.getByRole("list")
         const steps = stepper.querySelectorAll('[class*="MuiStep-root"]')
         expect(steps.length).toBe(3)
     })
 
-    it("should call onClose when Cancel button is clicked", async () => {
+    it.each([
+        {name: "the Cancel button", button: CANCEL_BUTTON},
+        {name: "the close (×) button", button: CLOSE_BUTTON},
+    ])("should call onClose when $name is clicked", async ({button}) => {
         renderModal()
-        await user.click(screen.getByRole("button", {name: /cancel/iu}))
-        expect(onCloseMock).toHaveBeenCalledTimes(1)
-    })
-
-    it("should call onClose when the close (×) button is clicked", async () => {
-        renderModal()
-        await user.click(screen.getByRole("button", {name: /close/iu}))
+        await user.click(screen.getByRole("button", {name: button}))
         expect(onCloseMock).toHaveBeenCalledTimes(1)
     })
 
     it.each([
-        {name: "the drop zone is clicked", button: /drop zone/iu},
-        {name: "the browse link is clicked", button: /browse your files/iu},
+        {name: "the drop zone is clicked", button: DROP_ZONE},
+        {name: "the browse link is clicked", button: BROWSE_LINK},
     ])("should trigger file input click when $name", async ({button}) => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
@@ -110,36 +129,24 @@ describe("ImportNetworkModal", () => {
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    it("should apply drag-over styling when a file is dragged over the drop zone", () => {
+    it.each([
+        {name: "should keep the drop zone mounted on drag-over", events: ["dragOver"] as const},
+        {
+            name: "should keep the drop zone mounted after drag-over then drag-leave",
+            events: ["dragOver", "dragLeave"] as const,
+        },
+    ])("$name", ({events}) => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-
-        fireEvent.dragOver(dropZone, {preventDefault: jest.fn()})
-
-        // The component re-renders with isDragOver=true; the border colour changes via styled component.
-        // We confirm the drop zone is still present (no crash).
+        const dropZone = getDropZone()
+        // The styled drop zone re-renders on these events; we only assert it survives without crashing.
+        events.forEach((event) => fireEvent[event](dropZone, {preventDefault: jest.fn()}))
         expect(dropZone).toBeInTheDocument()
     })
 
-    it("should remove drag-over styling when drag leaves the drop zone", () => {
+    it("should handle a drop event with no files without throwing", () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-
-        fireEvent.dragOver(dropZone, {preventDefault: jest.fn()})
-        fireEvent.dragLeave(dropZone, {preventDefault: jest.fn()})
-
-        expect(dropZone).toBeInTheDocument()
-    })
-
-    it("should handle drop event without throwing", () => {
-        renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-
-        expect(() => {
-            fireEvent.drop(dropZone, {
-                dataTransfer: {files: []},
-            })
-        }).not.toThrow()
+        const dropZone = getDropZone()
+        expect(() => fireEvent.drop(dropZone, {dataTransfer: {files: []}})).not.toThrow()
     })
 
     it("should expose correct accepted extensions constant", () => {
@@ -159,8 +166,7 @@ describe("ImportNetworkModal", () => {
     it("should process a file chosen via the hidden file input", async () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        const file = new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"})
-        await user.upload(fileInput, file)
+        await user.upload(fileInput, new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"}))
 
         // Should advance to the review step and parse successfully
         await screen.findByTestId("CheckCircleOutlinedIcon")
@@ -169,39 +175,36 @@ describe("ImportNetworkModal", () => {
     })
 
     // Step 2: Review
-    it("should show loading spinner after a file is dropped", async () => {
+    it("should show a loading spinner after a file is dropped", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
+        dropFileOnModal()
         await screen.findByRole("progressbar")
     })
 
-    it("should advance to step 2 after a file is dropped", async () => {
+    it("should advance to step 2 after a file is dropped", () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
+        const dropZone = getDropZone()
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
         // The drop synchronously advances to step 2, unmounting the drop zone.
         expect(dropZone).not.toBeInTheDocument()
     })
 
-    it("should show success banner and show Continue button after a valid JSON file is dropped", async () => {
+    it("should show success banner and a Continue button after a valid JSON file is dropped", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
+        dropFileOnModal()
         // CheckCircleOutlinedIcon appears in the success alert banner
         await screen.findByTestId("CheckCircleOutlinedIcon")
-        await screen.findByRole("button", {name: /Continue/u})
+        await screen.findByRole("button", {name: CONTINUE_BUTTON})
     })
 
     it("should show the network summary (counts + frontman) on the review step", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         const definition = JSON.stringify([
             {origin: "lead", display_as: "llm_agent", tools: ["worker", "search"]},
             {origin: "worker", display_as: "llm_agent", tools: []},
             {origin: "search", display_as: "coded_tool", tools: []},
         ])
-        dropFile(dropZone, "my_network.json", definition)
+        dropFileOnModal("my_network.json", definition)
 
         await screen.findByTestId("CheckCircleOutlinedIcon")
         const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
@@ -217,23 +220,20 @@ describe("ImportNetworkModal", () => {
         expect(summary.getByText("lead")).toBeInTheDocument()
     })
 
-    it("should show parse error banner when file content is unparseable", async () => {
+    it("should show a parse error banner when the file content is unparseable", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
         // Empty content is treated as a parse error (an empty file is not a valid network).
-        dropFile(dropZone, "bad.json", "")
+        dropFileOnModal("bad.json", "")
         // The error banner appears and there is no Continue button to advance.
         await screen.findByText(/Parse error:/u)
-        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: CONTINUE_BUTTON})).not.toBeInTheDocument()
     })
 
     it("should go back to step 1 from step 2 when Back is clicked", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        const backBtn = await screen.findByRole("button", {name: /^Back$/u})
-        await user.click(backBtn)
-        await screen.findByRole("button", {name: /drop zone/iu})
+        dropFileOnModal()
+        await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
+        await screen.findByRole("button", {name: DROP_ZONE})
     })
 
     it("should show an error when the file cannot be read", async () => {
@@ -242,8 +242,7 @@ describe("ImportNetworkModal", () => {
             reader?.dispatchEvent(new Event("error"))
         })
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "unreadable.json", '{"agents": {}}')
+        dropFileOnModal("unreadable.json", '{"agents": {}}')
         await screen.findByText(/Failed to read the file\./u)
     })
 
@@ -265,102 +264,86 @@ describe("ImportNetworkModal", () => {
     ])("should reject a dropped file with $name before reading it", async ({makeFile, error}) => {
         const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        fireEvent.drop(dropZone, {dataTransfer: {files: [makeFile()]}})
+        fireEvent.drop(getDropZone(), {dataTransfer: {files: [makeFile()]}})
         await screen.findByText(error)
         // No Continue button, and the file was never read/parsed
-        expect(screen.queryByRole("button", {name: /Continue/u})).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: CONTINUE_BUTTON})).not.toBeInTheDocument()
         expect(readSpy).not.toHaveBeenCalled()
     })
 
     // Step 3: Confirm
-    it("should advance to step 3 after clicking Continue and should pre-fill network name from filename", async () => {
+    it("should advance to step 3 on Continue and pre-fill the network name from the filename", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await screen.findByRole("button", {name: /Import network/u})
+        await advanceToConfirmStep("ecommerce_support.json")
+        await screen.findByRole("button", {name: IMPORT_BUTTON})
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
     it("should navigate from step 3 all the way back to step 1 via Back", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        await user.click(await screen.findByRole("button", {name: /Continue/u}))
-        await screen.findByRole("button", {name: /Import network/u})
+        await advanceToConfirmStep()
+        await screen.findByRole("button", {name: IMPORT_BUTTON})
         // Step 3 -> step 2
-        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
-        await screen.findByRole("button", {name: /Continue/u})
+        await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
+        await screen.findByRole("button", {name: CONTINUE_BUTTON})
         // Step 2 -> step 1
-        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
-        await screen.findByRole("button", {name: /drop zone/iu})
+        await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
+        await screen.findByRole("button", {name: DROP_ZONE})
     })
 
     it("should re-advance to step 3 after going back to step 2", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
-        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        await advanceToConfirmStep("ecommerce_support.json")
         // Step 3 -> step 2
-        await user.click(await screen.findByRole("button", {name: /^Back$/u}))
+        await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
         // Step 2 -> step 3 again
-        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        await user.click(await screen.findByRole("button", {name: CONTINUE_BUTTON}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
-    it("should show conflict warning and dismiss conflict warning when Replace is clicked", async () => {
+    it.each([
+        {
+            name: "Replace",
+            button: REPLACE_BUTTON,
+            verify: async () => {
+                await waitFor(() => expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument())
+            },
+        },
+        {
+            name: "Rename",
+            button: RENAME_BUTTON,
+            verify: async () => {
+                const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+                expect(nameInput).toHaveValue("Ecommerce Support (2)")
+                expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
+            },
+        },
+    ])("should dismiss the name-conflict warning when $name is clicked", async ({button, verify}) => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
+        await advanceToConfirmStep("ecommerce_support.json")
         await screen.findByTestId("WarningAmberIcon")
-        await user.click(screen.getByRole("button", {name: /Replace/u}))
-        await waitFor(() => expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument())
+        await user.click(screen.getByRole("button", {name: button}))
+        await verify()
     })
 
-    it("should show conflict warning and dismiss conflict warning / rename when Rename is clicked", async () => {
-        renderModal({existingNetworkNames: ["ecommerce_support"]})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await screen.findByTestId("WarningAmberIcon")
-        await user.click(screen.getByRole("button", {name: /Rename/u}))
-        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput).toHaveValue("Ecommerce Support (2)")
-        expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
-    })
-
-    it("should call onImport with name and content when Import network is clicked", async () => {
+    it.each([
+        {
+            name: "calls onImport with the network name and content",
+            verify: () => expect(onImportMock).toHaveBeenCalledWith("My_Network", expect.stringContaining('"agents"')),
+        },
+        {name: "calls onClose", verify: () => expect(onCloseMock).toHaveBeenCalled()},
+    ])("when Import network is clicked, it $name", async ({verify}) => {
         renderModal({onImport: onImportMock})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await user.click(await screen.findByRole("button", {name: /Import network/u}))
-        expect(onImportMock).toHaveBeenCalledWith("My_Network", expect.stringContaining('"agents"'))
-    })
-
-    it("should call onClose after Import network is clicked", async () => {
-        renderModal({onImport: onImportMock})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        const continueBtn = await screen.findByRole("button", {name: /Continue/u})
-        await user.click(continueBtn)
-        await user.click(await screen.findByRole("button", {name: /Import network/u}))
-        expect(onCloseMock).toHaveBeenCalled()
+        await advanceToConfirmStep("my_network.json")
+        await user.click(await screen.findByRole("button", {name: IMPORT_BUTTON}))
+        verify()
     })
 
     it("should let the user edit the network name on the confirm step", async () => {
         renderModal()
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "ecommerce_support.json", '{"agents": {}}')
-        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput).toHaveValue("Ecommerce Support")
 
@@ -371,13 +354,11 @@ describe("ImportNetworkModal", () => {
 
     it("should send the edited name (underscored) to onImport", async () => {
         renderModal({onImport: onImportMock})
-        const dropZone = screen.getByRole("button", {name: /drop zone/iu})
-        dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        await user.click(await screen.findByRole("button", {name: /Continue/u}))
+        await advanceToConfirmStep("my_network.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
         await user.type(nameInput, "Custom Name")
-        await user.click(await screen.findByRole("button", {name: /Import network/u}))
+        await user.click(await screen.findByRole("button", {name: IMPORT_BUTTON}))
         expect(onImportMock).toHaveBeenCalledWith("Custom_Name", expect.stringContaining('"agents"'))
     })
 })
