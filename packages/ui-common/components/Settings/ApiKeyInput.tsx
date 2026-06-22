@@ -166,7 +166,10 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 value={inputValue}
                 variant="outlined"
             />
-            <StatusLight statusValue={keyValidated === null ? "unknown" : keyValidated ? "green" : "red"} />
+            <StatusLight
+                id={`${id}-status-light`}
+                statusValue={keyValidated === null ? "unknown" : keyValidated ? "green" : "red"}
+            />
             <Button
                 disabled={disableActions}
                 loading={isValidating}

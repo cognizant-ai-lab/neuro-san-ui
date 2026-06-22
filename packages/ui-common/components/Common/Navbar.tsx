@@ -141,7 +141,7 @@ export const Navbar = ({
     }
 
     // Settings dialog state
-    const [settingsDialogOpen, setSettingsDialogOpen] = useState(true)
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
 
     // Customer for branding
     const customer = useSettingsStore((state) => state.settings.branding.customer)

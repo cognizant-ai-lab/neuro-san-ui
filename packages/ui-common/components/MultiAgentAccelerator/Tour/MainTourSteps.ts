@@ -30,9 +30,9 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
-            "Click this icon to connect to any Neuro SAN backend service. Mouse over it to see the current " +
-            "server you are connected to including the version.",
-        target: () => document.querySelector("#agent-network-settings-icon"),
+            "This status indicator shows whether the Neuro SAN backend service is online. " +
+            "Mouse over it to see the current server URL, status, version, and any error details.",
+        target: () => document.querySelector("#multi-agent-accelerator-sidebar-agent-network-status-light"),
         placement: "bottom",
     },
     {
@@ -79,7 +79,8 @@ export const MAIN_TOUR_STEPS: Step[] = [
     {
         content:
             "Access Settings from this icon. Here you can change the look and feel of the application, including " +
-            "auto branding for a particular customer!",
+            "auto branding for a particular customer, enter API keys for providers like OpenAI and Anthropic, and" +
+            "configure the URL used to access Neuro SAN services!",
         target: () => document.querySelector("#settings-icon"),
         placement: "top",
     },
