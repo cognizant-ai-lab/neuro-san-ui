@@ -124,7 +124,7 @@ const SettingsSubsection: FC<SettingsSubsectionProps> = ({title, children}) => (
 const URL_PROTOCOL_REGEX = /^https?:\/\//iu
 const HTTP_PROTOCOL_REGEX = /^http:\/\//iu
 
-const stripProtocol = (value: string) => value.replace(URL_PROTOCOL_REGEX, "")
+const stripProtocol = (value: string) => (value ?? "").replace(URL_PROTOCOL_REGEX, "")
 
 /**
  * Normalize a Neuro SAN URL input by stripping the protocol and determining the protocol to use.
@@ -137,7 +137,7 @@ const normalizeNeuroSanUrlInput = (value: string, fallbackProtocol: Protocol) =>
     const hasProtocol = URL_PROTOCOL_REGEX.exec(trimmedValue)
 
     return {
-        host: stripProtocol(trimmedValue),
+        host: stripProtocol(trimmedValue) ?? "",
         protocol: hasProtocol ? (HTTP_PROTOCOL_REGEX.test(trimmedValue) ? "http" : "https") : fallbackProtocol,
     } satisfies {
         host: string
@@ -198,12 +198,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         This can come from three sources:
         1) The default URL from server environment variables
         2) The persisted value in the Zustand store
-        3) The current state value, from the user's input
+        3) The current state value, from the user's input in the settings dialog
      */
-    const {backendNeuroSanApiUrl: defaultNeuroSanUrl} = useEnvironmentStore()
+    const defaultNeuroSanUrl = useEnvironmentStore((state) => state.backendNeuroSanApiUrl ?? "")
     const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl)
-    const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl || ""
-    const neuroSanUrlNoProtocol = effectiveNeuroSanUrl.replace(/https?:\/\//u, "") ?? ""
+    const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl
+    const neuroSanUrlNoProtocol = effectiveNeuroSanUrl.replace(/https?:\/\//u, "")
 
     const [neuroSanUrlInput, setNeuroSanUrlInput] = useState<string>(neuroSanUrlNoProtocol)
     const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocol>(
