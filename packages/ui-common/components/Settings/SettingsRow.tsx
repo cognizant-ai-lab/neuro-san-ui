@@ -10,6 +10,7 @@ interface SettingsRowProps {
     readonly checkmark?: ReturnType<typeof useCheckmarkFade>
     readonly children: ReactNode
     readonly disabled?: boolean
+    readonly id?: string
     readonly label: ReactNode
     readonly labelWidth?: string | number
     readonly sx?: SxProps<Theme>
@@ -23,6 +24,7 @@ export const SettingsRow: FC<SettingsRowProps> = ({
     checkmark,
     children,
     disabled = false,
+    id,
     label,
     labelWidth = "8rem",
     sx,
@@ -32,6 +34,7 @@ export const SettingsRow: FC<SettingsRowProps> = ({
 
     return (
         <Box
+            data-testid={id}
             sx={[
                 {
                     alignItems: "center",

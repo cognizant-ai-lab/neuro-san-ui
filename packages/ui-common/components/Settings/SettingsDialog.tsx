@@ -22,6 +22,7 @@ import {
     MouseEvent as ReactMouseEvent,
     ReactNode,
     useEffect,
+    useMemo,
     useState,
 } from "react"
 
@@ -109,7 +110,7 @@ interface SettingsSubsectionProps {
     readonly children: ReactNode
 }
 
-type Protocols = "http" | "https"
+type Protocol = "http" | "https"
 
 //#endregion: Types and Interfaces
 
@@ -120,7 +121,29 @@ const SettingsSubsection: FC<SettingsSubsectionProps> = ({title, children}) => (
         <SubSectionBody>{children}</SubSectionBody>
     </SubSection>
 )
+const URL_PROTOCOL_REGEX = /^https?:\/\//iu
+const HTTP_PROTOCOL_REGEX = /^http:\/\//iu
 
+const stripProtocol = (value: string) => value.replace(URL_PROTOCOL_REGEX, "")
+
+/**
+ * Normalize a Neuro SAN URL input by stripping the protocol and determining the protocol to use.
+ * @param value The input URL value to normalize.
+ * @param fallbackProtocol The protocol to use if the input value does not specify one.
+ * @return An object containing the normalized host and protocol.
+ */
+const normalizeNeuroSanUrlInput = (value: string, fallbackProtocol: Protocol) => {
+    const trimmedValue = value.trim()
+    const hasProtocol = URL_PROTOCOL_REGEX.exec(trimmedValue)
+
+    return {
+        host: stripProtocol(trimmedValue),
+        protocol: hasProtocol ? (HTTP_PROTOCOL_REGEX.test(trimmedValue) ? "http" : "https") : fallbackProtocol,
+    } satisfies {
+        host: string
+        protocol: Protocol
+    }
+}
 // eslint-disable-next-line react/no-multi-comp -- styled component shim is only used in this module
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
@@ -178,12 +201,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         3) The current state value, from the user's input
      */
     const {backendNeuroSanApiUrl: defaultNeuroSanUrl} = useEnvironmentStore()
-    const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.services.neuroSanUrl)
+    const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl)
     const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl || ""
     const neuroSanUrlNoProtocol = effectiveNeuroSanUrl.replace(/https?:\/\//u, "") ?? ""
 
     const [neuroSanUrlInput, setNeuroSanUrlInput] = useState<string>(neuroSanUrlNoProtocol)
-    const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocols>(
+    const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocol>(
         effectiveNeuroSanUrl.startsWith("http://") ? "http" : "https"
     )
 
@@ -313,13 +336,13 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     }
 
     const handleTestConnection = async () => {
-        const urlWithProtocol = `${neuroSanProtocol}://${neuroSanUrlInput}`
-        const result: TestConnectionResult = await testConnection(urlWithProtocol)
-        if (result.success) {
-            setNeuroSanUrlValidated(true)
-        } else {
-            setNeuroSanUrlValidated(false)
-        }
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+
+        const result: TestConnectionResult = await testConnection(`${normalized.protocol}://${normalized.host}`)
+        setNeuroSanUrlValidated(result.success)
     }
 
     const handleNeuroSanUrlChange = (e: ReactChangeEvent<HTMLInputElement>) => {
@@ -328,15 +351,21 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     }
 
     const handleSaveNeuroSanUrl = () => {
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+
         updateSettings({
-            services: {
-                neuroSanUrl: `${neuroSanProtocol}://${neuroSanUrlInput}`,
+            externalServices: {
+                neuroSanUrl: `${normalized.protocol}://${normalized.host}`,
             },
         })
+
         neuroSanURLCheckmark.trigger()
     }
 
-    const handleNeuroSanProtocolChange = (e: SelectChangeEvent<Protocols>) => {
+    const handleNeuroSanProtocolChange = (e: SelectChangeEvent<Protocol>) => {
         const newProtocol = e.target.value
         setNeuroSanProtocol(newProtocol)
         setNeuroSanUrlValidated(null)
@@ -392,12 +421,13 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const getNeuroSanSubsection = () => (
         <SettingsSubsection title="Neuro SAN">
             <SettingsRow
+                id={`${id}-neuro-san-server-url-row`}
                 checkmark={neuroSanURLCheckmark}
                 key={`${id}-neuro-san-server-url`}
                 label=""
                 tooltip="URL for the Neuro SAN server."
             >
-                <Select<Protocols>
+                <Select<Protocol>
                     aria-label="neuro-san-server-url-protocol-select"
                     onChange={handleNeuroSanProtocolChange}
                     size="small"
@@ -942,20 +972,23 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SubSection>
     )
 
-    return (
-        // Always use default theme for settings dialog so user can always see to reset. It's possible that with
-        // certain custom themes the dialog would be unreadable.
-        <ThemeProvider
-            theme={createTheme({
+    const settingsTheme = useMemo(
+        () =>
+            createTheme({
                 palette: {
                     mode: paletteMode,
                 },
                 typography: {
-                    // Default fonts are too large for the settings dialog, so we reduce the base font size
                     fontSize: 12,
                 },
-            })}
-        >
+            }),
+        [paletteMode]
+    )
+
+    return (
+        // Always use default theme for settings dialog so user can always see to reset. It's possible that with
+        // certain custom themes the dialog would be unreadable.
+        <ThemeProvider theme={settingsTheme}>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
             <MUIDialog
                 id={id}
