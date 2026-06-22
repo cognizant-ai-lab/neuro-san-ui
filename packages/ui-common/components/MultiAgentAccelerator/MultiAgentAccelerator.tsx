@@ -176,7 +176,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
 
-    const neuroSanURL = useSettingsStore((state) => state.settings.services.neuroSanUrl) ?? defaultNeuroSanUrl
+    const neuroSanURL = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl) ?? defaultNeuroSanUrl
 
     // Tracks how many times each agent has been involved in the conversation
     const [agentCounts, setAgentCounts] = useState<Map<string, number>>(new Map())

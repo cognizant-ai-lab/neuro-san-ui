@@ -98,6 +98,31 @@ describe("SettingsDialog", () => {
         expect(onCloseMock).toHaveBeenCalledTimes(1)
     })
 
+    describe("External services", () => {
+        it("allows user to input and save a Neuro SAN URL", async () => {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
+
+            const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
+
+            const testUrl = "https://neuro-san.test.com"
+            await user.type(inputBox, testUrl)
+
+            // Click "Save" to save the URL
+            const saveButton = within(urlInput).getByRole("button", {name: /Save/u})
+            expect(saveButton).toBeEnabled()
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(testUrl)
+        })
+    })
+
     describe("API keys", () => {
         it.each(["dark", "light"] satisfies PaletteMode[])("allows user to input and save API keys", async (mode) => {
             global.fetch = mockFetch({}, true)
@@ -173,7 +198,7 @@ describe("SettingsDialog", () => {
             expect(statusLight).toHaveAttribute("data-status", "red")
         })
 
-        it("allows user request that API keys be forgotten", async () => {
+        it("allows user to request that API keys be forgotten", async () => {
             // set an existing key value
             useSettingsStore.getState().updateSettings({
                 apiKeys: {

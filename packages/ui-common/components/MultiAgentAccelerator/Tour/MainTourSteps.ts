@@ -30,13 +30,16 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
-            "This status indicator shows whether the Neuro SAN backend service is online. " +
+            "This indicator shows the online status of the Neuro SAN backend service. " +
             "Mouse over it to see the current server URL, status, version, and any error details.",
         target: () => document.querySelector("#multi-agent-accelerator-sidebar-agent-network-status-light"),
         placement: "bottom",
     },
     {
-        content: "These are the agents within the current network.",
+        content:
+            "These are the agents within the current network. The arrows show the flow of information between " +
+            "them and the tools used by each agent. For networks you have created, you can click on an agent " +
+            "to edit it",
         target: () => document.querySelector("#multi-agent-accelerator-grid-agent-flow"),
         placement: "auto",
     },
@@ -71,15 +74,14 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
-            "These buttons allow you to control what is shown in the Chat window. " +
-            "Try mousing over them to see what they do!",
-        target: () => document.querySelector("#show-thinking-button"),
+            "Click this button to display a menu that allows you to choose how content is displayed in the chat window",
+        target: () => document.querySelector("#agent-network-ui-options-menu-button-container"),
         placement: "bottom",
     },
     {
         content:
             "Access Settings from this icon. Here you can change the look and feel of the application, including " +
-            "auto branding for a particular customer, enter API keys for providers like OpenAI and Anthropic, and" +
+            "auto branding for a particular customer, enter API keys for providers like OpenAI and Anthropic, and " +
             "configure the URL used to access Neuro SAN services!",
         target: () => document.querySelector("#settings-icon"),
         placement: "top",
