@@ -49,14 +49,14 @@ const TEMPORARY_FOLDER_DISPLAY = cleanUpAgentName(TEMPORARY_NETWORK_FOLDER)
 
 //#region: Types
 
-/** Outcome of validating a selected file against the advertised constraints. */
+// Outcome of validating a selected file against the advertised constraints.
 export enum ImportFileValidation {
     VALID = "valid",
     UNSUPPORTED_TYPE = "unsupported_type",
     TOO_LARGE = "too_large",
 }
 
-/** High-level counts shown on the review step so the user can sanity-check the import. */
+// High-level counts shown on the review step so the user can sanity-check the import.
 export interface NetworkSummary {
     readonly agents: number
     readonly codedTools: number
@@ -112,7 +112,7 @@ export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinit
         }))
 }
 
-/** Summarises a parsed network definition (counts by `display_as`, plus the frontman). */
+// Summarises a parsed network definition (counts by `display_as`, plus the frontman).
 export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEntry[]): NetworkSummary => {
     const countOf = (displayAs: DisplayAs): number =>
         networkDef.filter((entry) => entry.display_as === displayAs).length
@@ -124,7 +124,7 @@ export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEnt
     }
 }
 
-/** Format byte count to a human-readable string (e.g. "4.2 KB"). */
+// Format byte count to a human-readable string (e.g. "4.2 KB").
 export const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -155,7 +155,7 @@ export const validateImportFile = (file: File): ImportFileValidation => {
     return ImportFileValidation.VALID
 }
 
-/** Human-readable explanation for a non-VALID validation status, or null if the file is acceptable. */
+// Human-readable explanation for a non-VALID validation status, or null if the file is acceptable.
 export const importFileValidationMessage = (validation: ImportFileValidation, file: File): string | null => {
     switch (validation) {
         case ImportFileValidation.UNSUPPORTED_TYPE: {
@@ -184,13 +184,13 @@ export const filenameToNetworkName = (filename: string): string => {
     return startCase(removeTrailingUuid(stem))
 }
 
-/** Normalize a name for conflict comparison (underscores → spaces, lowercase, trimmed). */
+// Normalize a name for conflict comparison (underscores → spaces, lowercase, trimmed).
 const normalizeForComparison = (rawName: string): string => {
     const spaced = rawName.replaceAll(/[_-]+/gu, " ").toLowerCase()
     return spaced.trim()
 }
 
-/** Find the next non-conflicting name by appending " (2)", " (3)", etc. */
+// Find the next non-conflicting name by appending " (2)", " (3)", etc.
 export const findNonConflictingName = (base: string, existingNames: readonly string[]): string => {
     const existing = existingNames.map((n) => normalizeForComparison(n))
     if (!existing.includes(normalizeForComparison(base))) return base
