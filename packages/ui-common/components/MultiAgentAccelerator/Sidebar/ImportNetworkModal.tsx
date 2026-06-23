@@ -310,6 +310,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             setParseState("error")
             setParseError("Failed to read the file.")
         })
+        // We use FileReader (rather than the blob's text() promise) so the read can be
+        // aborted on cleanup and report failures via the "error" event above.
         // eslint-disable-next-line unicorn/prefer-blob-reading-methods
         reader.readAsText(file)
 

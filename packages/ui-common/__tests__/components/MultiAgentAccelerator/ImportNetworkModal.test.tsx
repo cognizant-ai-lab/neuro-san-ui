@@ -42,16 +42,16 @@ const DEFAULT_PROPS: ImportNetworkModalProps = {
     onClose: onCloseMock,
 }
 
-// Accessible-name matchers for the buttons exercised across the modal's three steps.
-const DROP_ZONE = /drop zone/iu
-const BROWSE_LINK = /browse your files/iu
-const CANCEL_BUTTON = /cancel/iu
-const CLOSE_BUTTON = /close/iu
-const CONTINUE_BUTTON = /continue/iu
-const BACK_BUTTON = /^back$/iu
-const IMPORT_BUTTON = /import network/iu
-const REPLACE_BUTTON = /replace/iu
-const RENAME_BUTTON = /rename/iu
+// Names for the buttons exercised across the modal's three steps.
+const DROP_ZONE = "Drop zone for network definition file"
+const BROWSE_LINK = "browse your files"
+const CANCEL_BUTTON = "Cancel"
+const CLOSE_BUTTON = "close"
+const CONTINUE_BUTTON = "Continue →"
+const BACK_BUTTON = "Back"
+const IMPORT_BUTTON = "Import network"
+const REPLACE_BUTTON = "Replace"
+const RENAME_BUTTON = "Rename"
 
 // Helper: create a mock File and simulate FileReader loading it
 const dropFile = (dropZone: HTMLElement, filename: string, content: string, type = "application/octet-stream") => {
