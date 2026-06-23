@@ -304,7 +304,6 @@ export const Sidebar: FC<SidebarProps> = ({
                     "aria-label": "Neuro-san server status",
                 },
             }}
-            open={true}
             title={
                 <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
                     <Typography variant="body2">
@@ -362,7 +361,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 >
                     <AddBoxRounded
                         id="add-network-icon"
-                        sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                        sx={{color: "var(--bs-secondary)"}}
                     />
                 </Tooltip>
             </Button>

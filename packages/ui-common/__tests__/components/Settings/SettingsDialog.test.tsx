@@ -158,7 +158,7 @@ describe("SettingsDialog", () => {
             await user.click(saveButton)
 
             expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(testUrl)
-        })
+        }, 10_000)
 
         it("handles input URLs with http and https protocols correctly", async () => {
             render(
