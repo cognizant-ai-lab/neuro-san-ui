@@ -39,6 +39,8 @@ export const withStrictMocks = (options: StrictMockOptions = {}) => {
             jest.resetModules()
         }
 
+        localStorage.clear()
+
         // Reset IndexedDB mock store
         globalThis.indexedDB = new IDBFactory()
     })
