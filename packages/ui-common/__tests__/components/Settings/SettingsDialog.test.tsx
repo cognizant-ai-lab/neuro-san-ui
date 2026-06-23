@@ -194,7 +194,7 @@ describe("SettingsDialog", () => {
 
             // The protocol should have been stripped and the dropdown changed to https
             expect(inputBox).toHaveValue("neuro-san.example.com")
-            expect(protocolDropdown).toHaveTextContent("http")
+            expect(protocolDropdown).toHaveTextContent(/^https:\/\/$/u)
         })
 
         it("handles user changing protocol in dropdown correctly", async () => {
@@ -231,14 +231,12 @@ describe("SettingsDialog", () => {
             const httpOption = await screen.findByRole("option", {name: "http://"})
             await user.click(httpOption)
 
-            // Save again: need to change input or else "Save" button will be disabled since nothing is "changed"
-            await user.click(inputBox) // add a character to enable the Save button
-            await user.clear(inputBox)
-            await user.paste(`${testUrl}a`) // add a character to enable the Save button
+            // Save again — protocol-only change should enable Save
+            expect(saveButton).toBeEnabled()
             await user.click(saveButton)
 
             // the "a" should also be saved
-            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(`http://${testUrl}a`)
+            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(`http://${testUrl}`)
         })
 
         it.each(["default-neuro-san.example.com", ""])(
