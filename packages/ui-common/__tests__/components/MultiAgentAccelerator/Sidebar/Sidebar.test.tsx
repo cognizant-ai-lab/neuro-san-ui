@@ -93,15 +93,14 @@ const onDeleteNetworkMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
-    neuroSanServerURL: DEFAULT_EXAMPLE_URL,
-    newlyAddedTemporaryNetworks: undefined,
-    onEditNetwork: jest.fn(),
-    temporaryNetworks: [],
     id: "test-flow-id",
     isAwaitingLlm: false,
-    networks: LIST_NETWORKS_RESPONSE,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
+    networks: LIST_NETWORKS_RESPONSE,
+    neuroSanServerURL: DEFAULT_EXAMPLE_URL,
+    newlyAddedTemporaryNetworks: undefined,
     onDeleteNetwork: onDeleteNetworkMock,
+    onEditNetwork: jest.fn(),
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
@@ -172,6 +171,7 @@ describe("SideBar", () => {
         await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "green"))
 
         // Check Tooltip
+        await user.hover(statusLight)
         const statusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(statusTooltip).getByText(TEST_VERSION)
         within(statusTooltip).getByText(/online/u)
@@ -195,7 +195,9 @@ describe("SideBar", () => {
         )
 
         // The status light should now be red
-        await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "red"))
+        const errorStatusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+        await user.hover(errorStatusLight)
+        await waitFor(() => expect(errorStatusLight).toHaveAttribute("data-status", "red"))
 
         // Tooltip should now show the error status
         const updatedStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
@@ -221,6 +223,10 @@ describe("SideBar", () => {
             />
         )
 
+        const unknownErrorStatusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+        await user.hover(unknownErrorStatusLight)
+        await waitFor(() => expect(unknownErrorStatusLight).toHaveAttribute("data-status", "red"))
+
         // Status light should still be red, but the tooltip should show the unknown status code
         await waitFor(() =>
             expect(screen.getByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)).toHaveAttribute(
@@ -231,9 +237,33 @@ describe("SideBar", () => {
         const unknownStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(unknownStatusTooltip).getByText(statusMessage)
         within(unknownStatusTooltip).getByText("offline")
-        screen.debug(unknownStatusTooltip)
         within(unknownStatusTooltip).getByText("unknown")
         within(unknownStatusTooltip).getByText(new RegExp(`${String(httpStatus.IM_A_TEAPOT + 1)}.*Unknown status`, "u"))
+    })
+
+    it.each([
+        {
+            caseName: "Error object",
+            exception: new Error("Simulated testConnection error"),
+            expectedMessage: "Simulated testConnection error",
+        },
+        {
+            caseName: "string",
+            exception: "Simulated string error",
+            expectedMessage: "Simulated string error",
+        },
+    ])("handles errors from testConnection when $caseName is thrown", async ({exception, expectedMessage}) => {
+        const testConnectionMock = jest.mocked(testConnection)
+
+        testConnectionMock.mockRejectedValue(exception)
+
+        renderSidebarComponent({})
+
+        const statusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+        await user.hover(statusLight)
+
+        const tooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
+        within(tooltip).getByText(expectedMessage)
     })
 
     it("Should display suggested network icons correctly", async () => {
