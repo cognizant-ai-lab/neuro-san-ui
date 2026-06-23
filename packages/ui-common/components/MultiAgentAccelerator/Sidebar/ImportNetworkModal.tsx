@@ -408,60 +408,67 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const networkSummary =
         parseState === "success" && parsedJson ? summarizeNetworkDefinition(jsonToNetworkDefinition(parsedJson)) : null
 
-    const footer = (
-        <>
-            {activeStep === 0 && (
-                <Button
-                    id="import-network-modal-cancel-btn"
-                    onClick={onClose}
-                    variant="outlined"
-                >
-                    Cancel
-                </Button>
-            )}
-            {activeStep === 1 && (
-                <>
+    const renderFooter = () => {
+        switch (activeStep) {
+            case 0:
+                return (
                     <Button
-                        id="import-network-modal-back-btn"
-                        onClick={handleBack}
+                        id="import-network-modal-cancel-btn"
+                        onClick={onClose}
                         variant="outlined"
                     >
-                        Back
+                        Cancel
                     </Button>
-                    {parseState === "success" && (
+                )
+            case 1:
+                return (
+                    <>
                         <Button
-                            id="import-network-modal-continue-btn"
-                            onClick={handleContinue}
+                            id="import-network-modal-back-btn"
+                            onClick={handleBack}
+                            variant="outlined"
+                        >
+                            Back
+                        </Button>
+                        {parseState === "success" && (
+                            <Button
+                                id="import-network-modal-continue-btn"
+                                onClick={handleContinue}
+                                sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
+                                variant="contained"
+                            >
+                                Continue →
+                            </Button>
+                        )}
+                    </>
+                )
+            case 2:
+                return (
+                    <>
+                        <Button
+                            id="import-network-modal-back-btn"
+                            onClick={handleBack}
+                            variant="outlined"
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            disabled={!networkName.trim()}
+                            id="import-network-modal-import-btn"
+                            onClick={handleImport}
                             sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
                             variant="contained"
                         >
-                            Continue →
+                            Import network
                         </Button>
-                    )}
-                </>
-            )}
-            {activeStep === 2 && (
-                <>
-                    <Button
-                        id="import-network-modal-back-btn"
-                        onClick={handleBack}
-                        variant="outlined"
-                    >
-                        Back
-                    </Button>
-                    <Button
-                        disabled={!networkName.trim()}
-                        id="import-network-modal-import-btn"
-                        onClick={handleImport}
-                        sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
-                        variant="contained"
-                    >
-                        Import network
-                    </Button>
-                </>
-            )}
-        </>
-    )
+                    </>
+                )
+            default:
+                return null
+        }
+    }
+
+    const footer = renderFooter()
 
     return (
         <MUIDialog

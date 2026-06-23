@@ -32,7 +32,7 @@ interface TreeBuildState {
     readonly uncategorizedItems: readonly AgentNetworkTreeItemModel[]
 }
 
-//#endregion
+//#endregion Types and Interfaces
 
 /**
  * Recursively searches for a tree item with the specified ID within the given list of tree items.
