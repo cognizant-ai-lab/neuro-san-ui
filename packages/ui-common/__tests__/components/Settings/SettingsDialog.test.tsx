@@ -33,8 +33,11 @@ describe("SettingsDialog", () => {
     let originalFetch: typeof global.fetch
 
     beforeEach(() => {
-        user = userEvent.setup()
         useSettingsStore.getState().resetSettings()
+        useSettingsStore.persist.clearStorage()
+        useEnvironmentStore.getState().setBackendNeuroSanApiUrl(undefined)
+
+        user = userEvent.setup()
         originalFetch = global.fetch
     })
 
@@ -101,15 +104,6 @@ describe("SettingsDialog", () => {
 
     describe("External services", () => {
         it("allows user to input, test and save a Neuro SAN URL", async () => {
-            global.fetch = mockFetch(
-                {
-                    success: false,
-                    httpStatus: 200,
-                    status: "ok",
-                },
-                true
-            )
-
             render(
                 <SettingsDialog
                     id="settings-dialog"
@@ -122,14 +116,40 @@ describe("SettingsDialog", () => {
             const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
 
             const testUrl = "https://neuro-san.example.com"
-            await user.type(inputBox, testUrl)
+            await user.click(inputBox)
+            await user.paste(testUrl)
+
+            // Click "clear input" button
+            const clearButton = within(urlInput).getByLabelText("Clear input")
+            await user.click(clearButton)
+            expect(inputBox).toHaveValue("")
+
+            // Status light should be back to "unknown" (gray) after clearing the input
+            const statusLight = within(urlInput).getByTestId("settings-dialog-status-light")
+            expect(statusLight).toHaveAttribute("data-status", "unknown")
+
+            // Set fetch to fail
+            global.fetch = mockFetch({}, false)
 
             // Click "Test" button to (pretend) "test" the URL
+            await user.type(inputBox, testUrl)
             const testButton = within(urlInput).getByRole("button", {name: /Test/u})
             expect(testButton).toBeEnabled()
             await user.click(testButton)
 
-            const statusLight = within(urlInput).getByTestId("settings-dialog-status-light")
+            expect(statusLight).toHaveAttribute("data-status", "red")
+
+            // Set fetch to succeed
+            global.fetch = mockFetch(
+                {
+                    success: false,
+                    httpStatus: 200,
+                    status: "ok",
+                },
+                true
+            )
+            await user.click(testButton)
+
             expect(statusLight).toHaveAttribute("data-status", "green")
 
             // Click "Save" to save the URL
@@ -152,8 +172,9 @@ describe("SettingsDialog", () => {
 
             const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
 
-            // Type an http protocol in the input
-            await user.type(inputBox, "http://neuro-san.example.com")
+            // Paste an http protocol URL in the input
+            await user.click(inputBox)
+            await user.paste("http://neuro-san.example.com")
 
             // Move out of the input to trigger onBlur
             await user.tab()
@@ -163,9 +184,10 @@ describe("SettingsDialog", () => {
             const protocolDropdown = within(urlInput).getByRole("combobox", {name: "protocol-select"})
             expect(protocolDropdown).toHaveTextContent("http")
 
-            // Now type an https protocol in the input
+            // Now type an https protocol URL in the input
             await user.clear(inputBox)
-            await user.type(inputBox, "https://neuro-san.example.com")
+            await user.click(inputBox)
+            await user.paste("https://neuro-san.example.com")
 
             // Move out of the input to trigger onBlur
             await user.tab()
@@ -193,7 +215,8 @@ describe("SettingsDialog", () => {
             // Enter a URL
             const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
             const testUrl = "neuro-san.example.com"
-            await user.type(inputBox, testUrl)
+            await user.click(inputBox)
+            await user.paste(testUrl)
 
             // Make sure it gets saved correctly
             const saveButton = within(urlInput).getByRole("button", {name: "Save"})
@@ -209,7 +232,9 @@ describe("SettingsDialog", () => {
             await user.click(httpOption)
 
             // Save again: need to change input or else "Save" button will be disabled since nothing is "changed"
-            await user.type(inputBox, "a") // add a character to enable the Save button
+            await user.click(inputBox) // add a character to enable the Save button
+            await user.clear(inputBox)
+            await user.paste(`${testUrl}a`) // add a character to enable the Save button
             await user.click(saveButton)
 
             // the "a" should also be saved
@@ -231,8 +256,9 @@ describe("SettingsDialog", () => {
                 const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
                 const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
 
-                // Type an http protocol in the input
-                await user.type(inputBox, "http://neuro-san.example.com")
+                // Paste an http protocol URL in the input
+                await user.click(inputBox)
+                await user.paste("http://neuro-san.example.com")
 
                 const resetButton = within(urlInput).getByRole("button", {name: "Default"})
                 await user.click(resetButton)

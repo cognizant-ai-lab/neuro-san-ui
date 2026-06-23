@@ -180,24 +180,28 @@ export const Sidebar: FC<SidebarProps> = ({
     }>({onlineStatus: "unknown", version: null})
 
     useEffect(() => {
-        let isMounted = true
+        let isCurrentRequest = true
 
         const checkStatus = async () => {
             try {
                 const result = await testConnection(neuroSanServerURL)
-                if (!isMounted) {
+
+                if (!isCurrentRequest) {
                     return
                 }
+
                 setNeuroSanServerStatus(
                     result.success
                         ? {onlineStatus: "online", version: result.version}
                         : {error: result.status, httpStatus: result.httpStatus, onlineStatus: "offline", version: null}
                 )
             } catch (error) {
-                if (isMounted) {
-                    const errorString = error instanceof Error ? error.message : String(error)
-                    setNeuroSanServerStatus({error: errorString, onlineStatus: "offline", version: null})
+                if (!isCurrentRequest) {
+                    return
                 }
+
+                const errorString = error instanceof Error ? error.message : String(error)
+                setNeuroSanServerStatus({error: errorString, onlineStatus: "offline", version: null})
             }
         }
 
@@ -206,7 +210,7 @@ export const Sidebar: FC<SidebarProps> = ({
         const intervalId = setInterval(checkStatus, NEURO_SAN_PING_INTERVAL_MS)
 
         return () => {
-            isMounted = false
+            isCurrentRequest = false
             clearInterval(intervalId)
         }
     }, [neuroSanServerURL])
@@ -293,86 +297,108 @@ export const Sidebar: FC<SidebarProps> = ({
         }
     }
 
+    const getStatusLight = () => (
+        <ServerStatusTooltip
+            slotProps={{
+                popper: {
+                    "aria-label": "Neuro-san server status",
+                },
+            }}
+            open={true}
+            title={
+                <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
+                    <Typography variant="body2">
+                        <strong>Status:</strong> {neuroSanServerStatus.onlineStatus}
+                    </Typography>
+                    <Typography variant="body2">
+                        <strong>Version:</strong> {neuroSanServerStatus.version ?? "unknown"}
+                    </Typography>
+                    <Typography variant="body2">
+                        <strong>URL:</strong> {neuroSanServerURL || "unknown"}
+                    </Typography>
+                    {neuroSanServerStatus.error && (
+                        <>
+                            <Typography variant="body2">
+                                <strong>Error:</strong> {neuroSanServerStatus.error}
+                            </Typography>
+                            {neuroSanServerStatus.httpStatus && (
+                                <Typography variant="body2">
+                                    <strong>HTTP status:</strong>{" "}
+                                    {/* eslint-disable-next-line max-len -- feels unnatural to break it */}
+                                    {`${neuroSanServerStatus.httpStatus} (${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
+                                </Typography>
+                            )}
+                        </>
+                    )}
+                </Box>
+            }
+            placement="right"
+        >
+            {/*For forwarding tooltip events*/}
+            <span>
+                <StatusLight
+                    id={`${id}-agent-network-status-light`}
+                    statusValue={toStatusColor()}
+                />
+            </span>
+        </ServerStatusTooltip>
+    )
+
+    const getAddNetworkButton = () => (
+        <Box sx={{display: "flex"}}>
+            <Button
+                aria-label="Add New Network"
+                disabled={isAwaitingLlm}
+                id="add-network-btn"
+                onClick={() => {
+                    setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
+                    setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
+                }}
+                sx={{display: "inline-block", minWidth: "40px"}}
+            >
+                <Tooltip
+                    title="Create your own agent network"
+                    placement="top"
+                >
+                    <AddBoxRounded
+                        id="add-network-icon"
+                        sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                    />
+                </Tooltip>
+            </Button>
+        </Box>
+    )
+
+    const getSidebarHeading = () => (
+        <SidebarHeading id={`${id}-heading`}>
+            <Box sx={{display: "flex", alignItems: "center", gap: (theme) => theme.spacing(1.5)}}>
+                {getStatusLight()}
+                Agent Networks
+            </Box>
+            {getAddNetworkButton()}
+        </SidebarHeading>
+    )
+
+    const getSidebarNetworksTree = () => (
+        <RichTreeView
+            disableSelection={isAwaitingLlm}
+            expandedItems={expandedItems}
+            items={treeViewItems}
+            multiSelect={false}
+            onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+            onSelectedItemsChange={handleSelectedItemsChange}
+            selectedItems={selectedItem}
+            slotProps={{
+                item: {onDeleteNetwork, onEditNetwork: handleEditNetworkWithSelect} as AgentNetworkNodeProps,
+            }}
+            slots={{item: AgentNetworkTreeItem as RichTreeViewSlots["item"]}}
+        />
+    )
+
     return (
         <SidebarAside id={`${id}-sidebar`}>
-            <SidebarHeading id={`${id}-heading`}>
-                <Box sx={{display: "flex", alignItems: "center", gap: (theme) => theme.spacing(1.5)}}>
-                    <ServerStatusTooltip
-                        title={
-                            <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
-                                <Typography variant="body2">
-                                    <strong>Status:</strong> {neuroSanServerStatus.onlineStatus}
-                                </Typography>
-                                <Typography variant="body2">
-                                    <strong>Version:</strong> {neuroSanServerStatus.version ?? "unknown"}
-                                </Typography>
-                                <Typography variant="body2">
-                                    <strong>URL:</strong> {neuroSanServerURL || "unknown"}
-                                </Typography>
-                                {neuroSanServerStatus.error && (
-                                    <>
-                                        <Typography variant="body2">
-                                            <strong>Error:</strong> {neuroSanServerStatus.error}
-                                        </Typography>
-                                        {neuroSanServerStatus.httpStatus && (
-                                            <Typography variant="body2">
-                                                <strong>HTTP status:</strong>{" "}
-                                                {/* eslint-disable-next-line max-len -- feels unnatural to break it */}
-                                                {`${neuroSanServerStatus.httpStatus} (${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
-                                            </Typography>
-                                        )}
-                                    </>
-                                )}
-                            </Box>
-                        }
-                        placement="right"
-                    >
-                        {/*For forwarding tooltip events*/}
-                        <span>
-                            <StatusLight
-                                id={`${id}-agent-network-status-light`}
-                                statusValue={toStatusColor()}
-                            />
-                        </span>
-                    </ServerStatusTooltip>
-                    Agent Networks
-                </Box>
-                <Box sx={{display: "flex"}}>
-                    <Button
-                        aria-label="Add New Network"
-                        disabled={isAwaitingLlm}
-                        id="add-network-btn"
-                        onClick={() => {
-                            setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
-                            setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
-                        }}
-                        sx={{display: "inline-block", minWidth: "40px"}}
-                    >
-                        <Tooltip
-                            title="Create your own agent network"
-                            placement="top"
-                        >
-                            <AddBoxRounded
-                                id="add-network-icon"
-                                sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
-                            />
-                        </Tooltip>
-                    </Button>
-                </Box>
-            </SidebarHeading>
-            <RichTreeView
-                disableSelection={isAwaitingLlm}
-                expandedItems={expandedItems}
-                items={treeViewItems}
-                multiSelect={false}
-                onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-                onSelectedItemsChange={handleSelectedItemsChange}
-                selectedItems={selectedItem}
-                slotProps={{
-                    item: {onDeleteNetwork, onEditNetwork: handleEditNetworkWithSelect} as AgentNetworkNodeProps,
-                }}
-                slots={{item: AgentNetworkTreeItem as RichTreeViewSlots["item"]}}
-            />
+            {getSidebarHeading()}
+            {getSidebarNetworksTree()}
         </SidebarAside>
     )
 }

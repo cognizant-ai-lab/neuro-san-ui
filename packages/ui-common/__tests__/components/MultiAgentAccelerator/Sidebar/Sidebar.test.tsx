@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
-import {act, render, screen, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+import httpStatus from "http-status"
 import {ComponentProps} from "react"
 
 import {
@@ -43,7 +43,7 @@ import {
     SidebarProps,
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
-import {testConnection} from "../../../../controller/agent/Agent"
+import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
@@ -93,7 +93,7 @@ const onDeleteNetworkMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
-    neuroSanServerURL: "",
+    neuroSanServerURL: DEFAULT_EXAMPLE_URL,
     newlyAddedTemporaryNetworks: undefined,
     onEditNetwork: jest.fn(),
     temporaryNetworks: [],
@@ -113,24 +113,13 @@ describe("SideBar", () => {
     /**
      * This function renders the Sidebar component
      * @param overrides An object of any prop overrides
-     * @param mode The color scheme mode, either "light" or "dark". Defaults to "light".
      * @return The props for the Sidebar component
      */
-    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}, mode: PaletteMode = "light") => {
+    const renderSidebarComponent = (overrides: Partial<SidebarProps> = {}) => {
         const props: SidebarProps = {...DEFAULT_PROPS, ...overrides}
-        render(
-            <ThemeProvider
-                theme={createTheme({
-                    palette: {
-                        mode: mode ?? "light",
-                    },
-                })}
-            >
-                <Sidebar {...props} />
-            </ThemeProvider>
-        )
+        const {rerender} = render(<Sidebar {...props} />)
 
-        return props
+        return {props, rerender}
     }
 
     beforeAll(() => {
@@ -141,14 +130,22 @@ describe("SideBar", () => {
         mockSelectedTreeItemId = undefined
 
         user = userEvent.setup()
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: TEST_VERSION})
+        const testConnectionMock = jest.mocked(testConnection)
+        testConnectionMock.mockResolvedValue({
+            httpStatus: httpStatus.OK,
+            status: "ok",
+            success: true,
+            version: TEST_VERSION,
+        } satisfies TestConnectionResult)
 
         // Reset settings store
         useSettingsStore.getState().resetSettings()
     })
 
-    it.each(["light", "dark"] as PaletteMode[])("should render correctly with darkMode=%s", async (mode) => {
-        const {setSelectedNetwork} = renderSidebarComponent({}, mode)
+    it("should render correctly", async () => {
+        const {
+            props: {setSelectedNetwork},
+        } = renderSidebarComponent({})
 
         // Make sure the heading is present
         await screen.findByText("Agent Networks")
@@ -164,6 +161,79 @@ describe("SideBar", () => {
         // setSelectedNetwork should be called
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+    })
+
+    it("should show correct Neuro SAN status", async () => {
+        const {rerender} = renderSidebarComponent({})
+
+        const statusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+
+        // We mocked testConnection to return success, so the status light should be green
+        await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "green"))
+
+        // Check Tooltip
+        const statusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
+        within(statusTooltip).getByText(TEST_VERSION)
+        within(statusTooltip).getByText(/online/u)
+        within(statusTooltip).getByText(DEFAULT_EXAMPLE_URL)
+
+        // Now mock testConnection to return failure and re-render the component
+        const statusMessage = "expected error string"
+
+        const testConnectionMock = jest.mocked(testConnection)
+        testConnectionMock.mockResolvedValue({
+            success: false,
+            status: statusMessage,
+            httpStatus: httpStatus.IM_A_TEAPOT,
+        } satisfies TestConnectionResult)
+
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                neuroSanServerURL=""
+            />
+        )
+
+        // The status light should now be red
+        await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "red"))
+
+        // Tooltip should now show the error status
+        const updatedStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
+        within(updatedStatusTooltip).getByText(statusMessage)
+        within(updatedStatusTooltip).getByText("offline")
+        // version and URL should be "unknown"
+        expect(within(updatedStatusTooltip).getAllByText("unknown")).toHaveLength(2)
+        within(updatedStatusTooltip).getByText(new RegExp(String(httpStatus.IM_A_TEAPOT), "u"))
+
+        testConnectionMock.mockClear()
+
+        // Now with an unknown http status (mainly for branch coverage)
+        testConnectionMock.mockResolvedValue({
+            success: false,
+            status: statusMessage,
+            httpStatus: httpStatus.IM_A_TEAPOT + 1,
+        } satisfies TestConnectionResult)
+
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                neuroSanServerURL="different-url"
+            />
+        )
+
+        // Status light should still be red, but the tooltip should show the unknown status code
+        await waitFor(() =>
+            expect(screen.getByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)).toHaveAttribute(
+                "data-status",
+                "red"
+            )
+        )
+        const unknownStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
+        within(unknownStatusTooltip).getByText(statusMessage)
+        within(unknownStatusTooltip).getByText("offline")
+        screen.debug(unknownStatusTooltip)
+        within(unknownStatusTooltip).getByText("unknown")
+        within(unknownStatusTooltip).getByText(new RegExp(`${String(httpStatus.IM_A_TEAPOT + 1)}.*Unknown status`, "u"))
     })
 
     it("Should display suggested network icons correctly", async () => {

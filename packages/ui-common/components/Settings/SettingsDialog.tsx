@@ -137,7 +137,7 @@ const normalizeNeuroSanUrlInput = (value: string, fallbackProtocol: Protocol) =>
     const hasProtocol = URL_PROTOCOL_REGEX.exec(trimmedValue)
 
     return {
-        host: stripProtocol(trimmedValue) ?? "",
+        host: stripProtocol(trimmedValue),
         protocol: hasProtocol ? (HTTP_PROTOCOL_REGEX.test(trimmedValue) ? "http" : "https") : fallbackProtocol,
     } satisfies {
         host: string
