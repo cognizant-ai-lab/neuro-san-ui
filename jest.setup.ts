@@ -128,7 +128,7 @@ if (global.SVGPathElement === undefined) {
 // Make tests fail if any output is sent to the console
 failOnConsole({
     shouldFailOnAssert: true,
-    shouldFailOnDebug: false,
+    shouldFailOnDebug: true,
     shouldFailOnError: true,
     shouldFailOnInfo: true,
     shouldFailOnLog: true,

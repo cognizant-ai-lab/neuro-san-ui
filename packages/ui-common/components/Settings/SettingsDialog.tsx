@@ -203,15 +203,19 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const defaultNeuroSanUrl = useEnvironmentStore((state) => state.backendNeuroSanApiUrl ?? "")
     const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl)
     const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl
-    const neuroSanUrlNoProtocol = effectiveNeuroSanUrl.replace(/https?:\/\//u, "")
+    const effectiveNeuroSanProtocol: Protocol = effectiveNeuroSanUrl.startsWith("http://") ? "http" : "https"
+    const neuroSanUrlNoProtocol = stripProtocol(effectiveNeuroSanUrl)
 
     const [neuroSanUrlInput, setNeuroSanUrlInput] = useState<string>(neuroSanUrlNoProtocol)
-    const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocol>(
-        effectiveNeuroSanUrl.startsWith("http://") ? "http" : "https"
-    )
+    const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocol>(effectiveNeuroSanProtocol)
 
     const [neuroSanUrlValidated, setNeuroSanUrlValidated] = useState<boolean | null>(null)
     const neuroSanURLCheckmark = useCheckmarkFade()
+
+    const neuroSanHostChanged = neuroSanUrlInput.trim() !== neuroSanUrlNoProtocol
+    const neuroSanProtocolChanged = neuroSanProtocol !== effectiveNeuroSanProtocol
+    const neuroSanUrlSaveDisabled =
+        neuroSanUrlInput.trim().length === 0 || (!neuroSanHostChanged && !neuroSanProtocolChanged)
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -491,7 +495,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         Test
                     </Button>
                     <Button
-                        disabled={neuroSanUrlInput.trim().length === 0 || neuroSanUrlInput === neuroSanUrlNoProtocol}
+                        disabled={neuroSanUrlSaveDisabled}
                         onClick={handleSaveNeuroSanUrl}
                         size="small"
                         variant="contained"
@@ -499,7 +503,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         Save
                     </Button>
                     <Button
-                        disabled={neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) && neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")}
+                        disabled={
+                            neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) &&
+                            neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")
+                        }
                         onClick={handleResetNeuroSanUrl}
                         size="small"
                         variant="contained"
