@@ -499,7 +499,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         Save
                     </Button>
                     <Button
-                        disabled={neuroSanUrlInput === defaultNeuroSanUrl}
+                        disabled={neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) && neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")}
                         onClick={handleResetNeuroSanUrl}
                         size="small"
                         variant="contained"
