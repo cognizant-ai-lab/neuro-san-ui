@@ -216,6 +216,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const neuroSanProtocolChanged = neuroSanProtocol !== effectiveNeuroSanProtocol
     const neuroSanUrlSaveDisabled =
         neuroSanUrlInput.trim().length === 0 || (!neuroSanHostChanged && !neuroSanProtocolChanged)
+    const neuroSanUrlResetDisabled =
+        neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) &&
+        neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")
+
+    const statusLightValue = neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -484,7 +489,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     />
                     <StatusLight
                         id={`${id}-status-light`}
-                        statusValue={neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"}
+                        statusValue={statusLightValue}
                     />
                     <Button
                         disabled={neuroSanUrlInput.trim().length === 0}
@@ -503,10 +508,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         Save
                     </Button>
                     <Button
-                        disabled={
-                            neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) &&
-                            neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")
-                        }
+                        disabled={neuroSanUrlResetDisabled}
                         onClick={handleResetNeuroSanUrl}
                         size="small"
                         variant="contained"
