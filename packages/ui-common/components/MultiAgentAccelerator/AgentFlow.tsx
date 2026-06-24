@@ -831,11 +831,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             "&:hover": {
                                 backgroundColor: theme.palette.action.hover,
                             },
-                            "&.Mui-selected": {
-                                backgroundColor: theme.palette.action.selected,
-                                borderColor: theme.palette.text.primary,
-                            },
-                            "&.Mui-selected:hover": {
+                            "&.Mui-selected, &.Mui-selected:hover": {
                                 backgroundColor: theme.palette.action.selected,
                                 borderColor: theme.palette.text.primary,
                             },
