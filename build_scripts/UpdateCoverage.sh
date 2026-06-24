@@ -95,7 +95,7 @@ main() {
 
     # Run the tests with coverage
     if ! jest --config ./jest_quiet.config.ts --collectCoverage --coverageReporters=json-summary \
-        --coverageThreshold '{}' --coverageDirectory="${output_dir}" packages/ui-common/__tests__/unit/Controller/agent ; then
+        --coverageThreshold '{}' --coverageDirectory="${output_dir}" ; then
         # If jest failed, don't update
         echo "Tests failed. Coverage not updated." >&2
         exit 1
