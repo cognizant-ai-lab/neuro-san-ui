@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../components/AgentChat/Common/Utils"
-import {FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from "../../../components/MultiAgentAccelerator/AgentNode"
-import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../components/MultiAgentAccelerator/const"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../../components/AgentChat/Common/Utils"
+import {
+    FRONTMAN_SIZE_MULTIPLIER,
+    NODE_HEIGHT,
+    NODE_WIDTH,
+} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
 import {
     addThoughtBubbleEdge,
     getThoughtBubbleEdges,
@@ -26,9 +29,10 @@ import {
     layoutRadial,
     MAX_GLOBAL_THOUGHT_BUBBLES,
     removeThoughtBubbleEdge,
-} from "../../../components/MultiAgentAccelerator/GraphLayouts"
-import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
-import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+} from "../../../../components/MultiAgentAccelerator/AgentFlow/GraphLayouts"
+import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../../components/MultiAgentAccelerator/const"
+import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
+import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 
 const defaultLayoutParams: LayoutOptions = {
     agentCounts: new Map(),

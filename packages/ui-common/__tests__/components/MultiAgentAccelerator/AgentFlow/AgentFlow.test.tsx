@@ -20,22 +20,22 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
-import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
+import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {
     AgentFlow,
     AgentFlowProps,
     DOCK_BANNER_AUTO_DISMISS_MS,
-} from "../../../components/MultiAgentAccelerator/AgentFlow"
-import {AgentNetworkDefinitionEntry} from "../../../components/MultiAgentAccelerator/const"
-import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
-import {sendChatQuery} from "../../../controller/agent/Agent"
-import {ChatMessageType, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
-import {PALETTES} from "../../../Theme/Palettes"
+} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
+import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
+import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
+import {sendChatQuery} from "../../../../controller/agent/Agent"
+import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
+import {PALETTES} from "../../../../Theme/Palettes"
 
-jest.mock("../../../controller/agent/Agent")
+jest.mock("../../../../controller/agent/Agent")
 
 jest.mock("notistack", () => ({
     ...jest.requireActual("notistack"),
@@ -56,11 +56,11 @@ jest.mock("@mui/material/styles", () => ({
     useColorScheme: jest.fn(),
 }))
 
-jest.mock("../../../components/MultiAgentAccelerator/PlasmaEdge", () => ({
+jest.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
 }))
 
-jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleEdge", () => ({
+jest.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge", () => ({
     ThoughtBubbleEdge: () => <g data-testid={mockThoughtBubbleEdgeTestId} />,
 }))
 
@@ -76,7 +76,7 @@ const defaultMockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = () => (
 )
 
 let __MockThoughtBubbleOverlayImpl: FC<ThoughtBubbleOverlayProps> = defaultMockThoughtBubbleOverlay
-jest.mock("../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay", () => ({
+jest.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay", () => ({
     ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
 }))
 

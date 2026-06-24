@@ -17,10 +17,10 @@ limitations under the License.
 import {act, render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {ThoughtBubbleEdgeShape} from "../../../components/MultiAgentAccelerator/ThoughtBubbleEdge"
-import {ThoughtBubbleOverlay} from "../../../components/MultiAgentAccelerator/ThoughtBubbleOverlay"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
+import {ThoughtBubbleOverlay} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay"
+import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
 
 describe("ThoughtBubbleOverlay", () => {
     withStrictMocks()
