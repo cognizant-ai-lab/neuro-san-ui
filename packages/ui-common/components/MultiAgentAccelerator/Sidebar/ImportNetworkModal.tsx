@@ -47,13 +47,20 @@ const TEMPORARY_FOLDER_DISPLAY = cleanUpAgentName(TEMPORARY_NETWORK_FOLDER)
 
 //#endregion: Constants
 
-//#region: Types
+//#region: Enums, Interfaces and Types
 
 // Outcome of validating a selected file against the advertised constraints.
 export enum ImportFileValidation {
     VALID = "valid",
     UNSUPPORTED_TYPE = "unsupported_type",
     TOO_LARGE = "too_large",
+}
+
+export interface ImportNetworkModalProps {
+    readonly existingNetworkNames?: readonly string[]
+    readonly isOpen: boolean
+    readonly onClose: () => void
+    readonly onImport?: (name: string, content: string) => void
 }
 
 // High-level counts shown on the review step so the user can sanity-check the import.
@@ -63,6 +70,8 @@ export interface NetworkSummary {
     readonly externalAgents: number
     readonly frontman: string
 }
+
+type ParseState = "loading" | "success" | "error"
 
 //#endregion: Types
 
@@ -86,16 +95,12 @@ export const parseNetworkFileContent = (text: string): {success: boolean; json?:
 }
 
 /**
- * Converts an imported network JSON file into an array of AgentNetworkDefinitionEntry objects
+ * Converts a parsed network JSON string into an array of AgentNetworkDefinitionEntry objects
  * suitable for sendNetworkDesignerRequest.
  *
- * Imports are the top-level array shape exported for a Temporary network — each entry already
- * carries `origin`, `tools`, `display_as`, etc. Entries without a string `origin` are dropped;
- * anything that isn't an array yields an empty result.
- *
- * The editable text fields (`instructions`, `description`) are trimmed here so downstream
- * consumers receive canonical values — e.g. HOCON triple-quoted blocks export with a leading
- * newline after `"""`, which would otherwise surface as a stray blank line in the editor.
+ * Expects the top-level array shape — each entry carrying `origin`, `tools`, `display_as`, etc.
+ * Anything that isn't an array yields an empty result, and entries without a string `origin`
+ * are dropped. The `instructions` and `description` fields are trimmed when present.
  */
 export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
     const parsed = JSON.parse(jsonString) as unknown
@@ -226,19 +231,6 @@ const DropZone = styled(Box, {
 
 //#endregion: Styled Components
 
-//#region: Types
-
-type ParseState = "loading" | "success" | "error"
-
-export interface ImportNetworkModalProps {
-    readonly existingNetworkNames?: readonly string[]
-    readonly isOpen: boolean
-    readonly onClose: () => void
-    readonly onImport?: (name: string, content: string) => void
-}
-
-//#endregion: Types
-
 const EMPTY_NETWORK_NAMES: readonly string[] = []
 
 export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
@@ -248,27 +240,27 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     onImport,
 }) => {
     const [activeStep, setActiveStep] = useState<number>(0)
-    const [isDragOver, setIsDragOver] = useState<boolean>(false)
+    // Track which (normalised) name the user consciously chose to replace
+    const [conflictAcknowledgedFor, setConflictAcknowledgedFor] = useState<string | null>(null)
     const [file, setFile] = useState<File | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isDragOver, setIsDragOver] = useState<boolean>(false)
+    const [networkName, setNetworkName] = useState<string>("")
     const [parseState, setParseState] = useState<ParseState | null>(null)
     const [parseError, setParseError] = useState<string | null>(null)
     const [parsedJson, setParsedJson] = useState<string | null>(null)
-    const [networkName, setNetworkName] = useState<string>("")
-    // Track which (normalised) name the user consciously chose to replace
-    const [conflictAcknowledgedFor, setConflictAcknowledgedFor] = useState<string | null>(null)
-    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Reset all state whenever the modal is opened
     useEffect(() => {
         if (isOpen) {
             setActiveStep(0)
+            setConflictAcknowledgedFor(null)
             setIsDragOver(false)
             setFile(null)
+            setNetworkName("")
             setParseState(null)
             setParseError(null)
             setParsedJson(null)
-            setNetworkName("")
-            setConflictAcknowledgedFor(null)
         }
     }, [isOpen])
 
