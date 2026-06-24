@@ -50,9 +50,8 @@ import {
 } from "@xyflow/react"
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {AgentConversation} from "./AgentConversations"
+import {AgentConversation} from "../AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {AgentNodePopup} from "./AgentNodePopup"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -62,29 +61,30 @@ import {
     DEFAULT_FRONTMAN_X_POS,
     DEFAULT_FRONTMAN_Y_POS,
     LEVEL_SPACING,
-} from "./const"
+} from "../const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
+import {sendChatQuery} from "../../../controller/agent/Agent"
+import {StreamingUnit} from "../../../controller/llm/LlmChat"
+import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
+import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {usePalette, useSettingsStore} from "../../../state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {getZIndex} from "../../../utils/zIndexLayers"
+import {chatMessageFromChunk} from "../../AgentChat/Common/Utils"
+import {MUIAlert} from "../../Common/MUIAlert"
+import {NotificationType, sendNotification} from "../../Common/notification"
+import {AgentNodePopup} from "../AgentNodePopup"
 import {
     convertReservationsToNetworks,
     extractNetworkHocon,
     extractReservations,
     isEditableAgent,
     mergeNetworks,
-} from "./TemporaryNetworks"
-import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
-import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
-import {sendChatQuery} from "../../controller/agent/Agent"
-import {StreamingUnit} from "../../controller/llm/LlmChat"
-import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
-import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {usePalette, useSettingsStore} from "../../state/Settings"
-import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {getZIndex} from "../../utils/zIndexLayers"
-import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
-import {MUIAlert} from "../Common/MUIAlert"
-import {NotificationType, sendNotification} from "../Common/notification"
+} from "../TemporaryNetworks"
+import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
+import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
 //#region: Types
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>

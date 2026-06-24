@@ -17,7 +17,7 @@ limitations under the License.
 import {act, render} from "@testing-library/react"
 import {Position} from "@xyflow/react"
 
-import {PlasmaEdge} from "../../../components/MultiAgentAccelerator/PlasmaEdge"
+import {PlasmaEdge} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
 
 describe("PlasmaEdge", () => {
     it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
