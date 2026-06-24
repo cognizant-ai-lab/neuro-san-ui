@@ -519,7 +519,14 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onClick={handleBrowseClick}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault()
+                            handleBrowseClick()
+                        }
+                    }}
                     role="button"
+                    tabIndex={0}
                     aria-label="Drop zone for network definition file"
                 >
                     <CloudUploadOutlinedIcon

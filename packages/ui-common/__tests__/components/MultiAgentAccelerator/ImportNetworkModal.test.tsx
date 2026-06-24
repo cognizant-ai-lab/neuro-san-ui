@@ -129,6 +129,29 @@ describe("ImportNetworkModal", () => {
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
+    it.each([{key: "Enter"}, {key: " "}])(
+        "should trigger file input click when the drop zone receives a $key keydown",
+        ({key}) => {
+            renderModal()
+            const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+            const clickSpy = jest.spyOn(fileInput, "click")
+
+            fireEvent.keyDown(getDropZone(), {key})
+
+            expect(clickSpy).toHaveBeenCalledTimes(1)
+        },
+    )
+
+    it("should not trigger file input click on an unrelated key", () => {
+        renderModal()
+        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const clickSpy = jest.spyOn(fileInput, "click")
+
+        fireEvent.keyDown(getDropZone(), {key: "a"})
+
+        expect(clickSpy).not.toHaveBeenCalled()
+    })
+
     it.each([
         {name: "should keep the drop zone mounted on drag-over", events: ["dragOver"] as const},
         {
