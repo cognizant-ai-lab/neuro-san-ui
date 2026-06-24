@@ -190,1405 +190,1225 @@ describe("AgentFlow", () => {
         return {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap: () => map}
     }
 
-    it("Should show the network title when networkDisplayName is provided", async () => {
-        renderAgentFlowComponent({networkDisplayName: "My Network"})
-        expect(await screen.findByText("My Network")).toBeInTheDocument()
-    })
-
-    it("Should show the network title in dark mode", async () => {
-        renderAgentFlowComponent({networkDisplayName: "Dark Network"}, "dark")
-        expect(await screen.findByText("Dark Network")).toBeInTheDocument()
-    })
-
-    it("Should not show the title bar when networkDisplayName is not provided", async () => {
-        const {container} = renderAgentFlowComponent()
-        expect(container.querySelector("#test-flow-id-network-title-bar")).not.toBeInTheDocument()
-    })
-
-    it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
-        const onEnterEditMode = jest.fn()
-        renderAgentFlowComponent({
-            networkDisplayName: "Temp Net",
-            isSelectedNetworkTemporary: true,
-            isEditMode: false,
-            isAwaitingLlm: false,
-            onEnterEditMode,
-        })
-        const editBtn = await screen.findByRole("button", {name: "Edit"})
-        await user.click(editBtn)
-        expect(onEnterEditMode).toHaveBeenCalledTimes(1)
-    })
-
-    it("Should not show the Edit button for a non-temporary network", async () => {
-        renderAgentFlowComponent({
-            networkDisplayName: "Regular Net",
-            isSelectedNetworkTemporary: false,
-        })
-        await screen.findByText("Regular Net")
-        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
-    })
-
-    it("Should not show the Edit button when already in edit mode", async () => {
-        renderAgentFlowComponent({
-            networkDisplayName: "Temp Net",
-            isSelectedNetworkTemporary: true,
-            isEditMode: true,
-        })
-        await screen.findByText("Temp Net")
-        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
-    })
-
-    it("Should not show the Edit button when awaiting LLM", async () => {
-        renderAgentFlowComponent({
-            networkDisplayName: "Temp Net",
-            isSelectedNetworkTemporary: true,
-            isEditMode: false,
-            isAwaitingLlm: true,
-        })
-        await screen.findByText("Temp Net")
-        expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
-    })
-
-    it("Should allow switching between heatmap and depth displays", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        const heatmapButton = await screen.findByRole("button", {name: "Heatmap"})
-
-        // press the button to switch to heatmap mode
-        await user.click(heatmapButton)
-
-        // Legend should have switched to heatmap mode
-        const legendContainer = container.querySelector('[id$="-legend"]')
-        const divElements = legendContainer?.querySelectorAll(".MuiBox-root")
-
-        const expectedItemsInLegend = PALETTES["blue"].length
-        expect(divElements.length).toBe(expectedItemsInLegend)
-
-        // Now switch back to depth display
-        const depthButton = await screen.findByRole("button", {name: "Depth"})
-        await user.click(depthButton)
-
-        // Legend should have switched back to depth mode
-        const depthLegendContainer = container.querySelector('[id$="-legend"]')
-        const depthDivElements = depthLegendContainer?.querySelectorAll(".MuiBox-root")
-        const expectedNetworkDepth = 2
-        expect(depthDivElements.length).toBe(expectedNetworkDepth)
-    })
-
-    it("Should allow switching to heatmap display and not show radial guides with linear display mode", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        let radialGuides = container.querySelector("#test-flow-id-radial-guides")
-
-        // Radial guides should be present in radial layout
-        expect(radialGuides).toBeInTheDocument()
-
-        // locate linear layout button
-        const linearLayoutButton = container.querySelector("#linear-layout-button")
-        expect(linearLayoutButton).toBeInTheDocument()
-
-        // click the button
-        await user.click(linearLayoutButton)
-
-        // Radial guides should not be present in linear layout
-        expect(radialGuides).not.toBeInTheDocument()
-
-        // Now switch to heatmap display
-        const heatmapButton = await screen.findByRole("button", {name: "Heatmap"})
-
-        // press the button to switch to heatmap mode
-        await user.click(heatmapButton)
-
-        // Radial guides should still not be present in linear layout
-        radialGuides = container.querySelector("#test-flow-id-radial-guides")
-        expect(radialGuides).not.toBeInTheDocument()
-    })
-
-    it("Should handle highlighting the active agents", async () => {
-        const {container, rerender} = renderAgentFlowComponent({
-            selectedNetwork: TEST_AGENT_MUSIC_NERD_PRO,
+    describe("Basic Rendering", () => {
+        it("Should show the network title when networkDisplayName is provided", async () => {
+            renderAgentFlowComponent({networkDisplayName: "My Network"})
+            expect(await screen.findByText("My Network")).toBeInTheDocument()
         })
 
-        // Force a re-render by changing layout
-        const layoutButton = container.querySelector("#linear-layout-button")
-        await user.click(layoutButton)
+        it("Should show the network title in dark mode", async () => {
+            renderAgentFlowComponent({networkDisplayName: "Dark Network"}, "dark")
+            expect(await screen.findByText("Dark Network")).toBeInTheDocument()
+        })
 
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    agentsInNetwork={NETWORK}
-                    id="test-flow-id"
-                    currentConversations={[
-                        {
-                            id: "test-conv-2",
-                            agents: new Set(["agent1", "agent3"]),
-                            startedAt: new Date(),
-                            type: ChatMessageType.AGENT,
-                        },
-                    ]}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={jest.fn()}
-                />
-            </ReactFlowProvider>
-        )
+        it("Should not show the title bar when networkDisplayName is not provided", async () => {
+            const {container} = renderAgentFlowComponent()
+            expect(container.querySelector("#test-flow-id-network-title-bar")).not.toBeInTheDocument()
+        })
 
-        // agent1 is active so should be highlighted
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        expect(agent1Node).toBeInTheDocument()
+        it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
+            const onEnterEditMode = jest.fn()
+            renderAgentFlowComponent({
+                networkDisplayName: "Temp Net",
+                isSelectedNetworkTemporary: true,
+                isEditMode: false,
+                isAwaitingLlm: false,
+                onEnterEditMode,
+            })
+            const editBtn = await screen.findByRole("button", {name: "Edit"})
+            await user.click(editBtn)
+            expect(onEnterEditMode).toHaveBeenCalledTimes(1)
+        })
 
-        // agent1 is active so should be highlighted
-        const agent1NodeBody = screen.getByTestId("agent1")
-        const computedStyleAgent1 = window.getComputedStyle(agent1NodeBody)
-        expect(computedStyleAgent1.animation).toMatch(/animation-\w+ 2s infinite/u)
+        it("Should not show the Edit button for a non-temporary network", async () => {
+            renderAgentFlowComponent({
+                networkDisplayName: "Regular Net",
+                isSelectedNetworkTemporary: false,
+            })
+            await screen.findByText("Regular Net")
+            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+        })
 
-        // agent2 is not "active" so should not have the pulsing animation (or any animation in fact)
-        const agent2NodeBody = screen.getByTestId("agent2")
-        const computedStyleAgent2 = window.getComputedStyle(agent2NodeBody)
-        expect(computedStyleAgent2.animation).toBe("")
+        it("Should not show the Edit button when already in edit mode", async () => {
+            renderAgentFlowComponent({
+                networkDisplayName: "Temp Net",
+                isSelectedNetworkTemporary: true,
+                isEditMode: true,
+            })
+            await screen.findByText("Temp Net")
+            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+        })
 
-        // agent3 is active so should be highlighted
-        const agent3NodeBody = screen.getByTestId("agent3")
-        const computedStyleAgent3 = window.getComputedStyle(agent3NodeBody)
-        expect(computedStyleAgent3.animation).toMatch(/animation-\w+ 2s infinite/u)
+        it("Should not show the Edit button when awaiting LLM", async () => {
+            renderAgentFlowComponent({
+                networkDisplayName: "Temp Net",
+                isSelectedNetworkTemporary: true,
+                isEditMode: false,
+                isAwaitingLlm: true,
+            })
+            await screen.findByText("Temp Net")
+            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+        })
+
+        it("Should allow switching between heatmap and depth displays", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            const heatmapButton = await screen.findByRole("button", {name: "Heatmap"})
+
+            // press the button to switch to heatmap mode
+            await user.click(heatmapButton)
+
+            // Legend should have switched to heatmap mode
+            const legendContainer = container.querySelector('[id$="-legend"]')
+            const divElements = legendContainer?.querySelectorAll(".MuiBox-root")
+
+            const expectedItemsInLegend = PALETTES["blue"].length
+            expect(divElements.length).toBe(expectedItemsInLegend)
+
+            // Now switch back to depth display
+            const depthButton = await screen.findByRole("button", {name: "Depth"})
+            await user.click(depthButton)
+
+            // Legend should have switched back to depth mode
+            const depthLegendContainer = container.querySelector('[id$="-legend"]')
+            const depthDivElements = depthLegendContainer?.querySelectorAll(".MuiBox-root")
+            const expectedNetworkDepth = 2
+            expect(depthDivElements.length).toBe(expectedNetworkDepth)
+        })
+
+        it("Should allow switching to heatmap display and not show radial guides with linear display mode", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            let radialGuides = container.querySelector("#test-flow-id-radial-guides")
+
+            // Radial guides should be present in radial layout
+            expect(radialGuides).toBeInTheDocument()
+
+            // locate linear layout button
+            const linearLayoutButton = container.querySelector("#linear-layout-button")
+            expect(linearLayoutButton).toBeInTheDocument()
+
+            // click the button
+            await user.click(linearLayoutButton)
+
+            // Radial guides should not be present in linear layout
+            expect(radialGuides).not.toBeInTheDocument()
+
+            // Now switch to heatmap display
+            const heatmapButton = await screen.findByRole("button", {name: "Heatmap"})
+
+            // press the button to switch to heatmap mode
+            await user.click(heatmapButton)
+
+            // Radial guides should still not be present in linear layout
+            radialGuides = container.querySelector("#test-flow-id-radial-guides")
+            expect(radialGuides).not.toBeInTheDocument()
+        })
+
+        it("Should handle isStreaming false", () => {
+            const {container} = renderAgentFlowComponent({isStreaming: false})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should render legend and controls when not awaiting LLM", () => {
+            const {container} = renderAgentFlowComponent({isAwaitingLlm: false})
+
+            // When not awaiting LLM, legend and controls should be rendered
+            expect(container.querySelector("#test-flow-id-legend")).toBeInTheDocument()
+            expect(container.querySelector("#radial-layout-button")).toBeInTheDocument()
+        })
+
+        it("Should render the legend if agent list is greater than 0", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            // Expect legend to be present
+            expect(container.querySelector("#test-flow-id-legend")).toBeInTheDocument()
+        })
+
+        it("Should handle an empty agent list", async () => {
+            const {container} = renderAgentFlowComponent({agentsInNetwork: [], currentConversations: null})
+
+            const nodes = container.getElementsByClassName("react-flow__node")
+            expect(nodes).toHaveLength(0)
+
+            // Expect legend not to be present
+            expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
+        })
+
+        it("Should render with isAwaitingLlm true", () => {
+            const {container} = renderAgentFlowComponent({isAwaitingLlm: true})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should render with isAwaitingLlm false", () => {
+            const {container} = renderAgentFlowComponent({isAwaitingLlm: false})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should handle a Frontman-only network", async () => {
+            const {container} = renderAgentFlowComponent({
+                agentsInNetwork: [NETWORK[2]],
+                currentConversations: [
+                    {
+                        id: "test-conv-frontman",
+                        agents: new Set(["agent3"]),
+                        startedAt: new Date(),
+                    },
+                ],
+            })
+
+            const nodes = container.getElementsByClassName("react-flow__node")
+            expect(nodes).toHaveLength(1)
+        })
     })
 
-    it("Should handle an empty agent list", async () => {
-        const {container} = renderAgentFlowComponent({agentsInNetwork: [], currentConversations: null})
+    describe("Layouts", () => {
+        it.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
+            const {container} = renderAgentFlowComponent()
 
-        const nodes = container.getElementsByClassName("react-flow__node")
-        expect(nodes).toHaveLength(0)
+            // locate appropriate button
+            const layoutButton = container.querySelector(`#${layout}-layout-button`)
+            expect(layoutButton).toBeInTheDocument()
 
-        // Expect legend not to be present
-        expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
+            // click the button
+            await user.click(layoutButton)
+
+            // Make sure at least agent nodes are still rendered
+            verifyAgentNodes(container)
+        })
+
+        it("Should show radial guides only in radial layout with more than one depth", () => {
+            const {container, rerender} = renderAgentFlowComponent()
+
+            // Should show radial guides SVG with more than one node (which is used for the default test network)
+            expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        agentsInNetwork={[NETWORK[2]]}
+                        id="test-flow-id"
+                        currentConversations={[
+                            {
+                                id: "test-conv-3",
+                                agents: new Set(["agent3"]),
+                                startedAt: new Date(),
+                                type: ChatMessageType.AGENT,
+                            },
+                        ]}
+                        isAwaitingLlm={false}
+                        isStreaming={false}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={jest.fn()}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should not show radial guides SVG with only one node
+            expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+        })
+
+        it("Should handle radial guides toggle when layout is linear", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            // First click to switch to linear layout
+            const linearButton = container.querySelector("#linear-layout-button")
+            expect(linearButton).toBeInTheDocument()
+            await user.click(linearButton)
+
+            const radialGuidesButton = container.querySelector("#radial-guides-button")
+            expect(radialGuidesButton).toBeInTheDocument()
+
+            // Button should be disabled when layout is linear
+            expect(radialGuidesButton).toHaveAttribute("disabled")
+        })
+
+        it("Should toggle radial guides on and off", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            const radialGuidesButton = container.querySelector("#radial-guides-button")
+            expect(radialGuidesButton).toBeInTheDocument()
+
+            // Click to toggle radial guides off
+            await user.click(radialGuidesButton)
+
+            // Radial guides should not be visible
+            expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+
+            // Click again to toggle radial guides back on
+            await user.click(radialGuidesButton)
+
+            // Radial guides should be visible again
+            expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+        })
     })
 
-    it("Should render the legend if agent list is greater than 0", async () => {
-        const {container} = renderAgentFlowComponent()
+    describe("Animation", () => {
+        it("Should handle highlighting the active agents", async () => {
+            const {container, rerender} = renderAgentFlowComponent({
+                selectedNetwork: TEST_AGENT_MUSIC_NERD_PRO,
+            })
 
-        // Expect legend to be present
-        expect(container.querySelector("#test-flow-id-legend")).toBeInTheDocument()
-    })
+            // Force a re-render by changing layout
+            const layoutButton = container.querySelector("#linear-layout-button")
+            await user.click(layoutButton)
 
-    it("Should handle a Frontman-only network", async () => {
-        const {container} = renderAgentFlowComponent({
-            agentsInNetwork: [NETWORK[2]],
-            currentConversations: [
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        agentsInNetwork={NETWORK}
+                        id="test-flow-id"
+                        currentConversations={[
+                            {
+                                id: "test-conv-2",
+                                agents: new Set(["agent1", "agent3"]),
+                                startedAt: new Date(),
+                                type: ChatMessageType.AGENT,
+                            },
+                        ]}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={jest.fn()}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // agent1 is active so should be highlighted
+            const agent1Node = container.querySelector('[data-id="agent1"]')
+            expect(agent1Node).toBeInTheDocument()
+
+            // agent1 is active so should be highlighted
+            const agent1NodeBody = screen.getByTestId("agent1")
+            const computedStyleAgent1 = window.getComputedStyle(agent1NodeBody)
+            expect(computedStyleAgent1.animation).toMatch(/animation-\w+ 2s infinite/u)
+
+            // agent2 is not "active" so should not have the pulsing animation (or any animation in fact)
+            const agent2NodeBody = screen.getByTestId("agent2")
+            const computedStyleAgent2 = window.getComputedStyle(agent2NodeBody)
+            expect(computedStyleAgent2.animation).toBe("")
+
+            // agent3 is active so should be highlighted
+            const agent3NodeBody = screen.getByTestId("agent3")
+            const computedStyleAgent3 = window.getComputedStyle(agent3NodeBody)
+            expect(computedStyleAgent3.animation).toMatch(/animation-\w+ 2s infinite/u)
+        })
+
+        it("Should handle isAwaitingLlm prop correctly", () => {
+            const {container} = renderAgentFlowComponent({isAwaitingLlm: true})
+
+            // When awaiting LLM, legend and controls should not be rendered
+            expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
+            expect(container.querySelector("#radial-layout-button")).not.toBeInTheDocument()
+        })
+
+        it("Should render with isStreaming prop", () => {
+            const {container} = renderAgentFlowComponent({isStreaming: true})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should render plasma edges between agents in conversation when isAwaitingLlm is true", () => {
+            // agent1 and agent2 are connected in NETWORK (agent1 -> agent2)
+            // Placing both in the same conversation with a valid type triggers plasma edges
+            const conversationsWithPlasma = [
                 {
-                    id: "test-conv-frontman",
-                    agents: new Set(["agent3"]),
+                    id: "plasma-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({
+                isAwaitingLlm: true,
+                currentConversations: conversationsWithPlasma,
+            })
+
+            // The edge between agent1 (source) and agent2 (target) has id "agent2-edge-agent1"
+            // ReactFlow wraps each edge in a group element with data-id matching the edge id
+            const plasmaEdgeWrapper = container.querySelector('[data-id="agent2-edge-agent1"]')
+            expect(plasmaEdgeWrapper).toBeVisible()
+
+            expect(screen.getByTestId(mockPlasmaEdgeTestId)).toBeVisible()
+        })
+    })
+
+    describe("Thought Bubbles", () => {
+        it("Should render ThoughtBubbleOverlay component", () => {
+            renderAgentFlowComponent()
+
+            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+        })
+
+        it("Should have a thought bubble toggle button", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            const thoughtBubbleButton = container.querySelector("#thought-bubble-button")
+            expect(thoughtBubbleButton).toBeInTheDocument()
+
+            // Click to toggle thought bubbles off
+            await user.click(thoughtBubbleButton)
+
+            // Button should still be there
+            expect(thoughtBubbleButton).toBeInTheDocument()
+        })
+
+        it("Should render ThoughtBubbleOverlay component when showing thought bubbles", () => {
+            renderAgentFlowComponent()
+
+            // ThoughtBubbleOverlay should be rendered (it's mocked)
+            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+        })
+
+        it("Should render ThoughtBubbleEdge in edge types", () => {
+            renderAgentFlowComponent()
+
+            // Component should render without errors
+            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+        })
+
+        it("Should handle conversations with text for thought bubbles", () => {
+            const conversationsWithText = [
+                {
+                    id: "test-conv-with-text",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "What is the weather today?",
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({
+                currentConversations: conversationsWithText,
+                isStreaming: true,
+            })
+
+            // Component should render successfully with conversation text
+            expect(container).toBeInTheDocument()
+        })
+
+        it("Should call setThoughtBubbleEdges when conversations with text are added", () => {
+            const mockSetThoughtBubbleEdges = jest.fn()
+            const conversationsWithText = [
+                {
+                    id: "conv-with-text",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: Test message",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            const {rerender} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={null}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Update with conversations that have text
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={conversationsWithText}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should have called setThoughtBubbleEdges to add the thought bubble
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        })
+
+        it("Should handle thought bubble edges in the layout", () => {
+            const thoughtBubbleEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+                [
+                    "test-edge",
+                    {
+                        edge: {
+                            id: "thought-bubble-test",
+                            source: "agent1",
+                            target: "agent2",
+                            type: "thoughtBubbleEdge",
+                            data: {text: "Test thought bubble"},
+                        },
+                        timestamp: Date.now(),
+                    },
+                ],
+            ])
+
+            const {container} = renderAgentFlowComponent({
+                thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            })
+
+            // Should render successfully with thought bubble edges
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should handle empty thought bubble edges map", () => {
+            const {container} = renderAgentFlowComponent({
+                thoughtBubbleEdges: new Map(),
+            })
+
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should prevent duplicate thought bubbles using thoughtBubbleEdges", () => {
+            const mockSetThoughtBubbleEdges = jest.fn()
+            const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+                [
+                    "conv-1",
+                    {
+                        edge: {
+                            id: "thought-bubble-conv-1",
+                            source: "agent1",
+                            target: "agent2",
+                            type: "thoughtBubbleEdge",
+                            data: {
+                                text: '{"inquiry": "What is the weather?"}',
+                                showAlways: true,
+                                conversationId: "conv-1",
+                            },
+                        },
+                        timestamp: Date.now(),
+                    },
+                ],
+            ])
+
+            // Pre-populate with an existing edge
+
+            const duplicateConversations: AgentConversation[] = [
+                {
+                    id: "conv-2",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
+                    text: '{"inquiry": "What is the weather?"}', // Same parsed content
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            const {container} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={duplicateConversations}
+                        thoughtBubbleEdges={existingEdgesMap}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+
+            // Should NOT add a new edge because the parsed text already exists in thoughtBubbleEdges
+            // The mock may be called but the logic should skip adding duplicate
+            expect(container).toBeInTheDocument()
+        })
+
+        it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
+            const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
+
+            // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
+            const manyConversations: AgentConversation[] = Array.from({length: 6}, (_, i) => ({
+                id: `conv-${i}`,
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
+                text: `{"inquiry": "Message ${i}"}`, // Unique messages
+                type: ChatMessageType.AGENT,
+            }))
+
+            render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={manyConversations}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                        isStreaming={true}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Map must be capped at MAX_THOUGHT_BUBBLES (5)
+            expect(getThoughtBubbleEdgesMap().size).toBeLessThanOrEqual(5)
+            // Oldest bubble (conv-0) should have been evicted
+            expect(getThoughtBubbleEdgesMap().has("conv-0")).toBe(false)
+            // Newest bubble (conv-5) should still be present
+            expect(getThoughtBubbleEdgesMap().has("conv-5")).toBe(true)
+        })
+
+        it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
+            jest.useFakeTimers()
+            const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
+
+            const conversationsWithText: AgentConversation[] = [
+                {
+                    id: "conv-timeout-test",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: Test timeout message",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={conversationsWithText}
+                        isStreaming={true}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // After initial render the bubble should have been added
+            expect(getThoughtBubbleEdgesMap().size).toBe(1)
+            expect(getThoughtBubbleEdgesMap().has("conv-timeout-test")).toBe(true)
+
+            // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
+            act(() => {
+                jest.advanceTimersByTime(11000)
+            })
+
+            // The bubble should have been removed from the map after expiry
+            expect(getThoughtBubbleEdgesMap().size).toBe(0)
+        })
+
+        it("Should handle hover state changes for thought bubbles", () => {
+            const currentConversations: AgentConversation[] = [
+                {
+                    id: "hover-test-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: Hover test",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+            renderAgentFlowComponent({
+                currentConversations,
+                isStreaming: true,
+            })
+
+            // Component should render with thought bubble overlay
+            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+        })
+
+        it("Should prevent expired bubbles from being removed when hovered", async () => {
+            jest.useFakeTimers()
+            const mockSetThoughtBubbleEdges = jest.fn()
+
+            // Create a conversation that will be added as a thought bubble
+            const conversationsWithText: AgentConversation[] = [
+                {
+                    id: "hover-prevent-expire-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: Hover prevents expiry",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            // Mock ThoughtBubbleOverlay to simulate hover behavior
+            const MockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({onBubbleHoverChange}) => {
+                // Simulate hover on mount
+                useEffect(() => {
+                    if (onBubbleHoverChange) {
+                        onBubbleHoverChange("thought-bubble-hover-prevent-expire-conv")
+                    }
+                }, [onBubbleHoverChange])
+                return <div data-testid={mockThoughtBubbleOverlayTestId} />
+            }
+
+            const previousImpl = __MockThoughtBubbleOverlayImpl
+            __MockThoughtBubbleOverlayImpl = MockThoughtBubbleOverlay
+
+            render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={conversationsWithText}
+                        isStreaming={true}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Fast-forward time by 11 seconds to trigger cleanup (past the 10-second timeout)
+            act(() => {
+                jest.advanceTimersByTime(11000)
+            })
+
+            // The bubble should not be removed because it's being hovered
+            // We can verify by checking that the component still renders
+            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+
+            __MockThoughtBubbleOverlayImpl = previousImpl
+        })
+
+        it("Should drop expired bubbles first when overflow limit is reached", () => {
+            jest.useFakeTimers()
+            const mockSetThoughtBubbleEdges = jest.fn()
+
+            // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
+            const initialConversations: AgentConversation[] = Array.from({length: 5}, (_, i) => ({
+                id: `conv-expire-overflow-${i}`,
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: `Invoking Agent with inquiry: Initial overflow message ${i}`,
+                type: ChatMessageType.AGENT,
+            }))
+
+            const {rerender} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={initialConversations}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Advance 1 second past THOUGHT_BUBBLE_TIMEOUT_MS (which is 10 seconds), so those 5 bubbles are expired.
+            act(() => {
+                jest.advanceTimersByTime(11000)
+            })
+
+            // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
+            const extraConversation: AgentConversation = {
+                id: "conv-expire-overflow-extra",
+                agents: new Set(["agent2", "agent3"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Extra overflow message",
+                type: ChatMessageType.AGENT,
+            }
+
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={[...initialConversations, extraConversation]}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // setThoughtBubbleEdges should have been called (for both add and remove paths).
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        })
+
+        it("Should handle case-insensitive duplicate detection in thought bubbles", () => {
+            const conversationsWithCaseVariations: AgentConversation[] = [
+                {
+                    id: "conv-case-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: TEST MESSAGE",
+                    type: ChatMessageType.AGENT,
+                },
+                {
+                    id: "conv-case-2",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: test message", // Same but lowercase
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            const mockSetThoughtBubbleEdges = jest.fn()
+
+            render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={conversationsWithCaseVariations}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should only add one thought bubble due to duplicate detection
+            // The mock should be called but duplicates should be filtered
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        })
+
+        it("Should handle thought bubble edges without text field", () => {
+            const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+                [
+                    "edge-without-text",
+                    {
+                        edge: {
+                            id: "thought-bubble-no-text",
+                            source: "agent1",
+                            target: "agent2",
+                            type: "thoughtBubbleEdge",
+                            data: {
+                                // No text field
+                                showAlways: true,
+                                conversationId: "no-text-conv",
+                            },
+                        },
+                        timestamp: Date.now(),
+                    },
+                ],
+            ])
+
+            // Add an edge without text (to test the "if (edgeText)" branch)
+
+            const conversationsWithText: AgentConversation[] = [
+                {
+                    id: "new-conv",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: New message",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+
+            const {container} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={conversationsWithText}
+                        thoughtBubbleEdges={existingEdgesMap}
+                        setThoughtBubbleEdges={jest.fn()}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+        })
+
+        it("Should handle clearing thoughtBubbleEdges map", () => {
+            const mockSetThoughtBubbleEdges = jest.fn()
+
+            const conversation1: AgentConversation = {
+                id: "conv-clear-test",
+                agents: new Set(["agent1", "agent2"]),
+                startedAt: new Date(),
+                text: "Invoking Agent with inquiry: Clear test",
+                type: ChatMessageType.AGENT,
+            }
+
+            // Render with edges present (non-empty map)
+            const edgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
+                [
+                    "edge-1",
+                    {
+                        edge: {
+                            id: "test-edge-1",
+                            source: "agent1",
+                            target: "agent2",
+                            type: "thoughtBubbleEdge",
+                            data: {text: "Test"},
+                        },
+                        timestamp: Date.now(),
+                    },
+                ],
+            ])
+
+            const {rerender} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={[conversation1]}
+                        thoughtBubbleEdges={edgesMap}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Verify it renders with non-empty map (covers thoughtBubbleEdges.size !== 0 branch)
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+
+            // Now clear the edges map
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={[conversation1]}
+                        thoughtBubbleEdges={new Map()} // Empty map
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
+
+            // Should render without errors when edges are cleared (covers thoughtBubbleEdges.size === 0 branch)
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        })
+    })
+
+    describe("Conversations", () => {
+        it("Should handle null currentConversations", () => {
+            const {container} = renderAgentFlowComponent({currentConversations: null})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
+
+        it("Should handle conversations with multiple agents", () => {
+            const multiAgentConversations = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
                     startedAt: new Date(),
                 },
-            ],
-        })
-
-        const nodes = container.getElementsByClassName("react-flow__node")
-        expect(nodes).toHaveLength(1)
-    })
-
-    it.each(["radial", "linear"])("Should allow switching to %s layout", async (layout) => {
-        const {container} = renderAgentFlowComponent()
-
-        // locate appropriate button
-        const layoutButton = container.querySelector(`#${layout}-layout-button`)
-        expect(layoutButton).toBeInTheDocument()
-
-        // click the button
-        await user.click(layoutButton)
-
-        // Make sure at least agent nodes are still rendered
-        verifyAgentNodes(container)
-    })
-
-    it("Should show radial guides only in radial layout with more than one depth", () => {
-        const {container, rerender} = renderAgentFlowComponent()
-
-        // Should show radial guides SVG with more than one node (which is used for the default test network)
-        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
-
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    agentsInNetwork={[NETWORK[2]]}
-                    id="test-flow-id"
-                    currentConversations={[
-                        {
-                            id: "test-conv-3",
-                            agents: new Set(["agent3"]),
-                            startedAt: new Date(),
-                            type: ChatMessageType.AGENT,
-                        },
-                    ]}
-                    isAwaitingLlm={false}
-                    isStreaming={false}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={jest.fn()}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should not show radial guides SVG with only one node
-        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
-    })
-
-    it("Should handle radial guides toggle when layout is linear", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        // First click to switch to linear layout
-        const linearButton = container.querySelector("#linear-layout-button")
-        expect(linearButton).toBeInTheDocument()
-        await user.click(linearButton)
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Button should be disabled when layout is linear
-        expect(radialGuidesButton).toHaveAttribute("disabled")
-    })
-
-    it("Should toggle radial guides on and off", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        const radialGuidesButton = container.querySelector("#radial-guides-button")
-        expect(radialGuidesButton).toBeInTheDocument()
-
-        // Click to toggle radial guides off
-        await user.click(radialGuidesButton)
-
-        // Radial guides should not be visible
-        expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
-
-        // Click again to toggle radial guides back on
-        await user.click(radialGuidesButton)
-
-        // Radial guides should be visible again
-        expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
-    })
-
-    it("Should render ThoughtBubbleOverlay component", () => {
-        renderAgentFlowComponent()
-
-        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
-    })
-
-    it("Should have a thought bubble toggle button", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        const thoughtBubbleButton = container.querySelector("#thought-bubble-button")
-        expect(thoughtBubbleButton).toBeInTheDocument()
-
-        // Click to toggle thought bubbles off
-        await user.click(thoughtBubbleButton)
-
-        // Button should still be there
-        expect(thoughtBubbleButton).toBeInTheDocument()
-    })
-
-    it("Should handle isAwaitingLlm prop correctly", () => {
-        const {container} = renderAgentFlowComponent({isAwaitingLlm: true})
-
-        // When awaiting LLM, legend and controls should not be rendered
-        expect(container.querySelector("#test-flow-id-legend")).not.toBeInTheDocument()
-        expect(container.querySelector("#radial-layout-button")).not.toBeInTheDocument()
-    })
-
-    // There is also a test in GraphLayouts.test.ts related to plasma edges.
-    it("Should render plasma edges between agents in conversation when isAwaitingLlm is true", () => {
-        // agent1 and agent2 are connected in NETWORK (agent1 -> agent2)
-        // Placing both in the same conversation with a valid type triggers plasma edges
-        const conversationsWithPlasma = [
-            {
-                id: "plasma-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({
-            isAwaitingLlm: true,
-            currentConversations: conversationsWithPlasma,
-        })
-
-        // The edge between agent1 (source) and agent2 (target) has id "agent2-edge-agent1"
-        // ReactFlow wraps each edge in a group element with data-id matching the edge id
-        const plasmaEdgeWrapper = container.querySelector('[data-id="agent2-edge-agent1"]')
-        expect(plasmaEdgeWrapper).toBeVisible()
-
-        expect(screen.getByTestId(mockPlasmaEdgeTestId)).toBeVisible()
-    })
-
-    it("Should render legend and controls when not awaiting LLM", () => {
-        const {container} = renderAgentFlowComponent({isAwaitingLlm: false})
-
-        // When not awaiting LLM, legend and controls should be rendered
-        expect(container.querySelector("#test-flow-id-legend")).toBeInTheDocument()
-        expect(container.querySelector("#radial-layout-button")).toBeInTheDocument()
-    })
-
-    it("Should handle conversations with text for thought bubbles", () => {
-        const conversationsWithText = [
-            {
-                id: "test-conv-with-text",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "What is the weather today?",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({
-            currentConversations: conversationsWithText,
-            isStreaming: true,
-        })
-
-        // Component should render successfully with conversation text
-        expect(container).toBeInTheDocument()
-    })
-
-    it("Should handle null currentConversations", () => {
-        const {container} = renderAgentFlowComponent({currentConversations: null})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should render with isStreaming prop", () => {
-        const {container} = renderAgentFlowComponent({isStreaming: true})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should render ThoughtBubbleOverlay component when showing thought bubbles", () => {
-        renderAgentFlowComponent()
-
-        // ThoughtBubbleOverlay should be rendered (it's mocked)
-        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
-    })
-
-    it("Should render ThoughtBubbleEdge in edge types", () => {
-        renderAgentFlowComponent()
-
-        // Component should render without errors
-        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
-    })
-
-    it("Should handle conversations with multiple agents", () => {
-        const multiAgentConversations = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-            },
-            {
-                id: "conv-2",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: multiAgentConversations})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle conversations with text field", () => {
-        const conversationsWithText = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1"]),
-                startedAt: new Date(),
-                text: "Test inquiry text",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: conversationsWithText})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle empty conversations array", () => {
-        const {container} = renderAgentFlowComponent({currentConversations: []})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle isStreaming false", () => {
-        const {container} = renderAgentFlowComponent({isStreaming: false})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should render with isAwaitingLlm true", () => {
-        const {container} = renderAgentFlowComponent({isAwaitingLlm: true})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should render with isAwaitingLlm false", () => {
-        const {container} = renderAgentFlowComponent({isAwaitingLlm: false})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle currentConversations becoming null (streaming complete)", () => {
-        const initialConversations = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Test message",
-            },
-        ]
-
-        const {rerender, container} = renderAgentFlowComponent({currentConversations: initialConversations})
-
-        // Initially should render with conversations
-        expect(container).toBeInTheDocument()
-
-        // Now set to null (simulating streaming complete)
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={null}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should still render without errors
-        expect(container).toBeInTheDocument()
-    })
-
-    it("Should handle conversation with single agent", () => {
-        const singleAgentConv = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1"]),
-                startedAt: new Date(),
-                text: "Single agent message",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: singleAgentConv})
-
-        // Should render without errors (won't create edge with < 2 agents)
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle conversation with three or more agents", () => {
-        const multiAgentConv = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2", "agent3"]),
-                startedAt: new Date(),
-                text: "Multi-agent message",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: multiAgentConv})
-
-        // Should render without errors (creates edge from first two agents)
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle window resize events", async () => {
-        const {container} = renderAgentFlowComponent()
-
-        // Trigger resize wrapped in act
-        await act(async () => {
-            global.window.dispatchEvent(new Event("resize"))
-        })
-
-        // Should not crash
-        expect(container).toBeInTheDocument()
-    })
-
-    it("Should clean up resize listener on unmount", () => {
-        const removeEventListenerSpy = jest.spyOn(window, "removeEventListener")
-        const {unmount} = renderAgentFlowComponent()
-
-        unmount()
-
-        // Verify cleanup was called
-        expect(removeEventListenerSpy).toHaveBeenCalledWith("resize", expect.any(Function))
-    })
-
-    it("Should handle conversations without text field", () => {
-        const conversationsWithoutText = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                // No text field
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: conversationsWithoutText})
-
-        // Should render without errors (skips processing conversations without text)
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle empty agents set in conversation", () => {
-        const conversationsWithEmptyAgents = [
-            {
-                id: "conv-1",
-                agents: new Set<string>(),
-                startedAt: new Date(),
-                text: "Message with no agents",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: conversationsWithEmptyAgents})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle duplicate conversations with same parsed text", () => {
-        const duplicateConversations = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: '{"inquiry": "Same message"}',
-            },
-            {
-                id: "conv-2",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-                text: '{"inquiry": "Same message"}', // Duplicate parsed content
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: duplicateConversations})
-
-        // Should render without errors (deduplication should prevent double-add)
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle very long conversation text", () => {
-        const longTextConv = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "a".repeat(1000), // Very long text
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: longTextConv})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle special characters in conversation text", () => {
-        const specialCharsConv = [
-            {
-                id: "conv-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Test with émojis 🎉 and spëcial çharacters",
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: specialCharsConv})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should call setThoughtBubbleEdges when conversations with text are added", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
-        const conversationsWithText = [
-            {
-                id: "conv-with-text",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test message",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={null}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Update with conversations that have text
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should have called setThoughtBubbleEdges to add the thought bubble
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-    })
-
-    it("Should handle thought bubble edges in the layout", () => {
-        const thoughtBubbleEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
-            [
-                "test-edge",
                 {
-                    edge: {
-                        id: "thought-bubble-test",
-                        source: "agent1",
-                        target: "agent2",
-                        type: "thoughtBubbleEdge",
-                        data: {text: "Test thought bubble"},
-                    },
-                    timestamp: Date.now(),
+                    id: "conv-2",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
                 },
-            ],
-        ])
+            ]
 
-        const {container} = renderAgentFlowComponent({
-            thoughtBubbleEdges: thoughtBubbleEdgesMap,
+            const {container} = renderAgentFlowComponent({currentConversations: multiAgentConversations})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        // Should render successfully with thought bubble edges
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle empty thought bubble edges map", () => {
-        const {container} = renderAgentFlowComponent({
-            thoughtBubbleEdges: new Map(),
-        })
-
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should prevent duplicate thought bubbles using thoughtBubbleEdges", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
-        const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
-            [
-                "conv-1",
+        it("Should handle conversations with text field", () => {
+            const conversationsWithText = [
                 {
-                    edge: {
-                        id: "thought-bubble-conv-1",
-                        source: "agent1",
-                        target: "agent2",
-                        type: "thoughtBubbleEdge",
-                        data: {
-                            text: '{"inquiry": "What is the weather?"}',
-                            showAlways: true,
-                            conversationId: "conv-1",
-                        },
-                    },
-                    timestamp: Date.now(),
+                    id: "conv-1",
+                    agents: new Set(["agent1"]),
+                    startedAt: new Date(),
+                    text: "Test inquiry text",
                 },
-            ],
-        ])
+            ]
 
-        // Pre-populate with an existing edge
+            const {container} = renderAgentFlowComponent({currentConversations: conversationsWithText})
 
-        const duplicateConversations: AgentConversation[] = [
-            {
-                id: "conv-2",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-                text: '{"inquiry": "What is the weather?"}', // Same parsed content
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {container} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={duplicateConversations}
-                    thoughtBubbleEdges={existingEdgesMap}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-
-        // Should NOT add a new edge because the parsed text already exists in thoughtBubbleEdges
-        // The mock may be called but the logic should skip adding duplicate
-        expect(container).toBeInTheDocument()
-    })
-
-    it("Should limit thought bubbles to MAX_THOUGHT_BUBBLES (5) and drop oldest", () => {
-        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
-
-        // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
-        const manyConversations: AgentConversation[] = Array.from({length: 6}, (_, i) => ({
-            id: `conv-${i}`,
-            agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
-            text: `{"inquiry": "Message ${i}"}`, // Unique messages
-            type: ChatMessageType.AGENT,
-        }))
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={manyConversations}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                    isStreaming={true}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Map must be capped at MAX_THOUGHT_BUBBLES (5)
-        expect(getThoughtBubbleEdgesMap().size).toBeLessThanOrEqual(5)
-        // Oldest bubble (conv-0) should have been evicted
-        expect(getThoughtBubbleEdgesMap().has("conv-0")).toBe(false)
-        // Newest bubble (conv-5) should still be present
-        expect(getThoughtBubbleEdgesMap().has("conv-5")).toBe(true)
-    })
-
-    it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
-        jest.useFakeTimers()
-        const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
-
-        const conversationsWithText: AgentConversation[] = [
-            {
-                id: "conv-timeout-test",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Test timeout message",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    isStreaming={true}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // After initial render the bubble should have been added
-        expect(getThoughtBubbleEdgesMap().size).toBe(1)
-        expect(getThoughtBubbleEdgesMap().has("conv-timeout-test")).toBe(true)
-
-        // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
-        act(() => {
-            jest.advanceTimersByTime(11000)
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        // The bubble should have been removed from the map after expiry
-        expect(getThoughtBubbleEdgesMap().size).toBe(0)
-    })
+        it("Should handle empty conversations array", () => {
+            const {container} = renderAgentFlowComponent({currentConversations: []})
 
-    it("Should handle hover state changes for thought bubbles", () => {
-        const currentConversations: AgentConversation[] = [
-            {
-                id: "hover-test-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Hover test",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-        renderAgentFlowComponent({
-            currentConversations,
-            isStreaming: true,
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        // Component should render with thought bubble overlay
-        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
-    })
-
-    it("Should prevent expired bubbles from being removed when hovered", async () => {
-        jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        // Create a conversation that will be added as a thought bubble
-        const conversationsWithText: AgentConversation[] = [
-            {
-                id: "hover-prevent-expire-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: Hover prevents expiry",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        // Mock ThoughtBubbleOverlay to simulate hover behavior
-        const MockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({onBubbleHoverChange}) => {
-            // Simulate hover on mount
-            useEffect(() => {
-                if (onBubbleHoverChange) {
-                    onBubbleHoverChange("thought-bubble-hover-prevent-expire-conv")
-                }
-            }, [onBubbleHoverChange])
-            return <div data-testid={mockThoughtBubbleOverlayTestId} />
-        }
-
-        const previousImpl = __MockThoughtBubbleOverlayImpl
-        __MockThoughtBubbleOverlayImpl = MockThoughtBubbleOverlay
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    isStreaming={true}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Fast-forward time by 11 seconds to trigger cleanup (past the 10-second timeout)
-        act(() => {
-            jest.advanceTimersByTime(11000)
-        })
-
-        // The bubble should not be removed because it's being hovered
-        // We can verify by checking that the component still renders
-        expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
-
-        __MockThoughtBubbleOverlayImpl = previousImpl
-    })
-
-    it("Should drop expired bubbles first when overflow limit is reached", () => {
-        jest.useFakeTimers()
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
-        const initialConversations: AgentConversation[] = Array.from({length: 5}, (_, i) => ({
-            id: `conv-expire-overflow-${i}`,
-            agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(),
-            text: `Invoking Agent with inquiry: Initial overflow message ${i}`,
-            type: ChatMessageType.AGENT,
-        }))
-
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={initialConversations}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Advance 1 second past THOUGHT_BUBBLE_TIMEOUT_MS (which is 10 seconds), so those 5 bubbles are expired.
-        act(() => {
-            jest.advanceTimersByTime(11000)
-        })
-
-        // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
-        const extraConversation: AgentConversation = {
-            id: "conv-expire-overflow-extra",
-            agents: new Set(["agent2", "agent3"]),
-            startedAt: new Date(),
-            text: "Invoking Agent with inquiry: Extra overflow message",
-            type: ChatMessageType.AGENT,
-        }
-
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={[...initialConversations, extraConversation]}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // setThoughtBubbleEdges should have been called (for both add and remove paths).
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-    })
-
-    it("Should update the Zustand store network map when a node popup is saved", async () => {
-        // Seed the Zustand store with a flat array (server format) under a network key
-        const initialDefinition: AgentNetworkDefinitionEntry[] = [
-            {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
-        ]
-        // Seed the temp networks store with the network and its definition
-        const networkKey = "temporary/test-network"
-        act(() => {
-            useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
-        })
-
-        renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkKey,
-        })
-
-        // Click an agent node to open the popup, querying by the visible agent name.
-        clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
-
-        // The popup should now be open — make the form dirty then save
-        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-        await user.clear(instructionsField)
-        await user.type(instructionsField, "Updated instructions.")
-        const saveButton = screen.getByRole("button", {name: "Save"})
-        expect(saveButton).toBeInTheDocument()
-
-        await user.click(saveButton)
-
-        // Popup should close
-        await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
-
-        // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
-        const storedDefinitions = useTempNetworksStore
-            .getState()
-            .tempNetworks.find((n) => n.agentInfo.agent_name === networkKey)?.agentNetworkDefinition
-        expect(storedDefinitions).toBeDefined()
-        expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
-    })
-
-    it("Should open and close the node popup without saving", async () => {
-        const networkKey = "temporary/test-net"
-        act(() => {
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks([
-                    makeTempNetwork(networkKey, [{origin: "agent1", tools: [], instructions: "Some instructions."}]),
-                ])
-        })
-        const {container} = renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkKey,
-        })
-
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        expect(agent1Node).toBeInTheDocument()
-        clickFlowNode(agent1Node)
-
-        // Popup opens
-        const cancelButton = await screen.findByRole("button", {name: "Cancel"})
-
-        // Cancel closes the popup
-        await user.click(cancelButton)
-        await waitFor(() => expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument())
-    })
-
-    it("Should handle conversations with empty text strings", () => {
-        const conversationsWithEmptyText: AgentConversation[] = [
-            {
-                id: "empty-text-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "",
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: conversationsWithEmptyText})
-
-        // Should render without errors (empty text should be handled gracefully)
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle conversations with whitespace-only text", () => {
-        const conversationsWithWhitespace: AgentConversation[] = [
-            {
-                id: "whitespace-conv",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "   \n\t   ",
-                type: ChatMessageType.AI,
-            },
-        ]
-
-        const {container} = renderAgentFlowComponent({currentConversations: conversationsWithWhitespace})
-
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-        verifyAgentNodes(container)
-    })
-
-    it("Should handle case-insensitive duplicate detection in thought bubbles", () => {
-        const conversationsWithCaseVariations: AgentConversation[] = [
-            {
-                id: "conv-case-1",
-                agents: new Set(["agent1", "agent2"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: TEST MESSAGE",
-                type: ChatMessageType.AGENT,
-            },
-            {
-                id: "conv-case-2",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: test message", // Same but lowercase
-                type: ChatMessageType.AGENT,
-            },
-        ]
-
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithCaseVariations}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should only add one thought bubble due to duplicate detection
-        // The mock should be called but duplicates should be filtered
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-    })
-
-    it("Should handle thought bubble edges without text field", () => {
-        const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
-            [
-                "edge-without-text",
+        it("Should handle currentConversations becoming null (streaming complete)", () => {
+            const initialConversations = [
                 {
-                    edge: {
-                        id: "thought-bubble-no-text",
-                        source: "agent1",
-                        target: "agent2",
-                        type: "thoughtBubbleEdge",
-                        data: {
-                            // No text field
-                            showAlways: true,
-                            conversationId: "no-text-conv",
-                        },
-                    },
-                    timestamp: Date.now(),
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Test message",
                 },
-            ],
-        ])
+            ]
 
-        // Add an edge without text (to test the "if (edgeText)" branch)
+            const {rerender, container} = renderAgentFlowComponent({currentConversations: initialConversations})
 
-        const conversationsWithText: AgentConversation[] = [
-            {
-                id: "new-conv",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-                text: "Invoking Agent with inquiry: New message",
-                type: ChatMessageType.AGENT,
-            },
-        ]
+            // Initially should render with conversations
+            expect(container).toBeInTheDocument()
 
-        const {container} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={conversationsWithText}
-                    thoughtBubbleEdges={existingEdgesMap}
-                    setThoughtBubbleEdges={jest.fn()}
-                />
-            </ReactFlowProvider>
-        )
+            // Now set to null (simulating streaming complete)
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={null}
+                    />
+                </ReactFlowProvider>
+            )
 
-        // Should render without errors
-        expect(container).toBeInTheDocument()
-    })
-
-    it("Should NOT open popup when clicking an agent node on a non-temporary network", async () => {
-        const networkKey = "industry/banking_ops"
-        // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
-        const {container} = renderAgentFlowComponent({networkId: networkKey})
-
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        clickFlowNode(agent1Node)
-
-        // Popup must not appear
-        expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
-    })
-
-    it.each([
-        ["coded_tool", "coded_tool"],
-        ["external_agent", "external_agent"],
-        ["langchain_tool", "langchain_tool"],
-    ])("Should NOT open popup when clicking a %s node in a temporary network", async (label, displayAs) => {
-        const networkKey = `temporary/test-${label}`
-        act(() => {
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks([makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: displayAs}])])
+            // Should still render without errors
+            expect(container).toBeInTheDocument()
         })
 
-        const {container} = renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkKey,
-            agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
+        it("Should handle conversation with single agent", () => {
+            const singleAgentConv = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1"]),
+                    startedAt: new Date(),
+                    text: "Single agent message",
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({currentConversations: singleAgentConv})
+
+            // Should render without errors (won't create edge with < 2 agents)
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        clickFlowNode(container.querySelector('[data-id="agent1"]'))
-        expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
-    })
+        it("Should handle conversation with three or more agents", () => {
+            const multiAgentConv = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2", "agent3"]),
+                    startedAt: new Date(),
+                    text: "Multi-agent message",
+                },
+            ]
 
-    it("Should open popup when clicking an llm_agent node in a temporary network", async () => {
-        const networkKey = "temporary/test-llm-agent"
-        act(() => {
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks([
-                    makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: "llm_agent"}]),
-                ])
+            const {container} = renderAgentFlowComponent({currentConversations: multiAgentConv})
+
+            // Should render without errors (creates edge from first two agents)
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        const {container} = renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkKey,
-            agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
+        it("Should handle conversations without text field", () => {
+            const conversationsWithoutText = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    // No text field
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({currentConversations: conversationsWithoutText})
+
+            // Should render without errors (skips processing conversations without text)
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        clickFlowNode(container.querySelector('[data-id="agent1"]'))
-        expect(await screen.findByRole("button", {name: "Save"})).toBeInTheDocument()
-    })
+        it("Should handle empty agents set in conversation", () => {
+            const conversationsWithEmptyAgents = [
+                {
+                    id: "conv-1",
+                    agents: new Set<string>(),
+                    startedAt: new Date(),
+                    text: "Message with no agents",
+                },
+            ]
 
-    it("Should read instructions only from the current network, not from another network with same agent", async () => {
-        // Two different temporary networks each containing agent1, with different instructions.
-        const networkA = "temporary/network-a"
-        const networkB = "temporary/network-b"
-        const instructionsA = "Instructions specific to Network A."
-        const instructionsB = "Instructions specific to Network B."
+            const {container} = renderAgentFlowComponent({currentConversations: conversationsWithEmptyAgents})
 
-        act(() => {
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks([
-                    makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: instructionsA}]),
-                    makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: instructionsB}]),
-                ])
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        // Render with networkB selected
-        const {container} = renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkB,
+        it("Should handle duplicate conversations with same parsed text", () => {
+            const duplicateConversations = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: '{"inquiry": "Same message"}',
+                },
+                {
+                    id: "conv-2",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
+                    text: '{"inquiry": "Same message"}', // Duplicate parsed content
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({currentConversations: duplicateConversations})
+
+            // Should render without errors (deduplication should prevent double-add)
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        clickFlowNode(agent1Node)
+        it("Should handle very long conversation text", () => {
+            const longTextConv = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "a".repeat(1000), // Very long text
+                },
+            ]
 
-        // Popup should show networkB's instructions, not networkA's
-        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-        expect(instructionsField).toHaveValue(instructionsB)
-    })
+            const {container} = renderAgentFlowComponent({currentConversations: longTextConv})
 
-    it("Should save edited instructions only to the current network's history entry", async () => {
-        const networkA = "temporary/network-a-save"
-        const networkB = "temporary/network-b-save"
-        const originalInstructions = "Original shared instructions."
-
-        act(() => {
-            useTempNetworksStore
-                .getState()
-                .setTempNetworks([
-                    makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
-                    makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
-                ])
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        const {container} = renderAgentFlowComponent({
-            isSelectedNetworkTemporary: true,
-            networkId: networkA,
+        it("Should handle special characters in conversation text", () => {
+            const specialCharsConv = [
+                {
+                    id: "conv-1",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Test with émojis 🎉 and spëcial çharacters",
+                },
+            ]
+
+            const {container} = renderAgentFlowComponent({currentConversations: specialCharsConv})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
         })
 
-        const agent1Node = container.querySelector('[data-id="agent1"]')
-        clickFlowNode(agent1Node)
+        it("Should handle conversations where bubble has no text field", () => {
+            const mockSetThoughtBubbleEdges = jest.fn()
 
-        // Edit the instructions and save
-        const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
-        await user.clear(instructionsField)
-        await user.type(instructionsField, "Updated instructions for Network A.")
-        await user.click(screen.getByRole("button", {name: "Save"}))
-        await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+            // First render with a conversation that has text
+            const currentConversations: AgentConversation[] = [
+                {
+                    id: "conv-with-text",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "Invoking Agent with inquiry: First message",
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+            const {rerender} = render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={currentConversations}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
 
-        // Network A's instructions should be updated
-        const defA = useTempNetworksStore
-            .getState()
-            .tempNetworks.find((n) => n.agentInfo.agent_name === networkA)?.agentNetworkDefinition
-        expect(defA?.find((e) => e.origin === "agent1")?.instructions).toBe("Updated instructions for Network A.")
+            // Now render with a conversation that has undefined text
+            // This tests the b.text || "" fallback in the normalizeText usage
+            const currentConversations1: AgentConversation[] = [
+                {
+                    id: "conv-no-text",
+                    agents: new Set(["agent2", "agent3"]),
+                    startedAt: new Date(),
+                    type: ChatMessageType.AGENT,
+                },
+            ]
+            rerender(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={currentConversations1}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={jest.fn()}
+                    />
+                </ReactFlowProvider>
+            )
 
-        // Network B's instructions must be untouched
-        const defB = useTempNetworksStore
-            .getState()
-            .tempNetworks.find((n) => n.agentInfo.agent_name === networkB)?.agentNetworkDefinition
-        expect(defB?.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
-    })
+            // Should render without errors (conversation without text should be skipped)
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+        })
 
-    it("Should handle conversations where bubble has no text field", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
+        it("Should not add duplicate conversations with same ID", () => {
+            const mockSetThoughtBubbleEdges = jest.fn()
 
-        // First render with a conversation that has text
-        const currentConversations: AgentConversation[] = [
-            {
-                id: "conv-with-text",
+            const conversation: AgentConversation = {
+                id: "conv-duplicate-id",
                 agents: new Set(["agent1", "agent2"]),
                 startedAt: new Date(),
-                text: "Invoking Agent with inquiry: First message",
+                text: "Invoking Agent with inquiry: Duplicate ID test",
                 type: ChatMessageType.AGENT,
-            },
-        ]
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={currentConversations}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
+            }
 
-        // Now render with a conversation that has undefined text
-        // This tests the b.text || "" fallback in the normalizeText usage
-        const currentConversations1: AgentConversation[] = [
-            {
-                id: "conv-no-text",
-                agents: new Set(["agent2", "agent3"]),
-                startedAt: new Date(),
-                type: ChatMessageType.AGENT,
-            },
-        ]
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={currentConversations1}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={jest.fn()}
-                />
-            </ReactFlowProvider>
-        )
+            render(
+                <ReactFlowProvider>
+                    <AgentFlow
+                        {...defaultProps}
+                        currentConversations={[conversation, conversation]} // Same conversation twice
+                        isStreaming={true}
+                        thoughtBubbleEdges={new Map()}
+                        setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
+                    />
+                </ReactFlowProvider>
+            )
 
-        // Should render without errors (conversation without text should be skipped)
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
-    })
+            // Should only add once despite being in the array twice
+            expect(mockSetThoughtBubbleEdges).toHaveBeenCalledTimes(1)
+        })
 
-    it("Should not add duplicate conversations with same ID", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        const conversation: AgentConversation = {
-            id: "conv-duplicate-id",
-            agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(),
-            text: "Invoking Agent with inquiry: Duplicate ID test",
-            type: ChatMessageType.AGENT,
-        }
-
-        render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={[conversation, conversation]} // Same conversation twice
-                    isStreaming={true}
-                    thoughtBubbleEdges={new Map()}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
-
-        // Should only add once despite being in the array twice
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalledTimes(1)
-    })
-
-    it("Should handle clearing thoughtBubbleEdges map", () => {
-        const mockSetThoughtBubbleEdges = jest.fn()
-
-        const conversation1: AgentConversation = {
-            id: "conv-clear-test",
-            agents: new Set(["agent1", "agent2"]),
-            startedAt: new Date(),
-            text: "Invoking Agent with inquiry: Clear test",
-            type: ChatMessageType.AGENT,
-        }
-
-        // Render with edges present (non-empty map)
-        const edgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
-            [
-                "edge-1",
+        it("Should handle conversations with empty text strings", () => {
+            const conversationsWithEmptyText: AgentConversation[] = [
                 {
-                    edge: {
-                        id: "test-edge-1",
-                        source: "agent1",
-                        target: "agent2",
-                        type: "thoughtBubbleEdge",
-                        data: {text: "Test"},
-                    },
-                    timestamp: Date.now(),
+                    id: "empty-text-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "",
+                    type: ChatMessageType.AGENT,
                 },
-            ],
-        ])
+            ]
 
-        const {rerender} = render(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={[conversation1]}
-                    thoughtBubbleEdges={edgesMap}
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
+            const {container} = renderAgentFlowComponent({currentConversations: conversationsWithEmptyText})
 
-        // Verify it renders with non-empty map (covers thoughtBubbleEdges.size !== 0 branch)
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+            // Should render without errors (empty text should be handled gracefully)
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
 
-        // Now clear the edges map
-        rerender(
-            <ReactFlowProvider>
-                <AgentFlow
-                    {...defaultProps}
-                    currentConversations={[conversation1]}
-                    thoughtBubbleEdges={new Map()} // Empty map
-                    setThoughtBubbleEdges={mockSetThoughtBubbleEdges}
-                />
-            </ReactFlowProvider>
-        )
+        it("Should handle conversations with whitespace-only text", () => {
+            const conversationsWithWhitespace: AgentConversation[] = [
+                {
+                    id: "whitespace-conv",
+                    agents: new Set(["agent1", "agent2"]),
+                    startedAt: new Date(),
+                    text: "   \n\t   ",
+                    type: ChatMessageType.AI,
+                },
+            ]
 
-        // Should render without errors when edges are cleared (covers thoughtBubbleEdges.size === 0 branch)
-        expect(mockSetThoughtBubbleEdges).toHaveBeenCalled()
+            const {container} = renderAgentFlowComponent({currentConversations: conversationsWithWhitespace})
+
+            // Should render without errors
+            expect(container).toBeInTheDocument()
+            verifyAgentNodes(container)
+        })
     })
 
-    describe("popup save — onSaveAgent callback", () => {
+    describe("Events", () => {
+        it("Should handle window resize events", async () => {
+            const {container} = renderAgentFlowComponent()
+
+            // Trigger resize wrapped in act
+            await act(async () => {
+                global.window.dispatchEvent(new Event("resize"))
+            })
+
+            // Should not crash
+            expect(container).toBeInTheDocument()
+        })
+
+        it("Should clean up resize listener on unmount", () => {
+            const removeEventListenerSpy = jest.spyOn(window, "removeEventListener")
+            const {unmount} = renderAgentFlowComponent()
+
+            unmount()
+
+            // Verify cleanup was called
+            expect(removeEventListenerSpy).toHaveBeenCalledWith("resize", expect.any(Function))
+        })
+    })
+
+    describe("Node Editor", () => {
         const OLD_NETWORK_ID = "temporary/old-res"
         const OLD_NETWORK_NAME = "my_network"
 
@@ -1731,9 +1551,132 @@ describe("AgentFlow", () => {
             await user.click(screen.getByRole("button", {name: "Save"}))
             await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
         })
+
+        it("Should update the Zustand store network map when a node popup is saved", async () => {
+            // Seed the Zustand store with a flat array (server format) under a network key
+            const initialDefinition: AgentNetworkDefinitionEntry[] = [
+                {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
+            ]
+            // Seed the temp networks store with the network and its definition
+            const networkKey = "temporary/test-network"
+            act(() => {
+                useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
+            })
+
+            renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkKey,
+            })
+
+            // Click an agent node to open the popup, querying by the visible agent name.
+            clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
+
+            // The popup should now be open — make the form dirty then save
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions.")
+            const saveButton = screen.getByRole("button", {name: "Save"})
+            expect(saveButton).toBeInTheDocument()
+
+            await user.click(saveButton)
+
+            // Popup should close
+            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+
+            // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
+            const storedDefinitions = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === networkKey)?.agentNetworkDefinition
+            expect(storedDefinitions).toBeDefined()
+            expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
+        })
+
+        it("Should open and close the node popup without saving", async () => {
+            const networkKey = "temporary/test-net"
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkKey, [
+                            {origin: "agent1", tools: [], instructions: "Some instructions."},
+                        ]),
+                    ])
+            })
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkKey,
+            })
+
+            const agent1Node = container.querySelector('[data-id="agent1"]')
+            expect(agent1Node).toBeInTheDocument()
+            clickFlowNode(agent1Node)
+
+            // Popup opens
+            const cancelButton = await screen.findByRole("button", {name: "Cancel"})
+
+            // Cancel closes the popup
+            await user.click(cancelButton)
+            await waitFor(() => expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument())
+        })
+
+        it("Should NOT open popup when clicking an agent node on a non-temporary network", async () => {
+            const networkKey = "industry/banking_ops"
+            // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
+            const {container} = renderAgentFlowComponent({networkId: networkKey})
+
+            const agent1Node = container.querySelector('[data-id="agent1"]')
+            clickFlowNode(agent1Node)
+
+            // Popup must not appear
+            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+        })
+
+        it.each([
+            ["coded_tool", "coded_tool"],
+            ["external_agent", "external_agent"],
+            ["langchain_tool", "langchain_tool"],
+        ])("Should NOT open popup when clicking a %s node in a temporary network", async (label, displayAs) => {
+            const networkKey = `temporary/test-${label}`
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: displayAs}]),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkKey,
+                agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
+            })
+
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
+            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+        })
+
+        it("Should open popup when clicking an llm_agent node in a temporary network", async () => {
+            const networkKey = "temporary/test-llm-agent"
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: "llm_agent"}]),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkKey,
+                agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
+            })
+
+            clickFlowNode(container.querySelector('[data-id="agent1"]'))
+            expect(await screen.findByRole("button", {name: "Save"})).toBeInTheDocument()
+        })
     })
 
-    describe("topology editor dock", () => {
+    describe("Network Editor", () => {
         const DOCK_NETWORK_ID = "temporary/dock-test-net"
         const DOCK_NETWORK_NAME = "dock_network"
         const DOCK_DEFAULT_RES = "dock-default-res"
@@ -2367,6 +2310,78 @@ describe("AgentFlow", () => {
             expect(mockSendChatQuery).not.toHaveBeenCalled()
             // The saving backdrop stays closed, so its title is never shown to the user.
             expect(screen.getByText(/applying changes to network/iu)).not.toBeVisible()
+        })
+
+        it("Should save edited instructions only to the current network's history entry", async () => {
+            const networkA = "temporary/network-a-save"
+            const networkB = "temporary/network-b-save"
+            const originalInstructions = "Original shared instructions."
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
+                        makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkA,
+            })
+
+            const agent1Node = container.querySelector('[data-id="agent1"]')
+            clickFlowNode(agent1Node)
+
+            // Edit the instructions and save
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await user.clear(instructionsField)
+            await user.type(instructionsField, "Updated instructions for Network A.")
+            await user.click(screen.getByRole("button", {name: "Save"}))
+            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+
+            // Network A's instructions should be updated
+            const defA = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === networkA)?.agentNetworkDefinition
+            expect(defA?.find((e) => e.origin === "agent1")?.instructions).toBe("Updated instructions for Network A.")
+
+            // Network B's instructions must be untouched
+            const defB = useTempNetworksStore
+                .getState()
+                .tempNetworks.find((n) => n.agentInfo.agent_name === networkB)?.agentNetworkDefinition
+            expect(defB?.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
+        })
+
+        it("Should read instructions only from the current network, not from another network with same agent", async () => {
+            // Two different temporary networks each containing agent1, with different instructions.
+            const networkA = "temporary/network-a"
+            const networkB = "temporary/network-b"
+            const instructionsA = "Instructions specific to Network A."
+            const instructionsB = "Instructions specific to Network B."
+
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: instructionsA}]),
+                        makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: instructionsB}]),
+                    ])
+            })
+
+            // Render with networkB selected
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkB,
+            })
+
+            const agent1Node = container.querySelector('[data-id="agent1"]')
+            clickFlowNode(agent1Node)
+
+            // Popup should show networkB's instructions, not networkA's
+            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            expect(instructionsField).toHaveValue(instructionsB)
         })
     })
 })
