@@ -823,7 +823,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     sx={{
                         marginLeft: theme.spacing(2),
                         "& .MuiToggleButton-root": {
-                            backgroundColor: theme.palette.background.paper,
                             borderColor: theme.palette.divider,
                             color: theme.palette.text.primary,
                             minHeight: 22,
@@ -831,7 +830,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             "&:hover": {
                                 backgroundColor: theme.palette.action.hover,
                             },
-                            "&.Mui-selected, &.Mui-selected:hover": {
+                            "&.Mui-selected": {
+                                backgroundColor: theme.palette.action.selected,
+                                borderColor: theme.palette.text.primary,
+                            },
+                            "&.Mui-selected:hover": {
                                 backgroundColor: theme.palette.action.selected,
                                 borderColor: theme.palette.text.primary,
                             },
@@ -863,7 +866,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
-    // Get the background color for the control buttons based on the layout and dark mode setting
+    // Get the background color for the control buttons; differs based on whether the button is active or not
     const getControlButtonBackgroundColor = (isActive: boolean) => {
         return isActive ? theme.palette.action.selected : undefined
     }
@@ -990,13 +993,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 sx={{
                                     backdropFilter: "blur(6px)",
                                     backgroundColor: titleBackgroundColor,
-                                    border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
                                     borderRadius: 2,
-                                    boxShadow:
-                                        theme.palette.mode === "dark"
-                                            ? `0 6px 20px ${alpha(theme.palette.common.black, 0.35)}`
-                                            : `0 6px 16px ${alpha(theme.palette.common.black, 0.12)}`,
-                                    color: theme.palette.getContrastText(alpha(titleBackgroundColor, 0.65)),
+                                    boxShadow: theme.shadows[6],
+                                    color: theme.palette.text.primary,
                                     fontWeight: 600,
                                     letterSpacing: "0.01em",
                                     lineHeight: 1.35,
@@ -1047,16 +1047,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     border: "1px solid divider",
                 },
 
-                "& .react-flow__panel": {
+                "& .react-flow__panel, & .react-flow__controls-button": {
                     backgroundColor: theme.palette.background.paper,
-                    border: "1px solid divider",
                     color: theme.palette.text.primary,
                 },
 
+                "& .react-flow__panel": {
+                    border: "1px solid divider",
+                },
+
                 "& .react-flow__controls-button": {
-                    backgroundColor: theme.palette.background.paper,
                     borderBottom: "1px solid divider",
-                    color: theme.palette.text.primary,
                     fill: theme.palette.text.primary,
                 },
             }}
