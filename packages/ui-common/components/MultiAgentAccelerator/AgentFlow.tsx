@@ -85,7 +85,7 @@ import {getZIndex} from "../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {MUIAlert} from "../Common/MUIAlert"
 import {NotificationType, sendNotification} from "../Common/notification"
-// #region: Types
+//#region: Types
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentIconSuggestions?: AgentIconSuggestions
@@ -125,9 +125,9 @@ export interface AgentFlowProps {
 
 type Layout = "radial" | "linear"
 
-// #endregion: Types
+//#endregion: Types
 
-// #region: Constants
+//#region: Constants
 
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
@@ -136,11 +136,11 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 // Exported for tests.
 export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
-// #endregion: Constants
+//#endregion: Constants
 
 const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
 
-// #region: Helpers
+//#region: Helpers
 
 /**
  * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
@@ -196,7 +196,7 @@ const streamNetworkDesignerPrompt = async (
     return newNetworks
 }
 
-// #endregion: Helpers
+//#endregion: Helpers
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
@@ -694,9 +694,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
             setNodes((currentNodes) =>
                 applyNodeChanges<RFNode<AgentNodeProps>>(
-                    // For now, we only allow dragging, no updates. In agent network designer mode, it doesn't make
-                    // sense to allow position changes since the user isn't actually manipulating a real network
-                    changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
+                    changes.filter((change) => {
+                        // Only allow nodes to be dragged, no topological edits to the graph (read-only)
+                        if (["remove", "add", "replace"].includes(change.type)) return false
+
+                        // Disallow dragging nodes in AND mode since it's supposed to be a read-only preview but
+                        // pass along all other event types as
+                        return !(change.type === "position" && isAgentNetworkDesignerMode)
+                    }),
                     currentNodes
                 )
             )
@@ -1066,15 +1071,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             >
                 {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
                 <ReactFlow
-                    id={`${id}-react-flow`}
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onNodeClick={handleNodeClick}
-                    fitView={true}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
                     connectionMode={ConnectionMode.Loose}
+                    edgeTypes={edgeTypes}
+                    edges={edges}
+                    fitView={true}
+                    id={`${id}-react-flow`}
+                    nodeTypes={nodeTypes}
+                    nodes={nodes}
+                    nodesDraggable={!isAgentNetworkDesignerMode}
+                    onNodeClick={handleNodeClick}
+                    onNodesChange={onNodesChange}
                 >
                     {!isAwaitingLlm && (
                         <>
