@@ -139,7 +139,7 @@ describe("ImportNetworkModal", () => {
             fireEvent.keyDown(getDropZone(), {key})
 
             expect(clickSpy).toHaveBeenCalledTimes(1)
-        },
+        }
     )
 
     it("should not trigger file input click on an unrelated key", () => {
