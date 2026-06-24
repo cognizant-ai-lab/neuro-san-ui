@@ -336,29 +336,20 @@ describe("AgentFlow", () => {
         const agent1Node = container.querySelector('[data-id="agent1"]')
         expect(agent1Node).toBeInTheDocument()
 
-        // agent1 first div is the one with the style
-        const agent1ChildDiv = agent1Node.firstElementChild as HTMLDivElement
-
-        // make sure agent1 has the expected animation
-        const computedStyleAgent1 = window.getComputedStyle(agent1ChildDiv)
+        // agent1 is active so should be highlighted
+        const agent1NodeBody = screen.getByTestId("agent1")
+        const computedStyleAgent1 = window.getComputedStyle(agent1NodeBody)
         expect(computedStyleAgent1.animation).toMatch(/animation-\w+ 2s infinite/u)
 
+        // agent2 is not "active" so should not have the pulsing animation (or any animation in fact)
+        const agent2NodeBody = screen.getByTestId("agent2")
+        const computedStyleAgent2 = window.getComputedStyle(agent2NodeBody)
+        expect(computedStyleAgent2.animation).toBe("")
+
         // agent3 is active so should be highlighted
-        const agent3Node = container.querySelector('[data-id="agent3"]')
-        expect(agent3Node).toBeInTheDocument()
-
-        // agent3 first div is the one with the style
-        const agent3ChildDiv = agent3Node.firstElementChild as HTMLDivElement
-
-        // make sure agent3 has the expected animation
-        const computedStyleAgent3 = window.getComputedStyle(agent3ChildDiv)
+        const agent3NodeBody = screen.getByTestId("agent3")
+        const computedStyleAgent3 = window.getComputedStyle(agent3NodeBody)
         expect(computedStyleAgent3.animation).toMatch(/animation-\w+ 2s infinite/u)
-
-        // agent2 is not "active" so should not have the pulsing animation
-        const agent2Div = container.querySelector('[data-id="agent2"]')
-        expect(agent2Div).toBeInTheDocument()
-        const agent2ChildDiv = agent2Div.firstElementChild as HTMLDivElement
-        expect(agent2ChildDiv).toHaveStyle({animation: ""})
     })
 
     it("Should handle an empty agent list", async () => {
