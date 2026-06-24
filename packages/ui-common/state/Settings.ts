@@ -58,6 +58,9 @@ interface Settings {
         readonly enableZenMode: boolean
     }
     readonly apiKeys: Partial<Record<LLMProvider, string>>
+    readonly externalServices: {
+        neuroSanUrl: string | null
+    }
 }
 
 /**
@@ -95,6 +98,9 @@ export const DEFAULT_SETTINGS: Settings = {
         enableZenMode: true,
     },
     apiKeys: {},
+    externalServices: {
+        neuroSanUrl: null,
+    },
 }
 
 /**

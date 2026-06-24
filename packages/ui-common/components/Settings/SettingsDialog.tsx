@@ -1,29 +1,45 @@
 import Business from "@mui/icons-material/Business"
+import ClearIcon from "@mui/icons-material/Clear"
 import RestoreIcon from "@mui/icons-material/SettingsBackupRestore"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Checkbox from "@mui/material/Checkbox"
 import FormLabel from "@mui/material/FormLabel"
+import IconButton from "@mui/material/IconButton"
+import InputAdornment from "@mui/material/InputAdornment"
+import MenuItem from "@mui/material/MenuItem"
+import Select, {SelectChangeEvent} from "@mui/material/Select"
 import {createTheme, styled, ThemeProvider, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {ComponentPropsWithoutRef, FC, MouseEvent as ReactMouseEvent, ReactNode, useEffect, useState} from "react"
+import {
+    ComponentPropsWithoutRef,
+    FC,
+    ChangeEvent as ReactChangeEvent,
+    MouseEvent as ReactMouseEvent,
+    ReactNode,
+    useEffect,
+    useMemo,
+    useState,
+} from "react"
 
 import {ApiKeyInput} from "./ApiKeyInput"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import InfoTip from "./InfoTip"
 import {SettingsRow} from "./SettingsRow"
-import {getBrandingSuggestions} from "../../controller/agent/Agent"
+import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
+import {useEnvironmentStore} from "../../state/Environment"
 import {DEFAULT_SETTINGS, LLMProvider, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
+import {StatusLight} from "../Common/StatusLight"
 import {CustomerLogo} from "../Logo/CustomerLogo"
 
 //#region: Styled Components
@@ -72,6 +88,7 @@ const SubSectionBody = styled(Box)(({theme}) => ({
 //#endregion: Styled Components
 
 //#region: Types and Interfaces
+
 interface SettingsDialogProps {
     readonly id: string
     readonly isOpen?: boolean
@@ -92,6 +109,9 @@ interface SettingsSubsectionProps {
     readonly title: string
     readonly children: ReactNode
 }
+
+type Protocol = "http" | "https"
+
 //#endregion: Types and Interfaces
 
 // eslint-disable-next-line react/no-multi-comp -- only relevant to this module.
@@ -101,7 +121,29 @@ const SettingsSubsection: FC<SettingsSubsectionProps> = ({title, children}) => (
         <SubSectionBody>{children}</SubSectionBody>
     </SubSection>
 )
+const URL_PROTOCOL_REGEX = /^https?:\/\//iu
+const HTTP_PROTOCOL_REGEX = /^http:\/\//iu
 
+const stripProtocol = (value: string) => (value ?? "").replace(URL_PROTOCOL_REGEX, "")
+
+/**
+ * Normalize a Neuro SAN URL input by stripping the protocol and determining the protocol to use.
+ * @param value The input URL value to normalize.
+ * @param fallbackProtocol The protocol to use if the input value does not specify one.
+ * @return An object containing the normalized host and protocol.
+ */
+const normalizeNeuroSanUrlInput = (value: string, fallbackProtocol: Protocol) => {
+    const trimmedValue = value.trim()
+    const hasProtocol = URL_PROTOCOL_REGEX.exec(trimmedValue)
+
+    return {
+        host: stripProtocol(trimmedValue),
+        protocol: hasProtocol ? (HTTP_PROTOCOL_REGEX.test(trimmedValue) ? "http" : "https") : fallbackProtocol,
+    } satisfies {
+        host: string
+        protocol: Protocol
+    }
+}
 // eslint-disable-next-line react/no-multi-comp -- styled component shim is only used in this module
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
@@ -150,6 +192,35 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     // Native names setting
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
     const nativeNamesCheckmark = useCheckmarkFade()
+
+    /*
+        Neuro SAN URL
+        This can come from three sources:
+        1) The default URL from server environment variables
+        2) The persisted value in the Zustand store
+        3) The current state value, from the user's input in the settings dialog
+     */
+    const defaultNeuroSanUrl = useEnvironmentStore((state) => state.backendNeuroSanApiUrl ?? "")
+    const persistedNeuroSanUrl = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl)
+    const effectiveNeuroSanUrl = persistedNeuroSanUrl || defaultNeuroSanUrl
+    const effectiveNeuroSanProtocol: Protocol = effectiveNeuroSanUrl.startsWith("http://") ? "http" : "https"
+    const neuroSanUrlNoProtocol = stripProtocol(effectiveNeuroSanUrl)
+
+    const [neuroSanUrlInput, setNeuroSanUrlInput] = useState<string>(neuroSanUrlNoProtocol)
+    const [neuroSanProtocol, setNeuroSanProtocol] = useState<Protocol>(effectiveNeuroSanProtocol)
+
+    const [neuroSanUrlValidated, setNeuroSanUrlValidated] = useState<boolean | null>(null)
+    const neuroSanURLCheckmark = useCheckmarkFade()
+
+    const neuroSanHostChanged = neuroSanUrlInput.trim() !== neuroSanUrlNoProtocol
+    const neuroSanProtocolChanged = neuroSanProtocol !== effectiveNeuroSanProtocol
+    const neuroSanUrlSaveDisabled =
+        neuroSanUrlInput.trim().length === 0 || (!neuroSanHostChanged && !neuroSanProtocolChanged)
+    const neuroSanUrlResetDisabled =
+        neuroSanUrlInput === stripProtocol(defaultNeuroSanUrl) &&
+        neuroSanProtocol === (defaultNeuroSanUrl.startsWith("http://") ? "http" : "https")
+
+    const statusLightValue = neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"
 
     // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
@@ -273,6 +344,54 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         checkmark.trigger()
     }
 
+    const handleTestConnection = async () => {
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+
+        const result: TestConnectionResult = await testConnection(`${normalized.protocol}://${normalized.host}`)
+        setNeuroSanUrlValidated(result.success)
+    }
+
+    const handleNeuroSanUrlChange = (e: ReactChangeEvent<HTMLInputElement>) => {
+        setNeuroSanUrlInput(e.target.value)
+        setNeuroSanUrlValidated(null)
+    }
+
+    const handleSaveNeuroSanUrl = () => {
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+
+        updateSettings({
+            externalServices: {
+                neuroSanUrl: `${normalized.protocol}://${normalized.host}`,
+            },
+        })
+
+        neuroSanURLCheckmark.trigger()
+    }
+
+    const handleNeuroSanProtocolChange = (e: SelectChangeEvent<Protocol>) => {
+        const newProtocol = e.target.value
+        setNeuroSanProtocol(newProtocol)
+        setNeuroSanUrlValidated(null)
+    }
+
+    const handleNeuroSanUrlBlur = () => {
+        const normalized = normalizeNeuroSanUrlInput(neuroSanUrlInput, neuroSanProtocol)
+        setNeuroSanProtocol(normalized.protocol)
+        setNeuroSanUrlInput(normalized.host)
+    }
+
+    const handleResetNeuroSanUrl = () => {
+        const normalized = normalizeNeuroSanUrlInput(defaultNeuroSanUrl, "https")
+        setNeuroSanUrlInput(normalized.host)
+        setNeuroSanProtocol(normalized.protocol)
+    }
+
     // Effect to keep input in sync with state store
     useEffect(() => {
         setCustomerInput(customer ?? "")
@@ -318,6 +437,94 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             }}
             title="Reset to default settings"
         />
+    )
+
+    const getNeuroSanSubsection = () => {
+        return (
+            <SettingsSubsection title="Neuro SAN">
+                <SettingsRow
+                    id={`${id}-neuro-san-server-url-row`}
+                    checkmark={neuroSanURLCheckmark}
+                    key={`${id}-neuro-san-server-url`}
+                    label=""
+                    tooltip="URL for the Neuro SAN server."
+                >
+                    <Select<Protocol>
+                        aria-label="protocol-select"
+                        onChange={handleNeuroSanProtocolChange}
+                        size="small"
+                        sx={{minWidth: 100, flexShrink: 0}}
+                        value={neuroSanProtocol}
+                    >
+                        <MenuItem value="https">https://</MenuItem>
+                        <MenuItem value="http">http://</MenuItem>
+                    </Select>
+                    <TextField
+                        aria-label="neuro-san-server-url-host-input"
+                        onBlur={handleNeuroSanUrlBlur}
+                        onChange={handleNeuroSanUrlChange}
+                        placeholder="example.com:1234"
+                        size="small"
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="Clear input"
+                                            edge="end"
+                                            size="small"
+                                            onClick={() => {
+                                                setNeuroSanUrlInput("")
+                                                setNeuroSanUrlValidated(null)
+                                            }}
+                                        >
+                                            <ClearIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        sx={{flex: 1}}
+                        value={neuroSanUrlInput}
+                    />
+                    <StatusLight
+                        id={`${id}-status-light`}
+                        statusValue={statusLightValue}
+                    />
+                    <Button
+                        disabled={neuroSanUrlInput.trim().length === 0}
+                        onClick={handleTestConnection}
+                        size="small"
+                        variant="contained"
+                    >
+                        Test
+                    </Button>
+                    <Button
+                        disabled={neuroSanUrlSaveDisabled}
+                        onClick={handleSaveNeuroSanUrl}
+                        size="small"
+                        variant="contained"
+                    >
+                        Save
+                    </Button>
+                    <Button
+                        disabled={neuroSanUrlResetDisabled}
+                        onClick={handleResetNeuroSanUrl}
+                        size="small"
+                        variant="contained"
+                    >
+                        Default
+                    </Button>
+                </SettingsRow>
+            </SettingsSubsection>
+        )
+    }
+
+    const getServicesSection = () => (
+        <Section>
+            <SettingsSectionTitle>External Services</SettingsSectionTitle>
+            {getNeuroSanSubsection()}
+        </Section>
     )
 
     const getApiKeysSection = () => (
@@ -790,20 +997,23 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SubSection>
     )
 
-    return (
-        // Always use default theme for settings dialog so user can always see to reset. It's possible that with
-        // certain custom themes the dialog would be unreadable.
-        <ThemeProvider
-            theme={createTheme({
+    const settingsTheme = useMemo(
+        () =>
+            createTheme({
                 palette: {
                     mode: paletteMode,
                 },
                 typography: {
-                    // Default fonts are too large for the settings dialog, so we reduce the base font size
                     fontSize: 12,
                 },
-            })}
-        >
+            }),
+        [paletteMode]
+    )
+
+    return (
+        // Always use default theme for settings dialog so user can always see to reset. It's possible that with
+        // certain custom themes the dialog would be unreadable.
+        <ThemeProvider theme={settingsTheme}>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
             <MUIDialog
                 id={id}
@@ -816,6 +1026,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     border: "1px solid",
                 }}
             >
+                {getServicesSection()}
                 {getApiKeysSection()}
                 {getBehaviorSection()}
                 {getAppearanceSection()}
