@@ -3,6 +3,7 @@ import {TreeViewDefaultItemModelProperties} from "@mui/x-tree-view/models"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region Types and Interfaces
 
@@ -17,13 +18,13 @@ export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModel
     readonly isNetwork: boolean
     readonly tags?: readonly string[]
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkJson?: string | null
+    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
 }
 
 interface NetworkTreeItemMetadata {
     readonly iconSuggestion?: string
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkJson?: string | null
+    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
     readonly displayNameOverride?: string
 }
 
@@ -123,7 +124,7 @@ const toNetworkLeaf = (
     isNetwork: true,
     tags: network.tags,
     temporaryNetworkExpirationTime: metadata.temporaryNetworkExpirationTime,
-    temporaryNetworkJson: metadata.temporaryNetworkJson,
+    temporaryNetworkDefinition: metadata.temporaryNetworkDefinition,
 })
 
 /**
@@ -291,11 +292,9 @@ export const buildTreeViewItems = (
         tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, displayNameCounts, {
             iconSuggestion: "HourglassTop",
             temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
-            // Temporary networks are downloaded as JSON, serialized from their structured agent network definition
-            // (the same shape the import modal reads back in).
-            temporaryNetworkJson: temporaryNetwork.agentNetworkDefinition
-                ? JSON.stringify(temporaryNetwork.agentNetworkDefinition, null, 2)
-                : null,
+            // The structured definition is carried through and serialized at download time (it's the same shape
+            // the import modal reads back in).
+            temporaryNetworkDefinition: temporaryNetwork.agentNetworkDefinition,
             displayNameOverride: temporaryNetwork.agentNetworkName,
         })
     }

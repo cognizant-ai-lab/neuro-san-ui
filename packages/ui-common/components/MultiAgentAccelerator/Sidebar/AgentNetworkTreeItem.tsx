@@ -96,7 +96,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = item?.temporaryNetworkExpirationTime
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkJson = item?.temporaryNetworkJson ?? null
+    const networkDefinition = item?.temporaryNetworkDefinition ?? null
 
     const iconNameSuggestion = item.iconSuggestion
 
@@ -185,7 +185,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
-                                {networkJson && (
+                                {networkDefinition && (
                                     <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                         <span>
                                             <IconButton
@@ -193,7 +193,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     e.stopPropagation()
 
                                                     const fileName = `${toSafeFilename(labelString)}.json`
-                                                    downloadFile(networkJson, fileName)
+                                                    downloadFile(JSON.stringify(networkDefinition, null, 2), fileName)
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"
