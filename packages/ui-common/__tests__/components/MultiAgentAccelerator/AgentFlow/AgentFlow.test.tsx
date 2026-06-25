@@ -169,14 +169,10 @@ describe("AgentFlow", () => {
         expect(nodes).toHaveLength(3)
 
         const agentNames = NETWORK.map((agent) => agent.origin)
-        const nodesArray = [...nodes]
 
-        // Make sure each agent node is rendered at least. Structure in react-flow is:
-        // <div class="react-flow__node"><div><p>agentName</p></div></div>
+        // Make sure each agent node is rendered at least. Each node has a data-id with its name.
         agentNames.forEach((agent) => {
-            expect(nodesArray.some((node) => node.querySelector("p")?.textContent === cleanUpAgentName(agent))).toBe(
-                true
-            )
+            expect(container.querySelector(`[data-id="${CSS.escape(agent)}"]`)).not.toBeNull()
         })
     }
 
