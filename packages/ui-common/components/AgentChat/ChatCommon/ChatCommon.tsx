@@ -860,6 +860,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const getOptionsMenuButton = () => (
         <Box
+            id={`${id}-options-menu-button-container`}
             sx={{
                 backgroundColor: theme.palette.background.paper,
                 borderRadius: "var(--bs-border-radius)",

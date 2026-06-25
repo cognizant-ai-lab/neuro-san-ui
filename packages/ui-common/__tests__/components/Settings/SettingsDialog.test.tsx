@@ -7,6 +7,7 @@ import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {BrandingSuggestions} from "../../../controller/Types/Branding"
+import {useEnvironmentStore} from "../../../state/Environment"
 import {DEFAULT_SETTINGS, LogoSource, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
@@ -32,8 +33,11 @@ describe("SettingsDialog", () => {
     let originalFetch: typeof global.fetch
 
     beforeEach(() => {
-        user = userEvent.setup()
         useSettingsStore.getState().resetSettings()
+        useSettingsStore.persist.clearStorage()
+        useEnvironmentStore.getState().setBackendNeuroSanApiUrl(undefined)
+
+        user = userEvent.setup()
         originalFetch = global.fetch
     })
 
@@ -63,6 +67,26 @@ describe("SettingsDialog", () => {
         await screen.findByText("Settings")
     })
 
+    it("handles nullish logoSource", async () => {
+        useSettingsStore.getState().updateSettings({
+            branding: {
+                logoSource: null,
+            },
+        })
+
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+
+        // Should render without crashing and show the "(None)" option as selected by default
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"})
+        const noneButton = within(logoOptionsContainer).getByRole("button", {name: /None/u})
+        expect(noneButton).toHaveAttribute("aria-pressed", "true")
+    })
+
     it("triggers onClose when the dialog is closed", async () => {
         const onCloseMock = jest.fn()
         render(
@@ -76,6 +100,173 @@ describe("SettingsDialog", () => {
         const closeButton = await screen.findByLabelText("close")
         await user.click(closeButton)
         expect(onCloseMock).toHaveBeenCalledTimes(1)
+    })
+
+    describe("External services", () => {
+        it("allows user to input, test and save a Neuro SAN URL", async () => {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
+
+            const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
+
+            const testUrl = "https://neuro-san.example.com"
+            await user.click(inputBox)
+            await user.paste(testUrl)
+
+            // Click "clear input" button
+            const clearButton = within(urlInput).getByLabelText("Clear input")
+            await user.click(clearButton)
+            expect(inputBox).toHaveValue("")
+
+            // Status light should be back to "unknown" (gray) after clearing the input
+            const statusLight = within(urlInput).getByTestId("settings-dialog-status-light")
+            expect(statusLight).toHaveAttribute("data-status", "unknown")
+
+            // Set fetch to fail
+            global.fetch = mockFetch({}, false)
+
+            // Click "Test" button to (pretend) "test" the URL
+            await user.type(inputBox, testUrl)
+            const testButton = within(urlInput).getByRole("button", {name: /Test/u})
+            expect(testButton).toBeEnabled()
+            await user.click(testButton)
+
+            expect(statusLight).toHaveAttribute("data-status", "red")
+
+            // Set fetch to succeed
+            global.fetch = mockFetch(
+                {
+                    success: false,
+                    httpStatus: 200,
+                    status: "ok",
+                },
+                true
+            )
+            await user.click(testButton)
+
+            expect(statusLight).toHaveAttribute("data-status", "green")
+
+            // Click "Save" to save the URL
+            const saveButton = within(urlInput).getByRole("button", {name: /Save/u})
+            expect(saveButton).toBeEnabled()
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(testUrl)
+        }, 10_000)
+
+        it("handles input URLs with http and https protocols correctly", async () => {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
+
+            const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
+
+            // Paste an http protocol URL in the input
+            await user.click(inputBox)
+            await user.paste("http://neuro-san.example.com")
+
+            // Move out of the input to trigger onBlur
+            await user.tab()
+
+            // The protocol should have been stripped and the dropdown changed to http
+            expect(inputBox).toHaveValue("neuro-san.example.com")
+            const protocolDropdown = within(urlInput).getByRole("combobox", {name: "protocol-select"})
+            expect(protocolDropdown).toHaveTextContent("http")
+
+            // Now type an https protocol URL in the input
+            await user.clear(inputBox)
+            await user.click(inputBox)
+            await user.paste("https://neuro-san.example.com")
+
+            // Move out of the input to trigger onBlur
+            await user.tab()
+
+            // The protocol should have been stripped and the dropdown changed to https
+            expect(inputBox).toHaveValue("neuro-san.example.com")
+            expect(protocolDropdown).toHaveTextContent(/^https:\/\/$/u)
+        })
+
+        it("handles user changing protocol in dropdown correctly", async () => {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
+
+            const protocolDropdown = within(urlInput).getByRole("combobox", {name: "protocol-select"})
+
+            // Should default to https
+            expect(protocolDropdown).toHaveTextContent("https")
+
+            // Enter a URL
+            const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
+            const testUrl = "neuro-san.example.com"
+            await user.click(inputBox)
+            await user.paste(testUrl)
+
+            // Make sure it gets saved correctly
+            const saveButton = within(urlInput).getByRole("button", {name: "Save"})
+            expect(saveButton).toBeEnabled()
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(`https://${testUrl}`)
+
+            // Now change the protocol to http
+            await user.click(protocolDropdown)
+
+            const httpOption = await screen.findByRole("option", {name: "http://"})
+            await user.click(httpOption)
+
+            // Save again — protocol-only change should enable Save
+            expect(saveButton).toBeEnabled()
+            await user.click(saveButton)
+
+            // the "a" should also be saved
+            expect(useSettingsStore.getState().settings.externalServices.neuroSanUrl).toBe(`http://${testUrl}`)
+        })
+
+        it.each(["default-neuro-san.example.com", ""])(
+            "handles resetting the Neuro SAN URL to the default",
+            async (defaultNeuroSanUrl) => {
+                useEnvironmentStore.getState().setBackendNeuroSanApiUrl(`https://${defaultNeuroSanUrl}`)
+
+                render(
+                    <SettingsDialog
+                        id="settings-dialog"
+                        isOpen={true}
+                    />
+                )
+
+                const urlInput = screen.getByTestId("settings-dialog-neuro-san-server-url-row")
+                const inputBox = within(urlInput).getByPlaceholderText("example.com:1234")
+
+                // Paste an http protocol URL in the input
+                await user.click(inputBox)
+                await user.paste("http://neuro-san.example.com")
+
+                const resetButton = within(urlInput).getByRole("button", {name: "Default"})
+                await user.click(resetButton)
+
+                // The input should be cleared and the protocol dropdown should be reset to https
+                expect(inputBox).toHaveValue(defaultNeuroSanUrl)
+                const protocolDropdown = within(urlInput).getByRole("combobox", {name: "protocol-select"})
+                expect(protocolDropdown).toHaveTextContent("https")
+            }
+        )
     })
 
     describe("API keys", () => {
@@ -99,12 +290,12 @@ describe("SettingsDialog", () => {
             await user.type(inputBox, testApiKey)
 
             // Click "Test" button to (pretend) "test" the key
-            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            const testButton = within(apiKeyInput).getByRole("button", {name: "Test"})
             expect(testButton).toBeEnabled()
             await user.click(testButton)
 
             // Click "Save" to save the API key
-            const saveButton = await within(apiKeyInput).findByRole("button", {name: /Save/u})
+            const saveButton = await within(apiKeyInput).findByRole("button", {name: "Save"})
             expect(saveButton).toBeEnabled()
 
             await user.click(saveButton)
@@ -129,7 +320,7 @@ describe("SettingsDialog", () => {
             await user.type(inputBox, TEST_API_KEY)
 
             // Make sure we can clear the input
-            const clearButton = within(apiKeyInput).getByLabelText(/Clear input/u)
+            const clearButton = within(apiKeyInput).getByLabelText("Clear input")
             await user.click(clearButton)
             expect(inputBox).toHaveValue("")
 
@@ -137,20 +328,23 @@ describe("SettingsDialog", () => {
             await user.type(inputBox, TEST_API_KEY)
 
             // Click "Test" button to (pretend) "test" the key
-            const testButton = within(apiKeyInput).getByRole("button", {name: /Test/u})
+            const testButton = within(apiKeyInput).getByRole("button", {name: "Test"})
             expect(testButton).toBeEnabled()
             await user.click(testButton)
 
-            within(apiKeyInput).getByTestId("CheckIcon")
+            // Make sure status light is green
+            const statusLight = within(apiKeyInput).getByTestId("settings-dialog-openai-status-light")
+            expect(statusLight).toHaveAttribute("data-status", "green")
 
             // Now mock test failure and check that error icon appears
             global.fetch = mockFetch({}, false)
             await user.click(testButton)
 
-            within(apiKeyInput).getByTestId("ErrorIcon")
+            // Now status light should be red
+            expect(statusLight).toHaveAttribute("data-status", "red")
         })
 
-        it("allows user request that API keys be forgotten", async () => {
+        it("allows user to request that API keys be forgotten", async () => {
             // set an existing key value
             useSettingsStore.getState().updateSettings({
                 apiKeys: {
@@ -167,7 +361,7 @@ describe("SettingsDialog", () => {
 
             const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
 
-            const forgetButton = within(apiKeyInput).getByRole("button", {name: /Forget/u})
+            const forgetButton = within(apiKeyInput).getByRole("button", {name: "Forget"})
             await user.click(forgetButton)
 
             // First time, cancel
@@ -281,7 +475,7 @@ describe("SettingsDialog", () => {
         )
 
         // Find button to select "GrayScale" palette
-        const grayScaleButton = screen.getByRole("button", {name: /grayScale-palette-button/u})
+        const grayScaleButton = screen.getByRole("button", {name: "grayScale-palette-button"})
 
         // Click the button to change the palette
         await user.click(grayScaleButton)
@@ -298,7 +492,7 @@ describe("SettingsDialog", () => {
         )
 
         // Find button to select "GrayScale" palette
-        const grayScaleButton = screen.getByRole("button", {name: /grayScale-palette-button/u})
+        const grayScaleButton = screen.getByRole("button", {name: "grayScale-palette-button"})
         await user.click(grayScaleButton)
         expect(useSettingsStore.getState().settings.appearance.rangePalette).toBe("grayScale")
 
@@ -332,6 +526,12 @@ describe("SettingsDialog", () => {
         await user.click(autoColorCheckbox)
 
         // Now should be true
+        expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
+
+        // Click it again
+        await user.click(autoColorCheckbox)
+
+        // Should not have changed value
         expect(useSettingsStore.getState().settings.appearance.autoAgentIconColor).toBe(true)
     })
 
@@ -371,14 +571,14 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
 
         // Locate the "beautified" toggle button
-        const beautifyToggle = screen.getByRole("button", {name: /Beautified/u})
+        const beautifyToggle = screen.getByRole("button", {name: "Beautified"})
         await user.click(beautifyToggle)
 
         // Should be no change since we're already on beautified mode
         expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(false)
 
         // Locate the "native" toggle button
-        const toggleButton = screen.getByRole("button", {name: /Native/u})
+        const toggleButton = screen.getByRole("button", {name: "Native"})
         await user.click(toggleButton)
 
         expect(useSettingsStore.getState().settings.appearance.useNativeNames).toBe(true)
@@ -402,7 +602,7 @@ describe("SettingsDialog", () => {
             />
         )
 
-        const resetButton = screen.getByRole("button", {name: /Reset to defaults/u})
+        const resetButton = screen.getByRole("button", {name: "Reset to defaults"})
         await user.click(resetButton)
 
         const confirmButton = await screen.findByText("Confirm")
@@ -440,7 +640,7 @@ describe("SettingsDialog", () => {
             />
         )
 
-        const resetButton = screen.getByRole("button", {name: /Reset to defaults/u})
+        const resetButton = screen.getByRole("button", {name: "Reset to defaults"})
         await user.click(resetButton)
 
         const cancelButton = await screen.findByText("Cancel")
@@ -465,7 +665,7 @@ describe("SettingsDialog", () => {
 
         expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
 
-        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"}).closest("span").closest("div")
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
@@ -496,7 +696,7 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
 
         // Try different logo options
-        const logoNoneButton = within(logoOptionsContainer).getByRole("button", {name: /None/u})
+        const logoNoneButton = within(logoOptionsContainer).getByRole("button", {name: "None"})
         await user.click(logoNoneButton)
 
         // Logo source should be set to "none", meaning no logo will be shown even if we have suggestions
@@ -512,7 +712,7 @@ describe("SettingsDialog", () => {
         within(logoOptionsContainer).getByText("(None)")
 
         // Now click "generic"
-        const logoGenericButton = within(logoOptionsContainer).getByRole("button", {name: /Generic/u})
+        const logoGenericButton = within(logoOptionsContainer).getByRole("button", {name: "Generic"})
         await user.click(logoGenericButton)
 
         expect(useSettingsStore.getState().settings.branding.logoSource).toBe("generic")
@@ -521,12 +721,12 @@ describe("SettingsDialog", () => {
         within(logoOptionsContainer).getByTestId("AddIcon")
 
         // Now the "auto" option
-        const logoAutoButton = within(logoOptionsContainer).getByRole("button", {name: /Auto/u})
+        const logoAutoButton = within(logoOptionsContainer).getByRole("button", {name: "Auto"})
         await user.click(logoAutoButton)
         expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
 
         // Should show the logo from logo.dev with the correct URL (we can check for the img element and its src)
-        const logoImg = within(logoOptionsContainer).getByRole("img", {name: /Acme 2 Logo/u})
+        const logoImg = within(logoOptionsContainer).getByRole("img", {name: "Acme 2 Logo"})
         expect(logoImg).toBeInTheDocument()
         expect(logoImg).toHaveAttribute(
             "src",
@@ -631,11 +831,12 @@ describe("SettingsDialog", () => {
 
         await enterCustomerName("Acme", true)
 
-        const logoOptionsContainer = screen.getByLabelText("logo-options-container")
-        const errorTooltip = within(logoOptionsContainer).getByLabelText(/No Logo.dev token found/u)
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"})
+
+        const errorTooltip = within(logoOptionsContainer).getByLabelText(/Cannot use Auto logo source/u)
 
         // Get span that wraps the button
-        const autoButtonSpan = within(logoOptionsContainer).getByRole("button", {name: /Auto/u}).parentElement
+        const autoButtonSpan = within(logoOptionsContainer).getByRole("button", {name: "Auto"}).parentElement
 
         // Hover and make sure we get the tooltip
         await user.hover(autoButtonSpan)

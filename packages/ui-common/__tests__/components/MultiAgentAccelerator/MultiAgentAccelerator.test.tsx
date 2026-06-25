@@ -102,7 +102,7 @@ jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
                     <div id="sample-queries-box">Sample queries</div>
                     <div id="user-input-div">User input</div>
                     <button
-                        id="show-thinking-button"
+                        id="agent-network-ui-options-menu-button-container"
                         type="button"
                     >
                         Show Thinking
@@ -225,7 +225,7 @@ const renderMultiAgentAcceleratorPage = () =>
     render(
         <SnackbarProvider>
             <MultiAgentAccelerator
-                backendNeuroSanApiUrl={NEURO_SAN_SERVER_URL}
+                defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
                 username={MOCK_USER}
             />
         </SnackbarProvider>
@@ -1453,7 +1453,7 @@ describe("MultiAgentAccelerator", () => {
     })
 
     describe("Tour", () => {
-        it("should run the tour when requested", async () => {
+        it("should run the tour when requested and successfully visit each step", async () => {
             renderMultiAgentAcceleratorPage()
 
             await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -1475,6 +1475,10 @@ describe("MultiAgentAccelerator", () => {
 
             // Click through remaining steps and verify their content shows up
             for (const step of MAIN_TOUR_STEPS.slice(1)) {
+                // Make sure step at least appears in the DOM, though due to mocks we may get false negatives here
+                // Steps can (in theory) be functions that return an element, or just a element
+                const stepElement = typeof step.target === "function" ? step.target() : step.target
+                expect(stepElement).toBeVisible()
                 const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})
                 await user.click(nextButton)
                 await screen.findByText(step.content.toString())

@@ -62,15 +62,16 @@ const insertTargetAgent = (agent: string, path: string) => {
 }
 
 export interface TestConnectionResult {
-    readonly success: boolean
+    readonly httpStatus?: number
     readonly status?: string
+    readonly success: boolean
     readonly version?: string
 }
 
 /**
  * Test connection for a neuro-san server.
  * @param url The neuro-san server URL.
- * @returns A boolean indicating whether the connection was successful.
+ * @returns An object with information about the connection test result
  */
 export const testConnection = async (url: string): Promise<TestConnectionResult> => {
     const controller = new AbortController()
@@ -79,8 +80,13 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
     try {
         const response = await fetch(url, {signal: controller.signal})
         if (!response.ok) {
-            return {success: false, status: response.statusText}
+            return {
+                success: false,
+                httpStatus: response.status,
+                status: response.statusText,
+            }
         }
+
         const jsonResponse = await response.json()
         // eslint-disable-next-line no-shadow
         const status = jsonResponse?.status
@@ -90,7 +96,7 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
 
         // For now, just capture the Neuro-san version since that's all the server returns. More can be added later.
         const version = jsonResponse?.versions?.["neuro-san"]
-        return {success, status, version}
+        return {httpStatus: response.status, success, status, version}
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         return {success: false, status: errorMessage}
