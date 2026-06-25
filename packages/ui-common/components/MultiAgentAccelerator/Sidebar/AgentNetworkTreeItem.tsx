@@ -8,8 +8,8 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
-import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
+import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
     TreeItemContent,
     TreeItemGroupTransition,
@@ -21,11 +21,8 @@ import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
-import {NodeIndex} from "./TreeBuilder"
-import {useSettingsStore} from "../../../state/Settings"
+import {AgentNetworkTreeItemModel} from "./TreeBuilder"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
-import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
-
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -46,12 +43,8 @@ type TagColor = (typeof TAG_COLORS)[number]
 const tagsToColors = new Map<string, TagColor>()
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
-    readonly nodeIndex: NodeIndex
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
-    readonly networkIconSuggestions: Record<string, string>
-    readonly temporaryNetworkExpirationTimes?: Record<string, Date>
-    readonly temporaryNetworkHoconStrings?: Record<string, string | null>
 }
 
 /**
@@ -73,23 +66,13 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     disabled,
     itemId,
     label,
-    networkIconSuggestions,
-    nodeIndex,
     onDeleteNetwork,
     onEditNetwork,
-    temporaryNetworkExpirationTimes,
-    temporaryNetworkHoconStrings,
 }) => {
-    const theme = useTheme()
-
-    // Display option for agent/network names
-    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
+    const item = useTreeItemModel<AgentNetworkTreeItemModel>(itemId)
 
     // We know all labels are strings because we set them that way in the tree view items
     const labelString = label as string
-    const displayLabel = useNativeNames
-        ? labelString
-        : nodeIndex.get(itemId)?.displayName || cleanUpAgentName(labelString)
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -99,13 +82,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isParent = Array.isArray(children) && children.length > 0
     const isChild = !isParent
 
-    const agentNode = nodeIndex?.get(itemId)?.agentInfo
-
-    // Only child items (the actual networks, not the containing folders) have tags. Retrieve tags from the
-    // networkFolders data structure passed in as a prop. This could in theory be a custom property for the
-    // RichTreeView item, but that isn't well-supported at this time.
-    // Discussion: https://stackoverflow.com/questions/69481071/material-ui-how-to-pass-custom-props-to-a-custom-treeitem
-    const tags = isChild ? agentNode?.tags || [] : []
+    const tags = item.tags ?? []
 
     // Assign colors to tags as needed and store in tagsToColors map
     for (const tag of tags) {
@@ -116,19 +93,33 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     }
 
     // Determine if expired (temporary networks only)
-    const expirationTime = temporaryNetworkExpirationTimes?.[itemId]
+    const expirationTime = item?.temporaryNetworkExpirationTime
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkHocon = isTemporaryNetwork ? temporaryNetworkHoconStrings?.[itemId] : null
+    const networkHocon = item?.temporaryNetworkHocon ?? null
 
-    const iconNameSuggestion = isTemporaryNetwork ? "HourglassTop" : isChild ? networkIconSuggestions?.[itemId] : null
+    const iconNameSuggestion = item.iconSuggestion
 
-    let muiIconElement = null
-    if (iconNameSuggestion && MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
-        const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
-        muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
-    } else if (iconNameSuggestion) {
-        console.warn(`Icon "${iconNameSuggestion}" not found in MUI icons library.`)
+    let muiIconElement
+
+    // If the item is a child (i.e., a network), we want to render an icon next to it.
+    if (isChild) {
+        if (iconNameSuggestion) {
+            if (MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
+                // If the icon name suggestion is valid, use it to render the icon
+                const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
+                muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
+            } else {
+                // If the icon name suggestion is not valid, use a default icon
+                muiIconElement = <MuiIcons.Hub sx={{fontSize: "1rem"}} />
+            }
+        } else {
+            // If no icon name suggestion is provided, use a default icon
+            muiIconElement = <MuiIcons.Hub sx={{fontSize: "1rem"}} />
+        }
+    } else {
+        // Use folder icon for parent items (i.e., folders)
+        muiIconElement = <MuiIcons.Folder sx={{fontSize: "1rem"}} />
     }
 
     return (
@@ -167,11 +158,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             },
                                         }}
                                     >
-                                        {displayLabel}
+                                        {item.displayName}
                                     </TreeItemLabel>
                                 </Box>
                             </Tooltip>
-                            {isChild && tags?.length > 0 ? (
+                            {isChild && tags.length > 0 ? (
                                 <Tooltip
                                     title={[...tags]
                                         .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
@@ -253,7 +244,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         }}
                                         sx={{
                                             color: "var(--bs-secondary)",
-                                            "&:hover": {color: theme.palette.warning.main},
+                                            "&:hover": {color: (theme) => theme.palette.warning.main},
                                             "&.Mui-disabled": {
                                                 color: "var(--bs-secondary)",
                                                 opacity: 0.3,

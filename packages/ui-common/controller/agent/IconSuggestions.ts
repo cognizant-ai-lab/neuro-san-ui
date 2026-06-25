@@ -22,7 +22,7 @@ export const postJsonRequest = async <T>(endpoint: string, body: Record<string, 
     })
 
     const jsonResponse = await response.json()
-    if (!response.ok || jsonResponse.error) {
+    if (!response.ok || jsonResponse?.error) {
         throw new Error(jsonResponse?.error || response?.statusText)
     }
 

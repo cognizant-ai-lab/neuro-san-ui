@@ -50,17 +50,52 @@ main() {
         exit 1
     fi
 
-    # Create a temporary directory for coverage output and ensure it gets cleaned up on exit
-    tmp_dir="$(mktemp -d)"
-    trap 'rm -rf "${tmp_dir}"' EXIT
+    local overwrite=false
 
-    # Where we want to put output files
-    coverage_summary="${tmp_dir}/coverage-summary.json"
-    new_coverage_values="${tmp_dir}/new_coverage_values.txt"
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+        --overwrite)
+            overwrite=true
+            ;;
+        --overwrite=*)
+            if parse_bool "${1#*=}"; then
+                overwrite=true
+            else
+                overwrite=false
+            fi
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Error: Unknown argument '$1'" >&2
+            usage >&2
+            exit 2
+            ;;
+        esac
+        shift
+    done
+
+    # Create a temporary directory for coverage output and ensure it gets cleaned up on exit
+    local output_dir=""
+    if [ "${overwrite}" = true ]; then
+        output_dir="./coverage"
+        mkdir -p "${output_dir}"
+    else
+        output_dir="$(mktemp -d)"
+        trap 'if [ -n "${output_dir:-}" ] && [ -d "${output_dir}" ]; then rm -rf "${output_dir}"; fi' EXIT
+    fi
+
+    local coverage_summary
+    local new_coverage_values
+
+    coverage_summary="${output_dir}/coverage-summary.json"
+    new_coverage_values="${output_dir}/new_coverage_values.txt"
 
     # Run the tests with coverage
     if ! jest --config ./jest_quiet.config.ts --collectCoverage --coverageReporters=json-summary \
-        --coverageThreshold '{}' --coverageDirectory="${tmp_dir}"; then
+        --coverageThreshold '{}' --coverageDirectory="${output_dir}" ; then
         # If jest failed, don't update
         echo "Tests failed. Coverage not updated." >&2
         exit 1
@@ -85,10 +120,56 @@ main() {
     # Regex for locating the global block in jest.config.ts.
     global_block_range='/^[[:space:]]*global:[[:space:]]*{/,/^[[:space:]]*},[[:space:]]*$/'
 
-    # Check if the values changed
-    if diff "${new_coverage_values}" <(sed -n "${global_block_range}p" jest.config.ts) >/dev/null; then
-        echo "Coverage values have not changed. No update needed."
+    # Extract old and new uncovered counts for each metric.
+    metrics=(statements branches functions lines)
+
+    # Helper: extract metric value from a block file line like "statements: -12,"
+    extract_metric_value() {
+        local metric="$1"
+        local file="$2"
+        sed -nE "s/^[[:space:]]*${metric}:[[:space:]]*(-?[0-9]+),[[:space:]]*$/\1/p" "${file}" | head -n1
+    }
+
+    # Capture the existing global block into a temp file for parsing and comparison.
+    old_coverage_values="${output_dir}/old_coverage_values.txt"
+    sed -n "${global_block_range}p" jest.config.ts > "${old_coverage_values}"
+
+    worsened_counts=0
+    improved_counts=0
+    unchanged_count=0
+
+    for metric in "${metrics[@]}"; do
+        old_val="$(extract_metric_value "${metric}" "${old_coverage_values}")"
+        new_val="$(extract_metric_value "${metric}" "${new_coverage_values}")"
+
+        if [ -z "${old_val}" ] || [ -z "${new_val}" ]; then
+            echo "Error: Unable to parse ${metric} coverage values." >&2
+            exit 1
+        fi
+
+       if [ "${new_val}" -gt "${old_val}" ]; then
+          improved_counts=$((improved_counts + 1))
+      elif [ "${new_val}" -lt "${old_val}" ]; then
+          worsened_counts=$((worsened_counts + 1))
+      else
+          unchanged_count=$((unchanged_count + 1))
+      fi
+    done
+
+    # No changes: exit with message
+    if [ "${unchanged_count}" -eq 4 ]; then
+        echo "🤷 Coverage values unchanged."
         exit 0
+    fi
+
+    # Something changed. Clarify how.
+    msg=""
+    if [ "${worsened_counts}" -gt 0 ] && [ "${improved_counts}" -gt 0 ]; then
+        msg="😐 Mixed coverage changes (some improved, some worsened). Updated jest.config.ts."
+    elif [ "${worsened_counts}" -gt 0 ] && [ "${improved_counts}" -eq 0 ]; then
+        msg="😢 Coverage worsened across all changed metrics. Updated jest.config.ts"
+    elif [ "${improved_counts}" -gt 0 ] && [ "${worsened_counts}" -eq 0 ]; then
+        msg="🎉 Coverage improved across all changed metrics. Updated jest.config.ts."
     fi
 
     # Update coverage numbers in jest.config.ts.
@@ -96,11 +177,37 @@ main() {
     /^[[:space:]]*global:[[:space:]]*{/r ${new_coverage_values}
     d
     }" jest.config.ts; then
-        echo "Coverage updated successfully in jest.config.ts"
+        echo "$msg"
     else
         echo "Error: Failed to update coverage in jest.config.ts" >&2
         exit 1
     fi
 }
 
-main
+# Parse boolean-ish CLI values commonly used in Linux tools.
+parse_bool() {
+    local raw="${1:-}"
+    local val
+    val="$(printf '%s' "${raw}" | tr '[:upper:]' '[:lower:]')"
+    case "${val}" in
+    1|true|t|yes|y|on)  return 0 ;;
+    0|false|f|no|n|off) return 1 ;;
+    *)
+        echo "Error: Invalid boolean value '${raw}'. Use true/false, 1/0, yes/no, on/off." >&2
+        exit 2
+        ;;
+    esac
+}
+
+usage() {
+    cat <<'EOF'
+Usage: build_scripts/UpdateCoverage.sh [--overwrite[=BOOL]]
+
+Options:
+  --overwrite            Overwrite ./coverage (same as --overwrite=true)
+  --overwrite=BOOL       BOOL: true/false, 1/0, yes/no, on/off
+  -h, --help             Show this help
+EOF
+}
+
+main "$@"
