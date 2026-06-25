@@ -194,21 +194,21 @@ export const filenameToNetworkName = (filename: string): string => {
     return startCase(stem.replace(FILENAME_TRAILING_UUID_PATTERN, ""))
 }
 
-// Normalize a name for conflict comparison (underscores → spaces, lowercase, trimmed).
+// Normalize a network name for conflict comparison (underscores, hyphens and whitespace are changed to single spaces).
 const normalizeForComparison = (rawName: string): string => {
-    const spaced = rawName.replaceAll(/[_-]+/gu, " ").toLowerCase()
+    const spaced = rawName.replaceAll(/[\s_-]+/gu, " ").toLowerCase()
     return spaced.trim()
 }
 
-// Find the next non-conflicting name by appending " (2)", " (3)", etc.
+// Find the next non-conflicting name by appending " 2", " 3", etc.
 export const findNonConflictingName = (base: string, existingNames: readonly string[]): string => {
     const existing = existingNames.map((n) => normalizeForComparison(n))
     if (!existing.includes(normalizeForComparison(base))) return base
     let counter = 2
-    while (existing.includes(normalizeForComparison(`${base} (${counter})`))) {
+    while (existing.includes(normalizeForComparison(`${base} ${counter}`))) {
         counter += 1
     }
-    return `${base} (${counter})`
+    return `${base} ${counter}`
 }
 
 //#endregion: Helpers

@@ -339,7 +339,7 @@ describe("ImportNetworkModal", () => {
             button: RENAME_BUTTON,
             verify: async () => {
                 const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-                expect(nameInput).toHaveValue("Ecommerce Support (2)")
+                expect(nameInput).toHaveValue("Ecommerce Support 2")
                 expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
             },
         },
@@ -611,16 +611,16 @@ describe("findNonConflictingName", () => {
             expected: "my network",
         },
         {
-            name: "appends (2) on the first conflict",
+            name: "appends 2 on the first conflict",
             base: "my network",
             existing: ["my_network"],
-            expected: "my network (2)",
+            expected: "my network 2",
         },
         {
-            name: "increments the counter when (2) also conflicts",
+            name: "increments the counter when 2 also conflicts",
             base: "my network",
-            existing: ["my_network", "my network (2)"],
-            expected: "my network (3)",
+            existing: ["my_network", "my network 2"],
+            expected: "my network 3",
         },
     ])("$name", ({base, existing, expected}) => {
         expect(findNonConflictingName(base, existing)).toBe(expected)
