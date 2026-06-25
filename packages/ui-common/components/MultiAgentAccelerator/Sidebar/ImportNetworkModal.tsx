@@ -33,7 +33,7 @@ import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"
-import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman, TEMPORARY_NETWORK_FOLDER} from "../const"
 
@@ -178,15 +178,20 @@ export const importFileValidationMessage = (validation: ImportFileValidation, fi
     }
 }
 
+/** Trailing UUID on a filename stem. Separator is `[_-]` because filename sanitization
+ * (`toSafeFilename`, neuro-san exports) flattens the UUID's hyphens to underscores.
+ */
+const FILENAME_TRAILING_UUID_PATTERN =
+    /[_-][0-9a-fA-F]{8}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{12}$/u
+
 /** Convert a filename stem to a display-friendly network name.
  *
- * Strips a trailing UUID in the form `_xxxxxxxx_xxxx_xxxx_xxxx_xxxxxxxxxxxx`
- * that neuro-san appends to exported filenames (e.g.
- * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.json` → `my network`).
+ * Strips a trailing UUID that neuro-san appends to exported filenames (e.g.
+ * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.json` → `My Network`).
  */
 export const filenameToNetworkName = (filename: string): string => {
     const {name: stem} = splitFilename(filename)
-    return startCase(removeTrailingUuid(stem))
+    return startCase(stem.replace(FILENAME_TRAILING_UUID_PATTERN, ""))
 }
 
 // Normalize a name for conflict comparison (underscores → spaces, lowercase, trimmed).

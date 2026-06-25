@@ -23,6 +23,7 @@ import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
+import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -192,7 +193,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 onClick={(e) => {
                                                     e.stopPropagation()
 
-                                                    const fileName = `${toSafeFilename(labelString)}.json`
+                                                    // Strip the reservation UUID before building the filename so
+                                                    // exported files carry a clean name (toSafeFilename would
+                                                    // otherwise flatten the UUID's hyphens to underscores).
+                                                    const cleanName = removeTrailingUuid(labelString)
+                                                    const fileName = `${toSafeFilename(cleanName)}.json`
                                                     downloadFile(JSON.stringify(networkDefinition, null, 2), fileName)
                                                 }}
                                                 disabled={isExpired}
