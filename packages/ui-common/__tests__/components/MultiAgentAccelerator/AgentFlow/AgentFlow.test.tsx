@@ -17,7 +17,7 @@ limitations under the License.
 import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
-import {ReactFlowProvider} from "@xyflow/react"
+import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -27,6 +27,7 @@ import {
     AgentFlow,
     AgentFlowProps,
     DOCK_BANNER_AUTO_DISMISS_MS,
+    filterNodeEvents,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
@@ -276,6 +277,7 @@ describe("AgentFlow", () => {
             expect(depthDivElements.length).toBe(expectedNetworkDepth)
         })
 
+        // eslint-disable-next-line max-len -- conflicts with prettier
         it("Should allow switching to heatmap display and not show radial guides with linear display mode", async () => {
             const {container} = renderAgentFlowComponent()
 
@@ -449,6 +451,26 @@ describe("AgentFlow", () => {
 
             // Radial guides should be visible again
             expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+        })
+    })
+
+    describe("Agent Graph", () => {
+        it("should correctly filter node events", async () => {
+            const dragEvent: NodePositionChange = {
+                id: "",
+                type: "position",
+            }
+
+            // Normally dragging is allowed
+            expect(filterNodeEvents(dragEvent, false)).toBe(true)
+
+            // No dragging in Agent Network Designer preview
+            expect(filterNodeEvents(dragEvent, true)).toBe(false)
+
+            // Modifications are not allowed (in regular mode or AND mode)
+            const removeEvent: NodeRemoveChange = {id: "", type: "remove"}
+            expect(filterNodeEvents(removeEvent, false)).toBe(false)
+            expect(filterNodeEvents(removeEvent, true)).toBe(false)
         })
     })
 
@@ -870,7 +892,8 @@ describe("AgentFlow", () => {
             jest.useFakeTimers()
             const mockSetThoughtBubbleEdges = jest.fn()
 
-            // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current fake time
+            // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current
+            // fake time
             const initialConversations: AgentConversation[] = Array.from({length: 5}, (_, i) => ({
                 id: `conv-expire-overflow-${i}`,
                 agents: new Set(["agent1", "agent2"]),
@@ -2354,6 +2377,7 @@ describe("AgentFlow", () => {
             expect(defB?.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
         })
 
+        // eslint-disable-next-line max-len -- conflicts with prettier
         it("Should read instructions only from the current network, not from another network with same agent", async () => {
             // Two different temporary networks each containing agent1, with different instructions.
             const networkA = "temporary/network-a"

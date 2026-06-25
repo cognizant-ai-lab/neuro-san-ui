@@ -136,9 +136,9 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 // Exported for tests.
 export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
-//#endregion: Constants
-
 const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
+
+//#endregion: Constants
 
 //#region: Helpers
 
@@ -194,6 +194,22 @@ const streamNetworkDesignerPrompt = async (
     )
 
     return newNetworks
+}
+
+/**
+ * Filters node events based on the current mode. Don't allow any topological-modifying events (adding, deleting nodes)
+ * and in Agent Network Designer mode, don't allow dragging nodes (position changes) either.
+ * @param change The node change event to filter.
+ * @param isAgentNetworkDesignerMode Whether the flow is in Agent Network Designer mode (read-only preview).
+ * @return True if the event should be allowed, false if it should be filtered out.
+ */
+export const filterNodeEvents = (change: NodeChange<RFNode<AgentNodeProps>>, isAgentNetworkDesignerMode: boolean) => {
+    // Only allow nodes to be dragged, no topological edits to the graph (read-only)
+    if (["remove", "add", "replace"].includes(change.type)) return false
+
+    // Disallow dragging nodes in AND mode since it's supposed to be a read-only preview but
+    // pass along all other event types as
+    return !(change.type === "position" && isAgentNetworkDesignerMode)
 }
 
 //#endregion: Helpers
@@ -694,14 +710,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
             setNodes((currentNodes) =>
                 applyNodeChanges<RFNode<AgentNodeProps>>(
-                    changes.filter((change) => {
-                        // Only allow nodes to be dragged, no topological edits to the graph (read-only)
-                        if (["remove", "add", "replace"].includes(change.type)) return false
-
-                        // Disallow dragging nodes in AND mode since it's supposed to be a read-only preview but
-                        // pass along all other event types as
-                        return !(change.type === "position" && isAgentNetworkDesignerMode)
-                    }),
+                    changes.filter((change) => filterNodeEvents(change, isAgentNetworkDesignerMode)),
                     currentNodes
                 )
             )
