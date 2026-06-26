@@ -202,6 +202,20 @@ const normalizeForComparison = (rawName: string): string => {
     return spaced.trim()
 }
 
+/** Pick the first non-colliding name by appending an incrementing index (" 2", " 3", …).
+ *
+ * Starts at 2 and skips any index already in use, so importing "My Network" alongside an existing
+ * "My Network" yields "My Network (2)" — or "My Network (3)" if "My Network (2)" is also taken.
+ */
+export const nextAvailableNetworkName = (baseName: string, existingNames: readonly string[]): string => {
+    const taken = new Set(existingNames.map((existing) => normalizeForComparison(existing)))
+    let index = 2
+    while (taken.has(normalizeForComparison(`${baseName} (${index})`))) {
+        index += 1
+    }
+    return `${baseName} (${index})`
+}
+
 //#endregion: Helpers
 
 //#region: Styled Components
@@ -368,6 +382,11 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const handleContinue = () => {
         setConflictResolution("keep-both")
+        // On a collision, "Keep both" defaults to the next free indexed name (e.g. "My Network 2")
+        // so the import is valid out of the box — the user can still edit it.
+        if (importedNameHasConflict) {
+            setNetworkName(nextAvailableNetworkName(importedName, existingNetworkNames))
+        }
         setActiveStep(2)
     }
 
@@ -387,11 +406,14 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     //#region: Conflict resolution
 
-    // Switching modes resets the editable name to the imported one: "Keep both" starts from the
-    // colliding name so the user renames it themselves, and "Replace existing" targets the original.
+    // Switching modes resets the editable name: "Keep both" pre-fills the next free indexed name
+    // (e.g. "My Network 2") so the user doesn't have to invent one, and "Replace existing" targets
+    // the original colliding name.
     const handleConflictResolutionChange = (resolution: ConflictResolution) => {
         setConflictResolution(resolution)
-        setNetworkName(importedName)
+        setNetworkName(
+            resolution === "keep-both" ? nextAvailableNetworkName(importedName, existingNetworkNames) : importedName
+        )
     }
 
     //#endregion: Conflict resolution
