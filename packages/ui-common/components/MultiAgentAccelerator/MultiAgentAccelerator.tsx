@@ -30,7 +30,7 @@ import {useJoyride} from "react-joyride"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
-import {AgentFlow} from "./AgentFlow"
+import {AgentFlow} from "./AgentFlow/AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -52,7 +52,8 @@ import {
     notifySaveError,
     streamNetworkDesignerUpsert,
 } from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
+import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
@@ -68,9 +69,8 @@ import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
-import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
-import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
+import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string

@@ -36,7 +36,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -85,7 +85,7 @@ jest.mock("next-auth/react")
 jest.mock("../../../controller/agent/Agent")
 jest.mock("../../../controller/agent/IconSuggestions")
 
-jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
+jest.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)

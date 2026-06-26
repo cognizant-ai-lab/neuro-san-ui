@@ -21,14 +21,14 @@ import dagre from "@dagrejs/dagre"
 import {Edge, MarkerType, Node as RFNode} from "@xyflow/react"
 import cloneDeep from "lodash-es/cloneDeep.js"
 
-import {AgentConversation} from "./AgentConversations"
+import {AgentConversation} from "../AgentConversations"
 import {AgentNodeProps, FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, getFrontman, LEVEL_SPACING} from "./const"
-import {isEditableAgent} from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
-import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
-import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../AgentChat/Common/Utils"
+import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
+import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../AgentChat/Common/Utils"
+import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, getFrontman, LEVEL_SPACING} from "../const"
+import {isEditableAgent} from "../TemporaryNetworks"
+import {ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
 
 export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 

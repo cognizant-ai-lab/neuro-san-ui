@@ -58,7 +58,7 @@ const Section = styled(Box)(({theme}) => ({
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing(2),
-    marginBottom: theme.spacing(4),
+    marginBottom: theme.spacing(2),
 }))
 
 const SubsectionTitle = styled(Typography)(({theme}) => ({
@@ -539,8 +539,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     }
                 />
             </Box>
-            <SubsectionTitle variant="subtitle1">Providers</SubsectionTitle>
-            <SubSectionBody>
+            <SettingsSubsection title="LLM Providers">
                 <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
                     {apiKeyConfigs.map(({checkmark, vendor, idSuffix, logo, onTest, placeholder}) => (
                         <SettingsRow
@@ -562,7 +561,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                         </SettingsRow>
                     ))}
                 </Box>
-            </SubSectionBody>
+            </SettingsSubsection>
         </Section>
     )
 
@@ -626,7 +625,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 <FormLabel>Preview: </FormLabel>
                 <FormLabel
                     sx={{
-                        marginBottom: 0,
                         border: "1px solid",
                         borderRadius: 1,
                         backgroundColor: "background.paper",
