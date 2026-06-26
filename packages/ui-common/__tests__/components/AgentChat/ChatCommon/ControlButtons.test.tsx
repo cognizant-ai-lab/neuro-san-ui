@@ -27,13 +27,16 @@ describe("ControlButtons", () => {
     const mockClearChat = jest.fn()
     const mockHandleSend = jest.fn()
     const mockHandleStop = jest.fn()
+    const mockHandleSave = jest.fn()
 
     const defaultProps = {
-        handleClearChat: mockClearChat,
         enableClearChatButton: true,
-        isAwaitingLlm: false,
+        enableSaveChatButton: true,
+        handleClearChat: mockClearChat,
+        handleSave: mockHandleSave,
         handleSend: mockHandleSend,
         handleStop: mockHandleStop,
+        isAwaitingLlm: false,
         previousUserQuery: "Previous query",
         shouldEnableRegenerateButton: true,
     }
