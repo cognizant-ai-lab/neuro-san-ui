@@ -335,7 +335,7 @@ describe("ImportNetworkModal", () => {
         // (the base name collides, so it starts at " (2)"), which is available and ready to import.
         await screen.findByText(/already exists\./u)
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput).toHaveValue("Ecommerce Support 2")
+        expect(nameInput).toHaveValue("Ecommerce Support (2)")
         expect(screen.getByText(/Name is available\./u)).toBeInTheDocument()
         const importAsNew = screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})
         expect(importAsNew).toBeEnabled()
@@ -347,7 +347,7 @@ describe("ImportNetworkModal", () => {
         renderModal({existingNetworkNames: ["ecommerce_support", "ecommerce_support_2"]})
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput).toHaveValue("Ecommerce Support 3")
+        expect(nameInput).toHaveValue("Ecommerce Support (3)")
         expect(screen.getByText(/Name is available\./u)).toBeInTheDocument()
     })
 

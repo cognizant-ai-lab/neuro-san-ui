@@ -196,9 +196,11 @@ export const filenameToNetworkName = (filename: string): string => {
     return startCase(stem.replace(FILENAME_TRAILING_UUID_PATTERN, ""))
 }
 
-// Normalize a network name for conflict comparison (underscores, hyphens and whitespace are changed to single spaces).
+// Normalize a network name for conflict comparison: underscores, hyphens, parentheses and whitespace
+// all collapse to single spaces, so the display form "My Network (2)" and its API form "My_Network_2"
+// compare equal.
 const normalizeForComparison = (rawName: string): string => {
-    const spaced = rawName.replaceAll(/[\s_-]+/gu, " ").toLowerCase()
+    const spaced = rawName.replaceAll(/[\s_()-]+/gu, " ").toLowerCase()
     return spaced.trim()
 }
 
@@ -382,7 +384,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const handleContinue = () => {
         setConflictResolution("keep-both")
-        // On a collision, "Keep both" defaults to the next free indexed name (e.g. "My Network 2")
+        // On a collision, "Keep both" defaults to the next free indexed name (e.g. "My Network (2)")
         // so the import is valid out of the box — the user can still edit it.
         if (importedNameHasConflict) {
             setNetworkName(nextAvailableNetworkName(importedName, existingNetworkNames))
@@ -396,8 +398,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         // imported name; "Keep both" sends whatever unique name the user typed.
         const nameToImport = importedNameHasConflict && conflictResolution === "replace" ? importedName : networkName
         // The API echoes back agent_network_name as-is, and the UI splits on underscores to
-        // produce display names — so send underscores instead of spaces.
-        const apiName = nameToImport.trim().replaceAll(" ", "_")
+        // produce display names — so send underscores instead of spaces. Parentheses around an
+        // auto-appended index ("My Network (2)") are dropped so the API name reads "My_Network_2".
+        const apiName = nameToImport.trim().replaceAll(" ", "_").replaceAll(/[()]/gu, "")
         onImport?.(apiName, parsedJson)
         onClose()
     }
@@ -407,7 +410,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     //#region: Conflict resolution
 
     // Switching modes resets the editable name: "Keep both" pre-fills the next free indexed name
-    // (e.g. "My Network 2") so the user doesn't have to invent one, and "Replace existing" targets
+    // (e.g. "My Network (2)") so the user doesn't have to invent one, and "Replace existing" targets
     // the original colliding name.
     const handleConflictResolutionChange = (resolution: ConflictResolution) => {
         setConflictResolution(resolution)
