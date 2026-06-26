@@ -418,7 +418,11 @@ describe("SideBar", () => {
         const downloadButton = screen.getByTestId("DownloadIcon")
         await user.click(downloadButton)
 
-        expect(downloadFile).toHaveBeenCalledWith(TEMPORARY_NETWORK.networkHocon, `${TEMPORARY_NETWORK_NAME}.hocon`)
+        expect(downloadFile).toHaveBeenCalledWith(
+            TEMPORARY_NETWORK.networkHocon,
+            `${TEMPORARY_NETWORK_NAME}.hocon`,
+            "text/plain"
+        )
     })
 
     it("Should handle expired temporary networks correctly", async () => {

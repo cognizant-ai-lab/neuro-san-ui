@@ -193,7 +193,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     e.stopPropagation()
 
                                                     const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                    downloadFile(networkHocon, fileName)
+                                                    downloadFile(networkHocon, fileName, "text/plain")
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"
