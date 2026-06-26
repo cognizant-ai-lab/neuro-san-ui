@@ -50,9 +50,8 @@ import {
 } from "@xyflow/react"
 import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
-import {AgentConversation} from "./AgentConversations"
+import {AgentConversation} from "../AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
-import {AgentNodePopup} from "./AgentNodePopup"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -62,30 +61,31 @@ import {
     DEFAULT_FRONTMAN_X_POS,
     DEFAULT_FRONTMAN_Y_POS,
     LEVEL_SPACING,
-} from "./const"
+} from "../const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {PlasmaEdge} from "./PlasmaEdge"
+import {sendChatQuery} from "../../../controller/agent/Agent"
+import {StreamingUnit} from "../../../controller/llm/LlmChat"
+import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
+import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {usePalette, useSettingsStore} from "../../../state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {getZIndex} from "../../../utils/zIndexLayers"
+import {chatMessageFromChunk} from "../../AgentChat/Common/Utils"
+import {MUIAlert} from "../../Common/MUIAlert"
+import {NotificationType, sendNotification} from "../../Common/notification"
+import {AgentNodePopup} from "../AgentNodePopup"
 import {
     convertReservationsToNetworks,
     extractNetworkHocon,
     extractReservations,
     isEditableAgent,
     mergeNetworks,
-} from "./TemporaryNetworks"
-import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
-import {ThoughtBubbleOverlay} from "./ThoughtBubbleOverlay"
-import {sendChatQuery} from "../../controller/agent/Agent"
-import {StreamingUnit} from "../../controller/llm/LlmChat"
-import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
-import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
-import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {usePalette, useSettingsStore} from "../../state/Settings"
-import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {getZIndex} from "../../utils/zIndexLayers"
-import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
-import {MUIAlert} from "../Common/MUIAlert"
-import {NotificationType, sendNotification} from "../Common/notification"
-// #region: Types
+} from "../TemporaryNetworks"
+import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
+import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
+//#region: Types
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentIconSuggestions?: AgentIconSuggestions
@@ -125,9 +125,9 @@ export interface AgentFlowProps {
 
 type Layout = "radial" | "linear"
 
-// #endregion: Types
+//#endregion: Types
 
-// #region: Constants
+//#region: Constants
 
 // Timeout for thought bubbles is set to 10 seconds
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
@@ -136,11 +136,11 @@ const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 // Exported for tests.
 export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 
-// #endregion: Constants
-
 const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
 
-// #region: Helpers
+//#endregion: Constants
+
+//#region: Helpers
 
 /**
  * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
@@ -196,7 +196,23 @@ const streamNetworkDesignerPrompt = async (
     return newNetworks
 }
 
-// #endregion: Helpers
+/**
+ * Filters node events based on the current mode. Don't allow any topological-modifying events (adding, deleting nodes)
+ * and in Agent Network Designer mode, don't allow dragging nodes (position changes) either.
+ * @param change The node change event to filter.
+ * @param isAgentNetworkDesignerMode Whether the flow is in Agent Network Designer mode (read-only preview).
+ * @return True if the event should be allowed, false if it should be filtered out.
+ */
+export const filterNodeEvents = (change: NodeChange<RFNode<AgentNodeProps>>, isAgentNetworkDesignerMode: boolean) => {
+    // Only allow nodes to be dragged, no topological edits to the graph (read-only)
+    if (["remove", "add", "replace"].includes(change.type)) return false
+
+    // Disallow dragging nodes in AND mode since it's supposed to be a read-only preview but
+    // pass along all other event types as
+    return !(change.type === "position" && isAgentNetworkDesignerMode)
+}
+
+//#endregion: Helpers
 
 export const AgentFlow: FC<AgentFlowProps> = ({
     agentCounts,
@@ -694,9 +710,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
             setNodes((currentNodes) =>
                 applyNodeChanges<RFNode<AgentNodeProps>>(
-                    // For now, we only allow dragging, no updates. In agent network designer mode, it doesn't make
-                    // sense to allow position changes since the user isn't actually manipulating a real network
-                    changes.filter((c) => c.type === "position" && !isAgentNetworkDesignerMode),
+                    changes.filter((change) => filterNodeEvents(change, isAgentNetworkDesignerMode)),
                     currentNodes
                 )
             )
@@ -818,7 +832,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     sx={{
                         marginLeft: theme.spacing(2),
                         "& .MuiToggleButton-root": {
-                            backgroundColor: theme.palette.background.paper,
                             borderColor: theme.palette.divider,
                             color: theme.palette.text.primary,
                             minHeight: 22,
@@ -862,7 +875,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
-    // Get the background color for the control buttons based on the layout and dark mode setting
+    // Get the background color for the control buttons; differs based on whether the button is active or not
     const getControlButtonBackgroundColor = (isActive: boolean) => {
         return isActive ? theme.palette.action.selected : undefined
     }
@@ -989,13 +1002,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 sx={{
                                     backdropFilter: "blur(6px)",
                                     backgroundColor: titleBackgroundColor,
-                                    border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
                                     borderRadius: 2,
-                                    boxShadow:
-                                        theme.palette.mode === "dark"
-                                            ? `0 6px 20px ${alpha(theme.palette.common.black, 0.35)}`
-                                            : `0 6px 16px ${alpha(theme.palette.common.black, 0.12)}`,
-                                    color: theme.palette.getContrastText(alpha(titleBackgroundColor, 0.65)),
+                                    boxShadow: theme.shadows[6],
+                                    color: theme.palette.text.primary,
                                     fontWeight: 600,
                                     letterSpacing: "0.01em",
                                     lineHeight: 1.35,
@@ -1046,16 +1056,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     border: "1px solid divider",
                 },
 
-                "& .react-flow__panel": {
+                "& .react-flow__panel, & .react-flow__controls-button": {
                     backgroundColor: theme.palette.background.paper,
-                    border: "1px solid divider",
                     color: theme.palette.text.primary,
                 },
 
+                "& .react-flow__panel": {
+                    border: "1px solid divider",
+                },
+
                 "& .react-flow__controls-button": {
-                    backgroundColor: theme.palette.background.paper,
                     borderBottom: "1px solid divider",
-                    color: theme.palette.text.primary,
                     fill: theme.palette.text.primary,
                 },
             }}
@@ -1066,15 +1077,16 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             >
                 {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
                 <ReactFlow
-                    id={`${id}-react-flow`}
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onNodeClick={handleNodeClick}
-                    fitView={true}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
                     connectionMode={ConnectionMode.Loose}
+                    edgeTypes={edgeTypes}
+                    edges={edges}
+                    fitView={true}
+                    id={`${id}-react-flow`}
+                    nodeTypes={nodeTypes}
+                    nodes={nodes}
+                    nodesDraggable={!isAgentNetworkDesignerMode}
+                    onNodeClick={handleNodeClick}
+                    onNodesChange={onNodesChange}
                 >
                     {!isAwaitingLlm && (
                         <>

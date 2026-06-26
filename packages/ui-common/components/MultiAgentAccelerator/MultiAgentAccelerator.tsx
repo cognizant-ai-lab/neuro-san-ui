@@ -27,7 +27,7 @@ import {useJoyride} from "react-joyride"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
-import {AgentFlow} from "./AgentFlow"
+import {AgentFlow} from "./AgentFlow/AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -41,7 +41,7 @@ import {
 } from "./const"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
 import {
     getAgentFunction,
     getAgentNetworks,

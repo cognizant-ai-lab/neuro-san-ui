@@ -30,11 +30,11 @@ import {Handle, NodeProps, Position} from "@xyflow/react"
 import type {Node as RFNode} from "@xyflow/react"
 import {FC, useState} from "react"
 
-import {AgentConversation} from "./AgentConversations"
-import {DisplayAs} from "./const"
-import {usePalette, useSettingsStore} from "../../state/Settings"
-import {isLightColor} from "../../Theme/Theme"
-import {getZIndex} from "../../utils/zIndexLayers"
+import {usePalette, useSettingsStore} from "../../../state/Settings"
+import {isLightColor} from "../../../Theme/Theme"
+import {getZIndex} from "../../../utils/zIndexLayers"
+import {AgentConversation} from "../AgentConversations"
+import {DisplayAs} from "../const"
 
 export interface AgentNodeProps extends Record<string, unknown> {
     readonly agentCounts?: Map<string, number>

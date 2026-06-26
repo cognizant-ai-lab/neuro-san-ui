@@ -3,7 +3,7 @@ import type {Node as RFNode} from "@xyflow/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 // #region: Types
 

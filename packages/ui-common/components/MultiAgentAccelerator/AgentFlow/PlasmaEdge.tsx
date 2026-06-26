@@ -17,7 +17,7 @@ limitations under the License.
 import {EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC, useEffect, useRef} from "react"
 
-import {useSettingsStore} from "../../state/Settings"
+import {useSettingsStore} from "../../../state/Settings"
 
 const createFunnelParticleOnPath = (
     pathEl: SVGPathElement,
