@@ -27,6 +27,8 @@ import StepLabel from "@mui/material/StepLabel"
 import Stepper from "@mui/material/Stepper"
 import {alpha, styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
+import ToggleButton from "@mui/material/ToggleButton"
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import startCase from "lodash-es/startCase"
@@ -72,6 +74,9 @@ export interface NetworkSummary {
 }
 
 type ParseState = "loading" | "success" | "error"
+
+// How to resolve an import whose name collides with an existing network.
+type ConflictResolution = "keep-both" | "replace"
 
 //#endregion: Types
 
@@ -200,17 +205,6 @@ const normalizeForComparison = (rawName: string): string => {
     return spaced.trim()
 }
 
-// Find the next non-conflicting name by appending " 2", " 3", etc.
-export const findNonConflictingName = (base: string, existingNames: readonly string[]): string => {
-    const existing = existingNames.map((n) => normalizeForComparison(n))
-    if (!existing.includes(normalizeForComparison(base))) return base
-    let counter = 2
-    while (existing.includes(normalizeForComparison(`${base} ${counter}`))) {
-        counter += 1
-    }
-    return `${base} ${counter}`
-}
-
 //#endregion: Helpers
 
 //#region: Styled Components
@@ -245,8 +239,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     onImport,
 }) => {
     const [activeStep, setActiveStep] = useState<number>(0)
-    // Track which (normalised) name the user consciously chose to replace
-    const [conflictAcknowledgedFor, setConflictAcknowledgedFor] = useState<string | null>(null)
+    // When the imported name conflicts, how the user wants to resolve it.
+    const [conflictResolution, setConflictResolution] = useState<ConflictResolution>("keep-both")
     const [file, setFile] = useState<File | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [isDragOver, setIsDragOver] = useState<boolean>(false)
@@ -259,7 +253,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setActiveStep(0)
-            setConflictAcknowledgedFor(null)
+            setConflictResolution("keep-both")
             setIsDragOver(false)
             setFile(null)
             setNetworkName("")
@@ -301,7 +295,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             setParsedJson(result.json)
             setParseState("success")
             setNetworkName(filenameToNetworkName(file.name))
-            setConflictAcknowledgedFor(null)
+            setConflictResolution("keep-both")
         })
         reader.addEventListener("error", () => {
             setParseState("error")
@@ -317,9 +311,16 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     //#region: Conflict detection
 
-    const normalizedName = normalizeForComparison(networkName)
-    const nameHasConflict = existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizedName)
-    const showConflict = nameHasConflict && conflictAcknowledgedFor !== normalizedName
+    const nameConflictsWith = (candidate: string): boolean =>
+        existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizeForComparison(candidate))
+
+    // The name pulled from the filename — fixed for the selected file. Whether it collides with an
+    // existing network is what drives the conflict-resolution UI (it stays visible while the user
+    // types a replacement, so we can't key it off the editable name).
+    const importedName = file ? filenameToNetworkName(file.name) : ""
+    const importedNameHasConflict = nameConflictsWith(importedName)
+    const trimmedName = networkName.trim()
+    const newNameHasConflict = nameConflictsWith(trimmedName)
 
     //#endregion: Conflict detection
 
@@ -328,7 +329,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const processFile = (selectedFile: File) => {
         setActiveStep(1)
         setParsedJson(null)
-        setConflictAcknowledgedFor(null)
+        setConflictResolution("keep-both")
         // Setting the file kicks off the read effect below, which owns reading/parsing and
         // cleans up its own FileReader.
         setFile(selectedFile)
@@ -369,15 +370,18 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const handleBack = () => setActiveStep((prev) => prev - 1)
 
     const handleContinue = () => {
-        setConflictAcknowledgedFor(null)
+        setConflictResolution("keep-both")
         setActiveStep(2)
     }
 
     const handleImport = () => {
         if (!parsedJson) return
+        // "Replace existing" overwrites the colliding network, so always send the original
+        // imported name; "Keep both" sends whatever unique name the user typed.
+        const nameToImport = importedNameHasConflict && conflictResolution === "replace" ? importedName : networkName
         // The API echoes back agent_network_name as-is, and the UI splits on underscores to
         // produce display names — so send underscores instead of spaces.
-        const apiName = networkName.trim().replaceAll(" ", "_")
+        const apiName = nameToImport.trim().replaceAll(" ", "_")
         onImport?.(apiName, parsedJson)
         onClose()
     }
@@ -386,14 +390,12 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     //#region: Conflict resolution
 
-    const handleReplace = () => {
-        setConflictAcknowledgedFor(normalizedName)
-    }
-
-    const handleRename = () => {
-        const renamed = findNonConflictingName(networkName.trim(), existingNetworkNames)
-        setNetworkName(renamed)
-        setConflictAcknowledgedFor(null)
+    // Switching modes resets the editable name to the imported one: "Keep both" starts from the
+    // colliding name so the user renames it themselves, and "Replace existing" targets the original.
+    const handleConflictResolutionChange = (resolution: ConflictResolution) => {
+        if (resolution === conflictResolution) return
+        setConflictResolution(resolution)
+        setNetworkName(importedName)
     }
 
     //#endregion: Conflict resolution
@@ -404,6 +406,17 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     // Summary shown on the review step. parsedJson is already-validated JSON, so this never throws.
     const networkSummary =
         parseState === "success" && parsedJson ? summarizeNetworkDefinition(jsonToNetworkDefinition(parsedJson)) : null
+
+    // The confirm-step primary action adapts to how the conflict is being resolved.
+    const isReplacing = importedNameHasConflict && conflictResolution === "replace"
+    const importButtonLabel = isReplacing
+        ? "Replace network"
+        : importedNameHasConflict
+          ? "Import as new"
+          : "Import network"
+    // Replacing overwrites the existing network, so the typed name is irrelevant; otherwise a name
+    // is required and must not collide with an existing network.
+    const importDisabled = !isReplacing && (!trimmedName || newNameHasConflict)
 
     const renderFooter = () => {
         switch (activeStep) {
@@ -450,13 +463,13 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             Back
                         </Button>
                         <Button
-                            disabled={!networkName.trim()}
+                            color={isReplacing ? "error" : "primary"}
+                            disabled={importDisabled}
                             id="import-network-modal-import-btn"
                             onClick={handleImport}
-                            sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
                             variant="contained"
                         >
-                            Import network
+                            {importButtonLabel}
                         </Button>
                     </>
                 )
@@ -784,78 +797,181 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                     id="import-network-modal-confirm"
                     sx={{display: "flex", flexDirection: "column", gap: 2, marginTop: 3}}
                 >
-                    {/* Network name field */}
-                    <Box>
-                        <Typography
-                            id="import-network-modal-name-label"
-                            variant="caption"
-                            sx={{
-                                color: "text.secondary",
-                                fontWeight: "bold",
-                                letterSpacing: "0.08em",
-                                textTransform: "uppercase",
-                            }}
-                        >
-                            Network name
-                        </Typography>
-                        <TextField
-                            id="import-network-modal-name-input"
-                            fullWidth
-                            helperText="Pulled from the filename — edit if you like."
-                            onChange={(event) => {
-                                setNetworkName(event.target.value)
-                                setConflictAcknowledgedFor(null)
-                            }}
-                            size="small"
-                            sx={{marginTop: 0.5}}
-                            value={networkName}
-                        />
-                    </Box>
-                    {/* Conflict warning */}
-                    {showConflict && (
-                        <Box
-                            id="import-network-modal-conflict-warning"
-                            sx={{
-                                alignItems: "flex-start",
-                                borderRadius: 1,
-                                borderStyle: "solid",
-                                borderWidth: "1px",
-                                borderColor: "warning.main",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 1,
-                                padding: "10px 14px",
-                            }}
-                        >
-                            <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
-                                <WarningAmberIcon
-                                    fontSize="small"
-                                    sx={{color: "warning.main", flexShrink: 0}}
-                                />
-                                <Typography variant="body2">
-                                    {`A network named "${networkName.trim()}" already exists in `}
-                                    <strong>{TEMPORARY_FOLDER_DISPLAY}</strong>.
+                    {importedNameHasConflict ? (
+                        <>
+                            {/* Name conflict prompt */}
+                            <Box id="import-network-modal-conflict-prompt">
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: "text.secondary",
+                                        fontWeight: "bold",
+                                        letterSpacing: "0.08em",
+                                        textTransform: "uppercase",
+                                    }}
+                                >
+                                    Name conflict
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{marginTop: 0.5}}
+                                >
+                                    A network named <strong>&quot;{importedName}&quot;</strong> already exists in{" "}
+                                    <strong>{TEMPORARY_FOLDER_DISPLAY}</strong>. How would you like to handle it?
                                 </Typography>
                             </Box>
-                            <Box sx={{display: "flex", gap: 1, marginTop: 0.5}}>
-                                <Button
-                                    id="import-network-modal-replace-btn"
-                                    onClick={handleReplace}
-                                    size="small"
-                                    variant="outlined"
+                            {/* Resolution toggle */}
+                            <ToggleButtonGroup
+                                id="import-network-modal-conflict-toggle"
+                                exclusive={true}
+                                fullWidth
+                                onChange={(_, value: ConflictResolution | null) => {
+                                    if (value !== null) handleConflictResolutionChange(value)
+                                }}
+                                value={conflictResolution}
+                                sx={{
+                                    "& .MuiToggleButton-root": {
+                                        textTransform: "none",
+                                    },
+                                    "& #import-network-modal-keep-both-btn.Mui-selected": {
+                                        backgroundColor: "primary.main",
+                                        color: "primary.contrastText",
+                                        "&:hover": {backgroundColor: "primary.dark"},
+                                    },
+                                    "& #import-network-modal-replace-existing-btn.Mui-selected": {
+                                        backgroundColor: "error.main",
+                                        color: "error.contrastText",
+                                        "&:hover": {backgroundColor: "error.dark"},
+                                    },
+                                }}
+                            >
+                                <ToggleButton
+                                    id="import-network-modal-keep-both-btn"
+                                    value="keep-both"
                                 >
-                                    Replace
-                                </Button>
-                                <Button
-                                    id="import-network-modal-rename-btn"
-                                    onClick={handleRename}
-                                    size="small"
-                                    sx={{"&:hover": {backgroundColor: "var(--bs-primary)"}}}
-                                    variant="contained"
+                                    Keep both
+                                </ToggleButton>
+                                <ToggleButton
+                                    id="import-network-modal-replace-existing-btn"
+                                    value="replace"
                                 >
-                                    Rename
-                                </Button>
-                            </Box>
+                                    Replace existing
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                            {conflictResolution === "keep-both" ? (
+                                <Box>
+                                    <Typography
+                                        id="import-network-modal-name-label"
+                                        variant="caption"
+                                        sx={{
+                                            color: "text.secondary",
+                                            fontWeight: "bold",
+                                            letterSpacing: "0.08em",
+                                            textTransform: "uppercase",
+                                        }}
+                                    >
+                                        New network name
+                                    </Typography>
+                                    <TextField
+                                        id="import-network-modal-name-input"
+                                        fullWidth
+                                        onChange={(event) => setNetworkName(event.target.value)}
+                                        size="small"
+                                        sx={{marginTop: 0.5}}
+                                        value={networkName}
+                                    />
+                                    {newNameHasConflict ? (
+                                        <Box
+                                            id="import-network-modal-name-taken"
+                                            sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
+                                        >
+                                            <WarningAmberIcon
+                                                fontSize="small"
+                                                sx={{color: "warning.main", flexShrink: 0}}
+                                            />
+                                            <Typography
+                                                variant="body2"
+                                                sx={{color: "warning.main"}}
+                                            >
+                                                That name is taken. Change it to keep both networks.
+                                            </Typography>
+                                        </Box>
+                                    ) : (
+                                        trimmedName !== "" && (
+                                            <Box
+                                                id="import-network-modal-name-available"
+                                                sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
+                                            >
+                                                <CheckCircleOutlineIcon
+                                                    fontSize="small"
+                                                    sx={{color: "success.main", flexShrink: 0}}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{color: "success.main"}}
+                                                >
+                                                    Name is available — saved alongside the original.
+                                                </Typography>
+                                            </Box>
+                                        )
+                                    )}
+                                </Box>
+                            ) : (
+                                <Box
+                                    id="import-network-modal-replace-warning"
+                                    sx={{
+                                        alignItems: "center",
+                                        backgroundColor: (theme) => alpha(theme.palette.error.main, 0.12),
+                                        borderRadius: 1,
+                                        borderStyle: "solid",
+                                        borderWidth: "1px",
+                                        borderColor: "error.main",
+                                        display: "flex",
+                                        gap: 1,
+                                        padding: "10px 14px",
+                                    }}
+                                >
+                                    <WarningAmberIcon
+                                        fontSize="small"
+                                        sx={{color: "error.main", flexShrink: 0}}
+                                    />
+                                    <Typography variant="body2">
+                                        The existing <strong>&quot;{importedName}&quot;</strong> in{" "}
+                                        {TEMPORARY_FOLDER_DISPLAY} will be <strong>permanently overwritten</strong>.
+                                        This can&apos;t be undone.
+                                    </Typography>
+                                </Box>
+                            )}
+                        </>
+                    ) : (
+                        /* Network name field (no conflict) */
+                        <Box>
+                            <Typography
+                                id="import-network-modal-name-label"
+                                variant="caption"
+                                sx={{
+                                    color: "text.secondary",
+                                    fontWeight: "bold",
+                                    letterSpacing: "0.08em",
+                                    textTransform: "uppercase",
+                                }}
+                            >
+                                Network name
+                            </Typography>
+                            <TextField
+                                id="import-network-modal-name-input"
+                                error={newNameHasConflict}
+                                fullWidth
+                                helperText={
+                                    newNameHasConflict
+                                        ? "That name is taken. Pick another to continue."
+                                        : "Pulled from the filename — edit if you like."
+                                }
+                                onChange={(event) => setNetworkName(event.target.value)}
+                                size="small"
+                                sx={{marginTop: 0.5}}
+                                value={networkName}
+                            />
                         </Box>
                     )}
                     {/* Added to Temporary info */}

@@ -34,10 +34,7 @@ describe("TreeBuilder", () => {
         })
 
         it("nests categorized networks and merges those sharing a category", () => {
-            const tree = buildTreeViewItems(true, [
-                makeAgent("retail/grocery/macys"),
-                makeAgent("retail/target"),
-            ])
+            const tree = buildTreeViewItems(true, [makeAgent("retail/grocery/macys"), makeAgent("retail/target")])
 
             expect(tree).toHaveLength(1)
             const retail = tree[0]
@@ -93,9 +90,11 @@ describe("TreeBuilder", () => {
 
         it("maps temporary-network metadata onto the leaf", () => {
             const definition = [{origin: "front_man", display_as: "llm_agent"}]
-            const tree = buildTreeViewItems(false, [], [
-                makeTempNetwork("travel_agency_ops", {agentNetworkDefinition: definition}),
-            ])
+            const tree = buildTreeViewItems(
+                false,
+                [],
+                [makeTempNetwork("travel_agency_ops", {agentNetworkDefinition: definition})]
+            )
 
             expect(tree[0].children?.[0]).toMatchObject({
                 iconSuggestion: "HourglassTop",
@@ -107,9 +106,7 @@ describe("TreeBuilder", () => {
     })
 
     describe("findTreeItemById", () => {
-        const tree: readonly AgentNetworkTreeItemModel[] = buildTreeViewItems(true, [
-            makeAgent("retail/grocery/macys"),
-        ])
+        const tree: readonly AgentNetworkTreeItemModel[] = buildTreeViewItems(true, [makeAgent("retail/grocery/macys")])
 
         it("finds a deeply nested node", () => {
             expect(findTreeItemById(tree, "retail/grocery/macys")?.id).toBe("retail/grocery/macys")

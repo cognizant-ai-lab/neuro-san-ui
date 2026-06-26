@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react"
+import {fireEvent, render, screen, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     filenameToNetworkName,
-    findNonConflictingName,
     formatFileSize,
     IMPORT_MODAL_ACCEPTED_EXTENSIONS,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
@@ -50,8 +49,10 @@ const CLOSE_BUTTON = "close"
 const CONTINUE_BUTTON = "Continue →"
 const BACK_BUTTON = "Back"
 const IMPORT_BUTTON = "Import network"
-const REPLACE_BUTTON = "Replace"
-const RENAME_BUTTON = "Rename"
+const IMPORT_AS_NEW_BUTTON = "Import as new"
+const REPLACE_NETWORK_BUTTON = "Replace network"
+const KEEP_BOTH_TOGGLE = "Keep both"
+const REPLACE_EXISTING_TOGGLE = "Replace existing"
 
 // Helper: create a mock File and simulate FileReader loading it
 const dropFile = (dropZone: HTMLElement, filename: string, content: string, type = "application/octet-stream") => {
@@ -326,29 +327,79 @@ describe("ImportNetworkModal", () => {
         expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
-    it.each([
-        {
-            name: "Replace",
-            button: REPLACE_BUTTON,
-            verify: async () => {
-                await waitFor(() => expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument())
-            },
-        },
-        {
-            name: "Rename",
-            button: RENAME_BUTTON,
-            verify: async () => {
-                const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-                expect(nameInput).toHaveValue("Ecommerce Support 2")
-                expect(screen.queryByTestId("WarningAmberIcon")).not.toBeInTheDocument()
-            },
-        },
-    ])("should dismiss the name-conflict warning when $name is clicked", async ({button, verify}) => {
+    it("should surface the conflict prompt with Keep both selected by default when the name collides", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"]})
         await advanceToConfirmStep("ecommerce_support.json")
-        await screen.findByTestId("WarningAmberIcon")
-        await user.click(screen.getByRole("button", {name: button}))
-        await verify()
+        // The conflict prompt references the colliding name.
+        await screen.findByText(/already exists in/u)
+        // Keep both is the default mode, and the name field is pre-filled with the colliding name.
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput).toHaveValue("Ecommerce Support")
+        // The colliding name is still taken, so the action is disabled until the user renames it.
+        expect(screen.getByText(/That name is taken\. Change it to keep both networks\./u)).toBeInTheDocument()
+        expect(screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})).toBeDisabled()
+    })
+
+    it("should not auto-append an index to the conflicting name (user renames it themselves)", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"]})
+        await advanceToConfirmStep("ecommerce_support.json")
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        // No " 2" / "copy" suffix is added — the field stays exactly as the colliding name.
+        expect(nameInput).toHaveValue("Ecommerce Support")
+    })
+
+    it("should enable Import as new and import the unique name once the user renames it", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"], onImport: onImportMock})
+        await advanceToConfirmStep("ecommerce_support.json")
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        await user.clear(nameInput)
+        await user.type(nameInput, "Ecommerce Support Revamp")
+        expect(screen.getByText(/Name is available — saved alongside the original\./u)).toBeInTheDocument()
+        const importAsNew = screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})
+        expect(importAsNew).toBeEnabled()
+        await user.click(importAsNew)
+        expect(onImportMock).toHaveBeenCalledWith("Ecommerce_Support_Revamp", expect.stringContaining('"agents"'))
+    })
+
+    it("should overwrite with the original name when Replace existing is chosen", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"], onImport: onImportMock})
+        await advanceToConfirmStep("ecommerce_support.json")
+        await user.click(screen.getByRole("button", {name: REPLACE_EXISTING_TOGGLE}))
+        // Destructive warning is shown and the action is enabled.
+        expect(screen.getByText(/permanently overwritten/u)).toBeInTheDocument()
+        const replaceNetwork = screen.getByRole("button", {name: REPLACE_NETWORK_BUTTON})
+        expect(replaceNetwork).toBeEnabled()
+        await user.click(replaceNetwork)
+        // Replace targets the original colliding name regardless of any earlier edits.
+        expect(onImportMock).toHaveBeenCalledWith("Ecommerce_Support", expect.stringContaining('"agents"'))
+    })
+
+    it("should reset a typed name back to the original when switching to Replace existing", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"], onImport: onImportMock})
+        await advanceToConfirmStep("ecommerce_support.json")
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        await user.clear(nameInput)
+        await user.type(nameInput, "Something Else")
+        await user.click(screen.getByRole("button", {name: REPLACE_EXISTING_TOGGLE}))
+        await user.click(screen.getByRole("button", {name: REPLACE_NETWORK_BUTTON}))
+        expect(onImportMock).toHaveBeenCalledWith("Ecommerce_Support", expect.stringContaining('"agents"'))
+    })
+
+    it("should return to the rename field when toggling back to Keep both", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"]})
+        await advanceToConfirmStep("ecommerce_support.json")
+        await user.click(screen.getByRole("button", {name: REPLACE_EXISTING_TOGGLE}))
+        expect(screen.getByText(/permanently overwritten/u)).toBeInTheDocument()
+        await user.click(screen.getByRole("button", {name: KEEP_BOTH_TOGGLE}))
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput).toHaveValue("Ecommerce Support")
+    })
+
+    it("should not show the conflict prompt when the imported name is unique", async () => {
+        renderModal({existingNetworkNames: ["some_other_network"]})
+        await advanceToConfirmStep("ecommerce_support.json")
+        await screen.findByRole("button", {name: IMPORT_BUTTON})
+        expect(screen.queryByText(/How would you like to handle it\?/u)).not.toBeInTheDocument()
     })
 
     it.each([
@@ -599,31 +650,6 @@ describe("filenameToNetworkName", () => {
         },
     ])("$name", ({filename, expected}) => {
         expect(filenameToNetworkName(filename)).toBe(expected)
-    })
-})
-
-describe("findNonConflictingName", () => {
-    it.each([
-        {
-            name: "returns the base name when there is no conflict",
-            base: "my network",
-            existing: ["other network"],
-            expected: "my network",
-        },
-        {
-            name: "appends 2 on the first conflict",
-            base: "my network",
-            existing: ["my_network"],
-            expected: "my network 2",
-        },
-        {
-            name: "increments the counter when 2 also conflicts",
-            base: "my network",
-            existing: ["my_network", "my network 2"],
-            expected: "my network 3",
-        },
-    ])("$name", ({base, existing, expected}) => {
-        expect(findNonConflictingName(base, existing)).toBe(expected)
     })
 })
 

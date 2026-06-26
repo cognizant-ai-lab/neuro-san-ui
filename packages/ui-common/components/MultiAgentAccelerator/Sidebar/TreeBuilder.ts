@@ -80,11 +80,7 @@ const toDisplayName = (itemName: string, useNativeNames: boolean): string =>
  * agentNetworkName), it is used as the basis for the cleaned name instead of the path part.
  * @returns The display name to show in the tree view
  */
-const toLeafDisplayName = (
-    label: string,
-    useNativeNames: boolean,
-    displayNameOverride?: string
-): string => {
+const toLeafDisplayName = (label: string, useNativeNames: boolean, displayNameOverride?: string): string => {
     // Native mode shows the raw agent name part, unmodified.
     if (useNativeNames) {
         return label
@@ -232,13 +228,7 @@ const withNetworkAdded = (
     // Return the updated state with the network added to the categorized items
     return {
         ...state,
-        categorizedItems: withCategorizedNetworkAdded(
-            state.categorizedItems,
-            network,
-            useNativeNames,
-            metadata,
-            parts
-        ),
+        categorizedItems: withCategorizedNetworkAdded(state.categorizedItems, network, useNativeNames, metadata, parts),
     }
 }
 
