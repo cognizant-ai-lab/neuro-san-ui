@@ -815,7 +815,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         const url = URL.createObjectURL(blob)
         const link = document.createElement("a")
         link.href = url
-        link.download = toSafeFilename(`${selectedNetwork || "chat"}-history.txt`)
+        link.download = `${toSafeFilename(`${selectedNetwork || "chat"}-history`)}.txt`
         document.body.append(link)
         link.click()
         link.remove()
