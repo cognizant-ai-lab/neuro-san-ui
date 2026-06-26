@@ -46,7 +46,6 @@ export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): st
         return ""
     }
 
-    // conflicts with ESLint newline-per-chained-call rule
     return modelId
         .slice(`${modelType}-`.length) // remove the model type
         .split("-") // split by hyphens

@@ -63,7 +63,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../../state/Settings"
-import {toSafeFilename} from "../../../utils/File"
+import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
@@ -299,6 +299,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
     )
+
+    // For saving chat history
+    const exportableTurns = turns.filter((turn) =>
+        [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error].includes(turn.role)
+    )
+    const enableSaveChatButton = turns.length > 0 || agentChatHistory?.chatHistory?.length > 0
 
     // Display option for agent/network names
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
@@ -771,15 +777,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
      * Save the current chat history and session to a file
      */
     const handleSave = () => {
-        const chatHistory = agentChatHistory?.chatHistory ?? []
+        const chatHistory = agentChatHistory?.chatHistory
         const chatHistoryTurns = toTurns(chatHistory)
 
         const formatTurns = (items: ConversationTurn[]) =>
             items.map((turn) => `${turn.role}: ${turn.text}`).join("\n\n")
-
-        const exportableTurns = turns.filter((turn) =>
-            [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error].includes(turn.role)
-        )
 
         // Get the current date and time in a human-readable format, including the local time zone
         const exportedAt = new Date()
@@ -796,7 +798,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
         const allHistoryText = [
             "Chat export",
-            `Network: ${selectedNetwork || "chat"}`,
+            `Network: ${selectedNetwork}`,
             `Exported: ${exportedAtText} (${timeZone})`,
             "",
             "====================",
@@ -810,15 +812,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             formatTurns(exportableTurns) || "No current session turns.",
         ].join("\n")
 
-        // Prepare download link and trigger download
-        const blob = new Blob([allHistoryText], {type: "text/plain"})
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `${toSafeFilename(`${selectedNetwork || "chat"}-history`)}.txt`
-        document.body.append(link)
-        link.click()
-        link.remove()
+        // Download the file
+        const filename = `${toSafeFilename(`${selectedNetwork}-history`)}.txt`
+        downloadFile(allHistoryText, filename, "text/plain")
     }
 
     // Regex to check if user has typed anything besides whitespace
@@ -835,8 +831,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const [clearChatConfirmationDialogOpen, setClearChatConfirmationDialogOpen] = useState<boolean>(false)
 
-    const getPlaceholder = () =>
-        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}` : null
+    const getPlaceholder = () => agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}`
 
     const handleClearChat = useCallback(() => {
         setClearChatConfirmationDialogOpen(true)
@@ -1041,7 +1036,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         >
             <ControlButtons
                 enableClearChatButton={enableClearChatButton}
-                enableSaveChatButton={turns.length > 0 || agentChatHistory?.chatHistory?.length > 0}
+                enableSaveChatButton={enableSaveChatButton}
                 handleClearChat={handleClearChat}
                 handleSave={handleSave}
                 handleSend={handleSend}

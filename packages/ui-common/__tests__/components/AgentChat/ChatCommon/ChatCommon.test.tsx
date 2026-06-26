@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {AIMessage} from "@langchain/core/messages"
 import {createTheme} from "@mui/material/styles"
-import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
 
@@ -35,6 +36,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {ChatContext, ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../../state/ChatHistory"
 import {useSettingsStore} from "../../../../state/Settings"
+import {downloadFile, toSafeFilename} from "../../../../utils/File"
 import {getZIndex} from "../../../../utils/zIndexLayers"
 
 // Mock agent API
@@ -45,6 +47,14 @@ jest.mock("../../../../controller/llm/LlmChat")
 
 // Don't want to send user notifications during tests so mock this
 jest.mock("../../../../components/Common/notification")
+
+jest.mock("../../../../utils/File", () => {
+    const actual = jest.requireActual("../../../../utils/File")
+    return {
+        ...actual,
+        downloadFile: jest.fn(),
+    }
+})
 
 const TEST_USER = "testUser"
 const CHAT_WITH_MATH_GUY = `Chat with ${TEST_AGENT_MATH_GUY}`
@@ -255,6 +265,26 @@ describe("ChatCommon", () => {
             await screen.findByPlaceholderText(customPlaceholder)
         })
     })
+
+    const sendChatQueryWithResponse = async () => {
+        const responseText = "Sample response text for save chat test"
+        const chatResponse: ChatResponse = {
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
+                text: responseText,
+                origin: [{tool: "testTool", instantiation_index: 1}],
+            },
+        }
+
+        const chunk = JSON.stringify(chatResponse)
+        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            callback(chunk)
+        })
+
+        const query = "Sample test query for chunk handling"
+        await sendQuery(TEST_AGENT_MATH_GUY, query)
+        return {responseText, query}
+    }
 
     describe("Interactivity", () => {
         it("Should behave correctly when awaiting the LLM response", async () => {
@@ -525,6 +555,71 @@ describe("ChatCommon", () => {
             expect(regenerateButton).toBeInTheDocument()
         })
 
+        it("Should handle Save Chat functionality", async () => {
+            const downloadFileMock = jest.mocked(downloadFile)
+
+            renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
+            const {responseText, query} = await sendChatQueryWithResponse()
+
+            // locate Save button
+            const saveButton = screen.getByRole("button", {name: "Save Chat"})
+            await user.click(saveButton)
+
+            expect(downloadFileMock).toHaveBeenCalledTimes(1)
+            expect(downloadFileMock).toHaveBeenCalledWith(
+                expect.stringMatching(new RegExp(`${query}.*${responseText}`, "su")),
+                `${toSafeFilename(`${TEST_AGENT_MATH_GUY}-history`)}.txt`,
+                "text/plain"
+            )
+        })
+
+        it("Should handle Save Chat functionality with current session but no history", async () => {
+            const downloadFileMock = jest.mocked(downloadFile)
+
+            renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
+
+            const {responseText, query} = await sendChatQueryWithResponse()
+
+            act(() => {
+                useAgentChatHistoryStore.setState({history: {}})
+            })
+
+            // locate Save button
+            const saveButton = screen.getByRole("button", {name: "Save Chat"})
+            await user.click(saveButton)
+
+            expect(downloadFileMock).toHaveBeenCalledTimes(1)
+            expect(downloadFileMock).toHaveBeenCalledWith(
+                expect.stringMatching(new RegExp(`${query}.*${responseText}`, "su")),
+                `${toSafeFilename(`${TEST_AGENT_MATH_GUY}-history`)}.txt`,
+                "text/plain"
+            )
+        })
+
+        it("Should handle Save Chat functionality history but no current session", async () => {
+            const downloadFileMock = jest.mocked(downloadFile)
+
+            renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
+
+            const testMessage = "Test message in history"
+            const messages = [new AIMessage(testMessage)]
+
+            act(() => {
+                useAgentChatHistoryStore.getState().updateChatHistory(TEST_AGENT_MATH_GUY, messages)
+            })
+
+            // locate Save button
+            const saveButton = screen.getByRole("button", {name: "Save Chat"})
+            await user.click(saveButton)
+
+            expect(downloadFileMock).toHaveBeenCalledTimes(1)
+            expect(downloadFileMock).toHaveBeenCalledWith(
+                expect.stringMatching(new RegExp(testMessage, "su")),
+                `${toSafeFilename(`${TEST_AGENT_MATH_GUY}-history`)}.txt`,
+                "text/plain"
+            )
+        })
+
         it("clears input when clear button is clicked", async () => {
             renderChatCommonComponent()
             const input = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
@@ -572,6 +667,18 @@ describe("ChatCommon", () => {
 
             // Should now be unchecked
             expect(menuItem.querySelector("svg")).toHaveAttribute("data-testid", "CheckBoxOutlineBlankIcon")
+        })
+
+        it("should handle opening and closing options menu", async () => {
+            renderChatCommonComponent()
+
+            const optionsButton = screen.getByTestId("TuneIcon")
+            await user.click(optionsButton)
+            screen.getByText("Wrap output")
+
+            // Simulate pressing Escape to close the menu
+            await user.keyboard("{Escape}")
+            await waitForElementToBeRemoved(() => screen.queryByText("Wrap output"))
         })
     })
 
