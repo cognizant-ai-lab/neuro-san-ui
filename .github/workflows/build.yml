@@ -106,4 +106,5 @@ jobs:
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
+                      NEXT_PUBLIC_ENABLE_AUTHENTICATION=false
                   quiet: "true"
