@@ -72,11 +72,9 @@ const toDisplayName = (itemName: string, useNativeNames: boolean): string =>
     useNativeNames ? itemName : cleanUpAgentName(removeTrailingUuid(itemName))
 
 /**
- * Computes the display name for a network (leaf) node, disambiguating duplicates by appending a number.
+ * Computes the display name for a network (leaf) node.
  * @param label - The label to use for the tree item (usually derived from the agent name)
  * @param useNativeNames - Whether to use native names or cleaned-up names for display
- * @param displayNameCounts - Tracks how many times each cleaned display name has been used so duplicates can be
- * disambiguated (e.g. "macys", "macys 2", "macys 3"). Mutated as names are assigned.
  * @param displayNameOverride - For temporary networks, `label` is the raw reservation_id, which is canonicalized and
  * may have lost the word separators (_/-) that cleanUpAgentName relies on. When provided (the temp network's
  * agentNetworkName), it is used as the basis for the cleaned name instead of the path part.
@@ -85,7 +83,6 @@ const toDisplayName = (itemName: string, useNativeNames: boolean): string =>
 const toLeafDisplayName = (
     label: string,
     useNativeNames: boolean,
-    displayNameCounts: Map<string, number>,
     displayNameOverride?: string
 ): string => {
     // Native mode shows the raw agent name part, unmodified.
@@ -94,11 +91,7 @@ const toLeafDisplayName = (
     }
 
     const cleanedName = cleanUpAgentName(displayNameOverride ?? removeTrailingUuid(label))
-
-    // Handle duplicate display names by appending a number (e.g. "macys", "macys 2", "macys 3")
-    const count = displayNameCounts.get(cleanedName) ?? 0
-    displayNameCounts.set(cleanedName, count + 1)
-    return count > 0 ? `${cleanedName} ${count + 1}` : cleanedName
+    return cleanedName
 }
 
 /**
@@ -106,7 +99,6 @@ const toLeafDisplayName = (
  * @param network - The AgentInfo object containing details about the network
  * @param label - The label to use for the tree item (usually derived from the agent name)
  * @param useNativeNames - Whether to use native names or cleaned-up names for display
- * @param displayNameCounts - Shared map used to disambiguate duplicate display names
  * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
  * @returns An AgentNetworkTreeItemModel representing the network as a leaf node in the tree
  */
@@ -114,12 +106,11 @@ const toNetworkLeaf = (
     network: AgentInfo,
     label: string,
     useNativeNames: boolean,
-    displayNameCounts: Map<string, number>,
     metadata: NetworkTreeItemMetadata = {}
 ): AgentNetworkTreeItemModel => ({
     id: network.agent_name,
     label,
-    displayName: toLeafDisplayName(label, useNativeNames, displayNameCounts, metadata.displayNameOverride),
+    displayName: toLeafDisplayName(label, useNativeNames, metadata.displayNameOverride),
     iconSuggestion: metadata.iconSuggestion,
     isNetwork: true,
     tags: network.tags,
@@ -160,7 +151,6 @@ const toFolderNode = (id: string, label: string, useNativeNames: boolean): Agent
  * @param nodes - The current list of tree nodes at this level of the hierarchy
  * @param network - The AgentInfo object representing the network to add
  * @param useNativeNames - Whether to use native names or cleaned-up names for display
- * @param displayNameCounts - Shared map used to disambiguate duplicate display names
  * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
  * @param parts - The parts of the agent name split by "/", used to determine the category hierarchy
  * @param depth - The current depth in the category hierarchy, used to determine which part of the agent name to use
@@ -171,7 +161,6 @@ const withCategorizedNetworkAdded = (
     nodes: readonly AgentNetworkTreeItemModel[],
     network: AgentInfo,
     useNativeNames: boolean,
-    displayNameCounts: Map<string, number>,
     metadata: NetworkTreeItemMetadata,
     parts: readonly string[],
     depth = 0
@@ -190,14 +179,13 @@ const withCategorizedNetworkAdded = (
     // If it's a network, we create a leaf node. If it's a category, we either create a new folder node or
     // update the existing one with the new child.
     const nextNode: AgentNetworkTreeItemModel = isNetwork
-        ? toNetworkLeaf(network, label, useNativeNames, displayNameCounts, metadata)
+        ? toNetworkLeaf(network, label, useNativeNames, metadata)
         : {
               ...(existingIndex >= 0 ? nodes[existingIndex] : toFolderNode(nodeId, label, useNativeNames)),
               children: withCategorizedNetworkAdded(
                   existingIndex >= 0 ? (nodes[existingIndex].children ?? []) : [],
                   network,
                   useNativeNames,
-                  displayNameCounts,
                   metadata,
                   parts,
                   depth + 1
@@ -219,14 +207,12 @@ const withCategorizedNetworkAdded = (
  * @param state - The current state of the tree build, containing categorized and uncategorized items
  * @param network - The AgentInfo object representing the network to add to the tree
  * @param useNativeNames - Whether to use native names or cleaned-up names for display
- * @param displayNameCounts - Shared map used to disambiguate duplicate display names
  * @param metadata - Additional metadata for the network tree item, such as icon suggestions and temporary network info
  */
 const withNetworkAdded = (
     state: TreeBuildState,
     network: AgentInfo,
     useNativeNames: boolean,
-    displayNameCounts: Map<string, number>,
     metadata: NetworkTreeItemMetadata
 ): TreeBuildState => {
     // Split the agent name into parts based on "/", which indicates category hierarchy. For example, an agent name
@@ -238,7 +224,7 @@ const withNetworkAdded = (
             ...state,
             uncategorizedItems: [
                 ...state.uncategorizedItems,
-                toNetworkLeaf(network, network.agent_name, useNativeNames, displayNameCounts, metadata),
+                toNetworkLeaf(network, network.agent_name, useNativeNames, metadata),
             ],
         }
     }
@@ -250,7 +236,6 @@ const withNetworkAdded = (
             state.categorizedItems,
             network,
             useNativeNames,
-            displayNameCounts,
             metadata,
             parts
         ),
@@ -279,17 +264,14 @@ export const buildTreeViewItems = (
         uncategorizedItems: [],
     }
 
-    // Tracks how many times each cleaned display name has been used, so duplicates can be disambiguated.
-    const displayNameCounts = new Map<string, number>()
-
     for (const network of regularNetworks) {
-        tree = withNetworkAdded(tree, network, useNativeNames, displayNameCounts, {
+        tree = withNetworkAdded(tree, network, useNativeNames, {
             iconSuggestion: iconSuggestions[network.agent_name],
         })
     }
 
     for (const temporaryNetwork of temporaryNetworks) {
-        tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, displayNameCounts, {
+        tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, {
             iconSuggestion: "HourglassTop",
             temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
             // The structured definition is carried through and serialized at download time (it's the same shape
