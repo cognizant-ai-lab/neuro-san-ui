@@ -98,6 +98,12 @@ jest.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () =>
                     >
                         Show Thinking
                     </button>
+                    <button
+                        id="save-chat-button"
+                        type="button"
+                    >
+                        Save chat
+                    </button>
                     {props.agentsInNetwork.map((element) => {
                         const json = JSON.stringify(element)
                         return <div key={json}>{json}</div>
@@ -1344,7 +1350,7 @@ describe("MultiAgentAccelerator", () => {
             // Click through remaining steps and verify their content shows up
             for (const step of MAIN_TOUR_STEPS.slice(1)) {
                 // Make sure step at least appears in the DOM, though due to mocks we may get false negatives here
-                // Steps can (in theory) be functions that return an element, or just a element
+                // Steps can (in theory) be functions that return an element, or just an element
                 const stepElement = typeof step.target === "function" ? step.target() : step.target
                 expect(stepElement).toBeVisible()
                 const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})
