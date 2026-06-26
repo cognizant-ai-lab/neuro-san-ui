@@ -47,10 +47,10 @@ export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): st
     }
 
     // conflicts with ESLint newline-per-chained-call rule
-    // prettier-ignore
-    return modelId.slice(`${modelType}-`.length) // remove the model type
-        .split("-")     // split by hyphens
-        .slice(0, -1)   // remove the last element
+    return modelId
+        .slice(`${modelType}-`.length) // remove the model type
+        .split("-") // split by hyphens
+        .slice(0, -1) // remove the last element
         .join("-") // join with hyphens
 }
 
@@ -61,8 +61,5 @@ export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): st
  * @returns Hashed string
  */
 export const hashString = (input: string): string => {
-    // prettier-ignore
-    return createHash("md5")
-        .update(input)
-        .digest("hex")
+    return createHash("md5").update(input).digest("hex")
 }
