@@ -327,34 +327,20 @@ describe("ImportNetworkModal", () => {
         expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
-    it("should surface the conflict prompt with Keep both selected by default when the name collides", async () => {
-        renderModal({existingNetworkNames: ["ecommerce_support"]})
-        await advanceToConfirmStep("ecommerce_support.json")
-        // The conflict prompt references the colliding name.
-        await screen.findByText(/already exists in/u)
-        // Keep both is the default mode, and the name field is pre-filled with the colliding name.
-        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        expect(nameInput).toHaveValue("Ecommerce Support")
-        // The colliding name is still taken, so the action is disabled until the user renames it.
-        expect(screen.getByText(/That name is taken\. Change it to keep both networks\./u)).toBeInTheDocument()
-        expect(screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})).toBeDisabled()
-    })
-
-    it("should not auto-append an index to the conflicting name (user renames it themselves)", async () => {
-        renderModal({existingNetworkNames: ["ecommerce_support"]})
-        await advanceToConfirmStep("ecommerce_support.json")
-        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
-        // No " 2" / "copy" suffix is added — the field stays exactly as the colliding name.
-        expect(nameInput).toHaveValue("Ecommerce Support")
-    })
-
-    it("should enable Import as new and import the unique name once the user renames it", async () => {
+    it("keep both: defaults to the colliding name, warns it is taken, then accepts a unique rename", async () => {
         renderModal({existingNetworkNames: ["ecommerce_support"], onImport: onImportMock})
         await advanceToConfirmStep("ecommerce_support.json")
+        // Conflict prompt shows, defaulting to Keep both with the colliding name pre-filled verbatim —
+        // no " 2"/"copy" suffix is appended, so it reads as still taken and the action is disabled.
+        await screen.findByText(/already exists\./u)
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput).toHaveValue("Ecommerce Support")
+        expect(screen.getByText(/That name is taken\. Choose a new name to keep both networks\./u)).toBeInTheDocument()
+        expect(screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})).toBeDisabled()
+        // Renaming to something unique clears the warning, enables the import, and sends the new name.
         await user.clear(nameInput)
         await user.type(nameInput, "Ecommerce Support Revamp")
-        expect(screen.getByText(/Name is available — saved alongside the original\./u)).toBeInTheDocument()
+        expect(screen.getByText(/Name is available\./u)).toBeInTheDocument()
         const importAsNew = screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})
         expect(importAsNew).toBeEnabled()
         await user.click(importAsNew)
@@ -400,6 +386,30 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         await screen.findByRole("button", {name: IMPORT_BUTTON})
         expect(screen.queryByText(/How would you like to handle it\?/u)).not.toBeInTheDocument()
+    })
+
+    it("should keep the edited name when re-clicking the already-active Keep both toggle", async () => {
+        renderModal({existingNetworkNames: ["ecommerce_support"]})
+        await advanceToConfirmStep("ecommerce_support.json")
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        await user.clear(nameInput)
+        await user.type(nameInput, "Ecommerce Support Revamp")
+        // Re-clicking the active toggle deselects it (exclusive group), which is a no-op here.
+        await user.click(screen.getByRole("button", {name: KEEP_BOTH_TOGGLE}))
+        expect(screen.getByRole<HTMLInputElement>("textbox")).toHaveValue("Ecommerce Support Revamp")
+    })
+
+    it("should warn and disable import when a unique imported name is edited into an existing one", async () => {
+        renderModal({existingNetworkNames: ["taken_network"]})
+        // Imported name is unique, so the simple field (not the conflict toggle) is shown.
+        await advanceToConfirmStep("my_network.json")
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeEnabled()
+
+        await user.clear(nameInput)
+        await user.type(nameInput, "Taken Network")
+        expect(screen.getByText(/That name is taken\. Pick another to continue\./u)).toBeInTheDocument()
+        expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeDisabled()
     })
 
     it.each([

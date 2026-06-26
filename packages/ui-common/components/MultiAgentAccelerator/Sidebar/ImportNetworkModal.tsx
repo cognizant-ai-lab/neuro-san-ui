@@ -16,7 +16,6 @@ limitations under the License.
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined"
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
-import HourglassTopIcon from "@mui/icons-material/HourglassTop"
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
 import Box from "@mui/material/Box"
@@ -35,9 +34,8 @@ import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
 import {splitFilename} from "../../../utils/File"
-import {cleanUpAgentName} from "../../AgentChat/Common/Utils"
 import {MUIDialog} from "../../Common/MUIDialog"
-import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman, TEMPORARY_NETWORK_FOLDER} from "../const"
+import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman} from "../const"
 
 //#region: Constants
 
@@ -45,7 +43,6 @@ export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
-const TEMPORARY_FOLDER_DISPLAY = cleanUpAgentName(TEMPORARY_NETWORK_FOLDER)
 
 //#endregion: Constants
 
@@ -393,7 +390,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     // Switching modes resets the editable name to the imported one: "Keep both" starts from the
     // colliding name so the user renames it themselves, and "Replace existing" targets the original.
     const handleConflictResolutionChange = (resolution: ConflictResolution) => {
-        if (resolution === conflictResolution) return
         setConflictResolution(resolution)
         setNetworkName(importedName)
     }
@@ -816,8 +812,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                     variant="body2"
                                     sx={{marginTop: 0.5}}
                                 >
-                                    A network named <strong>&quot;{importedName}&quot;</strong> already exists in{" "}
-                                    <strong>{TEMPORARY_FOLDER_DISPLAY}</strong>. How would you like to handle it?
+                                    A network named <strong>&quot;{importedName}&quot;</strong> already exists. How
+                                    would you like to handle it?
                                 </Typography>
                             </Box>
                             {/* Resolution toggle */}
@@ -891,9 +887,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                             />
                                             <Typography
                                                 variant="body2"
-                                                sx={{color: "warning.main"}}
+                                                sx={{color: "warning.main", fontWeight: "bold"}}
                                             >
-                                                That name is taken. Change it to keep both networks.
+                                                That name is taken. Choose a new name to keep both networks.
                                             </Typography>
                                         </Box>
                                     ) : (
@@ -908,9 +904,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                                 />
                                                 <Typography
                                                     variant="body2"
-                                                    sx={{color: "success.main"}}
+                                                    sx={{color: "success.main", fontWeight: "bold"}}
                                                 >
-                                                    Name is available — saved alongside the original.
+                                                    Name is available.
                                                 </Typography>
                                             </Box>
                                         )
@@ -936,9 +932,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                                         sx={{color: "error.main", flexShrink: 0}}
                                     />
                                     <Typography variant="body2">
-                                        The existing <strong>&quot;{importedName}&quot;</strong> in{" "}
-                                        {TEMPORARY_FOLDER_DISPLAY} will be <strong>permanently overwritten</strong>.
-                                        This can&apos;t be undone.
+                                        <strong>&quot;{importedName}&quot;</strong> will be{" "}
+                                        <strong>permanently overwritten</strong>. This can&apos;t be undone.
                                     </Typography>
                                 </Box>
                             )}
@@ -974,39 +969,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                             />
                         </Box>
                     )}
-                    {/* Added to Temporary info */}
-                    <Box
-                        id="import-network-modal-temporary-info"
-                        sx={{
-                            alignItems: "flex-start",
-                            borderRadius: 1,
-                            borderStyle: "solid",
-                            borderWidth: "1px",
-                            borderColor: "divider",
-                            display: "flex",
-                            gap: 1.5,
-                            padding: "10px 14px",
-                        }}
-                    >
-                        <HourglassTopIcon
-                            fontSize="small"
-                            sx={{color: "text.secondary", flexShrink: 0, marginTop: "2px"}}
-                        />
-                        <Box>
-                            <Typography
-                                variant="body2"
-                                sx={{fontWeight: "bold"}}
-                            >
-                                Added to {TEMPORARY_FOLDER_DISPLAY}
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{color: "text.secondary"}}
-                            >
-                                Imported networks always land in the {TEMPORARY_FOLDER_DISPLAY} category.
-                            </Typography>
-                        </Box>
-                    </Box>
                 </Box>
             )}
         </MUIDialog>
