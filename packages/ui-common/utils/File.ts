@@ -56,13 +56,7 @@ export const splitFilename = (filename: string): {ext: string; name: string} => 
  * @param path The path to be parsed
  * @return The filename part of the path only
  */
-export const getFileName = (path: string): string =>
-    // conflicts with ESLint newline-per-chained-call rule
-    // prettier-ignore
-    path.split("\\")
-        .pop()
-        .split("/")
-        .pop()
+export const getFileName = (path: string): string => path.split("\\").pop().split("/").pop()
 
 /**
  * Downloads a file containing the supplied content with the specified filename
