@@ -66,6 +66,7 @@ import {LLMProvider, useSettingsStore} from "../../../state/Settings"
 import {toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {ConfirmationModal} from "../../Common/ConfirmationModal"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
@@ -832,15 +833,14 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
+    const [clearChatConfirmationDialogOpen, setClearChatConfirmationDialogOpen] = useState<boolean>(false)
+
     const getPlaceholder = () =>
         selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}` : null
 
     const handleClearChat = useCallback(() => {
-        setTurns([])
-        resetHistory(selectedNetwork)
-        setPreviousUserQuery("")
-        currentResponse.current = ""
-    }, [resetHistory, selectedNetwork])
+        setClearChatConfirmationDialogOpen(true)
+    }, [])
 
     // Expose the handleStop and handleClearChat methods to parent components via ref for external control
     useImperativeHandle(
@@ -1105,6 +1105,27 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 overflowY: "auto",
             }}
         >
+            {clearChatConfirmationDialogOpen ? (
+                <ConfirmationModal
+                    id={`${id}-clear-chat-confirmation-modal`}
+                    content={
+                        "This will clear the current chat session and any persisted chat history for this " +
+                        "network. This operation cannot be undone. Are you sure you wish to continue?"
+                    }
+                    handleCancel={() => {
+                        setClearChatConfirmationDialogOpen(false)
+                    }}
+                    handleOk={() => {
+                        setClearChatConfirmationDialogOpen(false)
+                        setTurns([])
+                        resetHistory(selectedNetwork)
+                        setPreviousUserQuery("")
+                        currentResponse.current = ""
+                    }}
+                    okBtnLabel="Yes, clear chat"
+                    title={`Clear all chat including history for ${networkDisplayName}?`}
+                />
+            ) : null}
             <Box
                 id="llm-responses"
                 ref={chatOutputRef}

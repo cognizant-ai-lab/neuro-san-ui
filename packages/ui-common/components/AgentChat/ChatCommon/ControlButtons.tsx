@@ -100,6 +100,11 @@ export const ControlButtons: FC<ControlButtonsProps> = ({
                             <DeleteOutlined
                                 fontSize="small"
                                 id="stop-button-icon"
+                                sx={{
+                                    "&:hover": {
+                                        color: "error.main",
+                                    },
+                                }}
                             />
                         </SmallLlmChatButton>
                     </span>
