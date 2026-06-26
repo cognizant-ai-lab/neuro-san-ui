@@ -50,7 +50,7 @@ import {
 } from "react"
 import {v4 as uuid} from "uuid"
 
-import {ChatHistory} from "./ChatHistory"
+import {ChatHistory, toTurns} from "./ChatHistory"
 import {MAX_TURNS} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
@@ -63,6 +63,7 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
@@ -765,6 +766,60 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [addTurn, resetState])
 
+    /**
+     * Save the current chat history and session to a file
+     */
+    const handleSave = () => {
+        const chatHistory = agentChatHistory?.chatHistory ?? []
+        const chatHistoryTurns = toTurns(chatHistory)
+
+        const formatTurns = (items: ConversationTurn[]) =>
+            items.map((turn) => `${turn.role}: ${turn.text}`).join("\n\n")
+
+        const exportableTurns = turns.filter((turn) =>
+            [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error].includes(turn.role)
+        )
+
+        // Get the current date and time in a human-readable format, including the local time zone
+        const exportedAt = new Date()
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        const exportedAtText = exportedAt.toLocaleString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            timeZoneName: "short",
+        })
+
+        const allHistoryText = [
+            "Chat export",
+            `Network: ${selectedNetwork || "chat"}`,
+            `Exported: ${exportedAtText} (${timeZone})`,
+            "",
+            "====================",
+            "Chat history",
+            "====================",
+            formatTurns(chatHistoryTurns) || "No persisted chat history.",
+            "",
+            "====================",
+            "Current session",
+            "====================",
+            formatTurns(exportableTurns) || "No current session turns.",
+        ].join("\n")
+
+        // Prepare download link and trigger download
+        const blob = new Blob([allHistoryText], {type: "text/plain"})
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = toSafeFilename(`${selectedNetwork || "chat"}-history.txt`)
+        document.body.append(link)
+        link.click()
+        link.remove()
+    }
+
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
 
@@ -986,7 +1041,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         >
             <ControlButtons
                 enableClearChatButton={enableClearChatButton}
+                enableSaveChatButton={turns.length > 0 || agentChatHistory?.chatHistory?.length > 0}
                 handleClearChat={handleClearChat}
+                handleSave={handleSave}
                 handleSend={handleSend}
                 handleStop={handleStop}
                 isAwaitingLlm={isAwaitingLlm}
