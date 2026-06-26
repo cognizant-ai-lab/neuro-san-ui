@@ -1056,6 +1056,23 @@ describe("ChatCommon", () => {
 
         await user.click(clearButton)
 
+        // Confirmation dialog should show
+        await screen.findByText(/Clear all chat /u)
+
+        // First click "cancel"
+        const cancelButton = screen.getByRole("button", {name: "Cancel"})
+        await user.click(cancelButton)
+
+        // Text should still be present
+        await screen.findAllByText(testMessage)
+
+        // Click Clear Chat again
+        await user.click(clearButton)
+
+        // This time click "ok"
+        const okButton = screen.getByRole("button", {name: "Yes, clear chat"})
+        await user.click(okButton)
+
         // Verify chat is cleared and agent introduction appears
         await screen.findByText(TEST_AGENT_MATH_GUY)
         expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
