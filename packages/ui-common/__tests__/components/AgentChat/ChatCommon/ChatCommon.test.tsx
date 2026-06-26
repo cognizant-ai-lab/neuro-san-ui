@@ -27,8 +27,14 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {ChatCommon, ChatCommonHandle, ChatCommonProps} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
+import {
+    ChatCommon,
+    ChatCommonHandle,
+    ChatCommonProps,
+    roleToExportLabel,
+} from "../../../../components/AgentChat/ChatCommon/ChatCommon"
 import {MAX_TURNS} from "../../../../components/AgentChat/ChatCommon/Const"
+import {MessageRole} from "../../../../components/AgentChat/ChatCommon/ConversationTurn"
 import {MAX_SAMPLE_QUERIES, QUERY_TRUNCATE_LENGTH} from "../../../../components/AgentChat/ChatCommon/SampleQueries"
 import {CombinedAgentType, givesFinalAnswer, LegacyAgentType} from "../../../../components/AgentChat/Common/Types"
 import {getAgentFunction, getConnectivity, sendChatQuery} from "../../../../controller/agent/Agent"
@@ -618,6 +624,15 @@ describe("ChatCommon", () => {
                 `${toSafeFilename(`${TEST_AGENT_MATH_GUY}-history`)}.txt`,
                 "text/plain"
             )
+        })
+
+        it("Should maps roles to labels correctly for exporting", async () => {
+            expect(roleToExportLabel(MessageRole.User)).toBe("User")
+            expect(roleToExportLabel(MessageRole.Agent)).toBe("Assistant")
+            expect(roleToExportLabel(MessageRole.FinalAnswer)).toBe("Assistant")
+            expect(roleToExportLabel(MessageRole.Warning)).toBe("Warning")
+            expect(roleToExportLabel(MessageRole.Error)).toBe("Error")
+            expect(roleToExportLabel("unknownRole" as unknown as MessageRole)).toBe(undefined)
         })
 
         it("clears input when clear button is clicked", async () => {

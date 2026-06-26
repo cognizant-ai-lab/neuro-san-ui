@@ -221,7 +221,25 @@ const MAX_AGENT_RETRIES = 3
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
+// List of message roles that are exported when saving chat history.
+const EXPORTED_MESSAGE_TYPES = [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error]
+
+const EXPORT_ROLE_LABELS: Record<MessageRole, string> = {
+    [MessageRole.User]: "User",
+    [MessageRole.Agent]: "Assistant",
+    [MessageRole.FinalAnswer]: "Assistant",
+    [MessageRole.Warning]: "Warning",
+    [MessageRole.Error]: "Error",
+}
+
 //#endregion
+
+/**
+ * Helper function to convert a message role to a label for exporting chat history.
+ * @param role The message role to convert
+ * @returns The label for the message role
+ */
+export const roleToExportLabel = (role: MessageRole): string => EXPORT_ROLE_LABELS[role]
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -300,10 +318,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         [storedChatHistory]
     )
 
-    // For saving chat history
-    const exportableTurns = turns.filter((turn) =>
-        [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error].includes(turn.role)
-    )
+    // For saving chat history. Specifically, exclude "Agent" messages as they are verbose and not useful in a saved
+    // export.
+    const exportableTurns = turns.filter((turn) => EXPORTED_MESSAGE_TYPES.includes(turn.role))
     const enableSaveChatButton = turns.length > 0 || agentChatHistory?.chatHistory?.length > 0
 
     // Display option for agent/network names
@@ -773,15 +790,15 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [addTurn, resetState])
 
+    const formatTurns = (items: ConversationTurn[]) =>
+        items.map((turn) => `${roleToExportLabel(turn.role)}: ${turn.text}`).join("\n\n")
+
     /**
      * Save the current chat history and session to a file
      */
-    const handleSave = () => {
+    const handleSaveChat = () => {
         const chatHistory = agentChatHistory?.chatHistory
         const chatHistoryTurns = toTurns(chatHistory)
-
-        const formatTurns = (items: ConversationTurn[]) =>
-            items.map((turn) => `${turn.role}: ${turn.text}`).join("\n\n")
 
         // Get the current date and time in a human-readable format, including the local time zone
         const exportedAt = new Date()
@@ -802,7 +819,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             `Exported: ${exportedAtText} (${timeZone})`,
             "",
             "====================",
-            "Chat history",
+            "Previous history",
             "====================",
             formatTurns(chatHistoryTurns) || "No persisted chat history.",
             "",
@@ -834,8 +851,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const getPlaceholder = () => agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}`
 
     const handleClearChat = useCallback(() => {
-        setClearChatConfirmationDialogOpen(true)
-    }, [])
+        setTurns([])
+        resetHistory(selectedNetwork)
+        setPreviousUserQuery("")
+        currentResponse.current = ""
+    }, [resetHistory, selectedNetwork])
 
     // Expose the handleStop and handleClearChat methods to parent components via ref for external control
     useImperativeHandle(
@@ -1037,8 +1057,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             <ControlButtons
                 enableClearChatButton={enableClearChatButton}
                 enableSaveChatButton={enableSaveChatButton}
-                handleClearChat={handleClearChat}
-                handleSave={handleSave}
+                handleClearChat={() => setClearChatConfirmationDialogOpen(true)}
+                handleSave={handleSaveChat}
                 handleSend={handleSend}
                 handleStop={handleStop}
                 isAwaitingLlm={isAwaitingLlm}
