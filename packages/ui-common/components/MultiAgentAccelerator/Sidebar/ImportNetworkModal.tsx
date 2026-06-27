@@ -119,12 +119,28 @@ export const jsonToNetworkDefinition = (parsed: unknown): AgentNetworkDefinition
 
 // Summarises a parsed network definition (counts by `display_as`, plus the frontman).
 export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEntry[]): NetworkSummary => {
-    const countOf = (displayAs: DisplayAs): number =>
-        networkDef.filter((entry) => entry.display_as === displayAs).length
+    let agents = 0
+    let codedTools = 0
+    let externalAgents = 0
+    for (const entry of networkDef) {
+        switch (entry.display_as) {
+            case DisplayAs.LLM_AGENT:
+                agents += 1
+                break
+            case DisplayAs.CODED_TOOL:
+                codedTools += 1
+                break
+            case DisplayAs.EXTERNAL_AGENT:
+                externalAgents += 1
+                break
+            default:
+                break
+        }
+    }
     return {
-        agents: countOf(DisplayAs.LLM_AGENT),
-        codedTools: countOf(DisplayAs.CODED_TOOL),
-        externalAgents: countOf(DisplayAs.EXTERNAL_AGENT),
+        agents,
+        codedTools,
+        externalAgents,
         frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "—",
     }
 }
@@ -320,8 +336,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         return () => reader.abort()
     }, [file])
 
-    //#region: Conflict detection
-
+    // True if `candidate` collides with any existing network name (normalized for comparison).
     const nameConflictsWith = (candidate: string): boolean =>
         existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizeForComparison(candidate))
 
@@ -333,10 +348,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const trimmedName = networkName.trim()
     const newNameHasConflict = nameConflictsWith(trimmedName)
 
-    //#endregion: Conflict detection
-
-    //#region: File processing
-
+    // Advance to the review step and kick off reading/parsing the selected file.
     const processFile = (selectedFile: File) => {
         setActiveStep(1)
         setParsedData(null)
@@ -374,10 +386,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         event.target.value = ""
     }
 
-    //#endregion: File processing
-
-    //#region: Navigation
-
     const handleBack = () => setActiveStep((prev) => prev - 1)
 
     const handleContinue = () => {
@@ -403,10 +411,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         onClose()
     }
 
-    //#endregion: Navigation
-
-    //#region: Conflict resolution
-
     // Switching modes resets the editable name: "Keep both" pre-fills the next free indexed name
     // (e.g. "My Network (2)") so the user doesn't have to invent one, and "Replace existing" targets
     // the original colliding name.
@@ -416,8 +420,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             resolution === "keep-both" ? nextAvailableNetworkName(importedName, existingNetworkNames) : importedName
         )
     }
-
-    //#endregion: Conflict resolution
 
     const {name: fileStem, ext: fileNameExt} = file ? splitFilename(file.name) : {name: "", ext: ""}
     const fileExt = fileNameExt.toUpperCase()
@@ -437,6 +439,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     // is required and must not collide with an existing network.
     const importDisabled = !isReplacing && (!trimmedName || newNameHasConflict)
 
+    // Footer actions, which vary by step (Cancel / Back+Continue / Back+Import).
     const renderFooter = () => {
         switch (activeStep) {
             case 0:
@@ -497,7 +500,516 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         }
     }
 
-    const footer = renderFooter()
+    // The three-step progress header.
+    const renderStepper = () => (
+        <Stepper
+            activeStep={activeStep}
+            id="import-network-modal-stepper"
+            sx={(theme) => ({
+                marginTop: 1,
+                // MUI v9 rejects the CSS named color "gray" it uses by default for
+                // inactive steps/connectors — override with valid token values.
+                "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
+                    color: "var(--bs-gray-medium)",
+                },
+                "& .MuiStepConnector-line": {
+                    borderColor: "var(--bs-gray-light)",
+                },
+                "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
+                    color: "var(--bs-gray-medium)",
+                },
+                // In dark mode the completed-step icon defaults to a muted/gray fill;
+                // make it white so completed steps read clearly against the dark backdrop.
+                ...(theme.palette.mode === "dark" && {
+                    "& .MuiStepIcon-root.Mui-completed": {
+                        color: theme.palette.common.white,
+                    },
+                }),
+            })}
+        >
+            {STEPS.map((label) => (
+                <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                </Step>
+            ))}
+        </Stepper>
+    )
+
+    // Step 1: the drag-and-drop / browse file picker.
+    const renderSelectFileStep = () => (
+        <DropZone
+            isDragOver={isDragOver}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={handleBrowseClick}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    handleBrowseClick()
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Drop zone for network definition file"
+        >
+            <CloudUploadOutlinedIcon
+                id="import-network-modal-upload-icon"
+                sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
+            />
+            <Typography
+                id="import-network-modal-drop-text"
+                variant="subtitle1"
+                sx={{color: "primary.main", fontWeight: "bold"}}
+            >
+                Drag &amp; drop a network definition
+            </Typography>
+            <Typography variant="body2">
+                {"or "}
+                <Box
+                    component="button"
+                    id="import-network-modal-browse-link"
+                    onClick={(event) => {
+                        event.stopPropagation()
+                        handleBrowseClick()
+                    }}
+                    sx={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--bs-secondary)",
+                        cursor: "pointer",
+                        font: "inherit",
+                        padding: 0,
+                        textDecoration: "underline",
+                        "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                    }}
+                >
+                    browse your files
+                </Box>
+            </Typography>
+            <Typography
+                id="import-network-modal-file-types"
+                variant="caption"
+                sx={{color: "text.secondary"}}
+            >
+                Accepts .json up to 5 MB.
+            </Typography>
+            <input
+                accept={ACCEPTED_MIME_TYPES}
+                aria-hidden="true"
+                data-testid="import-network-file-input"
+                onChange={handleFileChange}
+                onClick={(event) => event.stopPropagation()}
+                ref={fileInputRef}
+                style={{display: "none"}}
+                tabIndex={-1}
+                type="file"
+            />
+        </DropZone>
+    )
+
+    // Step 2: parsing/validation outcome — loading spinner, success summary, or error banner.
+    const renderReviewParsing = () => (
+        <>
+            <CircularProgress
+                id="import-network-modal-spinner"
+                size={48}
+            />
+            <Typography
+                id="import-network-modal-parsing-text"
+                variant="subtitle1"
+                sx={{fontWeight: "bold"}}
+            >
+                {`Parsing & validating ${fileExt}…`}
+            </Typography>
+            <Typography
+                id="import-network-modal-parsing-filename"
+                variant="body2"
+                sx={{color: "text.secondary", fontFamily: "monospace"}}
+            >
+                {file?.name}
+            </Typography>
+        </>
+    )
+
+    const renderReviewSuccessBanner = () => (
+        <Box
+            id="import-network-modal-success-banner"
+            sx={{
+                alignItems: "center",
+                backgroundColor: (theme) => alpha(theme.palette.success.main, 0.12),
+                border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
+                borderRadius: 2,
+                color: "var(--bs-green)",
+                display: "flex",
+                gap: 1.5,
+                padding: "14px 16px",
+            }}
+        >
+            <CheckCircleOutlineIcon />
+            <Typography variant="body2">
+                {`Valid ${fileExt} — `}
+                <Box
+                    component="span"
+                    sx={{fontWeight: "bold"}}
+                >
+                    parsed successfully
+                </Box>
+            </Typography>
+        </Box>
+    )
+
+    const renderReviewFileInfo = () => (
+        <Box
+            sx={{
+                alignItems: "flex-start",
+                display: "flex",
+                gap: 1.5,
+                marginTop: 3,
+            }}
+        >
+            <InsertDriveFileOutlinedIcon
+                id="import-network-modal-file-icon"
+                sx={{color: "text.secondary", fontSize: "2rem"}}
+            />
+            {/* Keep the filename on one line: truncate the stem with an ellipsis
+                but pin the extension so ".json" stays visible. The full name is
+                available on hover via the tooltip. */}
+            <Tooltip title={file?.name ?? ""}>
+                <Box
+                    id="import-network-modal-review-filename"
+                    sx={{
+                        display: "flex",
+                        flex: 1,
+                        fontFamily: "monospace",
+                        fontSize: 15,
+                        minWidth: 0,
+                    }}
+                >
+                    <Box
+                        component="span"
+                        sx={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}
+                    >
+                        {fileStem}
+                    </Box>
+                    {fileNameExt && (
+                        <Box
+                            component="span"
+                            sx={{flexShrink: 0}}
+                        >
+                            {`.${fileNameExt}`}
+                        </Box>
+                    )}
+                </Box>
+            </Tooltip>
+            <Typography
+                id="import-network-modal-review-filesize"
+                variant="body2"
+                sx={{
+                    color: "text.secondary",
+                    flexShrink: 0,
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                }}
+            >
+                {formatFileSize(file?.size ?? 0)}
+            </Typography>
+        </Box>
+    )
+
+    const renderReviewSummary = () =>
+        networkSummary && (
+            <Box
+                id="import-network-modal-summary"
+                sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    marginTop: 3,
+                    overflow: "hidden",
+                }}
+            >
+                {(
+                    [
+                        {label: "Agents", value: networkSummary.agents},
+                        {label: "Coded tools", value: networkSummary.codedTools},
+                        {label: "External agents", value: networkSummary.externalAgents},
+                        {label: "Front man", value: networkSummary.frontman, isFrontman: true},
+                    ] as const
+                ).map((stat, index) => (
+                    <Box
+                        key={stat.label}
+                        sx={{
+                            borderColor: "divider",
+                            borderLeft: index % 2 === 1 ? "1px solid" : undefined,
+                            borderTop: index >= 2 ? "1px solid" : undefined,
+                            padding: "14px 16px",
+                        }}
+                    >
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "text.secondary",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                            }}
+                        >
+                            {stat.label}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: "isFrontman" in stat ? "monospace" : undefined,
+                                fontSize: "isFrontman" in stat ? 15 : 18,
+                                lineHeight: 1.4,
+                                marginTop: 0.5,
+                                wordBreak: "break-word",
+                            }}
+                        >
+                            {stat.value}
+                        </Typography>
+                    </Box>
+                ))}
+            </Box>
+        )
+
+    const renderReviewSuccess = () => (
+        <Box sx={{width: "100%"}}>
+            {renderReviewSuccessBanner()}
+            {renderReviewFileInfo()}
+            {renderReviewSummary()}
+        </Box>
+    )
+
+    const renderReviewError = () => (
+        <Box
+            id="import-network-modal-error-banner"
+            sx={{
+                alignItems: "center",
+                backgroundColor: "error.dark",
+                borderRadius: 1,
+                color: "error.contrastText",
+                display: "flex",
+                gap: 1,
+                padding: "10px 14px",
+                width: "100%",
+            }}
+        >
+            <ErrorOutlineIcon fontSize="small" />
+            <Typography variant="body2">{parseError}</Typography>
+        </Box>
+    )
+
+    const renderReviewStep = () => (
+        <Box
+            id="import-network-modal-review"
+            sx={{
+                alignItems: "center",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+                marginTop: 4,
+                minHeight: "220px",
+            }}
+        >
+            {parseState === "loading" && renderReviewParsing()}
+            {parseState === "success" && renderReviewSuccess()}
+            {parseState === "error" && renderReviewError()}
+        </Box>
+    )
+
+    // Step 3: name the network and resolve any collision with an existing one.
+    const renderConflictKeepBothField = () => (
+        <Box>
+            <Typography
+                id="import-network-modal-name-label"
+                variant="caption"
+                sx={{
+                    color: "text.secondary",
+                    fontWeight: "bold",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                }}
+            >
+                New network name
+            </Typography>
+            <TextField
+                id="import-network-modal-name-input"
+                fullWidth
+                onChange={(event) => setNetworkName(event.target.value)}
+                size="small"
+                sx={{marginTop: 0.5}}
+                value={networkName}
+            />
+            {newNameHasConflict ? (
+                <Box
+                    id="import-network-modal-name-taken"
+                    sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
+                >
+                    <WarningAmberIcon
+                        fontSize="small"
+                        sx={{color: "warning.main", flexShrink: 0}}
+                    />
+                    <Typography
+                        variant="body2"
+                        sx={{color: "warning.main", fontWeight: "bold"}}
+                    >
+                        That name is taken. Choose a new name to keep both networks.
+                    </Typography>
+                </Box>
+            ) : (
+                trimmedName !== "" && (
+                    <Box
+                        id="import-network-modal-name-available"
+                        sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
+                    >
+                        <CheckCircleOutlineIcon
+                            fontSize="small"
+                            sx={{color: "success.main", flexShrink: 0}}
+                        />
+                        <Typography
+                            variant="body2"
+                            sx={{color: "success.main", fontWeight: "bold"}}
+                        >
+                            Name is available.
+                        </Typography>
+                    </Box>
+                )
+            )}
+        </Box>
+    )
+
+    const renderConflictReplaceWarning = () => (
+        <Box
+            id="import-network-modal-replace-warning"
+            sx={{
+                alignItems: "center",
+                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.12),
+                borderRadius: 1,
+                borderStyle: "solid",
+                borderWidth: "1px",
+                borderColor: "error.main",
+                display: "flex",
+                gap: 1,
+                padding: "10px 14px",
+            }}
+        >
+            <WarningAmberIcon
+                fontSize="small"
+                sx={{color: "error.main", flexShrink: 0}}
+            />
+            <Typography variant="body2">
+                <strong>&quot;{importedName}&quot;</strong> will be <strong>permanently overwritten</strong>. This
+                can&apos;t be undone.
+            </Typography>
+        </Box>
+    )
+
+    const renderConflictResolution = () => (
+        <>
+            {/* Name conflict prompt */}
+            <Box id="import-network-modal-conflict-prompt">
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: "text.secondary",
+                        fontWeight: "bold",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                    }}
+                >
+                    Name conflict
+                </Typography>
+                <Typography
+                    variant="body2"
+                    sx={{marginTop: 0.5}}
+                >
+                    A network named <strong>&quot;{importedName}&quot;</strong> already exists. How would you like to
+                    handle it?
+                </Typography>
+            </Box>
+            {/* Resolution toggle */}
+            <ToggleButtonGroup
+                id="import-network-modal-conflict-toggle"
+                exclusive={true}
+                fullWidth
+                onChange={(_, value: ConflictResolution | null) => {
+                    if (value !== null) handleConflictResolutionChange(value)
+                }}
+                value={conflictResolution}
+                sx={{
+                    "& .MuiToggleButton-root": {
+                        textTransform: "none",
+                    },
+                    "& #import-network-modal-keep-both-btn.Mui-selected": {
+                        backgroundColor: "primary.main",
+                        color: "primary.contrastText",
+                        "&:hover": {backgroundColor: "primary.dark"},
+                    },
+                    "& #import-network-modal-replace-existing-btn.Mui-selected": {
+                        backgroundColor: "error.main",
+                        color: "error.contrastText",
+                        "&:hover": {backgroundColor: "error.dark"},
+                    },
+                }}
+            >
+                <ToggleButton
+                    id="import-network-modal-keep-both-btn"
+                    value="keep-both"
+                >
+                    Keep both
+                </ToggleButton>
+                <ToggleButton
+                    id="import-network-modal-replace-existing-btn"
+                    value="replace"
+                >
+                    Replace existing
+                </ToggleButton>
+            </ToggleButtonGroup>
+            {conflictResolution === "keep-both" ? renderConflictKeepBothField() : renderConflictReplaceWarning()}
+        </>
+    )
+
+    const renderNameField = () => (
+        <Box>
+            <Typography
+                id="import-network-modal-name-label"
+                variant="caption"
+                sx={{
+                    color: "text.secondary",
+                    fontWeight: "bold",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                }}
+            >
+                Network name
+            </Typography>
+            <TextField
+                id="import-network-modal-name-input"
+                error={newNameHasConflict}
+                fullWidth
+                helperText={
+                    newNameHasConflict
+                        ? "That name is taken. Pick another to continue."
+                        : "Pulled from the filename — edit if you like."
+                }
+                onChange={(event) => setNetworkName(event.target.value)}
+                size="small"
+                sx={{marginTop: 0.5}}
+                value={networkName}
+            />
+        </Box>
+    )
+
+    const renderConfirmStep = () => (
+        <Box
+            id="import-network-modal-confirm"
+            sx={{display: "flex", flexDirection: "column", gap: 2, marginTop: 3}}
+        >
+            {importedNameHasConflict ? renderConflictResolution() : renderNameField()}
+        </Box>
+    )
 
     return (
         <MUIDialog
@@ -506,494 +1018,15 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             onClose={onClose}
             title="Import network definition"
             paperProps={{minWidth: "560px"}}
-            footer={footer}
+            footer={renderFooter()}
         >
-            <Stepper
-                activeStep={activeStep}
-                id="import-network-modal-stepper"
-                sx={(theme) => ({
-                    marginTop: 1,
-                    // MUI v9 rejects the CSS named color "gray" it uses by default for
-                    // inactive steps/connectors — override with valid token values.
-                    "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
-                        color: "var(--bs-gray-medium)",
-                    },
-                    "& .MuiStepConnector-line": {
-                        borderColor: "var(--bs-gray-light)",
-                    },
-                    "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
-                        color: "var(--bs-gray-medium)",
-                    },
-                    // In dark mode the completed-step icon defaults to a muted/gray fill;
-                    // make it white so completed steps read clearly against the dark backdrop.
-                    ...(theme.palette.mode === "dark" && {
-                        "& .MuiStepIcon-root.Mui-completed": {
-                            color: theme.palette.common.white,
-                        },
-                    }),
-                })}
-            >
-                {STEPS.map((label) => (
-                    <Step key={label}>
-                        <StepLabel>{label}</StepLabel>
-                    </Step>
-                ))}
-            </Stepper>
-
+            {renderStepper()}
             {/* Step 1: Select file */}
-            {activeStep === 0 && (
-                <DropZone
-                    isDragOver={isDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    onClick={handleBrowseClick}
-                    onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault()
-                            handleBrowseClick()
-                        }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Drop zone for network definition file"
-                >
-                    <CloudUploadOutlinedIcon
-                        id="import-network-modal-upload-icon"
-                        sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
-                    />
-                    <Typography
-                        id="import-network-modal-drop-text"
-                        variant="subtitle1"
-                        sx={{color: "primary.main", fontWeight: "bold"}}
-                    >
-                        Drag &amp; drop a network definition
-                    </Typography>
-                    <Typography variant="body2">
-                        {"or "}
-                        <Box
-                            component="button"
-                            id="import-network-modal-browse-link"
-                            onClick={(event) => {
-                                event.stopPropagation()
-                                handleBrowseClick()
-                            }}
-                            sx={{
-                                background: "none",
-                                border: "none",
-                                color: "var(--bs-secondary)",
-                                cursor: "pointer",
-                                font: "inherit",
-                                padding: 0,
-                                textDecoration: "underline",
-                                "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
-                            }}
-                        >
-                            browse your files
-                        </Box>
-                    </Typography>
-                    <Typography
-                        id="import-network-modal-file-types"
-                        variant="caption"
-                        sx={{color: "text.secondary"}}
-                    >
-                        Accepts .json up to 5 MB.
-                    </Typography>
-                    <input
-                        accept={ACCEPTED_MIME_TYPES}
-                        aria-hidden="true"
-                        data-testid="import-network-file-input"
-                        onChange={handleFileChange}
-                        onClick={(event) => event.stopPropagation()}
-                        ref={fileInputRef}
-                        style={{display: "none"}}
-                        tabIndex={-1}
-                        type="file"
-                    />
-                </DropZone>
-            )}
-
+            {activeStep === 0 && renderSelectFileStep()}
             {/* Step 2: Review */}
-            {activeStep === 1 && (
-                <Box
-                    id="import-network-modal-review"
-                    sx={{
-                        alignItems: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                        marginTop: 4,
-                        minHeight: "220px",
-                    }}
-                >
-                    {parseState === "loading" && (
-                        <>
-                            <CircularProgress
-                                id="import-network-modal-spinner"
-                                size={48}
-                            />
-                            <Typography
-                                id="import-network-modal-parsing-text"
-                                variant="subtitle1"
-                                sx={{fontWeight: "bold"}}
-                            >
-                                {`Parsing & validating ${fileExt}…`}
-                            </Typography>
-                            <Typography
-                                id="import-network-modal-parsing-filename"
-                                variant="body2"
-                                sx={{color: "text.secondary", fontFamily: "monospace"}}
-                            >
-                                {file?.name}
-                            </Typography>
-                        </>
-                    )}
-                    {parseState === "success" && (
-                        <Box sx={{width: "100%"}}>
-                            {/* Success banner */}
-                            <Box
-                                id="import-network-modal-success-banner"
-                                sx={{
-                                    alignItems: "center",
-                                    backgroundColor: (theme) => alpha(theme.palette.success.main, 0.12),
-                                    border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.4)}`,
-                                    borderRadius: 2,
-                                    color: "var(--bs-green)",
-                                    display: "flex",
-                                    gap: 1.5,
-                                    padding: "14px 16px",
-                                }}
-                            >
-                                <CheckCircleOutlineIcon />
-                                <Typography variant="body2">
-                                    {`Valid ${fileExt} — `}
-                                    <Box
-                                        component="span"
-                                        sx={{fontWeight: "bold"}}
-                                    >
-                                        parsed successfully
-                                    </Box>
-                                </Typography>
-                            </Box>
-                            {/* File info row */}
-                            <Box
-                                sx={{
-                                    alignItems: "flex-start",
-                                    display: "flex",
-                                    gap: 1.5,
-                                    marginTop: 3,
-                                }}
-                            >
-                                <InsertDriveFileOutlinedIcon
-                                    id="import-network-modal-file-icon"
-                                    sx={{color: "text.secondary", fontSize: "2rem"}}
-                                />
-                                {/* Keep the filename on one line: truncate the stem with an ellipsis
-                                    but pin the extension so ".json" stays visible. The full name is
-                                    available on hover via the tooltip. */}
-                                <Tooltip title={file?.name ?? ""}>
-                                    <Box
-                                        id="import-network-modal-review-filename"
-                                        sx={{
-                                            display: "flex",
-                                            flex: 1,
-                                            fontFamily: "monospace",
-                                            fontSize: 15,
-                                            minWidth: 0,
-                                        }}
-                                    >
-                                        <Box
-                                            component="span"
-                                            sx={{overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}
-                                        >
-                                            {fileStem}
-                                        </Box>
-                                        {fileNameExt && (
-                                            <Box
-                                                component="span"
-                                                sx={{flexShrink: 0}}
-                                            >
-                                                {`.${fileNameExt}`}
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Tooltip>
-                                <Typography
-                                    id="import-network-modal-review-filesize"
-                                    variant="body2"
-                                    sx={{
-                                        color: "text.secondary",
-                                        flexShrink: 0,
-                                        fontSize: 15,
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {formatFileSize(file?.size ?? 0)}
-                                </Typography>
-                            </Box>
-                            {/* Network summary */}
-                            {networkSummary && (
-                                <Box
-                                    id="import-network-modal-summary"
-                                    sx={{
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                        borderRadius: 2,
-                                        display: "grid",
-                                        gridTemplateColumns: "1fr 1fr",
-                                        marginTop: 3,
-                                        overflow: "hidden",
-                                    }}
-                                >
-                                    {(
-                                        [
-                                            {label: "Agents", value: networkSummary.agents},
-                                            {label: "Coded tools", value: networkSummary.codedTools},
-                                            {label: "External agents", value: networkSummary.externalAgents},
-                                            {label: "Front man", value: networkSummary.frontman, isFrontman: true},
-                                        ] as const
-                                    ).map((stat, index) => (
-                                        <Box
-                                            key={stat.label}
-                                            sx={{
-                                                borderColor: "divider",
-                                                borderLeft: index % 2 === 1 ? "1px solid" : undefined,
-                                                borderTop: index >= 2 ? "1px solid" : undefined,
-                                                padding: "14px 16px",
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    color: "text.secondary",
-                                                    letterSpacing: "0.08em",
-                                                    textTransform: "uppercase",
-                                                }}
-                                            >
-                                                {stat.label}
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: "isFrontman" in stat ? "monospace" : undefined,
-                                                    fontSize: "isFrontman" in stat ? 15 : 18,
-                                                    lineHeight: 1.4,
-                                                    marginTop: 0.5,
-                                                    wordBreak: "break-word",
-                                                }}
-                                            >
-                                                {stat.value}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    )}
-                    {parseState === "error" && (
-                        <Box
-                            id="import-network-modal-error-banner"
-                            sx={{
-                                alignItems: "center",
-                                backgroundColor: "error.dark",
-                                borderRadius: 1,
-                                color: "error.contrastText",
-                                display: "flex",
-                                gap: 1,
-                                padding: "10px 14px",
-                                width: "100%",
-                            }}
-                        >
-                            <ErrorOutlineIcon fontSize="small" />
-                            <Typography variant="body2">{parseError}</Typography>
-                        </Box>
-                    )}
-                </Box>
-            )}
-
+            {activeStep === 1 && renderReviewStep()}
             {/* Step 3: Confirm */}
-            {activeStep === 2 && (
-                <Box
-                    id="import-network-modal-confirm"
-                    sx={{display: "flex", flexDirection: "column", gap: 2, marginTop: 3}}
-                >
-                    {importedNameHasConflict ? (
-                        <>
-                            {/* Name conflict prompt */}
-                            <Box id="import-network-modal-conflict-prompt">
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: "text.secondary",
-                                        fontWeight: "bold",
-                                        letterSpacing: "0.08em",
-                                        textTransform: "uppercase",
-                                    }}
-                                >
-                                    Name conflict
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{marginTop: 0.5}}
-                                >
-                                    A network named <strong>&quot;{importedName}&quot;</strong> already exists. How
-                                    would you like to handle it?
-                                </Typography>
-                            </Box>
-                            {/* Resolution toggle */}
-                            <ToggleButtonGroup
-                                id="import-network-modal-conflict-toggle"
-                                exclusive={true}
-                                fullWidth
-                                onChange={(_, value: ConflictResolution | null) => {
-                                    if (value !== null) handleConflictResolutionChange(value)
-                                }}
-                                value={conflictResolution}
-                                sx={{
-                                    "& .MuiToggleButton-root": {
-                                        textTransform: "none",
-                                    },
-                                    "& #import-network-modal-keep-both-btn.Mui-selected": {
-                                        backgroundColor: "primary.main",
-                                        color: "primary.contrastText",
-                                        "&:hover": {backgroundColor: "primary.dark"},
-                                    },
-                                    "& #import-network-modal-replace-existing-btn.Mui-selected": {
-                                        backgroundColor: "error.main",
-                                        color: "error.contrastText",
-                                        "&:hover": {backgroundColor: "error.dark"},
-                                    },
-                                }}
-                            >
-                                <ToggleButton
-                                    id="import-network-modal-keep-both-btn"
-                                    value="keep-both"
-                                >
-                                    Keep both
-                                </ToggleButton>
-                                <ToggleButton
-                                    id="import-network-modal-replace-existing-btn"
-                                    value="replace"
-                                >
-                                    Replace existing
-                                </ToggleButton>
-                            </ToggleButtonGroup>
-                            {conflictResolution === "keep-both" ? (
-                                <Box>
-                                    <Typography
-                                        id="import-network-modal-name-label"
-                                        variant="caption"
-                                        sx={{
-                                            color: "text.secondary",
-                                            fontWeight: "bold",
-                                            letterSpacing: "0.08em",
-                                            textTransform: "uppercase",
-                                        }}
-                                    >
-                                        New network name
-                                    </Typography>
-                                    <TextField
-                                        id="import-network-modal-name-input"
-                                        fullWidth
-                                        onChange={(event) => setNetworkName(event.target.value)}
-                                        size="small"
-                                        sx={{marginTop: 0.5}}
-                                        value={networkName}
-                                    />
-                                    {newNameHasConflict ? (
-                                        <Box
-                                            id="import-network-modal-name-taken"
-                                            sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
-                                        >
-                                            <WarningAmberIcon
-                                                fontSize="small"
-                                                sx={{color: "warning.main", flexShrink: 0}}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                sx={{color: "warning.main", fontWeight: "bold"}}
-                                            >
-                                                That name is taken. Choose a new name to keep both networks.
-                                            </Typography>
-                                        </Box>
-                                    ) : (
-                                        trimmedName !== "" && (
-                                            <Box
-                                                id="import-network-modal-name-available"
-                                                sx={{alignItems: "center", display: "flex", gap: 0.5, marginTop: 0.75}}
-                                            >
-                                                <CheckCircleOutlineIcon
-                                                    fontSize="small"
-                                                    sx={{color: "success.main", flexShrink: 0}}
-                                                />
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{color: "success.main", fontWeight: "bold"}}
-                                                >
-                                                    Name is available.
-                                                </Typography>
-                                            </Box>
-                                        )
-                                    )}
-                                </Box>
-                            ) : (
-                                <Box
-                                    id="import-network-modal-replace-warning"
-                                    sx={{
-                                        alignItems: "center",
-                                        backgroundColor: (theme) => alpha(theme.palette.error.main, 0.12),
-                                        borderRadius: 1,
-                                        borderStyle: "solid",
-                                        borderWidth: "1px",
-                                        borderColor: "error.main",
-                                        display: "flex",
-                                        gap: 1,
-                                        padding: "10px 14px",
-                                    }}
-                                >
-                                    <WarningAmberIcon
-                                        fontSize="small"
-                                        sx={{color: "error.main", flexShrink: 0}}
-                                    />
-                                    <Typography variant="body2">
-                                        <strong>&quot;{importedName}&quot;</strong> will be{" "}
-                                        <strong>permanently overwritten</strong>. This can&apos;t be undone.
-                                    </Typography>
-                                </Box>
-                            )}
-                        </>
-                    ) : (
-                        /* Network name field (no conflict) */
-                        <Box>
-                            <Typography
-                                id="import-network-modal-name-label"
-                                variant="caption"
-                                sx={{
-                                    color: "text.secondary",
-                                    fontWeight: "bold",
-                                    letterSpacing: "0.08em",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                Network name
-                            </Typography>
-                            <TextField
-                                id="import-network-modal-name-input"
-                                error={newNameHasConflict}
-                                fullWidth
-                                helperText={
-                                    newNameHasConflict
-                                        ? "That name is taken. Pick another to continue."
-                                        : "Pulled from the filename — edit if you like."
-                                }
-                                onChange={(event) => setNetworkName(event.target.value)}
-                                size="small"
-                                sx={{marginTop: 0.5}}
-                                value={networkName}
-                            />
-                        </Box>
-                    )}
-                </Box>
-            )}
+            {activeStep === 2 && renderConfirmStep()}
         </MUIDialog>
     )
 }
