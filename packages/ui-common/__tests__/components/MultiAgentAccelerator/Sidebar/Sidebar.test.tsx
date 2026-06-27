@@ -424,7 +424,8 @@ describe("SideBar", () => {
 
         expect(downloadFile).toHaveBeenCalledWith(
             JSON.stringify(TEMPORARY_NETWORK_DEFINITION, null, 2),
-            `${TEMPORARY_NETWORK_NAME}.json`
+            `${TEMPORARY_NETWORK_NAME}.json`,
+            "application/json"
         )
     })
 

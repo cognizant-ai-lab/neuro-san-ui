@@ -198,7 +198,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     // otherwise flatten the UUID's hyphens to underscores).
                                                     const cleanName = removeTrailingUuid(labelString)
                                                     const fileName = `${toSafeFilename(cleanName)}.json`
-                                                    downloadFile(JSON.stringify(networkDefinition, null, 2), fileName)
+                                                    downloadFile(
+                                                        JSON.stringify(networkDefinition, null, 2),
+                                                        fileName,
+                                                        "application/json"
+                                                    )
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"

@@ -19,7 +19,7 @@ interface ChatHistoryProps {
  * rendering the conversation.
  * @param chatHistory
  */
-const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
+export const toTurns = (chatHistory: BaseMessage[]): ConversationTurn[] =>
     chatHistory
         .filter((message) => message.type === "human" || message.type === "ai")
         .map((message): ConversationTurn => {
