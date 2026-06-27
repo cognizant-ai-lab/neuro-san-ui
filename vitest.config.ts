@@ -23,10 +23,10 @@ export default defineConfig({
             provider: "v8",
             reporter: ["text-summary"],
             thresholds: {
-                lines: -2840,
-                functions: -852,
                 statements: -3082,
                 branches: -1601,
+                functions: -852,
+                lines: -2840,
             },
         },
         environment: "jsdom",

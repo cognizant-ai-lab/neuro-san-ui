@@ -25,7 +25,8 @@
         "test": "yarn test:jest && yarn test:vitest",
         "test:jest": "jest --config ./jest.config.ts",
         "test:vitest": "vitest run",
-        "update-coverage": "./build_scripts/UpdateCoverage.sh"
+        "update-coverage:jest": "./build_scripts/UpdateCoverage.sh",
+        "update-coverage:vitest": "./build_scripts/vitest/UpdateCoverage.sh"
     },
     "packageManager": "yarn@4.12.0",
     "devDependencies": {
