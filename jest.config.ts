@@ -59,8 +59,6 @@ const esmPackagesToTransform = [
     "zwitch",
 ]
 
-const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`)
-
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
 
@@ -122,7 +120,7 @@ const config: Config.InitialOptions = {
         "<rootDir>/node_modules/",
         "<rootDir>/dist",
         "<rootDir>/.next/",
-        ...TESTS_MIGRATED_TO_VITEST.map((testPath) => escapeRegex(testPath)),
+        ...TESTS_MIGRATED_TO_VITEST.map((testPath) => `<rootDir>/${testPath}`),
     ],
 }
 
