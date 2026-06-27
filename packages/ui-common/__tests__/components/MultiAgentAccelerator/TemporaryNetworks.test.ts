@@ -85,7 +85,7 @@ describe("convertReservationsToNetworks", () => {
         const valid = makeReservation("good-1")
         // reservation_id is typed as a string, but it is echoed from un-vetted backend data and may be
         // missing or empty at runtime; such entries must not produce a "temporary/undefined" network.
-        const missingId = {...makeReservation("ignored"), reservation_id: undefined} as unknown as AgentReservation
+        const missingId: AgentReservation = {...makeReservation("ignored"), reservation_id: undefined}
         const emptyId = makeReservation("")
 
         const networks = convertReservationsToNetworks([missingId, valid, emptyId], null)

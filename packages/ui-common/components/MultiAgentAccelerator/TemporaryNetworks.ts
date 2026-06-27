@@ -1,10 +1,10 @@
+import {getFrontman} from "./AgentFlow/GraphStructure"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_HOCON,
     AGENT_RESERVATIONS_KEY,
     AgentNetworkDefinitionEntry,
     DisplayAs,
-    getFrontman,
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
 import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
@@ -224,7 +224,7 @@ export const importNetworkFromJson = async (
     neuroSanURL: string,
     username: string
 ): Promise<ImportNetworkResult> => {
-    const networkDef = jsonToNetworkDefinition(content)
+    const networkDef = jsonToNetworkDefinition(JSON.parse(content))
     if (networkDef.length === 0) {
         return {failure: "invalid-definition"}
     }

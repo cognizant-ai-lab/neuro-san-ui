@@ -142,6 +142,7 @@ type CONNECTION_STATUS = "online" | "offline" | "unknown"
 export interface SidebarProps {
     readonly id: string
     readonly isAwaitingLlm: boolean
+    readonly isImporting: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
     readonly neuroSanServerURL: string
@@ -158,6 +159,7 @@ export interface SidebarProps {
 export const Sidebar: FC<SidebarProps> = ({
     id,
     isAwaitingLlm,
+    isImporting,
     networkIconSuggestions,
     networks,
     neuroSanServerURL,
@@ -370,7 +372,7 @@ export const Sidebar: FC<SidebarProps> = ({
             </Button>
             <Button
                 aria-label="Import Network Definition"
-                disabled={isAwaitingLlm}
+                disabled={isAwaitingLlm || isImporting}
                 id="import-network-btn"
                 onClick={onImportClick}
                 sx={{display: "inline-block", minWidth: "40px"}}
@@ -381,7 +383,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 >
                     <FileUploadOutlinedIcon
                         id="import-network-icon"
-                        sx={{color: isAwaitingLlm ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                        sx={{color: isAwaitingLlm || isImporting ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
                     />
                 </Tooltip>
             </Button>

@@ -451,7 +451,7 @@ describe("MultiAgentAccelerator", () => {
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
 
-        // Not valid JSON — jsonToNetworkDefinition's JSON.parse throws, exercising the catch branch.
+        // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
         await act(async () => {
             onImport("Broken Network", "this is not json")
         })

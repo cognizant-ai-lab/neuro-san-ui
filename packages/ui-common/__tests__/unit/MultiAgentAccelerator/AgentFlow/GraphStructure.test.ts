@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {getFrontman} from "../../../components/MultiAgentAccelerator/const"
-import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {
+    getFrontman,
+    getParentAgents,
+    getParents,
+} from "../../../../components/MultiAgentAccelerator/AgentFlow/GraphStructure"
+import {ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 
 describe("getFrontman", () => {
     withStrictMocks()
@@ -63,5 +67,52 @@ describe("getFrontman", () => {
         // The only unreferenced parent has no origin, so there is no valid frontman.
         const agents: ConnectivityInfo[] = [{tools: ["worker"]}, {origin: "worker", tools: []}]
         expect(getFrontman(agents)).toBeUndefined()
+    })
+})
+
+describe("getParentAgents", () => {
+    withStrictMocks()
+
+    it("should return only agents that have at least one tool", () => {
+        const agents = [
+            {origin: "boss", tools: ["worker"]},
+            {origin: "worker", tools: []},
+        ]
+        expect(getParentAgents(agents).map((agent) => agent.origin)).toEqual(["boss"])
+    })
+
+    it("should treat a lone single-agent network as its own parent (even with no tools)", () => {
+        const agents: ConnectivityInfo[] = [{origin: "solo", tools: []}]
+        expect(getParentAgents(agents)).toEqual(agents)
+    })
+
+    it("should tolerate agents with no tools key", () => {
+        const agents = [{origin: "boss", tools: ["worker"]}, {origin: "worker"}]
+        expect(getParentAgents(agents).map((agent) => agent.origin)).toEqual(["boss"])
+    })
+
+    it("should return an empty array when no agent has tools", () => {
+        const agents: ConnectivityInfo[] = [
+            {origin: "a", tools: []},
+            {origin: "b", tools: []},
+        ]
+        expect(getParentAgents(agents)).toEqual([])
+    })
+})
+
+describe("getParents", () => {
+    withStrictMocks()
+
+    it("should return the origins of the immediate parents of a node", () => {
+        const parentAgents = [
+            {origin: "boss", tools: ["worker", "helper"]},
+            {origin: "lead", tools: ["worker"]},
+        ]
+        expect(getParents("worker", parentAgents)).toEqual(["boss", "lead"])
+    })
+
+    it("should return an empty array for a node with no parents (frontman)", () => {
+        const parentAgents = [{origin: "boss", tools: ["worker"]}]
+        expect(getParents("boss", parentAgents)).toEqual([])
     })
 })

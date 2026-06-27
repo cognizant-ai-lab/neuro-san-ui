@@ -35,25 +35,22 @@ import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEff
 
 import {splitFilename} from "../../../utils/File"
 import {MUIDialog} from "../../Common/MUIDialog"
-import {AgentNetworkDefinitionEntry, DisplayAs, getFrontman} from "../const"
+import {getFrontman} from "../AgentFlow/GraphStructure"
+import {AgentNetworkDefinitionEntry, DisplayAs} from "../const"
 
 //#region: Constants
 
 export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
-export const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
+const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
 
 //#endregion: Constants
 
-//#region: Enums, Interfaces and Types
+//#region: Interfaces and Types
 
 // Outcome of validating a selected file against the advertised constraints.
-export enum ImportFileValidation {
-    VALID = "valid",
-    UNSUPPORTED_TYPE = "unsupported_type",
-    TOO_LARGE = "too_large",
-}
+export type ImportFileValidation = "valid" | "unsupported_type" | "too_large"
 
 export interface ImportNetworkModalProps {
     readonly existingNetworkNames?: readonly string[]
@@ -82,30 +79,31 @@ type ConflictResolution = "keep-both" | "replace"
 /**
  * Parse and validate a network definition file. Imports are JSON only.
  *
- * Returns the normalised JSON string on success, or an error message on failure.
+ * Returns the parsed value on success, or an error message on failure. The value is typed `unknown`,
+ * so callers narrow it (see `jsonToNetworkDefinition`) or stringify it as needed.
  */
-export const parseNetworkFileContent = (text: string): {success: boolean; json?: string; error?: string} => {
+export const parseNetworkFileContent = (
+    text: string
+): {success: true; data: unknown} | {success: false; error: string} => {
     if (text.trim() === "") {
         return {success: false, error: "The file is empty."}
     }
     try {
-        const parsed = JSON.parse(text) as unknown
-        return {success: true, json: JSON.stringify(parsed, null, 2)}
+        return {success: true, data: JSON.parse(text)}
     } catch (err) {
         return {success: false, error: err instanceof Error ? err.message : String(err)}
     }
 }
 
 /**
- * Converts a parsed network JSON string into an array of AgentNetworkDefinitionEntry objects
+ * Converts a parsed network definition into an array of AgentNetworkDefinitionEntry objects
  * suitable for sendNetworkDesignerRequest.
  *
  * Expects the top-level array shape — each entry carrying `origin`, `tools`, `display_as`, etc.
  * Anything that isn't an array yields an empty result, and entries without a string `origin`
  * are dropped. The `instructions` and `description` fields are trimmed when present.
  */
-export const jsonToNetworkDefinition = (jsonString: string): AgentNetworkDefinitionEntry[] => {
-    const parsed = JSON.parse(jsonString) as unknown
+export const jsonToNetworkDefinition = (parsed: unknown): AgentNetworkDefinitionEntry[] => {
     if (!Array.isArray(parsed)) return []
     return parsed
         .filter(
@@ -154,27 +152,27 @@ export const validateImportFile = (file: File): ImportFileValidation => {
     const {ext} = splitFilename(file.name)
     const normalizedExt = `.${ext.toLowerCase()}`
     if (!IMPORT_MODAL_ACCEPTED_EXTENSIONS.includes(normalizedExt)) {
-        return ImportFileValidation.UNSUPPORTED_TYPE
+        return "unsupported_type"
     }
     if (file.size > IMPORT_MODAL_MAX_FILE_SIZE_BYTES) {
-        return ImportFileValidation.TOO_LARGE
+        return "too_large"
     }
-    return ImportFileValidation.VALID
+    return "valid"
 }
 
 // Human-readable explanation for a non-VALID validation status, or null if the file is acceptable.
 export const importFileValidationMessage = (validation: ImportFileValidation, file: File): string | null => {
     switch (validation) {
-        case ImportFileValidation.UNSUPPORTED_TYPE: {
+        case "unsupported_type": {
             const {ext} = splitFilename(file.name)
             const accepted = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(" and ")
             return `Unsupported file type${ext ? ` ".${ext}"` : ""}. Accepts ${accepted}.`
         }
-        case ImportFileValidation.TOO_LARGE: {
+        case "too_large": {
             const max = formatFileSize(IMPORT_MODAL_MAX_FILE_SIZE_BYTES)
             return `File is too large (${formatFileSize(file.size)}). Maximum size is ${max}.`
         }
-        case ImportFileValidation.VALID:
+        case "valid":
         default:
             return null
     }
@@ -260,7 +258,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const [networkName, setNetworkName] = useState<string>("")
     const [parseState, setParseState] = useState<ParseState | null>(null)
     const [parseError, setParseError] = useState<string | null>(null)
-    const [parsedJson, setParsedJson] = useState<string | null>(null)
+    const [parsedData, setParsedData] = useState<unknown>(null)
 
     // Reset all state whenever the modal is opened
     useEffect(() => {
@@ -272,7 +270,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             setNetworkName("")
             setParseState(null)
             setParseError(null)
-            setParsedJson(null)
+            setParsedData(null)
         }
     }, [isOpen])
 
@@ -287,7 +285,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         // hints the picker and is bypassed by drag/drop, so unsupported or oversized
         // files would otherwise be fed straight into the parser.
         const validation = validateImportFile(file)
-        if (validation !== ImportFileValidation.VALID) {
+        if (validation !== "valid") {
             setParseState("error")
             setParseError(importFileValidationMessage(validation, file))
             return undefined
@@ -305,7 +303,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                 setParseError(`Parse error: ${result.error}`)
                 return
             }
-            setParsedJson(result.json)
+            setParsedData(result.data)
             setParseState("success")
             setNetworkName(filenameToNetworkName(file.name))
             setConflictResolution("keep-both")
@@ -341,7 +339,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const processFile = (selectedFile: File) => {
         setActiveStep(1)
-        setParsedJson(null)
+        setParsedData(null)
         setConflictResolution("keep-both")
         // Setting the file kicks off the read effect below, which owns reading/parsing and
         // cleans up its own FileReader.
@@ -393,7 +391,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     }
 
     const handleImport = () => {
-        if (!parsedJson) return
+        if (parseState !== "success") return
         // "Replace existing" overwrites the colliding network, so always send the original
         // imported name; "Keep both" sends whatever unique name the user typed.
         const nameToImport = importedNameHasConflict && conflictResolution === "replace" ? importedName : networkName
@@ -401,7 +399,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         // produce display names — so send underscores instead of spaces. Parentheses around an
         // auto-appended index ("My Network (2)") are dropped so the API name reads "My_Network_2".
         const apiName = nameToImport.trim().replaceAll(" ", "_").replaceAll(/[()]/gu, "")
-        onImport?.(apiName, parsedJson)
+        onImport?.(apiName, JSON.stringify(parsedData))
         onClose()
     }
 
@@ -424,9 +422,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const {name: fileStem, ext: fileNameExt} = file ? splitFilename(file.name) : {name: "", ext: ""}
     const fileExt = fileNameExt.toUpperCase()
 
-    // Summary shown on the review step. parsedJson is already-validated JSON, so this never throws.
+    // Summary shown on the review step. parsedData is the already-validated parsed value, so this never throws.
     const networkSummary =
-        parseState === "success" && parsedJson ? summarizeNetworkDefinition(jsonToNetworkDefinition(parsedJson)) : null
+        parseState === "success" ? summarizeNetworkDefinition(jsonToNetworkDefinition(parsedData)) : null
 
     // The confirm-step primary action adapts to how the conflict is being resolved.
     const isReplacing = importedNameHasConflict && conflictResolution === "replace"

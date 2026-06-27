@@ -21,7 +21,6 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     filenameToNetworkName,
     formatFileSize,
-    IMPORT_MODAL_ACCEPTED_EXTENSIONS,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
     ImportFileValidation,
     importFileValidationMessage,
@@ -86,6 +85,15 @@ describe("ImportNetworkModal", () => {
     const advanceToConfirmStep = async (filename = "my_network.json", content = '{"agents": {}}') => {
         dropFileOnModal(filename, content)
         await user.click(await screen.findByRole("button", {name: CONTINUE_BUTTON}))
+    }
+
+    // Assert a network-summary stat. Each stat is a cell holding a label and its value as sibling
+    // Typographies; scope the value assertion to the cell so a bare "2"/"1"/"0" elsewhere in the
+    // summary can't satisfy it. Labels render uppercased via CSS but the DOM text is source-cased.
+    const expectStat = (summaryEl: HTMLElement, label: string, value: string): void => {
+        const cell = within(summaryEl).getByText(label).parentElement
+        if (!cell) throw new Error(`Network summary cell for "${label}" was not found`)
+        expect(within(cell).getByText(value)).toBeInTheDocument()
     }
 
     beforeEach(() => {
@@ -174,14 +182,6 @@ describe("ImportNetworkModal", () => {
         expect(() => fireEvent.drop(dropZone, {dataTransfer: {files: []}})).not.toThrow()
     })
 
-    it("should expose correct accepted extensions constant", () => {
-        expect(IMPORT_MODAL_ACCEPTED_EXTENSIONS).toEqual([".json"])
-    })
-
-    it("should expose correct max file size constant (5 MB)", () => {
-        expect(IMPORT_MODAL_MAX_FILE_SIZE_BYTES).toBe(5 * 1024 * 1024)
-    })
-
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
@@ -234,15 +234,11 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("CheckCircleOutlinedIcon")
         const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
         if (!summaryEl) throw new Error("Network summary was not rendered")
-        const summary = within(summaryEl)
-        // Labels render uppercased via CSS but the DOM text is the source-cased label.
-        expect(summary.getByText("Agents")).toBeInTheDocument()
-        expect(summary.getByText("Coded tools")).toBeInTheDocument()
-        expect(summary.getByText("External agents")).toBeInTheDocument()
-        expect(summary.getByText("Front man")).toBeInTheDocument()
         // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = lead
-        expect(summary.getByText("2")).toBeInTheDocument()
-        expect(summary.getByText("lead")).toBeInTheDocument()
+        expectStat(summaryEl, "Agents", "2")
+        expectStat(summaryEl, "Coded tools", "1")
+        expectStat(summaryEl, "External agents", "0")
+        expectStat(summaryEl, "Front man", "lead")
     })
 
     it("should show a parse error banner when the file content is unparseable", async () => {
@@ -475,7 +471,7 @@ describe("parseNetworkFileContent", () => {
         const result = parseNetworkFileContent(content)
         expect(result.success).toBe(true)
         // Use type assertion — jest assertions don't narrow TypeScript types
-        expect(JSON.parse((result as {success: true; json: string}).json)).toEqual(parsed)
+        expect((result as {success: true; data: unknown}).data).toEqual(parsed)
     })
 
     it.each([
@@ -509,38 +505,45 @@ describe("validateImportFile", () => {
         {name: "a file exactly at the size limit", fileName: "net.json", size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES},
     ])("should accept $name", ({fileName, size}) => {
         const file = fileWithSize(fileName, size)
-        expect(validateImportFile(file)).toBe(ImportFileValidation.VALID)
-        expect(importFileValidationMessage(ImportFileValidation.VALID, file)).toBeNull()
+        expect(validateImportFile(file)).toBe("valid")
+        expect(importFileValidationMessage("valid", file)).toBeNull()
     })
 
-    it.each([
+    it.each<{name: string; fileName: string; size: number; expectedValidation: ImportFileValidation; error: RegExp}>([
         // HOCON is no longer accepted — only JSON.
         {
             name: "an unsupported .hocon extension",
             fileName: "net.hocon",
             size: 1024,
-            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
+            expectedValidation: "unsupported_type",
             error: /Unsupported file type ".hocon"/u,
         },
         {
             name: "an unsupported .png extension",
             fileName: "image.png",
             size: 1024,
-            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
+            expectedValidation: "unsupported_type",
             error: /Unsupported file type ".png"/u,
+        },
+        {
+            name: "a dotfile whose name is entirely an unsupported extension",
+            fileName: ".env",
+            size: 1024,
+            expectedValidation: "unsupported_type",
+            error: /Unsupported file type ".env"/u,
         },
         {
             name: "a file with no extension",
             fileName: "noextension",
             size: 1024,
-            expectedValidation: ImportFileValidation.UNSUPPORTED_TYPE,
+            expectedValidation: "unsupported_type",
             error: /Unsupported file type\./u,
         },
         {
             name: "a file larger than the max size",
             fileName: "net.json",
             size: IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1,
-            expectedValidation: ImportFileValidation.TOO_LARGE,
+            expectedValidation: "too_large",
             error: /File is too large/u,
         },
     ])("should reject $name", ({fileName, size, expectedValidation, error}) => {
@@ -552,7 +555,7 @@ describe("validateImportFile", () => {
 
 describe("jsonToNetworkDefinition", () => {
     it("should pass through a top-level array of entries, dropping those without a string origin", () => {
-        const json = JSON.stringify([
+        const parsed = [
             {
                 origin: "frontman",
                 tools: ["helper"],
@@ -560,11 +563,11 @@ describe("jsonToNetworkDefinition", () => {
                 instructions: "Lead the team",
                 description: "The boss",
             },
-            {origin: "helper", tools: [], display_as: "coded_tool"},
+            {origin: "helper", tools: [] as string[], display_as: "coded_tool"},
             {instructions: "no origin"},
             null,
-        ])
-        expect(jsonToNetworkDefinition(json)).toEqual([
+        ]
+        expect(jsonToNetworkDefinition(parsed)).toEqual([
             {
                 origin: "frontman",
                 tools: ["helper"],
@@ -577,25 +580,26 @@ describe("jsonToNetworkDefinition", () => {
     })
 
     it.each([
-        {name: "an object with agents", json: '{"agents": {}}'},
-        {name: "an object with a tools array", json: '{"tools": [{"name": "frontman"}]}'},
-        {name: "an arbitrary object", json: '{"something": "else"}'},
-        {name: "an empty array", json: "[]"},
-    ])("should return an empty array for $name", ({json}) => {
-        expect(jsonToNetworkDefinition(json)).toEqual([])
+        {name: "an object with agents", parsed: {agents: {}}},
+        {name: "an object with a tools array", parsed: {tools: [{name: "frontman"}]}},
+        {name: "an arbitrary object", parsed: {something: "else"}},
+        {name: "an empty array", parsed: []},
+        {name: "a non-object value", parsed: "just a string"},
+    ])("should return an empty array for $name", ({parsed}) => {
+        expect(jsonToNetworkDefinition(parsed)).toEqual([])
     })
 
     it("should trim leading/trailing whitespace from instructions and description", () => {
-        const json = JSON.stringify([
+        const parsed = [
             {
                 origin: "frontman",
-                tools: [],
+                tools: [] as string[],
                 display_as: "llm_agent",
                 instructions: "\n  Lead the team  \n",
                 description: "  The boss\n",
             },
-        ])
-        expect(jsonToNetworkDefinition(json)).toEqual([
+        ]
+        expect(jsonToNetworkDefinition(parsed)).toEqual([
             {
                 origin: "frontman",
                 tools: [],
@@ -607,8 +611,8 @@ describe("jsonToNetworkDefinition", () => {
     })
 
     it("should leave entries without instructions or description untouched", () => {
-        const json = JSON.stringify([{origin: "helper", tools: [], display_as: "coded_tool"}])
-        expect(jsonToNetworkDefinition(json)).toEqual([{origin: "helper", tools: [], display_as: "coded_tool"}])
+        const parsed = [{origin: "helper", tools: [] as string[], display_as: "coded_tool"}]
+        expect(jsonToNetworkDefinition(parsed)).toEqual([{origin: "helper", tools: [], display_as: "coded_tool"}])
     })
 })
 

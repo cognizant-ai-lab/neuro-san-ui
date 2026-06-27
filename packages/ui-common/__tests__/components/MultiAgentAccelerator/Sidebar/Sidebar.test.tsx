@@ -97,6 +97,7 @@ const setSelectedNetworkMock = jest.fn()
 const DEFAULT_PROPS: SidebarProps = {
     id: "test-flow-id",
     isAwaitingLlm: false,
+    isImporting: false,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     networks: LIST_NETWORKS_RESPONSE,
     neuroSanServerURL: DEFAULT_EXAMPLE_URL,
@@ -542,6 +543,12 @@ describe("SideBar", () => {
 
     it("should disable the import button when isAwaitingLlm is true", async () => {
         renderSidebarComponent({isAwaitingLlm: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should disable the import button when isImporting is true", async () => {
+        renderSidebarComponent({isImporting: true})
         const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
         expect(importButton).toBeDisabled()
     })

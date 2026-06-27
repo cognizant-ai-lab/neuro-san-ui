@@ -26,7 +26,8 @@ import {AgentNodeProps, FRONTMAN_SIZE_MULTIPLIER, NODE_HEIGHT, NODE_WIDTH} from 
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {cleanUpAgentName, KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../AgentChat/Common/Utils"
-import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, getFrontman, LEVEL_SPACING} from "../const"
+import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "../const"
+import {getFrontman, getParentAgents, getParents} from "./GraphStructure"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
 
@@ -98,22 +99,6 @@ const areInSameConversation = (
 const AGENT_NODE_TYPE_NAME = "agentNode"
 
 // #endregion: Constants
-
-/**
- * Returns the "origins" (node names) of the _immediate_ parents of a node in the agent network. Grandparents and
- * higher are not included.
- *
- * @param node Node ID for which to find parents
- * @param parentAgents Full list of parent agents in the network
- * @returns The IDs of the immediate parent nodes for the given node or empty array if no parents are found (frontman)
- */
-const getParents = (node: string, parentAgents: ConnectivityInfo[]): string[] => {
-    return parentAgents.filter((agent) => agent.tools.includes(node)).map((parentNode) => parentNode.origin)
-}
-
-// "Parent agents" are those that have tools, aka agents with "child agents"
-const getParentAgents = (agentsInNetwork: ConnectivityInfo[]): ConnectivityInfo[] =>
-    agentsInNetwork.length === 1 ? agentsInNetwork : agentsInNetwork.filter((agent) => agent.tools?.length > 0)
 
 // Generates the properties for an edge in the graph.
 // Common for both radial and linear layouts.

@@ -765,6 +765,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     <Sidebar
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
+                        isImporting={isImporting}
                         networkIconSuggestions={networkIconSuggestions}
                         networks={networks}
                         neuroSanServerURL={neuroSanURL}
