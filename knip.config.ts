@@ -75,6 +75,7 @@ const config: KnipConfig = {
         "eslint-plugin-react-hooks",
         "eslint-plugin-testing-library",
         "eslint-plugin-unicorn",
+        "eslint-plugin-vitest",
         "typescript-eslint",
     ],
     workspaces: {
