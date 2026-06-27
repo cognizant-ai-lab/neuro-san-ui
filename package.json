@@ -69,7 +69,6 @@
         "ts-node": "10.9.2",
         "typescript": "catalog:default",
         "typescript-eslint": "8.61.0",
-        "vite-tsconfig-paths": "catalog:default",
         "vitest": "catalog:default",
         "vitest-fail-on-console": "catalog:default"
     },

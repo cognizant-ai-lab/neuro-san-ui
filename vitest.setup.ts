@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {vi} from "vitest"
-
+// eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
 import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
+import {vi} from "vitest"
 import failOnConsole from "vitest-fail-on-console"
 
 /*
