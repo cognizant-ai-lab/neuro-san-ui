@@ -16,16 +16,20 @@ limitations under the License.
 
 import {renderHook} from "@testing-library/react"
 import {signOut} from "next-auth/react"
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/TestUtils"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/vitest/TestUtils"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
 import {AD_TENANT_ID, smartSignOut, useAuthentication} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
-import {navigateToUrl} from "../../../utils/BrowserNavigation"
 
-// Mock the next-auth/react module
-jest.mock("next-auth/react")
+vi.mock("next-auth/react")
+
+const mockedSignOut = vi.mocked(signOut)
+
+let navigateToUrlSpy: MockInstance<typeof BrowserNavigation.navigateToUrl>
 
 /**
  * Unit tests for the authentication utility module
@@ -36,8 +40,7 @@ describe("useAuthentication", () => {
     let oldFetch: typeof window.fetch
 
     beforeEach(() => {
-        jest.spyOn(BrowserNavigation, "navigateToUrl")
-        ;(navigateToUrl as jest.Mock).mockImplementation()
+        navigateToUrlSpy = vi.spyOn(BrowserNavigation, "navigateToUrl").mockImplementation(() => undefined)
 
         oldFetch = window.fetch
         window.fetch = mockFetch({})
@@ -61,12 +64,12 @@ describe("useAuthentication", () => {
 
     describe("signOut", () => {
         it("Does nothing if currentUser not available", async () => {
-            ;(signOut as jest.Mock).mockResolvedValueOnce(undefined)
+            mockedSignOut.mockResolvedValueOnce(undefined)
 
             await smartSignOut(undefined, null, null, null)
 
             expect(signOut).not.toHaveBeenCalled()
-            expect(navigateToUrl).not.toHaveBeenCalled()
+            expect(navigateToUrlSpy).not.toHaveBeenCalled()
         })
 
         it("Delegates to NextAuth signOut() if provider is NextAuth", async () => {
@@ -77,7 +80,7 @@ describe("useAuthentication", () => {
 
         it("Handles sign-out for ALB with AD provider", async () => {
             await smartSignOut("user", "example.com", "clientId", "AD")
-            expect(navigateToUrl).toHaveBeenCalledWith(
+            expect(navigateToUrlSpy).toHaveBeenCalledWith(
                 `https://login.microsoftonline.com/${AD_TENANT_ID}/oauth2/v2.0/logout`
             )
         })
@@ -88,7 +91,7 @@ describe("useAuthentication", () => {
             await smartSignOut("user", auth0Domain, auth0ClientId, "Github")
 
             const expectedReturnTo = encodeURIComponent(`http://${window.location.host}`)
-            expect(navigateToUrl).toHaveBeenCalledWith(
+            expect(navigateToUrlSpy).toHaveBeenCalledWith(
                 `https://${auth0Domain}/v2/logout?client_id=${auth0ClientId}&returnTo=${expectedReturnTo}`
             )
         })

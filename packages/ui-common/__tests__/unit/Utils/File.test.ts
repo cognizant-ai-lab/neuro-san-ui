@@ -5,7 +5,7 @@ Unit tests for the "file" utility module
 // eslint-disable-next-line no-shadow
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocksViTest"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {downloadFile, getFileName, splitFilename, toSafeFilename} from "../../../utils/File"
 
 describe("toSafeFilename", () => {
