@@ -6,14 +6,8 @@ import {TESTS_MIGRATED_TO_VITEST} from "./vitest_migration"
 export default defineConfig({
     plugins: [react()],
     test: {
-        environment: "jsdom",
-        globals: false,
-        setupFiles: ["./vitest.setup.ts"],
-        include: TESTS_MIGRATED_TO_VITEST,
-        exclude: ["node_modules", "dist", ".next", "coverage"],
         coverage: {
-            provider: "v8",
-            include: ["**/*.{js,jsx,ts,tsx}"],
+            enabled: true,
             exclude: [
                 "**/.next/**",
                 "**/__tests__/**",
@@ -25,6 +19,20 @@ export default defineConfig({
                 "**/next.config.ts",
                 "apps/main/app/api/auth/[...nextauth]/route.ts",
             ],
+            include: ["**/*.{js,jsx,ts,tsx}"],
+            provider: "v8",
+            reporter: ["text-summary"],
+            thresholds: {
+                lines: -2840,
+                functions: -852,
+                statements: -3082,
+                branches: -1601,
+            },
         },
+        environment: "jsdom",
+        exclude: ["node_modules", "dist", ".next", "coverage"],
+        globals: false,
+        include: TESTS_MIGRATED_TO_VITEST,
+        setupFiles: ["./vitest.setup.ts"],
     },
 })
