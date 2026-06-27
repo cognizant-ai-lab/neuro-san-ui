@@ -2,7 +2,8 @@
 Unit tests for the "file" utility module
  */
 
-import {vi} from "vitest"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocksViTest"
 import {downloadFile, getFileName, splitFilename, toSafeFilename} from "../../../utils/File"
