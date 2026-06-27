@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [react()],
     test: {
         environment: "jsdom",
-        globals: true,
+        globals: false,
         setupFiles: ["./vitest.setup.ts"],
         include: TESTS_MIGRATED_TO_VITEST,
         exclude: ["node_modules", "dist", ".next", "coverage"],

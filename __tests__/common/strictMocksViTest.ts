@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import "fake-indexeddb/auto"
-import {vi} from "vitest"
+import {beforeEach, vi} from "vitest"
 
 /**
  * This function is used to clear and reset all mocks before each test.
