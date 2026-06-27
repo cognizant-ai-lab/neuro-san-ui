@@ -2,7 +2,9 @@
 Unit tests for the "file" utility module
  */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {vi} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocksViTest"
 import {downloadFile, getFileName, splitFilename, toSafeFilename} from "../../../utils/File"
 
 describe("toSafeFilename", () => {
@@ -89,8 +91,8 @@ describe("downloadFile", () => {
     it("should create a download link with the correct filename and content", () => {
         // Mock URL methods directly (they don't exist in JSDOM by default)
         const objectUrl = "blob:http://localhost/fake-blob-url"
-        const createObjectUrlMock = jest.fn().mockReturnValue(objectUrl)
-        const revokeObjectURLMock = jest.fn()
+        const createObjectUrlMock = vi.fn().mockReturnValue(objectUrl)
+        const revokeObjectURLMock = vi.fn()
         const originalCreateObjectURL = global.URL.createObjectURL
         const originalRevokeObjectURL = global.URL.revokeObjectURL
 
@@ -100,11 +102,11 @@ describe("downloadFile", () => {
         // Mock HTMLAnchorElement.prototype.click
         const originalAnchorClick = HTMLAnchorElement.prototype.click
 
-        const clickMock = jest.fn()
+        const clickMock = vi.fn()
         HTMLAnchorElement.prototype.click = clickMock
 
         // Mock Blob constructor
-        const blobMock = jest.fn()
+        const blobMock = vi.fn()
         const originalBlob = global.Blob
         global.Blob = blobMock
 

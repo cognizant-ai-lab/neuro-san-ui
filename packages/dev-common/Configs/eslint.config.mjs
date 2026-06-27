@@ -283,7 +283,13 @@ export default defineConfig([
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["**/__tests__/**", "jest*.*", "**/eslint.config.mjs", "**/knip.config.ts"],
+                    devDependencies: [
+                        "**/__tests__/**",
+                        "jest*.*",
+                        "vitest*.*",
+                        "**/eslint.config.mjs",
+                        "**/knip.config.ts",
+                    ],
                 },
             ],
 

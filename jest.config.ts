@@ -20,6 +20,8 @@ limitations under the License.
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
 
+import {TESTS_MIGRATED_TO_VITEST} from "./vitest_migration"
+
 // Packages in ESM format that need to be transformed by Jest because they are not distributed in CommonJS format
 const esmPackagesToTransform = [
     "bail",
@@ -56,6 +58,8 @@ const esmPackagesToTransform = [
     "web-namespaces",
     "zwitch",
 ]
+
+const escapeRegex = (value: string) => value.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`)
 
 const config: Config.InitialOptions = {
     // For details on these settings: https://jestjs.io/docs/configuration
@@ -114,7 +118,12 @@ const config: Config.InitialOptions = {
     testMatch: ["<rootDir>/**/__tests__/**/*.(test).{ts,tsx}"],
 
     // Exclude these files from Jest scanning
-    testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
+    testPathIgnorePatterns: [
+        "<rootDir>/node_modules/",
+        "<rootDir>/dist",
+        "<rootDir>/.next/",
+        ...TESTS_MIGRATED_TO_VITEST.map((testPath) => escapeRegex(testPath)),
+    ],
 }
 
 export default config
