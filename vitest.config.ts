@@ -8,7 +8,7 @@ export default defineConfig({
     test: {
         coverage: {
             reportsDirectory: "coverage-vitest",
-            enabled: false,
+            enabled: true,
             exclude: [
                 "**/.next/**",
                 "**/__tests__/**",
@@ -25,7 +25,7 @@ export default defineConfig({
             // For now use instanbul provider as we're merging with jest results.
             // Once we are fully migrated to vitest, consider switching to v8.
             provider: "istanbul",
-            reporter: ["text-summary"],
+            reporter: ["lcov"],
             // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
             // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
             thresholds: {
