@@ -50,5 +50,4 @@ run_check "tsc" yarn tsc
 run_check "knip" yarn knip
 run_check "prettier" yarn check-format
 run_check "eslint" yarn lint --max-warnings 0
-# Convert this to use some kind of "silent mode" for vitest that reports only failures, once we're migrated.
-run_check "test" yarn test &> /dev/null
+run_check "test" yarn test
