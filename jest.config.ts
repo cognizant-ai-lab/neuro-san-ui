@@ -96,7 +96,8 @@ const config: Config.InitialOptions = {
 
     coverageReporters: ["text-summary"],
 
-    // These values are not meaningful during migration as we are running some tests in vitest
+    // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
+    // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
     coverageThreshold: {
         global: {
             statements: -805,
