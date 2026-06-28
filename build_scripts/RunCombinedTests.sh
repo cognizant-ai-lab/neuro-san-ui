@@ -10,8 +10,15 @@ set -o nounset
 set -o pipefail
 
 # Combined Jest+Vitest/NYC baseline during migration.
+# Update these as coverage (hopefully) improves. The build will fail if the combined coverage report exceeds
+# these thresholds.
 # Line coverage matches the original Jest-only baseline, but statement/branch/function
 # counters differ slightly due to Vitest/Vite Istanbul instrumentation.
+# For reference, the jest.config numbers prior to any migration were:
+# statements: -112,
+# branches: -152,
+# functions: -27,
+# lines: -85,
 STATEMENTS=132
 BRANCHES=170
 FUNCTIONS=39
