@@ -128,6 +128,7 @@ const config: Config.InitialOptions = {
         "<rootDir>/node_modules/",
         "<rootDir>/dist",
         "<rootDir>/.next/",
+        // Exclude tests that have been migrated to Vitest.
         ...TESTS_MIGRATED_TO_VITEST.map((testPath) => `<rootDir>/${testPath}`),
     ],
 }
