@@ -1468,7 +1468,7 @@ __metadata:
     eslint-plugin-react-hooks: "*"
     eslint-plugin-testing-library: "*"
     eslint-plugin-unicorn: "*"
-    "eslint-plugin-vitest ": "*"
+    eslint-plugin-vitest: "*"
     globals: "*"
     knip: "*"
     typescript-eslint: "*"
