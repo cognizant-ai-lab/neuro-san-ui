@@ -78,7 +78,7 @@ const config: Config.InitialOptions = {
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     testEnvironment: "jsdom",
-    collectCoverage: true,
+    collectCoverage: false,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",
         "!**/.next/**",
@@ -95,6 +95,14 @@ const config: Config.InitialOptions = {
 
     coverageReporters: ["text-summary"],
 
+    // coverageThreshold: {
+    //     global: {
+    //         statements: -168,
+    //         branches: -179,
+    //         functions: -46,
+    //         lines: -138,
+    //     },
+    // },
     coverageThreshold: {
         global: {
             statements: -104,

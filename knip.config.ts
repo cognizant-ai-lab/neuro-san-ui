@@ -52,6 +52,9 @@ const config: KnipConfig = {
         // Used internally by eslint
         "globals",
 
+        // Used by RunCombinedTests.sh during Jest-to-Vitest migration
+        "nyc",
+
         // Used by do_openapi_generate.sh
         "openapi-typescript",
 
