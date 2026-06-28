@@ -28,10 +28,10 @@ export default defineConfig({
             reporter: ["text-summary"],
             // Set these to actual values once we're done migrating to vitest.
             thresholds: {
-                statements: -1,
-                branches: -1,
-                functions: -1,
-                lines: -1,
+                statements: -13,
+                branches: -7,
+                functions: -9,
+                lines: -9,
             },
         },
         environment: "jsdom",

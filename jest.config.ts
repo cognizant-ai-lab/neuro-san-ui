@@ -87,6 +87,7 @@ const config: Config.InitialOptions = {
         "!**/dist/**",
         "!**/generated/**",
         "!**/jest*.ts",
+        "!**/vitest*.ts",
         "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
@@ -95,20 +96,13 @@ const config: Config.InitialOptions = {
 
     coverageReporters: ["text-summary"],
 
-    // coverageThreshold: {
-    //     global: {
-    //         statements: -168,
-    //         branches: -179,
-    //         functions: -46,
-    //         lines: -138,
-    //     },
-    // },
+    // These values are not meaningful during migration as we are running some tests in vitest
     coverageThreshold: {
         global: {
-            statements: -104,
-            branches: -155,
-            functions: -25,
-            lines: -76,
+            statements: -805,
+            branches: -506,
+            functions: -87,
+            lines: -241,
         },
     },
 
