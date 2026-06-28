@@ -16,10 +16,13 @@ limitations under the License.
 
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
+
+import {cleanup} from "@testing-library/react"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
 import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
-import {vi} from "vitest"
+// eslint-disable-next-line no-shadow
+import {afterEach, vi} from "vitest"
 import failOnConsole from "vitest-fail-on-console"
 
 /*
@@ -125,6 +128,11 @@ if (global.SVGPathElement === undefined) {
 
     global.SVGPathElement = FakeSVGPathElement as unknown as typeof SVGPathElement
 }
+
+// We've disabled globals for Vitest during migration so have to do this here
+afterEach(() => {
+    cleanup()
+})
 
 // Make tests fail if any output is sent to the console
 failOnConsole({
