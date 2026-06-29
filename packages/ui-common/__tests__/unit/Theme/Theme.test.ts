@@ -1,6 +1,11 @@
+// eslint-disable-next-line no-shadow
+import {describe, expect, it} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {adjustBrightness, isLightColor} from "../../../Theme/Theme"
 
 describe("adjustBrightness", () => {
+    withStrictMocks()
     it("returns the same color if the input is not a valid hex color", () => {
         expect(adjustBrightness("invalid", 20)).toBe("invalid")
         expect(adjustBrightness("#12345", 20)).toBe("#12345")
@@ -30,6 +35,7 @@ describe("adjustBrightness", () => {
 })
 
 describe("isLightColor", () => {
+    withStrictMocks()
     it("Deems white a light color", () => {
         expect(isLightColor("#ffffff")).toBe(true)
     })
