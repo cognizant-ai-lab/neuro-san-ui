@@ -1,17 +1,19 @@
 import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {render, screen, waitFor} from "@testing-library/react"
 import userEvent, {UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {ChatBot} from "../../../components/ChatBot/ChatBot"
 import {useAuthentication} from "../../../utils/Authentication"
 
 // Mock dependencies
-jest.mock("../../../utils/Authentication", () => ({
-    useAuthentication: jest.fn(),
+vi.mock("../../../utils/Authentication", () => ({
+    useAuthentication: vi.fn(),
 }))
 
-jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
+vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     ChatCommon: (props: {id: string; title: string; onClose: () => void; backgroundColor: string}) => (
         <div
             data-testid="chat-common"
@@ -31,17 +33,17 @@ jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
 }))
 
 // Mock MUI theming
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
+vi.mock("@mui/material/styles", async () => ({
+    ...(await vi.importActual("@mui/material/styles")),
+    useColorScheme: vi.fn(),
 }))
 
-jest.mock("@mui/material/Grow", () => ({
+vi.mock("@mui/material/Grow", () => ({
     __esModule: true,
     default: ({children, in: inProp}: {children: unknown; in: boolean}) => (inProp ? children : null),
 }))
 
-const mockUseAuthentication = useAuthentication as jest.Mock
+const mockUseAuthentication = vi.mocked(useAuthentication)
 
 describe("ChatBot", () => {
     withStrictMocks()
@@ -59,11 +61,20 @@ describe("ChatBot", () => {
             data: {
                 user: {
                     name: "Test User",
+                    image: "",
                 },
             },
         })
-        ;(useColorScheme as jest.Mock).mockReturnValue({
+
+        vi.mocked(useColorScheme).mockReturnValue({
+            allColorSchemes: [],
             mode: "light",
+            systemMode: "light",
+            lightColorScheme: "light",
+            darkColorScheme: "light",
+            colorScheme: "light",
+            setMode: undefined,
+            setColorScheme: vi.fn(),
         })
 
         user = userEvent.setup()
@@ -126,9 +137,15 @@ describe("ChatBot", () => {
 
     it("Should apply dark mode styling", () => {
         // Set MUI to dark mode
-        ;(useColorScheme as jest.Mock).mockReturnValue({
+        vi.mocked(useColorScheme).mockReturnValue({
+            allColorSchemes: [],
             mode: "dark",
             systemMode: "dark",
+            lightColorScheme: "light",
+            darkColorScheme: "light",
+            colorScheme: "light",
+            setMode: undefined,
+            setColorScheme: vi.fn(),
         })
 
         renderChatBot()
@@ -166,8 +183,15 @@ describe("ChatBot", () => {
 
     it("Should set correct dark mode background for ChatCommon", async () => {
         // Set MUI to dark mode
-        ;(useColorScheme as jest.Mock).mockReturnValue({
+        vi.mocked(useColorScheme).mockReturnValue({
+            allColorSchemes: [],
             mode: "dark",
+            systemMode: "light",
+            lightColorScheme: "light",
+            darkColorScheme: "light",
+            colorScheme: "light",
+            setMode: undefined,
+            setColorScheme: vi.fn(),
         })
 
         renderChatBot()
