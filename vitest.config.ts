@@ -8,7 +8,7 @@ export default defineConfig({
     test: {
         coverage: {
             reportsDirectory: "coverage-vitest",
-            enabled: true,
+            enabled: false,
             exclude: [
                 "**/.next/**",
                 "**/__tests__/**",
