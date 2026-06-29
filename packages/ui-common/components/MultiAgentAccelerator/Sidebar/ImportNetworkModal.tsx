@@ -119,24 +119,25 @@ export const jsonToNetworkDefinition = (parsed: unknown): AgentNetworkDefinition
 
 // Summarises a parsed network definition (counts by `display_as`, plus the frontman).
 export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEntry[]): NetworkSummary => {
-    let agents = 0
-    let codedTools = 0
-    let externalAgents = 0
-    for (const entry of networkDef) {
-        switch (entry.display_as) {
-            case DisplayAs.LLM_AGENT:
-                agents += 1
-                break
-            case DisplayAs.CODED_TOOL:
-                codedTools += 1
-                break
-            case DisplayAs.EXTERNAL_AGENT:
-                externalAgents += 1
-                break
-            default:
-                break
-        }
-    }
+    const {agents, codedTools, externalAgents} = networkDef.reduce(
+        (acc, entry) => {
+            switch (entry.display_as) {
+                case DisplayAs.LLM_AGENT:
+                    acc.agents += 1
+                    break
+                case DisplayAs.CODED_TOOL:
+                    acc.codedTools += 1
+                    break
+                case DisplayAs.EXTERNAL_AGENT:
+                    acc.externalAgents += 1
+                    break
+                default:
+                    break
+            }
+            return acc
+        },
+        {agents: 0, codedTools: 0, externalAgents: 0}
+    )
     return {
         agents,
         codedTools,
@@ -254,6 +255,20 @@ const DropZone = styled(Box, {
     padding: theme.spacing(4),
     transition: "border-color 0.2s ease",
 }))
+
+// Hidden file input, triggered programmatically via the DropZone. MUI's idiomatic
+// visually-hidden pattern (https://mui.com/material-ui/react-button/#file-upload).
+const VisuallyHiddenInput = styled("input")({
+    bottom: 0,
+    clip: "rect(0 0 0 0)",
+    clipPath: "inset(50%)",
+    height: 1,
+    left: 0,
+    overflow: "hidden",
+    position: "absolute",
+    whiteSpace: "nowrap",
+    width: 1,
+})
 
 //#endregion: Styled Components
 
@@ -574,14 +589,13 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             >
                 Accepts .json up to 5 MB.
             </Typography>
-            <input
+            <VisuallyHiddenInput
                 accept={ACCEPTED_MIME_TYPES}
                 aria-hidden="true"
                 data-testid="import-network-file-input"
                 onChange={handleFileChange}
                 onClick={(event) => event.stopPropagation()}
                 ref={fileInputRef}
-                style={{display: "none"}}
                 tabIndex={-1}
                 type="file"
             />
