@@ -505,27 +505,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         <Stepper
             activeStep={activeStep}
             id="import-network-modal-stepper"
-            sx={(theme) => ({
-                marginTop: 1,
-                // MUI v9 rejects the CSS named color "gray" it uses by default for
-                // inactive steps/connectors — override with valid token values.
-                "& .MuiStepIcon-root:not(.Mui-active):not(.Mui-completed)": {
-                    color: "var(--bs-gray-medium)",
-                },
-                "& .MuiStepConnector-line": {
-                    borderColor: "var(--bs-gray-light)",
-                },
-                "& .MuiStepLabel-label:not(.Mui-active):not(.Mui-completed)": {
-                    color: "var(--bs-gray-medium)",
-                },
-                // In dark mode the completed-step icon defaults to a muted/gray fill;
-                // make it white so completed steps read clearly against the dark backdrop.
-                ...(theme.palette.mode === "dark" && {
-                    "& .MuiStepIcon-root.Mui-completed": {
-                        color: theme.palette.common.white,
-                    },
-                }),
-            })}
+            sx={{marginTop: 1}}
         >
             {STEPS.map((label) => (
                 <Step key={label}>

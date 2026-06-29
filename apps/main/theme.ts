@@ -115,6 +115,17 @@ export const createAppTheme = (primary: string, secondary: string, background: s
                     },
                 },
             },
+            MuiStepIcon: {
+                styleOverrides: {
+                    root: ({theme}) =>
+                        theme.applyStyles("dark", {
+                            // Show completed Stepper steps in white
+                            "&.Mui-completed": {
+                                color: theme.palette.common.white,
+                            },
+                        }),
+                },
+            },
         },
         typography: {
             // Initially just force MUI to use our corporate font.
