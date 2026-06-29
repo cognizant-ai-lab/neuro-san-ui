@@ -14,9 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/vitest/TestUtils"
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
@@ -37,7 +40,7 @@ import {
     ChatRequest,
 } from "../../../../generated/neuro-san/NeuroSanClient"
 
-jest.mock("../../../../controller/llm/LlmChat")
+vi.mock("../../../../controller/llm/LlmChat")
 
 const NEURO_SAN_EXAMPLE_URL = "https://neuro-san.example.com"
 
@@ -61,7 +64,7 @@ describe("Controller/Agent/testConnection", () => {
         expect(result.success).toBe(false)
 
         // If "fetch" throws, that should be considered unsuccessful too
-        global.fetch = jest.fn(() => {
+        global.fetch = vi.fn(() => {
             throw new Error("Fetch failed")
         })
 
@@ -126,10 +129,10 @@ describe("Controller/Agent/sendChatQuery", () => {
 
     const runSentChatQueryTest = async (username: string | null, mockChunks: boolean) => {
         const abortSignal = new AbortController().signal
-        const callbackMock = jest.fn()
+        const callbackMock = vi.fn()
 
         if (mockChunks) {
-            ;(sendLlmRequest as jest.Mock).mockImplementation((callback) => {
+            vi.mocked(sendLlmRequest).mockImplementation(async (callback) => {
                 callback("line 1 of mocked chunk data\nline 2 of mocked chunk data\n")
             })
         }
@@ -164,7 +167,6 @@ describe("Controller/Agent/sendChatQuery", () => {
         }
     }
 
-    // eslint-disable-next-line jest/expect-expect
     it.each([
         ["should correctly construct and send a request", TEST_USERNAME, true],
         ["should correctly send a request without a user ID", null, false],
@@ -202,8 +204,8 @@ describe("Controller/Agent/getConnectivity", () => {
     })
 
     it("Should throw on non-ok response", async () => {
-        const errorSpy = jest.spyOn(console, "error").mockImplementation()
-        global.fetch = jest.fn(() =>
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+        global.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: false,
                 statusText: "Not Found",
@@ -264,7 +266,7 @@ describe("Controller/Agent/getAgentFunction", () => {
     })
 
     it("Should throw on non-ok response", async () => {
-        global.fetch = jest.fn(() =>
+        global.fetch = vi.fn(() =>
             Promise.resolve({
                 ok: false,
                 statusText: "Bad Request",
@@ -282,10 +284,10 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
 
     it("calls sendChatQuery with the designer agent ID and correct sly_data", async () => {
         const signal = new AbortController().signal
-        const onChunk = jest.fn()
+        const onChunk = vi.fn()
         const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: [], instructions: "Do stuff."}]
 
-        ;(sendLlmRequest as jest.Mock).mockImplementation((callback) => {
+        const sendRequestMock = vi.mocked(sendLlmRequest).mockImplementation(async (callback) => {
             callback("chunk1")
         })
 
@@ -300,7 +302,7 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
         )
 
         expect(sendLlmRequest).toHaveBeenCalledTimes(1)
-        const callArgs = (sendLlmRequest as jest.Mock).mock.calls[0]
+        const callArgs = sendRequestMock.mock.calls[0]
         const fetchUrl = callArgs[2]
         const requestBody = callArgs[3]
         expect(fetchUrl).toContain("agent_network_designer")
@@ -318,7 +320,7 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
         const signal = new AbortController().signal
         const updated: AgentNetworkDefinitionEntry[] = [{origin: "myAgent", tools: []}]
 
-        ;(sendLlmRequest as jest.Mock).mockResolvedValue(undefined)
+        const sendLlmRequestMock = vi.mocked(sendLlmRequest).mockResolvedValue(undefined)
 
         await sendNetworkDesignerRequest(
             NEURO_SAN_EXAMPLE_URL,
@@ -327,10 +329,10 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
             updated,
             undefined,
             TEST_USERNAME,
-            jest.fn()
+            vi.fn()
         )
 
-        const requestBody = (sendLlmRequest as jest.Mock).mock.calls[0][3]
-        expect(requestBody.sly_data).not.toHaveProperty("agent_network_name")
+        const requestBody = sendLlmRequestMock.mock.calls[0][3]
+        expect(requestBody["sly_data"]).not.toHaveProperty("agent_network_name")
     })
 })
