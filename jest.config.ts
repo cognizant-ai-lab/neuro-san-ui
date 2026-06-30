@@ -20,6 +20,8 @@ limitations under the License.
 // https://nextjs.org/docs/pages/building-your-application/optimizing/testing#jest-and-react-testing-library
 import type {Config} from "@jest/types"
 
+import {TESTS_MIGRATED_TO_VITEST} from "./vitest_migration"
+
 // Packages in ESM format that need to be transformed by Jest because they are not distributed in CommonJS format
 const esmPackagesToTransform = [
     "bail",
@@ -76,7 +78,7 @@ const config: Config.InitialOptions = {
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     testEnvironment: "jsdom",
-    collectCoverage: true,
+    collectCoverage: false,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",
         "!**/.next/**",
@@ -85,6 +87,7 @@ const config: Config.InitialOptions = {
         "!**/dist/**",
         "!**/generated/**",
         "!**/jest*.ts",
+        "!**/vitest*.ts",
         "!**/knip.config.ts",
         "!**/next-env.d.ts",
         "!**/next.config.ts",
@@ -93,12 +96,14 @@ const config: Config.InitialOptions = {
 
     coverageReporters: ["text-summary"],
 
+    // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
+    // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
     coverageThreshold: {
         global: {
-            statements: -87,
-            branches: -147,
-            functions: -22,
-            lines: -64,
+            statements: -168,
+            branches: -179,
+            functions: -46,
+            lines: -138,
         },
     },
 
@@ -114,7 +119,13 @@ const config: Config.InitialOptions = {
     testMatch: ["<rootDir>/**/__tests__/**/*.(test).{ts,tsx}"],
 
     // Exclude these files from Jest scanning
-    testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist", "<rootDir>/.next/"],
+    testPathIgnorePatterns: [
+        "<rootDir>/node_modules/",
+        "<rootDir>/dist",
+        "<rootDir>/.next/",
+        // Exclude tests that have been migrated to Vitest.
+        ...TESTS_MIGRATED_TO_VITEST.map((testPath) => `<rootDir>/${testPath}`),
+    ],
 }
 
 export default config

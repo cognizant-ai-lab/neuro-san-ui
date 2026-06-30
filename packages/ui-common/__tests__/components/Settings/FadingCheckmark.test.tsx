@@ -1,6 +1,8 @@
 import {act, render, renderHook, screen} from "@testing-library/react"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {FadingCheckmark, useCheckmarkFade} from "../../../components/Settings/FadingCheckmark"
 
 describe("useCheckmarkFade", () => {
@@ -17,7 +19,7 @@ describe("useCheckmarkFade", () => {
     })
 
     it("hides the checkmark after the fade duration", () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const {result} = renderHook(() => useCheckmarkFade())
 
         act(() => {
@@ -25,14 +27,14 @@ describe("useCheckmarkFade", () => {
         })
 
         act(() => {
-            jest.advanceTimersByTime(1500)
+            vi.advanceTimersByTime(1500)
         })
 
         expect(result.current.show).toBe(false)
     })
 
     it("clears timeout on unmount", () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const {result, unmount} = renderHook(() => useCheckmarkFade())
 
         act(() => {
@@ -41,11 +43,11 @@ describe("useCheckmarkFade", () => {
 
         unmount()
 
-        expect(jest.getTimerCount()).toBe(0)
+        expect(vi.getTimerCount()).toBe(0)
     })
 
     it("allows multiple invocations (idempotency)", () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         const {result} = renderHook(() => useCheckmarkFade())
 
         act(() => {
@@ -57,22 +59,22 @@ describe("useCheckmarkFade", () => {
         expect(result.current.show).toBe(true)
 
         // Assert only one timer exists (first was cleared)
-        expect(jest.getTimerCount()).toBe(1)
+        expect(vi.getTimerCount()).toBe(1)
 
         // Advance time partway through duration (shouldn't hide yet)
         act(() => {
-            jest.advanceTimersByTime(1000)
+            vi.advanceTimersByTime(1000)
         })
         expect(result.current.show).toBe(true)
 
         // Advance time to complete the second trigger's duration
         act(() => {
-            jest.advanceTimersByTime(500)
+            vi.advanceTimersByTime(500)
         })
         expect(result.current.show).toBe(false)
 
         // All timers should be cleared
-        expect(jest.getTimerCount()).toBe(0)
+        expect(vi.getTimerCount()).toBe(0)
     })
 })
 
