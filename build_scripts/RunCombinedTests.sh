@@ -20,7 +20,7 @@ set -o pipefail
 # functions: -27,
 # lines: -85,
 STATEMENTS=281
-BRANCHES=364
+BRANCHES=366
 FUNCTIONS=120
 MAX_LINES=86
 
