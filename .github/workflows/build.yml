@@ -52,6 +52,9 @@ on:
             image_tag:
                 description: "The image tag that was pushed to ECR"
                 value: ${{ jobs.build.outputs.image_tag }}
+            noauth_image_tag:
+                description: "The no-auth image tag that was pushed to ECR"
+                value: ${{ jobs.build.outputs.noauth_image_tag }}
 
 env:
     # AWS info needed to push the image to ECR
@@ -70,6 +73,7 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             image_tag: ${{ inputs.DISPLAY_VERSION }}
+            noauth_image_tag: ${{ inputs.DISPLAY_VERSION }}-noauth
         steps:
             - name: Checkout repository
               # v6.0.2
@@ -106,4 +110,17 @@ jobs:
                   build-args: |
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
+                  quiet: "true"
+
+            - name: Build and push no-auth Docker image to ECR
+              # build-common 1.0.7
+              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              with:
+                  context: .
+                  dockerfile: apps/main/Dockerfile
+                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}-noauth
+                  build-args: |
+                      NODEJS_VERSION=${{ env.NODEJS_VERSION }}
+                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
+                      NEXT_PUBLIC_ENABLE_AUTHENTICATION=false
                   quiet: "true"
