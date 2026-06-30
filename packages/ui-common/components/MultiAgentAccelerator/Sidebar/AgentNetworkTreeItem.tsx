@@ -24,6 +24,7 @@ import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
+import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -108,7 +109,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = item?.temporaryNetworkExpirationTime
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkHocon = item?.temporaryNetworkHocon ?? null
+    const networkDefinition = item?.temporaryNetworkDefinition ?? null
 
     const iconNameSuggestion = item.iconSuggestion
 
@@ -197,15 +198,23 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
-                                {networkHocon && (
+                                {networkDefinition && (
                                     <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                         <span>
                                             <ActionIconButton
                                                 onClick={(e) => {
                                                     // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-                                                    const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                    downloadFile(networkHocon, fileName, "text/plain")
+                                                    // Strip the reservation UUID before building the filename so
+                                                    // exported files carry a clean name (toSafeFilename would
+                                                    // otherwise flatten the UUID's hyphens to underscores).
+                                                    const cleanName = removeTrailingUuid(labelString)
+                                                    const fileName = `${toSafeFilename(cleanName)}.json`
+                                                    downloadFile(
+                                                        JSON.stringify(networkDefinition, null, 2),
+                                                        fileName,
+                                                        "application/json"
+                                                    )
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"

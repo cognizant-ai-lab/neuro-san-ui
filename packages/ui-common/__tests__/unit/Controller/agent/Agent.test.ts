@@ -24,7 +24,7 @@ import {
     getBrandingSuggestions,
     getConnectivity,
     sendChatQuery,
-    sendNetworkDesignerUpdate,
+    sendNetworkDesignerRequest,
     testConnection,
     TestConnectionResult,
 } from "../../../../controller/agent/Agent"
@@ -319,7 +319,7 @@ describe("Controller/Agent/getAgentFunction", () => {
     })
 })
 
-describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
+describe("Controller/Agent/sendNetworkDesignerRequest", () => {
     withStrictMocks()
 
     it("calls sendChatQuery with the designer agent ID and correct sly_data", async () => {
@@ -331,7 +331,7 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
             callback("chunk1")
         })
 
-        await sendNetworkDesignerUpdate(
+        await sendNetworkDesignerRequest(
             NEURO_SAN_EXAMPLE_URL,
             signal,
             "myAgent",
@@ -362,7 +362,7 @@ describe("Controller/Agent/sendNetworkDesignerUpdate", () => {
 
         ;(sendLlmRequest as jest.Mock).mockResolvedValue(undefined)
 
-        await sendNetworkDesignerUpdate(
+        await sendNetworkDesignerRequest(
             NEURO_SAN_EXAMPLE_URL,
             signal,
             "myAgent",

@@ -26,6 +26,7 @@ import {
     LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
     TEMPORARY_NETWORK,
+    TEMPORARY_NETWORK_DEFINITION,
     TEMPORARY_NETWORK_NAME,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
@@ -90,17 +91,20 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
 }
 
 const onDeleteNetworkMock = jest.fn()
+const onImportClickMock = jest.fn()
 const setSelectedNetworkMock = jest.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
     id: "test-flow-id",
     isAwaitingLlm: false,
+    isImporting: false,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     networks: LIST_NETWORKS_RESPONSE,
     neuroSanServerURL: DEFAULT_EXAMPLE_URL,
     newlyAddedTemporaryNetworks: undefined,
     onDeleteNetwork: onDeleteNetworkMock,
     onEditNetwork: jest.fn(),
+    onImportClick: onImportClickMock,
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
@@ -440,9 +444,9 @@ describe("SideBar", () => {
         await user.click(downloadButton)
 
         expect(downloadFile).toHaveBeenCalledWith(
-            TEMPORARY_NETWORK.networkHocon,
-            `${TEMPORARY_NETWORK_NAME}.hocon`,
-            "text/plain"
+            JSON.stringify(TEMPORARY_NETWORK_DEFINITION, null, 2),
+            `${TEMPORARY_NETWORK_NAME}.json`,
+            "application/json"
         )
     })
 
@@ -570,6 +574,25 @@ describe("SideBar", () => {
         await user.click(screen.getByTestId("force-tree-selection"))
 
         expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+    })
+
+    it("should disable the import button when isAwaitingLlm is true", async () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should disable the import button when isImporting is true", async () => {
+        renderSidebarComponent({isImporting: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should render the import button and call onImportClick when the import button is clicked", async () => {
+        renderSidebarComponent()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+        expect(onImportClickMock).toHaveBeenCalledTimes(1)
     })
 
     it("should not break if networks is empty", async () => {

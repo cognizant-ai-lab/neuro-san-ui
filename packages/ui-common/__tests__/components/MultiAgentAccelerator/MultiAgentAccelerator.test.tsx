@@ -16,7 +16,7 @@ limitations under the License.
 
 import {HumanMessage} from "@langchain/core/messages"
 import {useColorScheme} from "@mui/material/styles"
-import {act, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
@@ -51,13 +51,14 @@ import {
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
 import {MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {ImportNetworkModalProps} from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
     getAgentFunction,
     getAgentNetworks,
     getConnectivity,
-    sendNetworkDesignerUpdate,
+    sendNetworkDesignerRequest,
     testConnection,
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
@@ -76,8 +77,9 @@ const conversationMock = jest.fn()
 const temporaryNetworksMock = jest.fn()
 const networkIconSuggestionsMock = jest.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
-let setSelectedNetwork: (network: string) => void
+let onImport: (name: string, content: string) => void
 let onSaveAgent: AgentFlowProps["onSaveAgent"]
+let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
 jest.mock("next-auth/react")
@@ -134,6 +136,19 @@ jest.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
             setSelectedNetwork = props.setSelectedNetwork
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
+        },
+    }
+})
+
+jest.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", () => {
+    const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
+    return {
+        __esModule: true,
+        ...originalModule,
+        ImportNetworkModal: (props: ImportNetworkModalProps) => {
+            onImport = props.onImport
+            const OriginalModal = originalModule.ImportNetworkModal
+            return <OriginalModal {...props} />
         },
     }
 })
@@ -246,6 +261,7 @@ describe("MultiAgentAccelerator", () => {
         ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
         ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
         ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
+        ;(sendNetworkDesignerRequest as jest.Mock).mockResolvedValue([])
 
         // make extractConversations the real implementation
         ;(extractConversations as jest.Mock).mockImplementation(
@@ -359,6 +375,146 @@ describe("MultiAgentAccelerator", () => {
                 expect.stringMatching(new RegExp(`Unable to get list of Agent Networks.*${NEURO_SAN_SERVER_URL}`, "u"))
             )
         })
+    })
+
+    it("should display the importing backdrop while a network import is in flight", async () => {
+        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
+
+        let resolveSend: () => void
+        const sendPromise = new Promise<void>((resolve) => {
+            resolveSend = resolve
+        })
+
+        ;(sendNetworkDesignerRequest as jest.Mock).mockImplementation(
+            async (_neuroSanUrl, _signal, _frontman, _networkDef, _agentNetworkName, _userName, onChunk) => {
+                onChunk(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
+                await sendPromise
+            }
+        )
+
+        renderMultiAgentAcceleratorPage()
+
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport(
+                "Santas Workshop Ops",
+                JSON.stringify([{origin: "frontman", instructions: "Do the thing", tools: []}])
+            )
+        })
+
+        await waitFor(() => {
+            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).toBeVisible()
+        })
+
+        await act(async () => {
+            resolveSend()
+        })
+
+        await waitFor(() => {
+            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).not.toBeVisible()
+        })
+    })
+
+    it("should show an error toast when the imported file contains no agents", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport("Empty Network", JSON.stringify([]))
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(
+                expect.stringContaining("does not contain a valid network definition")
+            )
+        })
+        // The designer should never be contacted when the definition is empty
+        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
+    })
+
+    it("should show an error toast when the network designer returns no reservation", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport("Reservationless Network", JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]))
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
+        })
+        expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(1)
+    })
+
+    it("should show an error toast when conversion of the imported file throws", async () => {
+        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        // notifySaveError also logs via console.error before surfacing the notification.
+        jest.spyOn(console, "error").mockImplementation()
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
+        await act(async () => {
+            onImport("Broken Network", "this is not json")
+        })
+
+        await waitFor(() => {
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update network "Broken Network"'))
+        })
+        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
+    })
+
+    it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
+        jest.spyOn(console, "debug").mockImplementation()
+        const upsertMock = sendNetworkDesignerRequest as jest.Mock
+        upsertMock.mockResolvedValue([])
+
+        renderMultiAgentAcceleratorPage()
+        await screen.findByText("Agent Networks")
+
+        await act(async () => {
+            onImport(
+                "Two Agent Network",
+                JSON.stringify([
+                    {origin: "boss", tools: ["worker"], instructions: "lead"},
+                    {origin: "worker", instructions: "work"},
+                ])
+            )
+        })
+
+        await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1))
+        // Third positional arg to sendNetworkDesignerRequest is the frontman name.
+        expect(upsertMock.mock.calls[0][2]).toBe("boss")
+    })
+
+    it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
+        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
+
+        renderMultiAgentAcceleratorPage()
+
+        await screen.findByText("Agent Networks")
+
+        // The modal is not mounted until the import button is clicked.
+        expect(screen.queryByText("Import network definition")).not.toBeInTheDocument()
+        expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument()
+
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+
+        // Modal is mounted after clicking import button
+        const modalHeading = screen.getByText("Import network definition")
+        expect(modalHeading).toBeInTheDocument()
+
+        // The modal is unmounted after clicking the cancel button.
+        await user.click(screen.getByRole("button", {name: /cancel/iu}))
+        await waitForElementToBeRemoved(modalHeading)
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {
@@ -1094,129 +1250,6 @@ describe("MultiAgentAccelerator", () => {
             // Chat history for the reaped network should also be gone.
             expect(useAgentChatHistoryStore.getState().history[expectedNetworkName]).toBeUndefined()
         })
-
-        describe("onSaveAgent", () => {
-            const UPDATED_DEFINITION: AgentNetworkDefinitionEntry[] = [{origin: "copy_cat", tools: []}]
-
-            // Mock the network designer stream so onSaveAgent's chunk collector receives the given chunks.
-            const mockDesignerStream = (...chunks: string[]) => {
-                ;(sendNetworkDesignerUpdate as jest.Mock).mockImplementation(async (...args: unknown[]) => {
-                    const onChunk = args[6] as (chunk: string) => void
-                    chunks.forEach((chunk) => onChunk(chunk))
-                })
-            }
-
-            it("upserts the returned network and reselects it when a matching reservation is streamed", async () => {
-                mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-                renderMultiAgentAcceleratorPage()
-
-                // Select a network so onSaveAgent has a selectedNetwork to copy chat history from.
-                const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
-                await user.click(header)
-                await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
-
-                await act(async () => {
-                    await onSaveAgent(
-                        "copy_cat",
-                        UPDATED_DEFINITION,
-                        RESERVATION.reservation_id,
-                        new AbortController().signal
-                    )
-                })
-
-                const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
-                // The returned reservation was upserted into the temp networks store...
-                expect(useTempNetworksStore.getState().tempNetworks).toEqual(
-                    expect.arrayContaining([
-                        expect.objectContaining({
-                            agentInfo: expect.objectContaining({agent_name: expectedAgentName}),
-                        }),
-                    ])
-                )
-                // ...and the newly-saved network became the selected target.
-                await waitFor(() => {
-                    expect(chatCommonMock).toHaveBeenCalledWith(
-                        expect.objectContaining({selectedNetwork: expectedAgentName})
-                    )
-                })
-            })
-
-            it("shows an error and does not upsert when the designer returns no reservation", async () => {
-                const debugSpy = jest.spyOn(console, "debug").mockImplementation()
-                mockDesignerStream() // no chunks → no networks collected
-                renderMultiAgentAcceleratorPage()
-                await screen.findByText("Agent Networks")
-
-                await act(async () => {
-                    await onSaveAgent(
-                        "copy_cat",
-                        UPDATED_DEFINITION,
-                        RESERVATION.reservation_id,
-                        new AbortController().signal
-                    )
-                })
-
-                expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
-                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
-            })
-
-            it("shows an error when the returned reservation does not match the edited network", async () => {
-                const debugSpy = jest.spyOn(console, "debug").mockImplementation()
-                mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-                renderMultiAgentAcceleratorPage()
-                await screen.findByText("Agent Networks")
-
-                await act(async () => {
-                    // agentNetworkName does not match the streamed reservation's derived name → no replacement found.
-                    const signal = new AbortController().signal
-                    await onSaveAgent("copy_cat", UPDATED_DEFINITION, "some-other-network", signal)
-                })
-
-                expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
-                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not match the current network"))
-            })
-
-            it("notifies a save error when the network designer stream throws", async () => {
-                const debugSpy = jest.spyOn(console, "debug").mockImplementation()
-                const errorSpy = jest.spyOn(console, "error").mockImplementation()
-                ;(sendNetworkDesignerUpdate as jest.Mock).mockRejectedValue(new Error("stream exploded"))
-                renderMultiAgentAcceleratorPage()
-                await screen.findByText("Agent Networks")
-
-                await act(async () => {
-                    await onSaveAgent(
-                        "copy_cat",
-                        UPDATED_DEFINITION,
-                        RESERVATION.reservation_id,
-                        new AbortController().signal
-                    )
-                })
-
-                expect(errorSpy).toHaveBeenCalled()
-                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("stream exploded"))
-            })
-
-            it("suppresses the error notification when the save is aborted by the user", async () => {
-                ;(sendNetworkDesignerUpdate as jest.Mock).mockRejectedValue(
-                    new DOMException("The operation was aborted", "AbortError")
-                )
-                renderMultiAgentAcceleratorPage()
-                await screen.findByText("Agent Networks")
-
-                // No console spies: an AbortError must be swallowed silently (no console.error / notification),
-                // so any logging here would fail the test via jest-fail-on-console.
-                await act(async () => {
-                    await onSaveAgent(
-                        "copy_cat",
-                        UPDATED_DEFINITION,
-                        RESERVATION.reservation_id,
-                        new AbortController().signal
-                    )
-                })
-
-                expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
-            })
-        })
     })
 
     it("Should pass along network icon suggestions to the sidebar", async () => {
@@ -1455,6 +1488,129 @@ describe("MultiAgentAccelerator", () => {
                 expect.stringContaining(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`),
                 expect.any(Error)
             )
+        })
+    })
+
+    describe("onSaveAgent", () => {
+        const UPDATED_DEFINITION: AgentNetworkDefinitionEntry[] = [{origin: "copy_cat", tools: []}]
+
+        // Mock the network designer stream so onSaveAgent's chunk collector receives the given chunks.
+        const mockDesignerStream = (...chunks: string[]) => {
+            ;(sendNetworkDesignerRequest as jest.Mock).mockImplementation(async (...args: unknown[]) => {
+                const onChunk = args[6] as (chunk: string) => void
+                chunks.forEach((chunk) => onChunk(chunk))
+            })
+        }
+
+        it("upserts the returned network and reselects it when a matching reservation is streamed", async () => {
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            renderMultiAgentAcceleratorPage()
+
+            // Select a network so onSaveAgent has a selectedNetwork to copy chat history from.
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+            await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            // The returned reservation was upserted into the temp networks store...
+            expect(useTempNetworksStore.getState().tempNetworks).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        agentInfo: expect.objectContaining({agent_name: expectedAgentName}),
+                    }),
+                ])
+            )
+            // ...and the newly-saved network became the selected target.
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({selectedNetwork: expectedAgentName})
+                )
+            })
+        })
+
+        it("shows an error and does not upsert when the designer returns no reservation", async () => {
+            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+            mockDesignerStream() // no chunks → no networks collected
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
+        })
+
+        it("shows an error when the returned reservation does not match the edited network", async () => {
+            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                // agentNetworkName does not match the streamed reservation's derived name → no replacement found.
+                const signal = new AbortController().signal
+                await onSaveAgent("copy_cat", UPDATED_DEFINITION, "some-other-network", signal)
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not match the current network"))
+        })
+
+        it("notifies a save error when the network designer stream throws", async () => {
+            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+            const errorSpy = jest.spyOn(console, "error").mockImplementation()
+            ;(sendNetworkDesignerRequest as jest.Mock).mockRejectedValue(new Error("stream exploded"))
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(errorSpy).toHaveBeenCalled()
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("stream exploded"))
+        })
+
+        it("suppresses the error notification when the save is aborted by the user", async () => {
+            ;(sendNetworkDesignerRequest as jest.Mock).mockRejectedValue(
+                new DOMException("The operation was aborted", "AbortError")
+            )
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            // No console spies: an AbortError must be swallowed silently (no console.error / notification),
+            // so any logging here would fail the test via jest-fail-on-console.
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
         })
     })
 

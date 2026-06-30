@@ -17,15 +17,13 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
-    AGENT_NETWORK_HOCON,
     AGENT_RESERVATIONS_KEY,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../../components/MultiAgentAccelerator/const"
 import {
     AgentReservation,
     convertReservationsToNetworks,
-    extractNetworksFromChunk,
-    extractTemporaryNetworks,
+    extractTemporaryNetworksFromMessage,
     isEditableAgent,
     isTemporaryNetwork,
     mergeNetworks,
@@ -81,6 +79,19 @@ describe("convertReservationsToNetworks", () => {
 
     it("returns an empty array for an empty input", () => {
         expect(convertReservationsToNetworks([], null)).toEqual([])
+    })
+
+    it("drops un-vetted reservations that lack a usable reservation_id", () => {
+        const valid = makeReservation("good-1")
+        // reservation_id is typed as a string, but it is echoed from un-vetted backend data and may be
+        // missing or empty at runtime; such entries must not produce a "temporary/undefined" network.
+        const missingId: AgentReservation = {...makeReservation("ignored"), reservation_id: undefined}
+        const emptyId = makeReservation("")
+
+        const networks = convertReservationsToNetworks([missingId, valid, emptyId], null)
+
+        expect(networks).toHaveLength(1)
+        expect(networks[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/good-1`)
     })
 
     it("forwards the agentNetworkDefinition to each network", () => {
@@ -150,7 +161,7 @@ describe("isEditableAgent", () => {
     })
 })
 
-describe("extractTemporaryNetworks", () => {
+describe("extractTemporaryNetworksFromMessage", () => {
     withStrictMocks()
 
     const makeReservationObj = (id: string): AgentReservation => ({
@@ -166,7 +177,7 @@ describe("extractTemporaryNetworks", () => {
 
     it("returns an empty array when the message has no reservations", () => {
         const message: ChatMessage = {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: {}}
-        expect(extractTemporaryNetworks(message)).toEqual([])
+        expect(extractTemporaryNetworksFromMessage(message)).toEqual([])
     })
 
     it("returns an empty array for a non-AGENT_FRAMEWORK message", () => {
@@ -174,14 +185,14 @@ describe("extractTemporaryNetworks", () => {
             type: ChatMessageType.AI,
             sly_data: {[AGENT_RESERVATIONS_KEY]: [makeReservationObj("res-1")]},
         }
-        expect(extractTemporaryNetworks(message)).toEqual([])
+        expect(extractTemporaryNetworksFromMessage(message)).toEqual([])
     })
 
     it("converts reservations from sly_data into TemporaryNetwork objects", () => {
         const reservation = makeReservationObj("my_net-7876642e-fe75-4d44-a61e-300688a1a6c5")
         const message = makeFrameworkMessage({[AGENT_RESERVATIONS_KEY]: [reservation]})
 
-        const result = extractTemporaryNetworks(message)
+        const result = extractTemporaryNetworksFromMessage(message)
 
         expect(result).toHaveLength(1)
         expect(result[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`)
@@ -194,20 +205,8 @@ describe("extractTemporaryNetworks", () => {
             [AGENT_RESERVATIONS_KEY]: [reservation],
         })
 
-        const [network] = extractTemporaryNetworks(message)
+        const [network] = extractTemporaryNetworksFromMessage(message)
         expect(network.agentNetworkName).toBe("res-abc")
-    })
-
-    it("propagates the networkHocon from sly_data onto the resulting networks", () => {
-        const reservation = makeReservationObj("res-abc")
-        const hocon = 'include required(classpath("base.conf"))'
-        const message = makeFrameworkMessage({
-            [AGENT_RESERVATIONS_KEY]: [reservation],
-            [AGENT_NETWORK_HOCON]: hocon,
-        })
-
-        const [network] = extractTemporaryNetworks(message)
-        expect(network.networkHocon).toBe(hocon)
     })
 
     it("reads agentNetworkDefinition from sly_data when no override is given", () => {
@@ -218,7 +217,7 @@ describe("extractTemporaryNetworks", () => {
             [AGENT_NETWORK_DEFINITION_KEY]: definition,
         })
 
-        const [network] = extractTemporaryNetworks(message)
+        const [network] = extractTemporaryNetworksFromMessage(message)
         expect(network.agentNetworkDefinition).toEqual(definition)
     })
 
@@ -231,7 +230,7 @@ describe("extractTemporaryNetworks", () => {
             [AGENT_NETWORK_DEFINITION_KEY]: slyDefinition,
         })
 
-        const [network] = extractTemporaryNetworks(message, overrideDefinition)
+        const [network] = extractTemporaryNetworksFromMessage(message, overrideDefinition)
         expect(network.agentNetworkDefinition).toBe(overrideDefinition)
     })
 })
@@ -302,68 +301,5 @@ describe("mergeNetworks", () => {
         mergeNetworks(target, [incoming])
 
         expect(target).toHaveLength(1)
-    })
-})
-
-describe("extractNetworksFromChunk", () => {
-    withStrictMocks()
-
-    // Wraps a ChatMessage in the streamed-chunk envelope the backend sends ({"response": {...}}).
-    const makeChunk = (slyData: Record<string, unknown>): string =>
-        JSON.stringify({response: {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: slyData}})
-
-    it("returns accumulated unchanged when the chunk is not valid JSON", () => {
-        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
-        expect(extractNetworksFromChunk("not-json{", [], accumulated)).toBe(accumulated)
-    })
-
-    it("returns accumulated unchanged when the chunk yields no reservations", () => {
-        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
-        const chunk = makeChunk({}) // AGENT_FRAMEWORK message with no reservations
-        expect(extractNetworksFromChunk(chunk, [], accumulated)).toBe(accumulated)
-    })
-
-    it("merges networks found in the chunk into the accumulated list", () => {
-        const reservation = makeReservation("brand_new-7876642e-fe75-4d44-a61e-300688a1a6c5")
-        const chunk = makeChunk({[AGENT_RESERVATIONS_KEY]: [reservation]})
-
-        const result = extractNetworksFromChunk(chunk, [], [])
-
-        expect(result).toHaveLength(1)
-        expect(result[0].reservation).toEqual(reservation)
-        expect(result[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`)
-    })
-
-    it("keeps the later-expiring reservation when merging a chunk with an existing network of the same name", () => {
-        const older = convertReservationsToNetworks(
-            [{reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 100}],
-            null
-        )
-        const chunk = makeChunk({
-            [AGENT_RESERVATIONS_KEY]: [
-                {reservation_id: "net", lifetime_in_seconds: 300, expiration_time_in_seconds: 999},
-            ],
-        })
-
-        const result = extractNetworksFromChunk(chunk, [], older)
-
-        expect(result).toHaveLength(1)
-        expect(result[0].reservation.expiration_time_in_seconds).toBe(999)
-    })
-
-    it("returns accumulated and warns when processing the chunk throws", () => {
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
-        const accumulated = [convertReservationsToNetworks([makeReservation("existing")], null)[0]]
-        // Reservations is a non-array value, so the downstream `.map` call throws and is caught.
-        const chunk = makeChunk({[AGENT_RESERVATIONS_KEY]: "not-an-array"})
-
-        const result = extractNetworksFromChunk(chunk, [], accumulated)
-
-        expect(result).toBe(accumulated)
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-            expect.stringContaining("Failed to process chunk from network designer"),
-            expect.anything()
-        )
-        consoleWarnSpy.mockRestore()
     })
 })
