@@ -332,7 +332,8 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
             vi.fn()
         )
 
-        const requestBody = sendLlmRequestMock.mock.calls[0][3]
-        expect(requestBody["sly_data"]).not.toHaveProperty("agent_network_name")
+        const requestParams = sendLlmRequestMock.mock.calls[0][3]
+        expect(requestParams).toHaveProperty("sly_data")
+        expect(requestParams["sly_data"]).not.toHaveProperty("agent_network_name")
     })
 })
