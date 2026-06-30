@@ -79,6 +79,7 @@ jobs:
         with:
             revision: ${{ github.ref }}
             DISPLAY_VERSION: ${{ needs.setup.outputs.version }}
+            is_release: ${{ github.event_name == 'release' }}
 
     # Step 3: Deploy to environment (only for main/release)
     # Triggers neuro-san-deploy to update the UI image tag in the target environment
@@ -103,11 +104,11 @@ jobs:
                         "sender": "${{ github.actor }}"
                       }
 
-    # Step 3b: Deploy no-auth image to byok environment
+    # Step 3b: Deploy no-auth image to byok environment (release only)
     deploy-byok:
         runs-on: ubuntu-latest
         needs: [setup, build]
-        if: needs.build.result == 'success' && needs.setup.outputs.should_deploy == 'true'
+        if: needs.build.result == 'success' && github.event_name == 'release'
         steps:
             - name: Trigger byok deployment to neuro-san-deploy
               # v3
