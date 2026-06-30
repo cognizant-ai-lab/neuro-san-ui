@@ -100,10 +100,10 @@ const config: Config.InitialOptions = {
     // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
     coverageThreshold: {
         global: {
-            statements: -805,
-            branches: -506,
-            functions: -87,
-            lines: -241,
+            statements: -168,
+            branches: -179,
+            functions: -46,
+            lines: -138,
         },
     },
 

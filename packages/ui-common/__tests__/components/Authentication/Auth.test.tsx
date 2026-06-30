@@ -16,8 +16,10 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {signIn, useSession} from "next-auth/react"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {Auth} from "../../../components/Authentication/Auth"
 
 const AUTH_CHILDREN_TEXT = "Mock Auth"
@@ -28,7 +30,8 @@ const AUTH_ELEMENT = (
     </Auth>
 )
 
-// Note: next-auth/react has its own mock under __mocks__/next-auth/react.js so we don't need to mock here.
+vi.mock("next-auth/react")
+
 describe("Auth Component", () => {
     withStrictMocks()
 
