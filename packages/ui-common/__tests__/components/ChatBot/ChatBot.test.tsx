@@ -45,6 +45,18 @@ vi.mock("@mui/material/Grow", () => ({
 
 const mockUseAuthentication = vi.mocked(useAuthentication)
 
+const getUseColorSchemeMockReturnValue = (mode: "light" | "dark", systemMode: "light" | "dark" = "light") =>
+    ({
+        allColorSchemes: ["light", "dark"],
+        mode,
+        systemMode,
+        lightColorScheme: "light",
+        darkColorScheme: "light",
+        colorScheme: "light",
+        setMode: vi.fn(),
+        setColorScheme: vi.fn(),
+    }) satisfies ReturnType<typeof useColorScheme>
+
 describe("ChatBot", () => {
     withStrictMocks()
 
@@ -66,16 +78,7 @@ describe("ChatBot", () => {
             },
         })
 
-        vi.mocked(useColorScheme).mockReturnValue({
-            allColorSchemes: [],
-            mode: "light",
-            systemMode: "light",
-            lightColorScheme: "light",
-            darkColorScheme: "light",
-            colorScheme: "light",
-            setMode: undefined,
-            setColorScheme: vi.fn(),
-        })
+        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("light"))
 
         user = userEvent.setup()
     })
@@ -137,16 +140,7 @@ describe("ChatBot", () => {
 
     it("Should apply dark mode styling", () => {
         // Set MUI to dark mode
-        vi.mocked(useColorScheme).mockReturnValue({
-            allColorSchemes: [],
-            mode: "dark",
-            systemMode: "dark",
-            lightColorScheme: "light",
-            darkColorScheme: "light",
-            colorScheme: "light",
-            setMode: undefined,
-            setColorScheme: vi.fn(),
-        })
+        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("dark", "dark"))
 
         renderChatBot()
 
@@ -183,16 +177,7 @@ describe("ChatBot", () => {
 
     it("Should set correct dark mode background for ChatCommon", async () => {
         // Set MUI to dark mode
-        vi.mocked(useColorScheme).mockReturnValue({
-            allColorSchemes: [],
-            mode: "dark",
-            systemMode: "light",
-            lightColorScheme: "light",
-            darkColorScheme: "light",
-            colorScheme: "light",
-            setMode: undefined,
-            setColorScheme: vi.fn(),
-        })
+        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("dark"))
 
         renderChatBot()
 
