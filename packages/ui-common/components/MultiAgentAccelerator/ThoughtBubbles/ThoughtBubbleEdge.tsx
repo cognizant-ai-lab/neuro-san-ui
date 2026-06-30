@@ -1,7 +1,7 @@
 import {Edge, EdgeProps, getBezierPath} from "@xyflow/react"
 import {FC} from "react"
 
-import {ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
 interface ThoughtBubbleEdgeData extends Record<string, unknown> {
     text?: string

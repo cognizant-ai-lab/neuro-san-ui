@@ -16,19 +16,23 @@ limitations under the License.
 
 import DeleteOutlined from "@mui/icons-material/DeleteOutlined"
 import Loop from "@mui/icons-material/Loop"
+import SaveIcon from "@mui/icons-material/Save"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
+import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
 import {SmallLlmChatButton} from "../Common/LlmChatButton"
 
 //#region: Types
 interface ControlButtonsProps {
-    handleClearChat: () => void
     enableClearChatButton: boolean
-    isAwaitingLlm: boolean
+    enableSaveChatButton: boolean
+    handleClearChat: () => void
+    handleSave: () => void
     handleSend: (query: string) => void
     handleStop: () => void
+    isAwaitingLlm: boolean
     previousUserQuery: string
     shouldEnableRegenerateButton: boolean
 }
@@ -39,55 +43,89 @@ interface ControlButtonsProps {
  * @returns A fragment containing the Control Buttons.
  */
 export const ControlButtons: FC<ControlButtonsProps> = ({
-    handleClearChat,
     enableClearChatButton,
-    isAwaitingLlm,
+    enableSaveChatButton,
+    handleClearChat,
+    handleSave,
     handleSend,
     handleStop,
+    isAwaitingLlm,
     previousUserQuery,
     shouldEnableRegenerateButton,
 }) => (
     <>
         {isAwaitingLlm ? (
             // Stop Button
-            <SmallLlmChatButton
-                aria-label="Stop"
-                disabled={!isAwaitingLlm}
-                id="stop-output-button"
-                onClick={() => handleStop()}
-            >
-                <StopCircle
-                    fontSize="small"
-                    id="stop-button-icon"
-                />
-            </SmallLlmChatButton>
-        ) : (
-            <Box sx={{display: "flex", gap: 1}}>
-                {/*Clear Chat button*/}
+            <Tooltip title="Terminate request">
                 <SmallLlmChatButton
-                    aria-label="Clear Chat"
-                    disabled={!enableClearChatButton}
-                    id="clear-chat-button"
-                    onClick={handleClearChat}
+                    aria-label="Stop"
+                    disabled={!isAwaitingLlm}
+                    id="stop-output-button"
+                    onClick={() => handleStop()}
                 >
-                    <DeleteOutlined
+                    <StopCircle
                         fontSize="small"
                         id="stop-button-icon"
                     />
                 </SmallLlmChatButton>
+            </Tooltip>
+        ) : (
+            <Box sx={{display: "flex", gap: 1}}>
+                {/*Save Chat button*/}
+                <Tooltip title="Save Chat">
+                    <span>
+                        <SmallLlmChatButton
+                            aria-label="Save Chat"
+                            disabled={!enableSaveChatButton}
+                            id="save-chat-button"
+                            onClick={handleSave}
+                        >
+                            <SaveIcon
+                                fontSize="small"
+                                id="save-button-icon"
+                            />
+                        </SmallLlmChatButton>
+                    </span>
+                </Tooltip>
+
+                {/*Clear Chat button*/}
+                <Tooltip title="Clear Chat">
+                    <span>
+                        <SmallLlmChatButton
+                            aria-label="Clear Chat"
+                            disabled={!enableClearChatButton}
+                            id="clear-chat-button"
+                            onClick={handleClearChat}
+                        >
+                            <DeleteOutlined
+                                fontSize="small"
+                                id="stop-button-icon"
+                                sx={{
+                                    "&:hover": {
+                                        color: "error.main",
+                                    },
+                                }}
+                            />
+                        </SmallLlmChatButton>
+                    </span>
+                </Tooltip>
 
                 {/*Regenerate Button*/}
-                <SmallLlmChatButton
-                    aria-label="Regenerate"
-                    disabled={!shouldEnableRegenerateButton}
-                    id="regenerate-output-button"
-                    onClick={() => handleSend(previousUserQuery)}
-                >
-                    <Loop
-                        fontSize="small"
-                        id="generate-icon"
-                    />
-                </SmallLlmChatButton>
+                <Tooltip title="Resend last query">
+                    <span>
+                        <SmallLlmChatButton
+                            aria-label="Regenerate"
+                            disabled={!shouldEnableRegenerateButton}
+                            id="regenerate-output-button"
+                            onClick={() => handleSend(previousUserQuery)}
+                        >
+                            <Loop
+                                fontSize="small"
+                                id="generate-icon"
+                            />
+                        </SmallLlmChatButton>
+                    </span>
+                </Tooltip>
             </Box>
         )}
     </>

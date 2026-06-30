@@ -19,12 +19,12 @@ import {render, screen} from "@testing-library/react"
 import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentConversation} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {AgentNode, AgentNodeProps} from "../../../components/MultiAgentAccelerator/AgentNode"
-import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../../state/Settings"
-import {PALETTES} from "../../../Theme/Palettes"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
+import {AgentNode, AgentNodeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
+import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useSettingsStore} from "../../../../state/Settings"
+import {PALETTES} from "../../../../Theme/Palettes"
 
 // Mock the Handle component since we don't want to invite reactflow (now @xyflow/react) to this party
 jest.mock("@xyflow/react", () => ({

@@ -114,23 +114,21 @@ describe("downloadFile", () => {
             downloadFile(textToWrite, fileName)
 
             // Make sure correct Blob was created
-            expect(blobMock).toHaveBeenCalledWith([textToWrite])
+            expect(blobMock).toHaveBeenCalledWith([textToWrite], {type: "application/octet-stream"})
 
             expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
 
             expect(clickMock).toHaveBeenCalled()
+
+            // Now with custom MIME type
+            const customMimeType = "text/plain"
+            downloadFile(textToWrite, fileName, customMimeType)
+            expect(blobMock).toHaveBeenCalledWith([textToWrite], {type: customMimeType})
         } finally {
             global.URL.createObjectURL = originalCreateObjectURL
             global.URL.revokeObjectURL = originalRevokeObjectURL
             HTMLAnchorElement.prototype.click = originalAnchorClick
             global.Blob = originalBlob
         }
-
-        // Make sure correct Blob was created
-        expect(blobMock).toHaveBeenCalledWith([textToWrite])
-
-        expect(revokeObjectURLMock).toHaveBeenCalledWith(objectUrl)
-
-        expect(clickMock).toHaveBeenCalled()
     })
 })

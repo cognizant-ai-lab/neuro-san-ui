@@ -205,7 +205,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
                                                     const fileName = `${toSafeFilename(labelString)}.hocon`
-                                                    downloadFile(networkHocon, fileName)
+                                                    downloadFile(networkHocon, fileName, "text/plain")
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"

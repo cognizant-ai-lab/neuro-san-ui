@@ -36,7 +36,7 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
-import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow"
+import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -85,7 +85,7 @@ jest.mock("next-auth/react")
 jest.mock("../../../controller/agent/Agent")
 jest.mock("../../../controller/agent/IconSuggestions")
 
-jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
+jest.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
@@ -106,6 +106,12 @@ jest.mock("../../../components/MultiAgentAccelerator/AgentFlow", () => ({
                         type="button"
                     >
                         Show Thinking
+                    </button>
+                    <button
+                        id="save-chat-button"
+                        type="button"
+                    >
+                        Save chat
                     </button>
                     {props.agentsInNetwork.map((element) => {
                         const json = JSON.stringify(element)
@@ -1476,7 +1482,7 @@ describe("MultiAgentAccelerator", () => {
             // Click through remaining steps and verify their content shows up
             for (const step of MAIN_TOUR_STEPS.slice(1)) {
                 // Make sure step at least appears in the DOM, though due to mocks we may get false negatives here
-                // Steps can (in theory) be functions that return an element, or just a element
+                // Steps can (in theory) be functions that return an element, or just an element
                 const stepElement = typeof step.target === "function" ? step.target() : step.target
                 expect(stepElement).toBeVisible()
                 const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})

@@ -50,7 +50,7 @@ import {
 } from "react"
 import {v4 as uuid} from "uuid"
 
-import {ChatHistory} from "./ChatHistory"
+import {ChatHistory, toTurns} from "./ChatHistory"
 import {MAX_TURNS} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
@@ -63,8 +63,10 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {ConfirmationModal} from "../../Common/ConfirmationModal"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
 import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
@@ -219,7 +221,25 @@ const MAX_AGENT_RETRIES = 3
 const extractFinalAnswer = (response: string) =>
     /Final Answer: (?<finalAnswerText>.*)/su.exec(response)?.groups?.["finalAnswerText"]
 
+// List of message roles that are exported when saving chat history.
+const EXPORTED_MESSAGE_TYPES = [MessageRole.User, MessageRole.FinalAnswer, MessageRole.Warning, MessageRole.Error]
+
+const EXPORT_ROLE_LABELS: Record<MessageRole, string> = {
+    [MessageRole.User]: "User",
+    [MessageRole.Agent]: "Assistant",
+    [MessageRole.FinalAnswer]: "Assistant",
+    [MessageRole.Warning]: "Warning",
+    [MessageRole.Error]: "Error",
+}
+
 //#endregion
+
+/**
+ * Helper function to convert a message role to a label for exporting chat history.
+ * @param role The message role to convert
+ * @returns The label for the message role
+ */
+export const roleToExportLabel = (role: MessageRole): string => EXPORT_ROLE_LABELS[role]
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -297,6 +317,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         () => storedChatHistory ?? {chatHistory: [], chatContext: null, slyData: {}},
         [storedChatHistory]
     )
+
+    // For saving chat history. Specifically, exclude "Agent" messages as they are verbose and not useful in a saved
+    // export.
+    const exportableTurns = turns.filter((turn) => EXPORTED_MESSAGE_TYPES.includes(turn.role))
+    const enableSaveChatButton = turns.length > 0 || agentChatHistory?.chatHistory?.length > 0
 
     // Display option for agent/network names
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
@@ -765,6 +790,50 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         }
     }, [addTurn, resetState])
 
+    const formatTurns = (items: ConversationTurn[]) =>
+        items.map((turn) => `${roleToExportLabel(turn.role)}: ${turn.text}`).join("\n\n")
+
+    /**
+     * Save the current chat history and session to a file
+     */
+    const handleSaveChat = () => {
+        const chatHistory = agentChatHistory?.chatHistory
+        const chatHistoryTurns = toTurns(chatHistory)
+
+        // Get the current date and time in a human-readable format, including the local time zone
+        const exportedAt = new Date()
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        const exportedAtText = exportedAt.toLocaleString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            timeZoneName: "short",
+        })
+
+        const allHistoryText = [
+            "Chat export",
+            `Network: ${selectedNetwork}`,
+            `Exported: ${exportedAtText} (${timeZone})`,
+            "",
+            "====================",
+            "Previous history",
+            "====================",
+            formatTurns(chatHistoryTurns) || "No persisted chat history.",
+            "",
+            "====================",
+            "Current session",
+            "====================",
+            formatTurns(exportableTurns) || "No current session turns.",
+        ].join("\n")
+
+        // Download the file
+        const filename = `${toSafeFilename(`${selectedNetwork}-history`)}.txt`
+        downloadFile(allHistoryText, filename, "text/plain")
+    }
+
     // Regex to check if user has typed anything besides whitespace
     const userInputEmpty = !chatInput || chatInput.length === 0 || hasOnlyWhitespace(chatInput)
 
@@ -777,8 +846,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     // Enable Clear Chat button if not awaiting response and there is chat output to clear
     const enableClearChatButton = !isAwaitingLlm && (turns.length > 0 || agentChatHistory?.chatHistory?.length > 0)
 
-    const getPlaceholder = () =>
-        selectedNetwork ? agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}` : null
+    const [clearChatConfirmationDialogOpen, setClearChatConfirmationDialogOpen] = useState<boolean>(false)
+
+    const getPlaceholder = () => agentPlaceholders[selectedNetwork] || `Chat with ${networkDisplayName}`
 
     const handleClearChat = useCallback(() => {
         setTurns([])
@@ -986,7 +1056,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         >
             <ControlButtons
                 enableClearChatButton={enableClearChatButton}
-                handleClearChat={handleClearChat}
+                enableSaveChatButton={enableSaveChatButton}
+                handleClearChat={() => setClearChatConfirmationDialogOpen(true)}
+                handleSave={handleSaveChat}
                 handleSend={handleSend}
                 handleStop={handleStop}
                 isAwaitingLlm={isAwaitingLlm}
@@ -1048,6 +1120,27 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 overflowY: "auto",
             }}
         >
+            {clearChatConfirmationDialogOpen ? (
+                <ConfirmationModal
+                    id={`${id}-clear-chat-confirmation-modal`}
+                    content={
+                        "This will clear the current chat session and any persisted chat history for this " +
+                        "network. This operation cannot be undone. Are you sure you wish to continue?"
+                    }
+                    handleCancel={() => {
+                        setClearChatConfirmationDialogOpen(false)
+                    }}
+                    handleOk={() => {
+                        setClearChatConfirmationDialogOpen(false)
+                        setTurns([])
+                        resetHistory(selectedNetwork)
+                        setPreviousUserQuery("")
+                        currentResponse.current = ""
+                    }}
+                    okBtnLabel="Yes, clear chat"
+                    title={`Clear all chat including history for ${networkDisplayName}?`}
+                />
+            ) : null}
             <Box
                 id="llm-responses"
                 ref={chatOutputRef}
