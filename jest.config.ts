@@ -78,7 +78,7 @@ const config: Config.InitialOptions = {
     verbose: false,
     setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
     testEnvironment: "jsdom",
-    collectCoverage: true,
+    collectCoverage: false,
     collectCoverageFrom: [
         "**/*.{js,jsx,ts,tsx}",
         "!**/.next/**",
@@ -94,7 +94,7 @@ const config: Config.InitialOptions = {
         "!apps/main/app/api/auth/[[]...nextauth[]]/route.ts",
     ],
 
-    coverageReporters: ["lcov"],
+    coverageReporters: ["text-summary"],
 
     // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
     // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
