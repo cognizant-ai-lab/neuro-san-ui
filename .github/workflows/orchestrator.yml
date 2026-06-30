@@ -104,29 +104,6 @@ jobs:
                         "sender": "${{ github.actor }}"
                       }
 
-    # Step 3b: Deploy no-auth image to byok environment (release only)
-    deploy-byok:
-        runs-on: ubuntu-latest
-        needs: [setup, build]
-        if: needs.build.result == 'success' && github.event_name == 'release'
-        steps:
-            - name: Trigger byok deployment to neuro-san-deploy
-              # v3
-              uses: peter-evans/repository-dispatch@ff45666b9427631e3450c54a1bcbee4d9ff4d7c0
-              with:
-                  token: ${{ secrets.NEURO_SAN_DEPLOY_DISPATCH_TOKEN }}
-                  repository: cognizant-ai-lab/neuro-san-deploy
-                  event-type: ui_deploy
-                  client-payload: |
-                      {
-                        "source_repo": "${{ github.repository }}",
-                        "ref": "${{ github.ref_name }}",
-                        "sha": "${{ github.sha }}",
-                        "target_environment": "byok",
-                        "image_tag": "${{ needs.build.outputs.noauth_image_tag }}",
-                        "sender": "${{ github.actor }}"
-                      }
-
     # Step 4: Bump package.json version on main after a release
     # Uses [skip ci] in the commit message so the resulting push does not re-trigger workflows.
     bump-version:
