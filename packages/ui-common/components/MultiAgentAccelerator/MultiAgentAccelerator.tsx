@@ -15,8 +15,11 @@ limitations under the License.
 */
 
 import StopCircle from "@mui/icons-material/StopCircle"
+import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
+import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid"
+import Paper from "@mui/material/Paper"
 import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
@@ -39,15 +42,19 @@ import {
     SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
+import {ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
 import {Sidebar} from "./Sidebar/Sidebar"
-import {extractTemporaryNetworksFromMessage, isTemporaryNetwork, mergeNetworks} from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
 import {
-    getAgentFunction,
-    getAgentNetworks,
-    getConnectivity,
-    sendNetworkDesignerUpdate,
-} from "../../controller/agent/Agent"
+    extractTemporaryNetworksFromMessage,
+    IMPORT_FAILURE_DETAIL,
+    importNetworkFromJson,
+    isTemporaryNetwork,
+    notifySaveError,
+    streamNetworkDesignerUpsert,
+} from "./TemporaryNetworks"
+import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
+import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
+import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
@@ -62,9 +69,8 @@ import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
-import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
-import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {MUIDialog} from "../Common/MUIDialog"
+import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -79,44 +85,6 @@ const GROW_ANIMATION_TIME_MS = 800
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
-// #region: Agent-save helpers
-
-/**
- * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
- * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
- */
-const collectNetworksFromChunk = (
-    chunk: string,
-    updated: AgentNetworkDefinitionEntry[],
-    accumulated: TemporaryNetwork[]
-): TemporaryNetwork[] => {
-    try {
-        const chatMessage = chatMessageFromChunk(chunk)
-        if (!chatMessage) return accumulated
-
-        // Always use the user's edited definition as the authoritative value.
-        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
-        if (converted.length === 0) return accumulated
-        return mergeNetworks(accumulated, converted)
-    } catch (e: unknown) {
-        console.warn("Failed to process chunk from network designer:", e)
-        return accumulated
-    }
-}
-
-/** Logs and notifies about a save error. Suppresses AbortError (user-canceled). */
-const notifySaveError = (agentName: string, e: unknown): void => {
-    if (e instanceof DOMException && e.name === "AbortError") return
-    console.error("Failed to submit agent network update:", e)
-    const detail =
-        e instanceof DOMException && e.name === "TimeoutError"
-            ? "The request timed out waiting for the server. Please try again."
-            : String(e)
-    sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
-}
-
-// #endregion: Agent-save helpers
 
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
@@ -153,6 +121,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     // Track newly added temp networks so we can highlight them
     const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
+
+    // True while a file import is in-flight (after modal confirm, before the new network appears)
+    const [isImporting, setIsImporting] = useState<boolean>(false)
 
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
@@ -199,6 +170,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     >(new Map())
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
+    const [importModalOpen, setImportModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
@@ -615,17 +587,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             signal: AbortSignal
         ): Promise<void> => {
             try {
-                let newNetworks: TemporaryNetwork[] = []
-                await sendNetworkDesignerUpdate(
+                const newNetworks = await streamNetworkDesignerUpsert(
                     neuroSanURL,
                     signal,
                     agentName,
                     updated,
                     agentNetworkName,
-                    username,
-                    (chunk) => {
-                        newNetworks = collectNetworksFromChunk(chunk, updated, newNetworks)
-                    }
+                    username
                 )
 
                 if (newNetworks.length === 0) {
@@ -658,6 +626,41 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
         },
         [neuroSanURL, username, selectedNetwork]
+    )
+
+    /**
+     * Handles an import from the ImportNetworkModal: converts the JSON content to a
+     * network definition, streams it through the network designer to obtain a reservation,
+     * then upserts the result into the temporary-networks store and navigates to the new network.
+     */
+    const handleImportNetwork = useCallback(
+        async (agentNetworkName: string, content: string): Promise<void> => {
+            setIsImporting(true)
+            try {
+                const result = await importNetworkFromJson(content, agentNetworkName, neuroSanURL, username)
+                if ("failure" in result) {
+                    sendNotification(
+                        NotificationType.error,
+                        `Failed to import "${agentNetworkName}".`,
+                        IMPORT_FAILURE_DETAIL[result.failure]
+                    )
+                    return
+                }
+                useTempNetworksStore.getState().upsertTempNetworks(result.networks)
+                // An import defines a single network, so the designer returns one reservation. Highlight and
+                // navigate to it; any further entries (none expected) are still upserted above.
+                const newNetworkName = result.networks[0]?.agentInfo.agent_name
+                if (newNetworkName) {
+                    setNewlyAddedTemporaryNetworks(new Set([newNetworkName]))
+                    changeSelectedNetwork(newNetworkName)
+                }
+            } catch (e: unknown) {
+                notifySaveError(agentNetworkName, e)
+            } finally {
+                setIsImporting(false)
+            }
+        },
+        [changeSelectedNetwork, neuroSanURL, username]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -762,12 +765,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     <Sidebar
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
+                        isImporting={isImporting}
                         networkIconSuggestions={networkIconSuggestions}
                         networks={networks}
                         neuroSanServerURL={neuroSanURL}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
                         onEditNetwork={handleEditNetwork}
+                        onImportClick={() => setImportModalOpen(true)}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
@@ -939,6 +944,52 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
+    const getImportNetworkModal = () => (
+        <ImportNetworkModal
+            existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
+            isOpen={importModalOpen}
+            onClose={() => setImportModalOpen(false)}
+            onImport={handleImportNetwork}
+        />
+    )
+
+    // Blocking overlay shown while an imported network is being created on the backend.
+    const getImportBackdrop = () => (
+        <Backdrop
+            id="multi-agent-accelerator-import-backdrop"
+            data-testid="multi-agent-accelerator-import-backdrop"
+            open={isImporting}
+            sx={{zIndex: getZIndex(3, theme)}}
+        >
+            <Paper
+                elevation={6}
+                role="status"
+                aria-live="polite"
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    px: 4,
+                    py: 2.5,
+                    borderRadius: 2,
+                    maxWidth: 480,
+                }}
+            >
+                <CircularProgress
+                    id="multi-agent-accelerator-import-spinner"
+                    size={24}
+                />
+                <Typography
+                    id="multi-agent-accelerator-import-title"
+                    variant="body1"
+                    sx={{fontWeight: "bold"}}
+                >
+                    Importing network...
+                </Typography>
+            </Paper>
+        </Backdrop>
+    )
+
     const getTourModal = () =>
         tourModalOpen && (
             <MUIDialog
@@ -1059,8 +1110,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
-
             {getDeleteNetworkConfirmationModal()}
+            {getImportNetworkModal()}
+            {getImportBackdrop()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

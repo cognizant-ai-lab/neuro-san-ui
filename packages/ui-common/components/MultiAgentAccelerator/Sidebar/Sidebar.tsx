@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import {keyframes, styled} from "@mui/material/styles"
@@ -141,12 +142,14 @@ type CONNECTION_STATUS = "online" | "offline" | "unknown"
 export interface SidebarProps {
     readonly id: string
     readonly isAwaitingLlm: boolean
+    readonly isImporting: boolean
     readonly networkIconSuggestions?: NetworkIconSuggestions
     readonly networks: readonly AgentInfo[]
     readonly neuroSanServerURL: string
     readonly newlyAddedTemporaryNetworks?: Set<string>
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
+    readonly onImportClick?: () => void
     readonly setSelectedNetwork: (network: string) => void
     readonly temporaryNetworks?: readonly TemporaryNetwork[]
 }
@@ -156,12 +159,14 @@ export interface SidebarProps {
 export const Sidebar: FC<SidebarProps> = ({
     id,
     isAwaitingLlm,
+    isImporting,
     networkIconSuggestions,
     networks,
     neuroSanServerURL,
     newlyAddedTemporaryNetworks,
     onDeleteNetwork,
     onEditNetwork,
+    onImportClick,
     setSelectedNetwork,
     temporaryNetworks = EMPTY_ARRAY,
 }) => {
@@ -362,6 +367,23 @@ export const Sidebar: FC<SidebarProps> = ({
                     <AddBoxRounded
                         id="add-network-icon"
                         sx={{color: "var(--bs-secondary)"}}
+                    />
+                </Tooltip>
+            </Button>
+            <Button
+                aria-label="Import Network Definition"
+                disabled={isAwaitingLlm || isImporting}
+                id="import-network-btn"
+                onClick={onImportClick}
+                sx={{display: "inline-block", minWidth: "40px"}}
+            >
+                <Tooltip
+                    title="Import a network definition file"
+                    placement="top"
+                >
+                    <FileUploadOutlinedIcon
+                        id="import-network-icon"
+                        sx={{color: isAwaitingLlm || isImporting ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
                     />
                 </Tooltip>
             </Button>
