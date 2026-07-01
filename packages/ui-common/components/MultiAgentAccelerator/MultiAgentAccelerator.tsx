@@ -959,6 +959,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             id="multi-agent-accelerator-import-backdrop"
             data-testid="multi-agent-accelerator-import-backdrop"
             open={isImporting}
+            // Layer 3 sits above the modal so the backdrop blocks interaction with any open dialog while importing.
             sx={{zIndex: getZIndex(3, theme)}}
         >
             <Paper
