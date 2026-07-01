@@ -2,6 +2,7 @@ export const TESTS_MIGRATED_TO_VITEST = [
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/ChatCommon.test.tsx",
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/ControlButtons.test.tsx",
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/Conversation.test.tsx",
+    "packages/ui-common/__tests__/components/AgentChat/ChatCommon/FormattedMarkdown.test.tsx",
     "packages/ui-common/__tests__/components/Authentication/Auth.test.tsx",
     "packages/ui-common/__tests__/components/ChatBot/ChatBot.test.tsx",
     "packages/ui-common/__tests__/components/ErrorPage/ErrorBoundary.test.tsx",
