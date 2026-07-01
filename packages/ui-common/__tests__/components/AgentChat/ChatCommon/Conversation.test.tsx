@@ -15,13 +15,15 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {Conversation} from "../../../../components/AgentChat/ChatCommon/Conversation"
 import {ConversationTurn, MessageRole} from "../../../../components/AgentChat/ChatCommon/ConversationTurn"
 
-jest.mock("../../../../controller/agent/Agent")
-jest.mock("../../../../components/Common/notification")
+vi.mock("../../../../controller/agent/Agent")
+vi.mock("../../../../components/Common/notification")
 
 const TURNS: ConversationTurn[] = [
     {
