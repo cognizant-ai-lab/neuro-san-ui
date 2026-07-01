@@ -17,9 +17,11 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {MicrophoneButton, MicrophoneButtonProps} from "../../../../components/AgentChat/VoiceChat/MicrophoneButton"
 import {
     checkSpeechSupport,
@@ -28,13 +30,13 @@ import {
 } from "../../../../components/AgentChat/VoiceChat/VoiceChat"
 
 // Mock the VoiceChat module
-jest.mock("../../../../components/AgentChat/VoiceChat/VoiceChat", () => ({
-    toggleListening: jest.fn(),
-    checkSpeechSupport: jest.fn(),
+vi.mock("../../../../components/AgentChat/VoiceChat/VoiceChat", () => ({
+    toggleListening: vi.fn(),
+    checkSpeechSupport: vi.fn(),
 }))
 
 // Mock the LlmChatButton component
-jest.mock("../../../../components/AgentChat/Common/LlmChatButton", () => ({
+vi.mock("../../../../components/AgentChat/Common/LlmChatButton", () => ({
     LlmChatButton: ({
         children,
         onClick,
@@ -60,15 +62,15 @@ jest.mock("../../../../components/AgentChat/Common/LlmChatButton", () => ({
 }))
 
 describe("MicrophoneButton", () => {
-    const mockOnMicToggle = jest.fn()
+    const mockOnMicToggle = vi.fn()
     const mockRecognition: Partial<SpeechRecognition> = {
-        start: jest.fn(),
-        stop: jest.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
         continuous: false,
         interimResults: false,
         lang: "en-US",
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
     }
 
     const defaultVoiceInputState: SpeechRecognitionState = {
@@ -83,7 +85,7 @@ describe("MicrophoneButton", () => {
         onMicToggle: mockOnMicToggle,
         speechRecognitionRef: {current: mockRecognition as SpeechRecognition},
         voiceInputState: defaultVoiceInputState,
-        setVoiceInputState: jest.fn(),
+        setVoiceInputState: vi.fn(),
     }
 
     let user: UserEvent
@@ -91,14 +93,10 @@ describe("MicrophoneButton", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        ;(toggleListening as jest.Mock).mockResolvedValue(undefined)
-        ;(checkSpeechSupport as jest.Mock).mockReturnValue(true)
+        vi.mocked(toggleListening).mockResolvedValue(undefined)
+        vi.mocked(checkSpeechSupport).mockReturnValue(true)
 
         user = userEvent.setup()
-    })
-
-    afterEach(() => {
-        jest.clearAllMocks()
     })
 
     it("renders with mic off icon when not listening", () => {
@@ -288,7 +286,7 @@ describe("MicrophoneButton", () => {
         })
 
         // Mock checkSpeechSupport to return false for unsupported browsers
-        ;(checkSpeechSupport as jest.Mock).mockReturnValue(false)
+        vi.mocked(checkSpeechSupport).mockReturnValue(false)
 
         const unsupportedVoiceInputState = {
             ...defaultVoiceInputState,
