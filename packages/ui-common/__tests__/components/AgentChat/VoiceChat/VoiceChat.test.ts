@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type {Dispatch, RefObject, SetStateAction} from "react"
+import type {RefObject} from "react"
+import {Dispatch, SetStateAction} from "react"
+// eslint-disable-next-line no-shadow
+import {afterAll, beforeAll, beforeEach, describe, expect, it, Mock, MockedFunction, vi} from "vitest"
 
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {
     checkSpeechSupport,
     cleanupAndStopSpeechRecognition,
@@ -38,13 +42,13 @@ const mockChromeBrowser = () => {
 }
 
 // Suppress React 18 render warning during hook tests
-let errorSpy: jest.SpyInstance
+let errorSpy: Mock
 let originalSpeechRecognition: unknown
 let originalGetUserMedia: unknown
 let originalMediaDevices: unknown
 
 beforeAll(() => {
-    errorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn())
+    errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
     originalSpeechRecognition = ((window as Window) && {SpeechRecognition: {}}).SpeechRecognition
     originalMediaDevices = navigator.mediaDevices
     originalGetUserMedia = navigator.mediaDevices?.getUserMedia
@@ -70,11 +74,13 @@ afterAll(() => {
 })
 
 describe("VoiceChat utils", () => {
+    withStrictMocks()
+
     describe("Browser Support", () => {
         beforeEach(() => {
             // Reset SpeechRecognition before each test
             Object.defineProperty(window, "SpeechRecognition", {
-                value: jest.fn(),
+                value: vi.fn(),
                 configurable: true,
                 writable: true,
             })
@@ -125,13 +131,13 @@ describe("VoiceChat utils", () => {
 
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockRejectedValue(permissionError),
+                    getUserMedia: vi.fn().mockRejectedValue(permissionError),
                 },
                 configurable: true,
                 writable: true,
             })
 
-            const mockRecognition = {start: jest.fn(), stop: jest.fn()}
+            const mockRecognition = {start: vi.fn(), stop: vi.fn()}
             await toggleListening(true, mockRecognition as unknown as SpeechRecognition)
             expect(mockRecognition.start).not.toHaveBeenCalled()
         })
@@ -140,7 +146,7 @@ describe("VoiceChat utils", () => {
             // Mock Chrome browser for this test
             mockChromeBrowser()
 
-            const recognition = {stop: jest.fn(), start: jest.fn()}
+            const recognition = {stop: vi.fn(), start: vi.fn()}
 
             // Test stopping recognition (shouldStartListening = false)
             await toggleListening(false, recognition as unknown as SpeechRecognition)
@@ -149,8 +155,8 @@ describe("VoiceChat utils", () => {
             // Mock successful permission for starting
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockResolvedValue({
-                        getTracks: () => [{stop: jest.fn()}],
+                    getUserMedia: vi.fn().mockResolvedValue({
+                        getTracks: () => [{stop: vi.fn()}],
                     }),
                 },
                 configurable: true,
@@ -170,17 +176,17 @@ describe("VoiceChat utils", () => {
 
             // Mock successful permission request
             const mockStream = {
-                getTracks: () => [{stop: jest.fn()}],
+                getTracks: () => [{stop: vi.fn()}],
             }
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockResolvedValue(mockStream),
+                    getUserMedia: vi.fn().mockResolvedValue(mockStream),
                 },
                 configurable: true,
                 writable: true,
             })
 
-            const recognition = {start: jest.fn(), stop: jest.fn()}
+            const recognition = {start: vi.fn(), stop: vi.fn()}
             await toggleListening(true, recognition as unknown as SpeechRecognition)
 
             expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
@@ -202,13 +208,13 @@ describe("VoiceChat utils", () => {
             permissionError.name = "NotAllowedError"
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockRejectedValue(permissionError),
+                    getUserMedia: vi.fn().mockRejectedValue(permissionError),
                 },
                 configurable: true,
                 writable: true,
             })
 
-            const recognition = {start: jest.fn(), stop: jest.fn()}
+            const recognition = {start: vi.fn(), stop: vi.fn()}
             await toggleListening(true, recognition as unknown as SpeechRecognition)
 
             expect(recognition.start).not.toHaveBeenCalled()
@@ -223,13 +229,13 @@ describe("VoiceChat utils", () => {
             permissionError.name = "PermissionDeniedError"
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockRejectedValue(permissionError),
+                    getUserMedia: vi.fn().mockRejectedValue(permissionError),
                 },
                 configurable: true,
                 writable: true,
             })
 
-            const recognition = {start: jest.fn(), stop: jest.fn()}
+            const recognition = {start: vi.fn(), stop: vi.fn()}
             await toggleListening(true, recognition as unknown as SpeechRecognition)
 
             expect(recognition.start).not.toHaveBeenCalled()
@@ -244,13 +250,13 @@ describe("VoiceChat utils", () => {
             otherError.name = "SomeOtherError"
             Object.defineProperty(navigator, "mediaDevices", {
                 value: {
-                    getUserMedia: jest.fn().mockRejectedValue(otherError),
+                    getUserMedia: vi.fn().mockRejectedValue(otherError),
                 },
                 configurable: true,
                 writable: true,
             })
 
-            const recognition = {start: jest.fn(), stop: jest.fn()}
+            const recognition = {start: vi.fn(), stop: vi.fn()}
             await toggleListening(true, recognition as unknown as SpeechRecognition)
 
             // Should still try to start recognition since it's Chrome and error is not permission-related
@@ -259,25 +265,30 @@ describe("VoiceChat utils", () => {
     })
 
     describe("Speech Recognition Event Handlers", () => {
-        let mockSetChatInput: jest.MockedFunction<Dispatch<SetStateAction<string>>>
-        let mockSetVoiceInputState: jest.MockedFunction<Dispatch<SetStateAction<SpeechRecognitionState>>>
+        let mockSetChatInput: MockedFunction<Dispatch<SetStateAction<string>>>
+        let mockSetVoiceInputState: MockedFunction<Dispatch<SetStateAction<SpeechRecognitionState>>>
         let speechRecognitionRef: RefObject<SpeechRecognition | null>
 
         beforeEach(() => {
-            mockSetChatInput = jest.fn()
-            mockSetVoiceInputState = jest.fn()
+            mockSetChatInput = vi.fn()
+            mockSetVoiceInputState = vi.fn()
             speechRecognitionRef = {current: null}
 
+            // We need to use a function here to allow it to act as a constructor for new() calls. Arrow functions
+            // cannot be used as constructors, so we use a regular function to mock the SpeechRecognition constructor.
             // Mock SpeechRecognition constructor
-            const MockSpeechRecognition = jest.fn().mockImplementation(() => ({
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                start: jest.fn(),
-                stop: jest.fn(),
-                continuous: true,
-                interimResults: true,
-                lang: "en-US",
-            }))
+            // eslint-disable-next-line prefer-arrow-callback,prefer-arrow-functions/prefer-arrow-functions
+            const MockSpeechRecognition = vi.fn().mockImplementation(function () {
+                return {
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn(),
+                    start: vi.fn(),
+                    stop: vi.fn(),
+                    continuous: true,
+                    interimResults: true,
+                    lang: "en-US",
+                }
+            })
 
             Object.defineProperty(window, "SpeechRecognition", {
                 value: MockSpeechRecognition,
@@ -435,7 +446,7 @@ describe("VoiceChat utils", () => {
         })
 
         it("should handle recognition error event", () => {
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(jest.fn())
+            const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
             const handlers = setupSpeechRecognition(mockSetChatInput, mockSetVoiceInputState, speechRecognitionRef)
             expect(handlers).not.toBeNull()
@@ -483,19 +494,19 @@ describe("VoiceChat utils", () => {
 
     describe("cleanupAndStopSpeechRecognition", () => {
         it("should cleanup and stop speech recognition", () => {
-            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(jest.fn())
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
 
             const mockSpeechRecognition = {
-                removeEventListener: jest.fn(),
-                stop: jest.fn(),
+                removeEventListener: vi.fn(),
+                stop: vi.fn(),
             }
 
             const speechRecognitionRef = {current: mockSpeechRecognition as unknown as SpeechRecognition}
             const handlers = {
-                start: jest.fn(),
-                end: jest.fn(),
-                error: jest.fn(),
-                result: jest.fn(),
+                start: vi.fn(),
+                end: vi.fn(),
+                error: vi.fn(),
+                result: vi.fn(),
             }
 
             cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
@@ -512,21 +523,21 @@ describe("VoiceChat utils", () => {
         })
 
         it("should handle stop errors gracefully", () => {
-            const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(jest.fn())
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
 
             const mockSpeechRecognition = {
-                removeEventListener: jest.fn(),
-                stop: jest.fn().mockImplementation(() => {
+                removeEventListener: vi.fn(),
+                stop: vi.fn().mockImplementation(() => {
                     throw new Error("Stop failed")
                 }),
             }
 
             const speechRecognitionRef = {current: mockSpeechRecognition as unknown as SpeechRecognition}
             const handlers = {
-                start: jest.fn(),
-                end: jest.fn(),
-                error: jest.fn(),
-                result: jest.fn(),
+                start: vi.fn(),
+                end: vi.fn(),
+                error: vi.fn(),
+                result: vi.fn(),
             }
 
             cleanupAndStopSpeechRecognition(speechRecognitionRef, handlers)
