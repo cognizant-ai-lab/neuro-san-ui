@@ -16,13 +16,15 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {UserEvent, userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {SendButton} from "../../../../components/AgentChat/ChatCommon/SendButton"
 
 describe("SendButton", () => {
     let user: UserEvent
-    const handleClick = jest.fn()
+    const handleClick = vi.fn()
 
     withStrictMocks()
 
