@@ -1087,7 +1087,7 @@ describe("ChatCommon", () => {
         it("Should handle non-error type thrown while fetching", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
-            vi.spyOn(console, "error").mockImplementation(vi.fn)
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
 
             // Now throw something that isn't an Error (which is possible in JavaScript)
             vi.mocked(sendLlmRequest).mockRejectedValue("Just a string, not an Error object")
@@ -1112,7 +1112,7 @@ describe("ChatCommon", () => {
                 })('"Operation was aborted"')
             )
 
-            vi.spyOn(console, "error").mockImplementation(vi.fn)
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
             await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
             // Should be only 1 attempt when we are aborted
@@ -1125,7 +1125,7 @@ describe("ChatCommon", () => {
         it("Should handle other types of errors than AbortError correctly", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
-            vi.spyOn(console, "error").mockImplementation(vi.fn)
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
 
             vi.mocked(sendLlmRequest).mockRejectedValue(
                 new (class extends Error {
@@ -1150,9 +1150,9 @@ describe("ChatCommon", () => {
 
             // Mock a timeout scenario
 
-            vi.mocked(sendChatQuery).mockThrow(new Error("Network timeout"))
+            vi.mocked(sendChatQuery).mockRejectedValue(new Error("Network timeout"))
 
-            vi.spyOn(console, "error").mockImplementation(vi.fn)
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
             await sendQuery(TEST_AGENT_MATH_GUY, "test query for timeout")
 
             // Should handle timeout gracefully and show error
