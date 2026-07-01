@@ -16,17 +16,19 @@ limitations under the License.
 
 import {AIMessage} from "@langchain/core/messages"
 import {createTheme} from "@mui/material/styles"
-import {act, fireEvent, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
     MOCK_CONNECTIVITY_INFO,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MUSIC_NERD,
 } from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {
     ChatCommon,
     ChatCommonHandle,
@@ -46,19 +48,19 @@ import {downloadFile, toSafeFilename} from "../../../../utils/File"
 import {getZIndex} from "../../../../utils/zIndexLayers"
 
 // Mock agent API
-jest.mock("../../../../controller/agent/Agent")
+vi.mock("../../../../controller/agent/Agent")
 
 // Mock llm_chat API
-jest.mock("../../../../controller/llm/LlmChat")
+vi.mock("../../../../controller/llm/LlmChat")
 
 // Don't want to send user notifications during tests so mock this
-jest.mock("../../../../components/Common/notification")
+vi.mock("../../../../components/Common/notification")
 
-jest.mock("../../../../utils/File", () => {
-    const actual = jest.requireActual("../../../../utils/File")
+vi.mock("../../../../utils/File", async () => {
+    const actual = vi.importActual("../../../../utils/File")
     return {
-        ...actual,
-        downloadFile: jest.fn(),
+        ...(await actual),
+        downloadFile: vi.fn(),
     }
 })
 
@@ -82,6 +84,27 @@ const getResponseMessage = (type: ChatMessageType, text: string): ChatMessage =>
     },
 })
 
+type SendChatQueryArgs = Parameters<typeof sendChatQuery>
+type SendChatQueryCallback = SendChatQueryArgs[4]
+type SendChatQueryChatContext = SendChatQueryArgs[5]
+
+const mockSendChatQuery = (
+    handler: (args: {
+        callback: SendChatQueryCallback
+        chatContext: SendChatQueryChatContext
+        args: SendChatQueryArgs
+    }) => void
+) => {
+    vi.mocked(sendChatQuery).mockImplementation(async (...args) => {
+        const callback = args[4]
+        const chatContext = args[5]
+
+        handler({callback, chatContext, args})
+
+        return {} satisfies Awaited<ReturnType<typeof sendChatQuery>>
+    })
+}
+
 describe("ChatCommon", () => {
     withStrictMocks()
 
@@ -91,9 +114,9 @@ describe("ChatCommon", () => {
         currentUser: TEST_USER,
         id: "test",
         isAwaitingLlm: false,
-        onSend: jest.fn(),
+        onSend: vi.fn(),
         sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
-        setIsAwaitingLlm: jest.fn(),
+        setIsAwaitingLlm: vi.fn(),
         selectedNetwork: TEST_AGENT_MATH_GUY,
     }
 
@@ -111,12 +134,13 @@ describe("ChatCommon", () => {
     beforeEach(() => {
         user = userEvent.setup({delay: null})
 
-        // Mock getConnectivity to return dummy connectivity info
-        ;(getAgentFunction as jest.Mock).mockResolvedValue({
+        // Mock getAgentFunction to return dummy connectivity info
+        vi.mocked(getAgentFunction).mockResolvedValue({
             function: {
                 description: "Test description",
             },
         })
+
         // Reset history. TODO: would be nice if withStrictMocks could also reset Zustand stores
         // but that requires extra machinery, tracking "known stores", etc. For now, just reset the one store
         // that we know is relevant to these tests.
@@ -165,7 +189,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should render and send sample queries correctly", async () => {
-            const mockSendFunction = jest.fn()
+            const mockSendFunction = vi.fn()
             renderChatCommonComponent({onSend: mockSendFunction})
 
             // Make sure long query chip is truncated
@@ -228,7 +252,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should render with title and close button when provided", async () => {
-            const mockOnClose = jest.fn()
+            const mockOnClose = vi.fn()
             const testTitle = "Test Chat Title"
 
             renderChatCommonComponent({
@@ -283,7 +307,7 @@ describe("ChatCommon", () => {
         }
 
         const chunk = JSON.stringify(chatResponse)
-        ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+        mockSendChatQuery(({callback}) => {
             callback(chunk)
         })
 
@@ -310,7 +334,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle user input correctly and should call Send on click", async () => {
-            const mockSendFunction = jest.fn()
+            const mockSendFunction = vi.fn()
             const strToCheck = "Please fix my internet"
 
             renderChatCommonComponent({onSend: mockSendFunction})
@@ -333,7 +357,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should call Send on enter", async () => {
-            const mockSendFunction = jest.fn()
+            const mockSendFunction = vi.fn()
             const strToCheck = "Please fix my internet"
 
             renderChatCommonComponent({onSend: mockSendFunction})
@@ -351,7 +375,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should not call Send on enter + shift and should handle multiline input correctly", async () => {
-            const mockSendFunction = jest.fn()
+            const mockSendFunction = vi.fn()
             const strToCheckLine1 = "Please fix my internet line 1"
             const strToCheckLine2 = "Please fix my internet line 2"
             const fullStrToCheck = `${strToCheckLine1}\n${strToCheckLine2}`
@@ -380,7 +404,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should refuse interaction when no target agent is set", async () => {
-            const mockSendFunction = jest.fn()
+            const mockSendFunction = vi.fn()
             renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
 
             // Should be no "Chat with"
@@ -435,7 +459,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle Stop correctly", async () => {
-            const setAwaitingLlmMock = jest.fn()
+            const setAwaitingLlmMock = vi.fn()
             renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true})
 
             const stopButton = await screen.findByRole("button", {name: "Stop"})
@@ -447,7 +471,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle External Stop correctly", async () => {
-            const setAwaitingLlmMock = jest.fn()
+            const setAwaitingLlmMock = vi.fn()
             const ref = createRef<ChatCommonHandle>()
             renderChatCommonComponent({setIsAwaitingLlm: setAwaitingLlmMock, isAwaitingLlm: true, ref})
 
@@ -533,7 +557,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(initialResponse))
             })
 
@@ -551,7 +575,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(regenerateResponse))
             })
 
@@ -562,7 +586,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle Save Chat functionality", async () => {
-            const downloadFileMock = jest.mocked(downloadFile)
+            const downloadFileMock = vi.mocked(downloadFile)
 
             renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
             const {responseText, query} = await sendChatQueryWithResponse()
@@ -580,7 +604,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle Save Chat functionality with current session but no history", async () => {
-            const downloadFileMock = jest.mocked(downloadFile)
+            const downloadFileMock = vi.mocked(downloadFile)
 
             renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
 
@@ -603,7 +627,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle Save Chat functionality history but no current session", async () => {
-            const downloadFileMock = jest.mocked(downloadFile)
+            const downloadFileMock = vi.mocked(downloadFile)
 
             renderChatCommonComponent({selectedNetwork: TEST_AGENT_MATH_GUY})
 
@@ -689,17 +713,20 @@ describe("ChatCommon", () => {
 
             const optionsButton = screen.getByTestId("TuneIcon")
             await user.click(optionsButton)
-            screen.getByText("Wrap output")
 
-            // Simulate pressing Escape to close the menu
+            await screen.findByText("Wrap output")
+
             await user.keyboard("{Escape}")
-            await waitForElementToBeRemoved(() => screen.queryByText("Wrap output"))
+
+            await waitFor(() => {
+                expect(screen.queryByText("Wrap output")).not.toBeInTheDocument()
+            })
         })
     })
 
     describe("Chunk Handling", () => {
         it("Should handle receiving chunks from Neuro-san agents correctly", async () => {
-            const onChunkReceivedMock = jest.fn().mockReturnValue(true)
+            const onChunkReceivedMock = vi.fn().mockReturnValue(true)
             const testResponseText = '"Response text from LLM"'
 
             renderChatCommonComponent({onChunkReceived: onChunkReceivedMock})
@@ -714,7 +741,7 @@ describe("ChatCommon", () => {
             }
 
             const chunk = JSON.stringify(chatResponse)
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(chunk)
             })
 
@@ -728,7 +755,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle receiving chunks from legacy agents correctly", async () => {
-            const onChunkReceivedMock = jest.fn().mockReturnValue(true)
+            const onChunkReceivedMock = vi.fn().mockReturnValue(true)
             const testResponseText1 = "Response text 1 from LLM"
             const testResponseText2 = "Response text 2 from LLM"
 
@@ -736,10 +763,13 @@ describe("ChatCommon", () => {
                 onChunkReceived: onChunkReceivedMock,
                 selectedNetwork: LegacyAgentType.DataGenerator,
             })
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-                callback(testResponseText1)
-                callback(testResponseText2)
-            })
+
+            vi.mocked(sendLlmRequest).mockImplementation(
+                async (callback, _signal, _fetchUrl, _params, _userQuery, _chatHistory, _userId, _streamingUnit) => {
+                    callback(testResponseText1)
+                    callback(testResponseText2)
+                }
+            )
 
             const query = "Sample test query for chunk handling"
             await sendQuery(LegacyAgentType.DataGenerator, query)
@@ -752,14 +782,17 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle final answer from legacy agents correctly", async () => {
-            const onChunkReceivedMock = jest.fn()
+            const onChunkReceivedMock = vi.fn()
             const finalAnswerText = "Sample final answer from LLM"
             const testResponseText = `Final Answer: ${finalAnswerText}`
 
             renderChatCommonComponent({onChunkReceived: onChunkReceivedMock, selectedNetwork: LegacyAgentType.DMSChat})
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-                callback(testResponseText)
-            })
+
+            vi.mocked(sendLlmRequest).mockImplementation(
+                async (callback, _signal, _fetchUrl, _params, _userQuery, _chatHistory, _userId, _streamingUnit) => {
+                    callback(testResponseText)
+                }
+            )
 
             const query = "Sample test query for legacy agent final answer handling"
             await sendQuery(LegacyAgentType.DMSChat, query)
@@ -775,7 +808,7 @@ describe("ChatCommon", () => {
         it("Should handle no chunks received", async () => {
             renderChatCommonComponent()
             screen.getByText(TEST_AGENT_MATH_GUY)
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(null)
             })
 
@@ -787,7 +820,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle when legacy agents fail to send a Final Answer", async () => {
-            const onChunkReceivedMock = jest.fn()
+            const onChunkReceivedMock = vi.fn()
             const responseText = "Text without the magical final answer string"
 
             expect(givesFinalAnswer(LegacyAgentType.OpportunityFinder)).toBe(false)
@@ -796,9 +829,12 @@ describe("ChatCommon", () => {
                 selectedNetwork: LegacyAgentType.OpportunityFinder,
             })
             screen.getByText(LegacyAgentType.OpportunityFinder)
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-                callback(responseText)
-            })
+
+            vi.mocked(sendLlmRequest).mockImplementation(
+                async (callback, _signal, _fetchUrl, _params, _userQuery, _chatHistory, _userId, _streamingUnit) => {
+                    callback(responseText)
+                }
+            )
 
             await sendQuery(LegacyAgentType.OpportunityFinder, "test")
 
@@ -808,7 +844,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should show an error when legacy agent fails to respond with a final answer", async () => {
-            const onChunkReceivedMock = jest.fn()
+            const onChunkReceivedMock = vi.fn()
             const responseText = "Text without the magical final answer string"
 
             expect(givesFinalAnswer(LegacyAgentType.DMSChat)).toBe(true)
@@ -818,9 +854,12 @@ describe("ChatCommon", () => {
             })
 
             screen.getByText(LegacyAgentType.DMSChat)
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-                callback(responseText)
-            })
+
+            vi.mocked(sendLlmRequest).mockImplementation(
+                async (callback, _signal, _fetchUrl, _params, _userQuery, _chatHistory, _userId, _streamingUnit) => {
+                    callback(responseText)
+                }
+            )
 
             await sendQuery(LegacyAgentType.DMSChat, "test")
 
@@ -842,7 +881,7 @@ describe("ChatCommon", () => {
             }
 
             renderChatCommonComponent()
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -878,7 +917,7 @@ describe("ChatCommon", () => {
             // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
             const chatResponse = {response: responseMessage}
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -906,7 +945,7 @@ describe("ChatCommon", () => {
             // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
             const chatResponse = {response: responseMessage}
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -930,7 +969,7 @@ describe("ChatCommon", () => {
             // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
             const chatResponse = {response: responseMessage}
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -945,7 +984,7 @@ describe("ChatCommon", () => {
             renderChatCommonComponent()
 
             screen.getByText(TEST_AGENT_MATH_GUY)
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(getResponseMessage(ChatMessageType.AGENT, "response")))
             })
 
@@ -961,7 +1000,7 @@ describe("ChatCommon", () => {
 
             const malformedChunk = "{ malformed json without closing brace"
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(malformedChunk)
             })
 
@@ -974,7 +1013,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle chunks that return false from onChunkReceived", async () => {
-            const mockOnChunkReceived = jest.fn().mockReturnValue(false)
+            const mockOnChunkReceived = vi.fn().mockReturnValue(false)
 
             renderChatCommonComponent({
                 onChunkReceived: mockOnChunkReceived,
@@ -988,7 +1027,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -1004,7 +1043,7 @@ describe("ChatCommon", () => {
                 getResponseMessage(ChatMessageType.AGENT, `Sample AI response ${i + 1}`)
             )
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 for (const chatMessage of messages) {
                     callback(JSON.stringify({response: chatMessage}))
                 }
@@ -1033,30 +1072,25 @@ describe("ChatCommon", () => {
     describe("Fetch Errors", () => {
         it("Should handle error thrown while fetching", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
-                throw new Error("Sample error from fetch")
-            })
 
-            jest.spyOn(console, "error").mockImplementation()
+            vi.mocked(sendLlmRequest).mockRejectedValue(new Error("Sample error from fetch"))
+
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
             await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
             // Should be 3 attempts, so 3 error messages
             expect(await screen.findAllByText(/Error occurred:/u)).toHaveLength(3)
 
             expect(console.error).toHaveBeenCalledTimes(3)
-            ;(console.error as jest.Mock).mockClear()
         })
 
         it("Should handle non-error type thrown while fetching", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
-            jest.spyOn(console, "error").mockImplementation()
+            vi.spyOn(console, "error").mockImplementation(vi.fn)
 
             // Now throw something that isn't an Error (which is possible in JavaScript)
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
-                // eslint-disable-next-line @typescript-eslint/only-throw-error
-                throw "Just a string, not an Error object"
-            })
+            vi.mocked(sendLlmRequest).mockRejectedValue("Just a string, not an Error object")
 
             await sendQuery(
                 LegacyAgentType.OpportunityFinder,
@@ -1068,20 +1102,21 @@ describe("ChatCommon", () => {
 
         it("Should handle an abort error correctly", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
-                throw new (class extends Error {
+
+            const sendLlmRequestMock = vi.mocked(sendLlmRequest).mockRejectedValue(
+                new (class extends Error {
                     constructor(message?: string) {
                         super(message)
                         this.name = "AbortError"
                     }
-                })("Operation was aborted")
-            })
+                })('"Operation was aborted"')
+            )
 
-            jest.spyOn(console, "error").mockImplementation()
+            vi.spyOn(console, "error").mockImplementation(vi.fn)
             await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
             // Should be only 1 attempt when we are aborted
-            expect(sendLlmRequest).toHaveBeenCalledTimes(1)
+            expect(sendLlmRequestMock).toHaveBeenCalledTimes(1)
 
             // For abort errors, we don't display the error block since they are handled differently
             expect(screen.queryByText(/Error occurred:/u)).not.toBeInTheDocument()
@@ -1090,15 +1125,16 @@ describe("ChatCommon", () => {
         it("Should handle other types of errors than AbortError correctly", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.OpportunityFinder})
 
-            jest.spyOn(console, "error").mockImplementation()
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async () => {
-                throw new (class extends Error {
+            vi.spyOn(console, "error").mockImplementation(vi.fn)
+
+            vi.mocked(sendLlmRequest).mockRejectedValue(
+                new (class extends Error {
                     constructor(message?: string) {
                         super(message)
                         this.name = "SomeOtherError"
                     }
                 })("Some other error occurred")
-            })
+            )
 
             await sendQuery(LegacyAgentType.OpportunityFinder, "Sample test query for handling errors during fetch")
 
@@ -1113,11 +1149,10 @@ describe("ChatCommon", () => {
             renderChatCommonComponent()
 
             // Mock a timeout scenario
-            ;(sendChatQuery as jest.Mock).mockImplementation(async () => {
-                throw new Error("Network timeout")
-            })
 
-            jest.spyOn(console, "error").mockImplementation()
+            vi.mocked(sendChatQuery).mockThrow(new Error("Network timeout"))
+
+            vi.spyOn(console, "error").mockImplementation(vi.fn)
             await sendQuery(TEST_AGENT_MATH_GUY, "test query for timeout")
 
             // Should handle timeout gracefully and show error
@@ -1128,7 +1163,7 @@ describe("ChatCommon", () => {
 
         it("Should handle connectivity info error gracefully", async () => {
             // Mock connectivity to throw an error
-            ;(getConnectivity as jest.Mock).mockRejectedValue(new Error("Connectivity fetch failed"))
+            vi.mocked(getConnectivity).mockRejectedValue(new Error("Connectivity fetch failed"))
 
             renderChatCommonComponent()
 
@@ -1155,9 +1190,9 @@ describe("ChatCommon", () => {
                 onresult: null as ((event: SpeechRecognitionEvent) => void) | null,
                 onerror: null as ((event: Event) => void) | null,
                 onend: null as (() => void) | null,
-                start: jest.fn(),
-                stop: jest.fn(),
-                addEventListener: jest.fn((event: string, handler: (event?: unknown) => void) => {
+                start: vi.fn(),
+                stop: vi.fn(),
+                addEventListener: vi.fn((event: string, handler: (event?: unknown) => void) => {
                     // Store the handlers so we can call them in tests
                     switch (event) {
                         case "result":
@@ -1179,7 +1214,7 @@ describe("ChatCommon", () => {
                             break
                     }
                 }),
-                removeEventListener: jest.fn(),
+                removeEventListener: vi.fn(),
             }
 
             Object.defineProperty(navigator, "userAgent", {
@@ -1188,8 +1223,8 @@ describe("ChatCommon", () => {
             })
 
             // Mock getUserMedia for microphone permission
-            const mockGetUserMedia = jest.fn().mockResolvedValue({
-                getTracks: () => [{stop: jest.fn()}],
+            const mockGetUserMedia = vi.fn().mockResolvedValue({
+                getTracks: () => [{stop: vi.fn()}],
             })
 
             Object.defineProperty(navigator, "mediaDevices", {
@@ -1200,8 +1235,15 @@ describe("ChatCommon", () => {
             })
 
             // Mock SpeechRecognition constructor
+            class MockSpeechRecognition {
+                start = mockSpeechRecognition.start
+                stop = mockSpeechRecognition.stop
+                addEventListener = mockSpeechRecognition.addEventListener
+                removeEventListener = mockSpeechRecognition.removeEventListener
+            }
+
             Object.defineProperty(win, "SpeechRecognition", {
-                value: jest.fn(() => mockSpeechRecognition),
+                value: MockSpeechRecognition,
                 configurable: true,
             })
 
@@ -1310,8 +1352,8 @@ describe("ChatCommon", () => {
 
     describe("Callbacks", () => {
         it("Should handle onStreamingStarted and onStreamingComplete callbacks", async () => {
-            const mockOnStreamingStarted = jest.fn()
-            const mockOnStreamingComplete = jest.fn()
+            const mockOnStreamingStarted = vi.fn()
+            const mockOnStreamingComplete = vi.fn()
 
             renderChatCommonComponent({
                 onStreamingStarted: mockOnStreamingStarted,
@@ -1326,7 +1368,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -1337,7 +1379,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle setPreviousResponse callback", async () => {
-            const mockSetPreviousResponse = jest.fn()
+            const mockSetPreviousResponse = vi.fn()
 
             renderChatCommonComponent({
                 setPreviousResponse: mockSetPreviousResponse,
@@ -1351,7 +1393,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -1366,7 +1408,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should handle onSend callback that modifies query", async () => {
-            const mockOnSend = jest.fn((query: string) => `Modified: ${query}`)
+            const mockOnSend = vi.fn((query: string) => `Modified: ${query}`)
 
             renderChatCommonComponent({
                 onSend: mockOnSend,
@@ -1380,7 +1422,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -1401,7 +1443,7 @@ describe("ChatCommon", () => {
                 selectedNetwork: LegacyAgentType.DataGenerator,
                 extraParams: testExtraParams,
             })
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback("Legacy agent response")
             })
 
@@ -1430,14 +1472,18 @@ describe("ChatCommon", () => {
             })
 
             screen.getByText(LegacyAgentType.OpportunityFinder)
-            ;(sendLlmRequest as jest.Mock).mockImplementation(async (callback) => {
-                callback("Legacy response with custom endpoint")
-            })
+            const responseChunk = "Legacy response with custom endpoint"
+            vi.mocked(sendLlmRequest).mockImplementation(
+                async (callback, _signal, fetchUrl, _params, _userQuery, _chatHistory, _userId, _streamingUnit) => {
+                    expect(fetchUrl).toBe(testEndpoint)
+                    callback(responseChunk)
+                }
+            )
 
             await sendQuery(LegacyAgentType.OpportunityFinder, "test query")
 
             const conversation = document.querySelector(`#${defaultProps.id}-conversation`)
-            within(conversation as HTMLElement).getByText("Legacy response with custom endpoint")
+            within(conversation as HTMLElement).getByText(responseChunk)
         })
     })
 
@@ -1458,7 +1504,7 @@ describe("ChatCommon", () => {
                 response,
             }))
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponses[0]))
                 callback(JSON.stringify(chatResponses[1]))
             })
@@ -1502,7 +1548,7 @@ describe("ChatCommon", () => {
             }
 
             renderChatCommonComponent()
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(chatResponse))
             })
 
@@ -1533,7 +1579,7 @@ describe("ChatCommon", () => {
                 },
             }
 
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback) => {
+            mockSendChatQuery(({callback}) => {
                 callback(JSON.stringify(agentChunk))
             })
 
@@ -1556,8 +1602,9 @@ describe("ChatCommon", () => {
             // Chunk handler expects messages in "wire" (snake case) format since that is how they come from Neuro-san.
             const chatResponse = {response: responseMessage}
 
-            let sentChatContext: ChatContext
-            ;(sendChatQuery as jest.Mock).mockImplementation(async (_, __, ___, ____, callback, chatContext) => {
+            let sentChatContext: ChatContext | null = null
+
+            mockSendChatQuery(({callback, chatContext}) => {
                 callback(JSON.stringify(chatResponse))
                 sentChatContext = chatContext
             })
