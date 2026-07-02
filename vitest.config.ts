@@ -1,8 +1,6 @@
 import react from "@vitejs/plugin-react"
 import {defineConfig} from "vitest/config"
 
-import {TESTS_MIGRATED_TO_VITEST} from "./vitest_migration"
-
 export default defineConfig({
     plugins: [react()],
     test: {
@@ -18,16 +16,14 @@ export default defineConfig({
                 "**/knip.config.ts",
                 "**/next-env.d.ts",
                 "**/next.config.ts",
+                "**/vitest*.ts",
                 "apps/main/app/api/auth/[...nextauth]/route.ts",
             ],
-            // TODO: Uncomment this once we have migrated all tests to vitest.
-            // include: ["**/*.{js,jsx,ts,tsx}"],
+            include: ["**/*.{js,jsx,ts,tsx}"],
             // For now use instanbul provider as we're merging with jest results.
             // Once we are fully migrated to vitest, consider switching to v8.
             provider: "istanbul",
             reporter: ["text-summary"],
-            // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
-            // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
             thresholds: {
                 statements: -104,
                 branches: -156,
@@ -36,9 +32,9 @@ export default defineConfig({
             },
         },
         environment: "jsdom",
-        exclude: ["node_modules", "dist", ".next", "coverage"],
+        exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/coverage/**"],
         globals: false,
-        include: TESTS_MIGRATED_TO_VITEST,
+        include: ["**/__tests__/**/*.test.{ts,tsx}"],
         setupFiles: ["./vitest.setup.ts"],
     },
 })

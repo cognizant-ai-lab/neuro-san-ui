@@ -16,7 +16,6 @@ limitations under the License.
 
 import {renderHook} from "@testing-library/react"
 import {signOut} from "next-auth/react"
-// eslint-disable-next-line no-shadow
 import {afterEach, beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import httpStatus from "http-status"
-// eslint-disable-next-line no-shadow
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"

@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"

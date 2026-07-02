@@ -19,7 +19,6 @@ Tests for the main app theme, focused on the MuiButton style overrides.
  */
 
 import {createTheme, Theme} from "@mui/material/styles"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

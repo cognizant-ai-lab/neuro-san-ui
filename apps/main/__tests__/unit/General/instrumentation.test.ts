@@ -18,7 +18,6 @@ limitations under the License.
 Tests for instrumentation.ts Next.js startup file.
  */
 
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

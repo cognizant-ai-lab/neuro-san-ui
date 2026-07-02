@@ -11,8 +11,6 @@
         "eslint": "*",
         "eslint-config-prettier": "*",
         "eslint-plugin-import-x": "*",
-        "eslint-plugin-jest": "*",
-        "eslint-plugin-jest-dom-ya": "*",
         "eslint-plugin-prefer-arrow-functions": "*",
         "eslint-plugin-react": "*",
         "eslint-plugin-react-hooks": "*",

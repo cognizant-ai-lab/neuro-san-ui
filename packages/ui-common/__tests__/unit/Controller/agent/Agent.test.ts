@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// eslint-disable-next-line no-shadow
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"

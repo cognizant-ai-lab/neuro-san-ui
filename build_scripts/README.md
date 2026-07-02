@@ -33,7 +33,7 @@ trigger:
 | GitHub Release     | Test → Build → Deploy | `staging`     |
 
 1. **Test** (`.github/workflows/test.yml`) — ESLint, ShellCheck, Prettier,
-   knip, hadolint, Docker build check, TypeScript compilation, and Jest unit
+   knip, hadolint, Docker build check, TypeScript compilation, and Vitest unit
    tests. All checks run with `continue-on-error` and are rolled up at the end
    so every failure is visible in a single run.
 2. **Build** (`.github/workflows/build.yml`) — Builds the Docker image and
@@ -63,7 +63,7 @@ The **Publish UI Common** workflow (`.github/workflows/publish.yml`) publishes
 | `set_package_version.sh`     | Writes a version string into a `package.json` file (used before `npm publish`).                            |
 | `run_eslint.sh`              | Runs ESLint with a zero-warning threshold.                                                                 |
 | `run_shellcheck.sh`          | Runs ShellCheck on all `.sh` files in the repo (excluding `node_modules`).                                 |
-| `CommitCheck.sh`             | Local pre-commit quality checks (tsc, knip, prettier, eslint, jest).                                       |
+| `CommitCheck.sh`             | Local pre-commit quality checks (tsc, knip, prettier, eslint, vitest).                                     |
 
 ## Local Quality Checks
 

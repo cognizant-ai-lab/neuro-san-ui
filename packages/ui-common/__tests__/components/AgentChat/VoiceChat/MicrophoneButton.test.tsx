@@ -17,7 +17,6 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
