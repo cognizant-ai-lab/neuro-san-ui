@@ -18,6 +18,7 @@ export const TESTS_MIGRATED_TO_VITEST = [
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentNodePopup.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/ImportNetworkModal.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/MultiAgentAccelerator.test.tsx",
+    "packages/ui-common/__tests__/components/MultiAgentAccelerator/Sidebar/Sidebar.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/TemporaryNetworks.test.ts",
     "packages/ui-common/__tests__/components/Settings/FadingCheckmark.test.tsx",
     "packages/ui-common/__tests__/components/Settings/SettingsDialog.test.tsx",

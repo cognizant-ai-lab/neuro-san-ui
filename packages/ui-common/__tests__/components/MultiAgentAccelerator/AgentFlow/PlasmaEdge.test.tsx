@@ -24,6 +24,7 @@ import {PlasmaEdge} from "../../../../components/MultiAgentAccelerator/AgentFlow
 
 describe("PlasmaEdge", () => {
     withStrictMocks()
+
     it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
         const errSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
