@@ -16,7 +16,7 @@ export default defineConfig({
                 "**/next-env.d.ts",
                 "**/next.config.ts",
                 "**/vitest*.ts",
-                "apps/main/app/api/auth/[...nextauth]/route.ts",
+                "apps/main/app/api/auth/[[]...nextauth[]]/route.ts",
             ],
             include: ["**/*.{js,jsx,ts,tsx}"],
             // For now use instanbul provider as we're merging with jest results.
@@ -24,10 +24,10 @@ export default defineConfig({
             provider: "istanbul",
             reporter: ["text-summary"],
             thresholds: {
-                statements: -109,
-                branches: -156,
-                functions: -26,
-                lines: -81,
+                statements: -104,
+                branches: -155,
+                functions: -25,
+                lines: -76,
             },
         },
         environment: "jsdom",
