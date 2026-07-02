@@ -19,8 +19,10 @@ import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {
@@ -32,60 +34,22 @@ import {
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../../controller/agent/Agent"
-import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
 
-jest.mock("../../../../controller/agent/Agent")
-
-jest.mock("notistack", () => ({
-    ...jest.requireActual("notistack"),
-    enqueueSnackbar: jest.fn(),
-}))
-
-// Handle to the auto-mocked sendChatQuery so tests can stub it without repeating the cast.
-const mockSendChatQuery = sendChatQuery as jest.Mock
-
+//#region Constants
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
 const mockPlasmaEdgeTestId = "mock-plasma-edge"
 const mockThoughtBubbleEdgeTestId = "mock-thought-bubble-edge"
 const mockThoughtBubbleOverlayTestId = "mock-thought-bubble-overlay"
 
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
-}))
-
-jest.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
-    PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
-}))
-
-jest.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge", () => ({
-    ThoughtBubbleEdge: () => <g data-testid={mockThoughtBubbleEdgeTestId} />,
-}))
-
-// Provide a mutable implementation for the ThoughtBubbleOverlay mock so individual
-// tests can swap the implementation without attempting to redefine the module
-// export (which can throw "Cannot redefine property" errors).
-type ThoughtBubbleOverlayProps = {
-    onBubbleHoverChange?: (id: string) => void
-}
-
-const defaultMockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = () => (
-    <div data-testid={mockThoughtBubbleOverlayTestId} />
-)
-
-let __MockThoughtBubbleOverlayImpl: FC<ThoughtBubbleOverlayProps> = defaultMockThoughtBubbleOverlay
-jest.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay", () => ({
-    ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
-}))
-
-const NETWORK: ConnectivityInfo[] = [
+const NETWORK = [
     {
         origin: "agent1",
-        tools: ["agent2", "agent3"],
         display_as: "llm_agent",
+        tools: ["agent2", "agent3"],
     },
     {
         origin: "agent2",
@@ -95,7 +59,62 @@ const NETWORK: ConnectivityInfo[] = [
         origin: "agent3",
         tools: [],
     },
-]
+] satisfies ConnectivityInfo[]
+
+//#endregion Constants
+
+//#region Types
+
+// Provide a mutable implementation for the ThoughtBubbleOverlay mock so individual
+// tests can swap the implementation without attempting to redefine the module
+// export (which can throw "Cannot redefine property" errors).
+type ThoughtBubbleOverlayProps = {
+    onBubbleHoverChange?: (id: string) => void
+}
+//#endregion Types
+
+//#region Mocks
+
+vi.mock("../../../../controller/agent/Agent")
+
+vi.mock("notistack", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("notistack")>()
+
+    return {
+        ...actual,
+        enqueueSnackbar: vi.fn(),
+    }
+})
+
+vi.mock("@mui/material/styles", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@mui/material/styles")>()
+
+    return {
+        ...actual,
+        useColorScheme: vi.fn(),
+    }
+})
+
+// Handle to the auto-mocked sendChatQuery so tests can stub it without repeating the cast.
+const mockSendChatQuery = vi.mocked(sendChatQuery)
+
+vi.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
+    PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
+}))
+
+vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge", () => ({
+    ThoughtBubbleEdge: () => <g data-testid={mockThoughtBubbleEdgeTestId} />,
+}))
+
+const defaultMockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = () => (
+    <div data-testid={mockThoughtBubbleOverlayTestId} />
+)
+let __MockThoughtBubbleOverlayImpl: FC<ThoughtBubbleOverlayProps> = defaultMockThoughtBubbleOverlay
+vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay", () => ({
+    ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
+}))
+
+//#endregion Mocks
 
 describe("AgentFlow", () => {
     let user: UserEvent
@@ -104,7 +123,14 @@ describe("AgentFlow", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
-        ;(useColorScheme as jest.Mock).mockReturnValue({
+        vi.mocked(useColorScheme).mockReturnValue({
+            colorScheme: undefined,
+            darkColorScheme: undefined,
+            lightColorScheme: undefined,
+            setColorScheme: vi.fn(),
+            setMode: vi.fn(),
+            systemMode: undefined,
+            allColorSchemes: ["light", "dark"],
             mode: "light",
         })
         useTempNetworksStore.getState().setTempNetworks([])
@@ -141,7 +167,7 @@ describe("AgentFlow", () => {
         isAwaitingLlm: false,
         isStreaming: false,
         thoughtBubbleEdges: new Map(),
-        setThoughtBubbleEdges: jest.fn(),
+        setThoughtBubbleEdges: vi.fn(),
     }
 
     const renderAgentFlowComponent = (overrides = {}, mode: PaletteMode = "light") => {
@@ -179,7 +205,7 @@ describe("AgentFlow", () => {
     // Simulates React's functional-setState pattern so tests can inspect the resulting Map.
     const createThoughtBubbleEdgesStore = () => {
         let map = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-        const mockSetThoughtBubbleEdges = jest.fn((updater: unknown) => {
+        const mockSetThoughtBubbleEdges = vi.fn((updater: unknown) => {
             if (typeof updater === "function") {
                 map = (updater as (prev: typeof map) => typeof map)(map)
             }
@@ -204,7 +230,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
-            const onEnterEditMode = jest.fn()
+            const onEnterEditMode = vi.fn()
             renderAgentFlowComponent({
                 networkDisplayName: "Temp Net",
                 isSelectedNetworkTemporary: true,
@@ -277,7 +303,7 @@ describe("AgentFlow", () => {
         it("Should allow switching to heatmap display and not show radial guides with linear display mode", async () => {
             const {container} = renderAgentFlowComponent()
 
-            let radialGuides = container.querySelector("#test-flow-id-radial-guides")
+            const radialGuides = container.querySelector("#test-flow-id-radial-guides")
 
             // Radial guides should be present in radial layout
             expect(radialGuides).toBeInTheDocument()
@@ -299,8 +325,8 @@ describe("AgentFlow", () => {
             await user.click(heatmapButton)
 
             // Radial guides should still not be present in linear layout
-            radialGuides = container.querySelector("#test-flow-id-radial-guides")
-            expect(radialGuides).not.toBeInTheDocument()
+            const radialGuidesAfterClick = container.querySelector("#test-flow-id-radial-guides")
+            expect(radialGuidesAfterClick).not.toBeInTheDocument()
         })
 
         it("Should handle isStreaming false", () => {
@@ -406,7 +432,7 @@ describe("AgentFlow", () => {
                         isAwaitingLlm={false}
                         isStreaming={false}
                         thoughtBubbleEdges={new Map()}
-                        setThoughtBubbleEdges={jest.fn()}
+                        setThoughtBubbleEdges={vi.fn()}
                     />
                 </ReactFlowProvider>
             )
@@ -494,7 +520,7 @@ describe("AgentFlow", () => {
                             },
                         ]}
                         thoughtBubbleEdges={new Map()}
-                        setThoughtBubbleEdges={jest.fn()}
+                        setThoughtBubbleEdges={vi.fn()}
                     />
                 </ReactFlowProvider>
             )
@@ -615,7 +641,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should call setThoughtBubbleEdges when conversations with text are added", () => {
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
             const conversationsWithText = [
                 {
                     id: "conv-with-text",
@@ -689,7 +715,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should prevent duplicate thought bubbles using thoughtBubbleEdges", () => {
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
             const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
                 [
                     "conv-1",
@@ -774,7 +800,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
-            jest.useFakeTimers()
+            vi.useFakeTimers()
             const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
             const conversationsWithText: AgentConversation[] = [
@@ -805,7 +831,7 @@ describe("AgentFlow", () => {
 
             // Fast-forward time by 11 seconds (past THOUGHT_BUBBLE_TIMEOUT_MS of 10 seconds)
             act(() => {
-                jest.advanceTimersByTime(11000)
+                vi.advanceTimersByTime(11000)
             })
 
             // The bubble should have been removed from the map after expiry
@@ -832,8 +858,8 @@ describe("AgentFlow", () => {
         })
 
         it("Should prevent expired bubbles from being removed when hovered", async () => {
-            jest.useFakeTimers()
-            const mockSetThoughtBubbleEdges = jest.fn()
+            vi.useFakeTimers()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             // Create a conversation that will be added as a thought bubble
             const conversationsWithText: AgentConversation[] = [
@@ -874,7 +900,7 @@ describe("AgentFlow", () => {
 
             // Fast-forward time by 11 seconds to trigger cleanup (past the 10-second timeout)
             act(() => {
-                jest.advanceTimersByTime(11000)
+                vi.advanceTimersByTime(11000)
             })
 
             // The bubble should not be removed because it's being hovered
@@ -885,8 +911,8 @@ describe("AgentFlow", () => {
         })
 
         it("Should drop expired bubbles first when overflow limit is reached", () => {
-            jest.useFakeTimers()
-            const mockSetThoughtBubbleEdges = jest.fn()
+            vi.useFakeTimers()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             // Create 5 conversations to fill MAX_THOUGHT_BUBBLES (5) with bubbles whose startedAt is the current
             // fake time
@@ -911,7 +937,7 @@ describe("AgentFlow", () => {
 
             // Advance 1 second past THOUGHT_BUBBLE_TIMEOUT_MS (which is 10 seconds), so those 5 bubbles are expired.
             act(() => {
-                jest.advanceTimersByTime(11000)
+                vi.advanceTimersByTime(11000)
             })
 
             // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
@@ -956,7 +982,7 @@ describe("AgentFlow", () => {
                 },
             ]
 
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             render(
                 <ReactFlowProvider>
@@ -1013,7 +1039,7 @@ describe("AgentFlow", () => {
                         {...defaultProps}
                         currentConversations={conversationsWithText}
                         thoughtBubbleEdges={existingEdgesMap}
-                        setThoughtBubbleEdges={jest.fn()}
+                        setThoughtBubbleEdges={vi.fn()}
                     />
                 </ReactFlowProvider>
             )
@@ -1023,7 +1049,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle clearing thoughtBubbleEdges map", () => {
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             const conversation1: AgentConversation = {
                 id: "conv-clear-test",
@@ -1291,7 +1317,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversations where bubble has no text field", () => {
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             // First render with a conversation that has text
             const currentConversations: AgentConversation[] = [
@@ -1330,7 +1356,7 @@ describe("AgentFlow", () => {
                         {...defaultProps}
                         currentConversations={currentConversations1}
                         thoughtBubbleEdges={new Map()}
-                        setThoughtBubbleEdges={jest.fn()}
+                        setThoughtBubbleEdges={vi.fn()}
                     />
                 </ReactFlowProvider>
             )
@@ -1340,7 +1366,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should not add duplicate conversations with same ID", () => {
-            const mockSetThoughtBubbleEdges = jest.fn()
+            const mockSetThoughtBubbleEdges = vi.fn()
 
             const conversation: AgentConversation = {
                 id: "conv-duplicate-id",
@@ -1417,7 +1443,7 @@ describe("AgentFlow", () => {
         })
 
         it("Should clean up resize listener on unmount", () => {
-            const removeEventListenerSpy = jest.spyOn(window, "removeEventListener")
+            const removeEventListenerSpy = vi.spyOn(window, "removeEventListener")
             const {unmount} = renderAgentFlowComponent()
 
             unmount()
@@ -1433,7 +1459,7 @@ describe("AgentFlow", () => {
 
         it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
             let resolveQuery: () => void
-            const onSaveAgent = jest.fn(
+            const onSaveAgent = vi.fn(
                 () =>
                     new Promise<void>((resolve) => {
                         resolveQuery = resolve
@@ -1478,7 +1504,7 @@ describe("AgentFlow", () => {
         })
 
         it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
-            const onSaveAgent = jest.fn().mockResolvedValue(undefined)
+            const onSaveAgent = vi.fn().mockResolvedValue(undefined)
             const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
 
             act(() => {
@@ -1521,9 +1547,9 @@ describe("AgentFlow", () => {
         })
 
         it("closes popup even when onSaveAgent throws", async () => {
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
-            const consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
-            const onSaveAgent = jest.fn().mockRejectedValue(new Error("Network failure"))
+            const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+            const consoleDebugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+            const onSaveAgent = vi.fn().mockRejectedValue(new Error("Network failure"))
 
             act(() => {
                 useTempNetworksStore
@@ -1744,29 +1770,32 @@ describe("AgentFlow", () => {
          */
         const mockInFlightDockApply = () => {
             let release!: () => void
+
             mockSendChatQuery.mockImplementation(
                 (_url, _signal, _query, _agent, chunkCallback) =>
-                    new Promise<void>((resolve) => {
+                    new Promise<ChatResponse>((resolve) => {
                         release = () => {
                             chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
-                            resolve()
+                            resolve({} satisfies ChatResponse)
                         }
                     })
             )
+
             return () => release()
         }
 
         // All dock outcomes — apply, cancel, timeout, and reservation-validation failures — now render
         // inline banners and are asserted against the DOM. The spy stays as a guard: tests assert
         // sendNotification's console.debug copy is NOT emitted, confirming nothing escapes to a global toast.
-        let consoleDebugSpy: jest.SpyInstance
+        let consoleDebugSpy: MockInstance
 
         beforeEach(() => {
-            consoleDebugSpy = jest.spyOn(console, "debug").mockImplementation()
+            consoleDebugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
             // Default to a successful designer response: a reservation matching the current network.
             // Tests that need a failure (no/unmatched reservation, throw, timeout) override this.
             mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
+                return {} satisfies ChatResponse
             })
             act(() => {
                 useTempNetworksStore
@@ -1819,7 +1848,7 @@ describe("AgentFlow", () => {
         })
 
         it("calls onExitEditMode when the close button is clicked", async () => {
-            const onExitEditMode = jest.fn()
+            const onExitEditMode = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -1834,12 +1863,12 @@ describe("AgentFlow", () => {
         })
 
         it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {
-            const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
-            const onExitEditMode = jest.fn()
+            const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+            const onExitEditMode = vi.fn()
             let capturedSignal: AbortSignal | undefined
             mockSendChatQuery.mockImplementation(
                 (_url: string, signal: AbortSignal) =>
-                    new Promise<void>((_resolve, reject) => {
+                    new Promise<ChatResponse>((_resolve, reject) => {
                         capturedSignal = signal
                         signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
                     })
@@ -1901,9 +1930,10 @@ describe("AgentFlow", () => {
             const NEW_DOCK_RES_ID = "dock-new-res"
             mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(NEW_DOCK_RES_ID, DOCK_NETWORK_NAME))
+                return {} satisfies ChatResponse
             })
 
-            const onNetworkReplaced = jest.fn()
+            const onNetworkReplaced = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -1954,9 +1984,10 @@ describe("AgentFlow", () => {
             })
             mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, "some-other-network"))
+                return {} satisfies ChatResponse
             })
 
-            const onNetworkReplaced = jest.fn()
+            const onNetworkReplaced = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -1999,16 +2030,16 @@ describe("AgentFlow", () => {
         })
 
         it("shows a timeout error banner that persists when the dock apply request times out", async () => {
-            jest.useFakeTimers()
+            vi.useFakeTimers()
+
             // Re-initialise userEvent with advanceTimers so its internal delays stay in sync with
             // fake timers (the module-level `user` is bound to real timers and would stall here).
-            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
-            mockSendChatQuery.mockImplementation(
-                (_url: string, signal: AbortSignal) =>
-                    new Promise<void>((_resolve, reject) => {
-                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                    })
-            )
+            const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
+            mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
+                return new Promise<ChatResponse>((_resolve, reject) => {
+                    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                })
+            })
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2019,20 +2050,22 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await localUser.type(promptField, "add a node")
-            await localUser.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            await vi.waitFor(async () => localUser.type(promptField, "add a node"))
+
+            const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
+            await vi.waitFor(async () => localUser.click(applyButton))
 
             // Advance past the 120-second dock apply timeout
             await act(async () => {
-                jest.advanceTimersByTime(121_000)
+                vi.advanceTimersByTime(121_000)
             })
 
             // The user sees an error banner explaining the request timed out...
-            expect(await screen.findByText(/timed out/iu)).toBeInTheDocument()
+            screen.getByText(/timed out/u)
 
             // ...and, unlike success/cancel banners, it does not auto-dismiss
             act(() => {
-                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+                vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
             })
             expect(screen.getByText(FAILED_BANNER)).toBeInTheDocument()
         })
@@ -2064,9 +2097,10 @@ describe("AgentFlow", () => {
                 // Send low-expiry first, then high-expiry (high should win)
                 chunkCallback(makeChunk(FIRST_RES, LOW_EXPIRY))
                 chunkCallback(makeChunk(SECOND_RES, HIGH_EXPIRY))
+                return {} satisfies ChatResponse
             })
 
-            const onNetworkReplaced = jest.fn()
+            const onNetworkReplaced = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: true,
                 isSelectedNetworkTemporary: true,
@@ -2213,12 +2247,11 @@ describe("AgentFlow", () => {
         })
 
         it("Stop & discard aborts the request, hides backdrop, shows a cancel banner, restores prompt", async () => {
-            mockSendChatQuery.mockImplementation(
-                (_url: string, signal: AbortSignal) =>
-                    new Promise<void>((_resolve, reject) => {
-                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                    })
-            )
+            mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
+                return new Promise<ChatResponse>((_resolve, reject) => {
+                    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                })
+            })
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2269,8 +2302,9 @@ describe("AgentFlow", () => {
         })
 
         it("auto-dismisses the success banner after the timeout elapses", async () => {
-            jest.useFakeTimers()
-            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+            vi.useFakeTimers()
+
+            const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2280,16 +2314,21 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await localUser.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
-            await localUser.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+            const editInput = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
 
-            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
+            await vi.waitFor(() => localUser.type(editInput, "add a node"))
+
+            const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
+            await vi.waitFor(() => localUser.click(applyButton))
+
+            screen.getByText(APPLIED_BANNER)
 
             // Once the auto-dismiss timer fires, the banner disappears
-            act(() => {
-                jest.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(DOCK_BANNER_AUTO_DISMISS_MS + 100)
             })
-            await waitFor(() => {
+
+            await vi.waitFor(() => {
                 expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
             })
         })
