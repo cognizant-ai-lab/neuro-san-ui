@@ -16,8 +16,10 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {useSession} from "next-auth/react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
 import {MultiAgentAcceleratorProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {MultiAgentAcceleratorPage} from "../../pages/multiAgentAccelerator"
@@ -31,13 +33,13 @@ const NEURO_SAN_SERVER_URL = "https://default.example.com"
 const MAA_TEXT = "Mock MultiAgentAccelerator component."
 
 // Mock dependencies
-jest.mock("next-auth/react")
+vi.mock("next-auth/react")
 
-jest.mock("../../../../packages/ui-common/controller/agent/Agent")
+vi.mock("../../../../packages/ui-common/controller/agent/Agent")
 
-const mockMultiAgentAcceleratorSpy = jest.fn()
+const mockMultiAgentAcceleratorSpy = vi.fn()
 
-jest.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator", () => ({
+vi.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator", () => ({
     __esModule: true,
     MultiAgentAccelerator: (props: MultiAgentAcceleratorProps) => {
         mockMultiAgentAcceleratorSpy(props)
@@ -51,7 +53,14 @@ describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        ;(useSession as jest.Mock).mockReturnValue({data: {user: {name: MOCK_USER, image: MOCK_IMAGE}}})
+        vi.mocked(useSession).mockReturnValue({
+            status: undefined,
+            update: vi.fn(),
+            data: {
+                user: {name: MOCK_USER, image: MOCK_IMAGE},
+                expires: "",
+            },
+        })
     })
 
     it("Should render correctly", async () => {
