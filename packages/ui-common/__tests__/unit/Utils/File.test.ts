@@ -2,8 +2,6 @@
 Unit tests for the "file" utility module
  */
 
-import {describe, expect, it, vi} from "vitest"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {downloadFile, getFileName, splitFilename, toSafeFilename} from "../../../utils/File"
 

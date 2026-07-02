@@ -19,7 +19,7 @@ import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
-import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
+import {MockInstance} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"

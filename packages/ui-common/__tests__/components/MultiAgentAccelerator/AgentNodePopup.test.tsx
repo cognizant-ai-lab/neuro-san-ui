@@ -16,7 +16,6 @@ limitations under the License.
 
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
-import {describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"

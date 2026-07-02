@@ -32,7 +32,7 @@ export default defineConfig({
         },
         environment: "jsdom",
         exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/coverage/**"],
-        globals: false,
+        globals: true,
         include: ["**/__tests__/**/*.test.{ts,tsx}"],
         setupFiles: ["./vitest.setup.ts"],
     },

@@ -32,9 +32,6 @@ const config: KnipConfig = {
         // Used internally by eslint
         "globals",
 
-        // Used for Speech Recognition API types
-        "@types/dom-speech-recognition",
-
         // Used by do_openapi_generate.sh
         "openapi-typescript",
 

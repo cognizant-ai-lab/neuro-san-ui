@@ -1,8 +1,6 @@
 // Include mock for IndexedDB
 import "fake-indexeddb/auto"
 
-import {describe, expect, it, vi} from "vitest"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {DB_NAME, indexedDBStorage} from "../../../state/IndexedDBStorage"
 

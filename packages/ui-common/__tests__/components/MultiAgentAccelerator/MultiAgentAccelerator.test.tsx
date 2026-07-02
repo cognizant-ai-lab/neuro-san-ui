@@ -19,7 +19,6 @@ import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
-import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
     LIST_NETWORKS_RESPONSE,

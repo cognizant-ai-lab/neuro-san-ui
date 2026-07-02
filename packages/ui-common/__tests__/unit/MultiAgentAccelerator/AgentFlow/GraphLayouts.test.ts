@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import {beforeEach, describe, expect, it} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../../components/AgentChat/Common/Utils"

@@ -59,6 +59,7 @@ export default defineConfig([
             globals: {
                 ...globals.browser,
                 ...globals.node,
+                ...globals.vitest,
                 React: "readonly",
                 JSX: "readonly",
                 // Speech Recognition API globals

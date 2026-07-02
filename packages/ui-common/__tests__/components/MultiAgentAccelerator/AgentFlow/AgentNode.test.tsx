@@ -18,7 +18,6 @@ import {hexToRgb} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
-import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
