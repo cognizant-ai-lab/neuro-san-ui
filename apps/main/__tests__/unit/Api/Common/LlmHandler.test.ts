@@ -18,22 +18,16 @@ import {ChatPromptTemplate} from "@langchain/core/prompts"
 import {ChatOpenAI} from "@langchain/openai"
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"
 
-jest.mock("@langchain/openai")
+vi.mock("@langchain/openai")
 
 describe("LlmHandler", () => {
     withStrictMocks()
-
-    beforeEach(() => {
-        ;(ChatOpenAI as unknown as jest.Mock).mockImplementation(() => ({
-            invoke: jest.fn().mockResolvedValue({
-                content: JSON.stringify({message: "Test response"}),
-            }),
-        }))
-    })
 
     it("Handles a valid request", async () => {
         const {req, res} = createMocks({
@@ -44,9 +38,7 @@ describe("LlmHandler", () => {
 
         await handleLLMRequest(req, res, {
             extractVariables: (): Record<string, unknown> => undefined,
-            promptTemplate: {
-                formatMessages: jest.fn().mockResolvedValue([{content: "Test prompt"}]),
-            } as unknown as ChatPromptTemplate,
+            promptTemplate: ChatPromptTemplate.fromTemplate("Test prompt"),
         })
 
         expect(res._getJSONData()).toBeTruthy()
@@ -59,11 +51,11 @@ describe("LlmHandler", () => {
 
         delete process.env["OPENAI_API_KEY"]
 
-        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         await handleLLMRequest(req, res, {
             extractVariables: (): Record<string, unknown> => undefined,
-            promptTemplate: {} as unknown as ChatPromptTemplate,
+            promptTemplate: undefined,
         })
 
         expect(res._getStatusCode()).toBe(httpStatus.INTERNAL_SERVER_ERROR)
@@ -78,7 +70,7 @@ describe("LlmHandler", () => {
 
         await handleLLMRequest(req, res, {
             extractVariables: (): Record<string, unknown> => undefined,
-            promptTemplate: {} as unknown as ChatPromptTemplate,
+            promptTemplate: undefined,
         })
 
         expect(res._getStatusCode()).toBe(httpStatus.METHOD_NOT_ALLOWED)
@@ -92,17 +84,18 @@ describe("LlmHandler", () => {
 
         process.env["OPENAI_API_KEY"] = "test-api-key"
 
-        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
-        ;(ChatOpenAI as unknown as jest.Mock).mockImplementationOnce(() => ({
-            invoke: jest.fn().mockRejectedValue(new Error("Expected error")),
-        }))
+        // eslint-disable-next-line prefer-arrow-callback,prefer-arrow-functions/prefer-arrow-functions
+        vi.mocked(ChatOpenAI).mockImplementation(function () {
+            return {
+                invoke: vi.fn().mockRejectedValue(new Error("Expected error")),
+            }
+        })
 
         await handleLLMRequest(req, res, {
             extractVariables: (): Record<string, unknown> => ({}),
-            promptTemplate: {
-                formatMessages: jest.fn().mockResolvedValue([{content: "Test prompt"}]),
-            } as unknown as ChatPromptTemplate,
+            promptTemplate: ChatPromptTemplate.fromTemplate("Test prompt"),
         })
 
         expect(res._getStatusCode()).toBe(httpStatus.INTERNAL_SERVER_ERROR)

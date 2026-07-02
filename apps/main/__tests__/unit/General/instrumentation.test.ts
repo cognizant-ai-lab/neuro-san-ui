@@ -18,11 +18,14 @@ limitations under the License.
 Tests for instrumentation.ts Next.js startup file.
  */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {authenticationEnabled} from "../../../../../packages/ui-common/const"
 import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
-jest.mock("../../../../../packages/ui-common/const")
+vi.mock("../../../../../packages/ui-common/const")
 
 // It's okay to do this in tests
 /* eslint-disable @typescript-eslint/no-dynamic-delete */
@@ -46,8 +49,9 @@ const setAllEnvVars = () => {
 
 describe("instrumentation", () => {
     withStrictMocks()
+
     beforeEach(() => {
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
+        vi.mocked(authenticationEnabled).mockReturnValue(true)
         setAllEnvVars()
     })
 
@@ -63,8 +67,6 @@ describe("instrumentation", () => {
     })
 
     it("Should throw if authentication is enabled and required variable is not set", () => {
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
-
         // Unset an environment variable that is only required for authentication
         delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
 
@@ -72,7 +74,7 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if authentication is disabled and required variable is not set", () => {
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
+        vi.mocked(authenticationEnabled).mockReturnValue(false)
 
         // Unset an environment variable that is only required for authentication
         delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
@@ -81,7 +83,7 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if optional variables are not set", () => {
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
+        vi.mocked(authenticationEnabled).mockReturnValue(false)
 
         // Clear all optional environment variables
         OPTIONAL_ENV_VARS.forEach((envVar) => {
@@ -89,7 +91,7 @@ describe("instrumentation", () => {
         })
 
         // Spy on console.warn to suppress output during test
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation()
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
 
         expect(() => register()).not.toThrow()
 
