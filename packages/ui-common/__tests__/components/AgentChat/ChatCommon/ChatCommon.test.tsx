@@ -26,8 +26,8 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MUSIC_NERD,
 } from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {
     ChatCommon,
     ChatCommonHandle,

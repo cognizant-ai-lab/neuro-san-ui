@@ -1,7 +1,7 @@
 import {Theme} from "@mui/material/styles"
 import {describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 
 describe("zIndexLayers", () => {

@@ -20,7 +20,7 @@ import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"
 
 vi.mock("@langchain/openai")

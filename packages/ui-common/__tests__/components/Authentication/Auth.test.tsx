@@ -18,7 +18,7 @@ import {render, screen} from "@testing-library/react"
 import {signIn, useSession} from "next-auth/react"
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Auth} from "../../../components/Authentication/Auth"
 
 const AUTH_CHILDREN_TEXT = "Mock Auth"
