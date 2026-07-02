@@ -30,10 +30,10 @@ const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
     route: "/",
     query: {},
     asPath: "/",
-    isFallback: false,
+    isFallback: undefined,
     isReady: true,
-    isPreview: false,
-    isLocaleDomain: false,
+    isPreview: undefined,
+    isLocaleDomain: undefined,
     push: undefined,
     replace: undefined,
     reload: undefined,
@@ -41,11 +41,7 @@ const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
     forward: undefined,
     prefetch: undefined,
     beforePopState: undefined,
-    events: {
-        on: undefined,
-        off: undefined,
-        emit: undefined,
-    },
+    events: undefined,
     ...overrides,
 })
 
