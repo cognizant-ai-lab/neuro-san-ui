@@ -17,40 +17,71 @@ limitations under the License.
 import type {EnvironmentResponse} from "../../pages/api/environment/Types"
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
-import {useRouter} from "next/router"
+import {NextRouter, Router, useRouter} from "next/router"
 import {ReactNode} from "react"
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../__tests__/common/TestUtils"
+import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
+import {mockFetch} from "../../../../__tests__/common/vitest/TestUtils"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import {NeuroSanUI} from "../../pages/_app"
 
+//#region Constants
 const originalFetch = window.fetch
 
 const COMPONENT_BODY = "Test Component to Render"
 
-jest.mock("next-auth/react", () => ({
-    SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
-}))
+const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
+    asPath: undefined,
+    back: undefined,
+    basePath: undefined,
+    beforePopState: undefined,
+    events: undefined,
+    forward: undefined,
+    isFallback: undefined,
+    isLocaleDomain: false,
+    isPreview: undefined,
+    isReady: undefined,
+    prefetch: undefined,
+    push: undefined,
+    query: undefined,
+    reload: undefined,
+    replace: undefined,
+    route: undefined,
+    pathname: "/projects",
 
-jest.mock("../../../../packages/ui-common/const")
-
-jest.mock("next/router", () => ({
-    useRouter: jest.fn(),
-}))
-
-jest.mock("../../../../packages/ui-common/utils/Authentication")
+    ...overrides,
+})
 
 const APP_COMPONENT = (
     <NeuroSanUI
         Component={() => <div>{COMPONENT_BODY}</div>}
         pageProps={{url: "TestComponentURL", session: {user: {}}}}
-        router={jest.requireMock("next/router").useRouter()}
+        router={createMockRouter() as unknown as Router}
     />
 )
+
+//#endregion Constants
+
+//#region Mocks
+
+vi.mock("next-auth/react", () => ({
+    SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
+}))
+
+vi.mock("../../../../packages/ui-common/const")
+
+vi.mock("next/router", () => ({
+    useRouter: vi.fn(),
+}))
+
+vi.mock("../../../../packages/ui-common/utils/Authentication")
+
+//#endregion Mocks
 
 describe("Main App Component", () => {
     withStrictMocks()
@@ -64,10 +95,10 @@ describe("Main App Component", () => {
     const testLogoServiceToken = "testLogoServiceToken"
 
     beforeEach(() => {
-        ;(useAuthentication as jest.Mock).mockReturnValue({
+        vi.mocked(useAuthentication).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(true)
+        vi.mocked(authenticationEnabled).mockReturnValue(true)
 
         // Clear and reset the zustand store before each test
         useEnvironmentStore.setState({
@@ -89,9 +120,7 @@ describe("Main App Component", () => {
         }
 
         window.fetch = mockFetch(mockEnvironmentResponse as Record<string, unknown>)
-        ;(useRouter as jest.Mock).mockReturnValue({
-            pathname: "/projects",
-        })
+        vi.mocked(useRouter).mockReturnValue(createMockRouter())
     })
 
     afterEach(() => {
@@ -123,7 +152,7 @@ describe("Main App Component", () => {
     })
 
     it("Should render correctly when authentication is disabled", async () => {
-        ;(authenticationEnabled as jest.Mock).mockReturnValue(false)
+        vi.mocked(authenticationEnabled).mockReturnValue(false)
 
         render(APP_COMPONENT)
 
@@ -140,7 +169,7 @@ describe("Main App Component", () => {
 
     it("Should handle failure to fetch environment variables", async () => {
         // We're expecting console errors due to the failed fetch
-        const consoleSpy = jest.spyOn(console, "error").mockImplementation()
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         // Mock fetch to return an error
         window.fetch = mockFetch({error: "Network Error"}, false)
@@ -166,9 +195,13 @@ describe("Main App Component", () => {
     })
 
     it("Should render the splash page correctly", async () => {
-        ;(useRouter as jest.Mock).mockReturnValue({
-            pathname: "/", // Splash page
-        })
+        vi.mocked(useRouter).mockReturnValue(
+            createMockRouter({
+                pathname: "/",
+                route: "/",
+                asPath: "/",
+            })
+        )
 
         render(APP_COMPONENT)
 
@@ -179,7 +212,7 @@ describe("Main App Component", () => {
     it("Should launch the tour when the items is selected from the Help menu", async () => {
         render(APP_COMPONENT)
 
-        const dispatchSpy = jest.spyOn(window, "dispatchEvent")
+        const dispatchSpy = vi.spyOn(window, "dispatchEvent")
 
         const helpToggle = await screen.findByText("Help")
         await user.click(helpToggle)

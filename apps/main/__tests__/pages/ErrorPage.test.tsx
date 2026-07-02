@@ -16,19 +16,21 @@ limitations under the License.
 
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
 import {default as ErrorPage} from "../../../../packages/ui-common/components/ErrorPage/ErrorPage"
 import {LOGO} from "../../../../packages/ui-common/const"
 import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 
-jest.mock("next-auth/react", () => ({
+vi.mock("next-auth/react", () => ({
     useSession: () => ({
         status: "authenticated",
     }),
 }))
 
-jest.mock("next/router", () => ({
+vi.mock("next/router", () => ({
     useRouter: () => ({
         pathname: "",
         query: {
@@ -37,8 +39,8 @@ jest.mock("next/router", () => ({
     }),
 }))
 
-jest.mock("../../../../packages/ui-common/utils/Authentication")
-const mockSmartSignOut = jest.mocked(smartSignOut, {shallow: true})
+vi.mock("../../../../packages/ui-common/utils/Authentication")
+const mockSmartSignOut = vi.mocked(smartSignOut)
 
 describe("ErrorPage", () => {
     withStrictMocks()
@@ -47,7 +49,7 @@ describe("ErrorPage", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
-        jest.mocked(useAuthentication, {shallow: true}).mockReturnValue({
+        vi.mocked(useAuthentication).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
     })
