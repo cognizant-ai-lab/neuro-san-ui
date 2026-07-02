@@ -86,6 +86,8 @@ describe("LlmHandler", () => {
 
         const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
+        // This cannot be an arrow function as it will be new'd by the module under test, and you can't do that with
+        // arrow functions.
         // eslint-disable-next-line prefer-arrow-callback,prefer-arrow-functions/prefer-arrow-functions
         vi.mocked(ChatOpenAI).mockImplementation(function () {
             return {
