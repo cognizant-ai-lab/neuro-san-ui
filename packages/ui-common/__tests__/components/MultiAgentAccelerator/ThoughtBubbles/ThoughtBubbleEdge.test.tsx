@@ -2,7 +2,7 @@ import {render} from "@testing-library/react"
 import {Position} from "@xyflow/react"
 import {describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdge} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 
 describe("ThoughtBubbleEdge", () => {

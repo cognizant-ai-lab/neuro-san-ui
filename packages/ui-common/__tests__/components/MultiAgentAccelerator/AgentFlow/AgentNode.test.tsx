@@ -20,7 +20,7 @@ import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentNode, AgentNodeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
 import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"

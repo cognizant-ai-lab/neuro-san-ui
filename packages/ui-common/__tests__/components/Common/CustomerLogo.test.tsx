@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 import {describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {CustomerLogo, LOGO_DEV_URL} from "../../../components/Logo/CustomerLogo"
 
 describe("CustomerLogo", () => {

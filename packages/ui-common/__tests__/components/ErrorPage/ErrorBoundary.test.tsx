@@ -1,7 +1,7 @@
 import {render, screen} from "@testing-library/react"
 import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores

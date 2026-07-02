@@ -1,7 +1,7 @@
 import {act, render, renderHook, screen} from "@testing-library/react"
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {FadingCheckmark, useCheckmarkFade} from "../../../components/Settings/FadingCheckmark"
 
 describe("useCheckmarkFade", () => {

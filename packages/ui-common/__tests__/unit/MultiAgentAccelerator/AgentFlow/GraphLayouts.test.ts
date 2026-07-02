@@ -15,7 +15,7 @@ limitations under the License.
 */
 import {beforeEach, describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../../../components/AgentChat/Common/Utils"
 import {
     FRONTMAN_SIZE_MULTIPLIER,
