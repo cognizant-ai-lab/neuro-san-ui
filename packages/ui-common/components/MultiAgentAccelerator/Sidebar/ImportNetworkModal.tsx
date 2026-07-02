@@ -16,6 +16,7 @@ limitations under the License.
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined"
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
 import Box from "@mui/material/Box"
@@ -30,9 +31,14 @@ import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
+import {
+    filenameToNetworkName,
+    networkNamesConflict,
+    networkNameToApiName,
+    nextAvailableNetworkName,
+} from "../../../utils/AgentName"
 import {splitFilename} from "../../../utils/File"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {getFrontman} from "../AgentFlow/GraphStructure"
@@ -57,6 +63,9 @@ export interface ImportNetworkModalProps {
     readonly isOpen: boolean
     readonly onClose: () => void
     readonly onImport?: (name: string, content: string) => void
+    // Honors the appearance preference: when true the name is pulled from the filename verbatim
+    // rather than beautified (see `filenameToNetworkName`).
+    readonly useNativeNames?: boolean
 }
 
 // High-level counts shown on the review step so the user can sanity-check the import.
@@ -72,7 +81,7 @@ type ParseState = "loading" | "success" | "error"
 // How to resolve an import whose name collides with an existing network.
 type ConflictResolution = "keep-both" | "replace"
 
-//#endregion: Types
+//#endregion: Interfaces and Types
 
 //#region: Helpers
 
@@ -195,44 +204,6 @@ export const importFileValidationMessage = (validation: ImportFileValidation, fi
     }
 }
 
-/** Trailing UUID on a filename stem. Separator is `[_-]` because filename sanitization
- * (`toSafeFilename`, neuro-san exports) flattens the UUID's hyphens to underscores.
- */
-const FILENAME_TRAILING_UUID_PATTERN =
-    /[_-][0-9a-fA-F]{8}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{12}$/u
-
-/** Convert a filename stem to a display-friendly network name.
- *
- * Strips a trailing UUID that neuro-san appends to exported filenames (e.g.
- * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.json` → `My Network`).
- */
-export const filenameToNetworkName = (filename: string): string => {
-    const {name: stem} = splitFilename(filename)
-    return startCase(stem.replace(FILENAME_TRAILING_UUID_PATTERN, ""))
-}
-
-// Normalize a network name for conflict comparison: underscores, hyphens, parentheses and whitespace
-// all collapse to single spaces, so the display form "My Network (2)" and its API form "My_Network_2"
-// compare equal.
-const normalizeForComparison = (rawName: string): string => {
-    const spaced = rawName.replaceAll(/[\s_()-]+/gu, " ").toLowerCase()
-    return spaced.trim()
-}
-
-/** Pick the first non-colliding name by appending an incrementing index (" 2", " 3", …).
- *
- * Starts at 2 and skips any index already in use, so importing "My Network" alongside an existing
- * "My Network" yields "My Network (2)" — or "My Network (3)" if "My Network (2)" is also taken.
- */
-export const nextAvailableNetworkName = (baseName: string, existingNames: readonly string[]): string => {
-    const taken = new Set(existingNames.map((existing) => normalizeForComparison(existing)))
-    let index = 2
-    while (taken.has(normalizeForComparison(`${baseName} (${index})`))) {
-        index += 1
-    }
-    return `${baseName} (${index})`
-}
-
 //#endregion: Helpers
 
 //#region: Styled Components
@@ -279,6 +250,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     isOpen,
     onClose,
     onImport,
+    useNativeNames = false,
 }) => {
     const [activeStep, setActiveStep] = useState<number>(0)
     // When the imported name conflicts, how the user wants to resolve it.
@@ -336,7 +308,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             }
             setParsedData(result.data)
             setParseState("success")
-            setNetworkName(filenameToNetworkName(file.name))
+            setNetworkName(filenameToNetworkName(file.name, useNativeNames))
             setConflictResolution("keep-both")
         })
         reader.addEventListener("error", () => {
@@ -349,16 +321,16 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         reader.readAsText(file)
 
         return () => reader.abort()
-    }, [file])
+    }, [file, useNativeNames])
 
     // True if `candidate` collides with any existing network name (normalized for comparison).
     const nameConflictsWith = (candidate: string): boolean =>
-        existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizeForComparison(candidate))
+        existingNetworkNames.some((existing) => networkNamesConflict(existing, candidate))
 
     // The name pulled from the filename — fixed for the selected file. Whether it collides with an
     // existing network is what drives the conflict-resolution UI (it stays visible while the user
     // types a replacement, so we can't key it off the editable name).
-    const importedName = file ? filenameToNetworkName(file.name) : ""
+    const importedName = file ? filenameToNetworkName(file.name, useNativeNames) : ""
     const importedNameHasConflict = nameConflictsWith(importedName)
     const trimmedName = networkName.trim()
     const newNameHasConflict = nameConflictsWith(trimmedName)
@@ -418,11 +390,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         // "Replace existing" overwrites the colliding network, so always send the original
         // imported name; "Keep both" sends whatever unique name the user typed.
         const nameToImport = importedNameHasConflict && conflictResolution === "replace" ? importedName : networkName
-        // The API echoes back agent_network_name as-is, and the UI splits on underscores to
-        // produce display names — so send underscores instead of spaces. Parentheses around an
-        // auto-appended index ("My Network (2)") are dropped so the API name reads "My_Network_2".
-        const apiName = nameToImport.trim().replaceAll(" ", "_").replaceAll(/[()]/gu, "")
-        onImport?.(apiName, JSON.stringify(parsedData))
+        onImport?.(networkNameToApiName(nameToImport), JSON.stringify(parsedData))
         onClose()
     }
 
@@ -530,79 +498,128 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Stepper>
     )
 
-    // Step 1: the drag-and-drop / browse file picker.
+    // The drag-and-drop / browse file picker, plus the restriction callout beneath it.
     const renderSelectFileStep = () => (
-        <DropZone
-            isDragOver={isDragOver}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={handleBrowseClick}
-            onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault()
-                    handleBrowseClick()
-                }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Drop zone for network definition file"
-        >
-            <CloudUploadOutlinedIcon
-                id="import-network-modal-upload-icon"
-                sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
-            />
-            <Typography
-                id="import-network-modal-drop-text"
-                variant="subtitle1"
-                sx={{color: "primary.main", fontWeight: "bold"}}
-            >
-                Drag &amp; drop a network definition
-            </Typography>
-            <Typography variant="body2">
-                {"or "}
-                <Box
-                    component="button"
-                    id="import-network-modal-browse-link"
-                    onClick={(event) => {
-                        event.stopPropagation()
+        <>
+            <DropZone
+                isDragOver={isDragOver}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onClick={handleBrowseClick}
+                onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
                         handleBrowseClick()
-                    }}
+                    }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="Drop zone for network definition file"
+            >
+                <Box
                     sx={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--bs-secondary)",
-                        cursor: "pointer",
-                        font: "inherit",
-                        padding: 0,
-                        textDecoration: "underline",
-                        "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                        alignItems: "center",
+                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                        borderRadius: 2,
+                        color: "primary.main",
+                        display: "flex",
+                        height: 64,
+                        justifyContent: "center",
+                        marginBottom: 1,
+                        width: 64,
                     }}
                 >
-                    browse your files
+                    <CloudUploadOutlinedIcon
+                        id="import-network-modal-upload-icon"
+                        sx={{fontSize: "2rem"}}
+                    />
                 </Box>
-            </Typography>
-            <Typography
-                id="import-network-modal-file-types"
-                variant="caption"
-                sx={{color: "text.secondary"}}
+                <Typography
+                    id="import-network-modal-drop-text"
+                    variant="subtitle1"
+                    sx={{color: "primary.main", fontWeight: "bold"}}
+                >
+                    Drag &amp; drop a network definition
+                </Typography>
+                <Typography variant="body2">
+                    {"or "}
+                    <Box
+                        component="button"
+                        id="import-network-modal-browse-link"
+                        onClick={(event) => {
+                            event.stopPropagation()
+                            handleBrowseClick()
+                        }}
+                        sx={{
+                            background: "none",
+                            border: "none",
+                            color: "var(--bs-secondary)",
+                            cursor: "pointer",
+                            font: "inherit",
+                            padding: 0,
+                            textDecoration: "underline",
+                            "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
+                        }}
+                    >
+                        browse your files
+                    </Box>
+                </Typography>
+                <Box
+                    id="import-network-modal-file-types"
+                    sx={{
+                        alignItems: "center",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 999,
+                        color: "text.secondary",
+                        display: "inline-flex",
+                        gap: 0.75,
+                        marginTop: 1,
+                        padding: "4px 12px",
+                    }}
+                >
+                    <InsertDriveFileOutlinedIcon sx={{fontSize: "1rem"}} />
+                    <Typography variant="caption">Accepts .json up to 5 MB</Typography>
+                </Box>
+                <VisuallyHiddenInput
+                    accept={ACCEPTED_MIME_TYPES}
+                    aria-hidden="true"
+                    data-testid="import-network-file-input"
+                    onChange={handleFileChange}
+                    onClick={(event) => event.stopPropagation()}
+                    ref={fileInputRef}
+                    tabIndex={-1}
+                    type="file"
+                />
+            </DropZone>
+            <Box
+                id="import-network-modal-file-restriction"
+                sx={{
+                    alignItems: "flex-start",
+                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    display: "flex",
+                    gap: 1.5,
+                    marginTop: 2,
+                    padding: "14px 16px",
+                }}
             >
-                Accepts .json up to 5 MB.
-            </Typography>
-            <VisuallyHiddenInput
-                accept={ACCEPTED_MIME_TYPES}
-                aria-hidden="true"
-                data-testid="import-network-file-input"
-                onChange={handleFileChange}
-                onClick={(event) => event.stopPropagation()}
-                ref={fileInputRef}
-                tabIndex={-1}
-                type="file"
-            />
-        </DropZone>
+                <InfoOutlinedIcon sx={{color: "text.secondary", fontSize: "1.25rem", flexShrink: 0, marginTop: 0.25}} />
+                <Typography
+                    variant="caption"
+                    sx={{color: "text.secondary"}}
+                >
+                    Must be a JSON file previously exported from an <strong>Agent Network Designer</strong>–created
+                    network. General Neuro SAN HOCON files are not currently supported.
+                </Typography>
+            </Box>
+        </>
     )
 
-    // Step 2: parsing/validation outcome — loading spinner, success summary, or error banner.
+    // The parsing/validation outcome — loading spinner, success summary, or error banner.
     const renderReviewParsing = () => (
         <>
             <CircularProgress
@@ -656,16 +673,35 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const renderReviewFileInfo = () => (
         <Box
             sx={{
-                alignItems: "flex-start",
+                alignItems: "center",
+                backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 2,
                 display: "flex",
                 gap: 1.5,
                 marginTop: 3,
+                padding: "12px 16px",
             }}
         >
-            <InsertDriveFileOutlinedIcon
-                id="import-network-modal-file-icon"
-                sx={{color: "text.secondary", fontSize: "2rem"}}
-            />
+            <Box
+                sx={{
+                    alignItems: "center",
+                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.06),
+                    borderRadius: 1.5,
+                    color: "text.secondary",
+                    display: "flex",
+                    flexShrink: 0,
+                    height: 44,
+                    justifyContent: "center",
+                    width: 44,
+                }}
+            >
+                <InsertDriveFileOutlinedIcon
+                    id="import-network-modal-file-icon"
+                    sx={{fontSize: "1.5rem"}}
+                />
+            </Box>
             {/* Keep the filename on one line: truncate the stem with an ellipsis
                 but pin the extension so ".json" stays visible. The full name is
                 available on hover via the tooltip. */}
@@ -813,7 +849,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Box>
     )
 
-    // Step 3: name the network and resolve any collision with an existing one.
+    // Name the network and resolve any collision with an existing one.
     const renderConflictKeepBothField = () => (
         <Box>
             <Typography
@@ -1015,11 +1051,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             footer={renderFooter()}
         >
             {renderStepper()}
-            {/* Step 1: Select file */}
             {activeStep === 0 && renderSelectFileStep()}
-            {/* Step 2: Review */}
             {activeStep === 1 && renderReviewStep()}
-            {/* Step 3: Confirm */}
             {activeStep === 2 && renderConfirmStep()}
         </MUIDialog>
     )

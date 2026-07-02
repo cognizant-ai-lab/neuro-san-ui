@@ -21,6 +21,7 @@ The interface consists of three main sections:
 - Displays a list of available agent networks.
 - Each agent network represents a group of AI agents working together to analyze and solve problems.
 - Enables you to select a network to view its structure and interactions.
+- Use the upload icon in the sidebar header to **import** your own network definition (see [Importing a Network Definition](#importing-a-network-definition)).
 
 ### 2. Multi-Agent Network Graph
 
@@ -34,10 +35,36 @@ The interface consists of three main sections:
 - Queries are processed using LangChain-powered logic to fetch relevant insights.
 - Responses may be influenced by the selected agent network and its internal decision-making processes.
 
+## Importing a Network Definition
+
+You can bring your own agent network into the accelerator by importing a network definition file.
+
+To open the importer, click the upload icon in the **Agent Networks** sidebar header. This launches a guided three-step wizard:
+
+### 1. Select file
+
+- Drag & drop a network definition onto the drop zone, or click **browse your files** to pick one.
+- Imports accept a single `.json` file up to 5 MB.
+- The file must be a JSON file previously exported from an **Agent Network Designer**-created network. General Neuro SAN HOCON files are not currently supported.
+
+### 2. Review
+
+- The file is parsed and validated automatically.
+- On success, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Front man** (the network's entry-point agent).
+- If the file is empty, not valid JSON, the wrong type, or too large, an error message explains the problem so you can pick a different file.
+
+### 3. Confirm
+
+- The network name is pre-filled from the filename (a trailing identifier is stripped automatically) and can be edited.
+- If the name matches a network you already have, you'll be asked how to resolve the conflict:
+    - **Keep both** — the importer suggests a unique name (for example, `My Network (2)`), keeping your existing network untouched. You can type any available name; the field tells you whether a name is available or already taken.
+    - **Replace existing** — overwrites the existing network with the imported one. This is permanent and cannot be undone.
+- Click **Import network** (or **Import as new** / **Replace network**, depending on your choice) to finish. The imported network is added to the sidebar and selected automatically.
+
 ## Other Considerations
 
 1. Currently, there is no chat history, and agents do not retain memory. This is a planned feature for a future release.
-1. The system is entirely read-only, meaning you cannot modify, edit, create, or save anything—including agents, prompts, or networks.
-1. You can only use the built-in demo agents. The ability to create and customize your own agents is planned for a future update.
+1. Beyond importing a network definition, the system is largely read-only—you cannot edit agents, prompts, or the structure of an existing network.
+1. In addition to the built-in demo agents, you can import your own network definitions (see [Importing a Network Definition](#importing-a-network-definition)). Imported networks are stored locally in your browser rather than on the server.
 1. The agent communication animation may not always be perfectly accurate. As the back-end features are enhanced, communication will be more precise. For now, some approximation is necessary.
 1. Regarding layout, resizing, and UI refinements—we’re aware of the current limitations. We're actively exploring ways to allow resizing, collapsing, and expanding elements.

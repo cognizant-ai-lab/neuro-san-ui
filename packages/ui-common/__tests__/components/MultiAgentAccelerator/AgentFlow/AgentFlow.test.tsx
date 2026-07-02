@@ -21,7 +21,6 @@ import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/r
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {
     AgentFlow,
@@ -35,6 +34,7 @@ import {sendChatQuery} from "../../../../controller/agent/Agent"
 import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
+import {cleanUpAgentName} from "../../../../utils/AgentName"
 
 jest.mock("../../../../controller/agent/Agent")
 
@@ -1831,6 +1831,64 @@ describe("AgentFlow", () => {
             await user.click(closeButton)
 
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
+        })
+
+        it("exits edit mode when the Escape key is pressed", () => {
+            const onExitEditMode = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                onExitEditMode,
+            })
+
+            fireEvent.keyDown(document, {key: "Escape"})
+
+            expect(onExitEditMode).toHaveBeenCalledTimes(1)
+        })
+
+        it("does not exit on Escape when not in edit mode", () => {
+            const onExitEditMode = jest.fn()
+            renderAgentFlowComponent({
+                isEditMode: false,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                onExitEditMode,
+            })
+
+            fireEvent.keyDown(document, {key: "Escape"})
+
+            expect(onExitEditMode).not.toHaveBeenCalled()
+        })
+
+        it("does not exit edit mode on Escape while the node popup is open", async () => {
+            const onExitEditMode = jest.fn()
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(
+                            DOCK_NETWORK_ID,
+                            [{origin: "agent1", tools: [], display_as: "llm_agent"}],
+                            DOCK_NETWORK_NAME
+                        ),
+                    ])
+            })
+
+            renderAgentFlowComponent({
+                isEditMode: true,
+                isSelectedNetworkTemporary: true,
+                networkId: DOCK_NETWORK_ID,
+                onExitEditMode,
+            })
+
+            // Open the node popup so Escape should close it first, not exit edit mode.
+            clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
+            await screen.findByRole("textbox", {name: /^instructions$/iu})
+
+            fireEvent.keyDown(document, {key: "Escape"})
+
+            expect(onExitEditMode).not.toHaveBeenCalled()
         })
 
         it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {

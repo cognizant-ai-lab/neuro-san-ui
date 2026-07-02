@@ -19,7 +19,6 @@ import {default as userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
-    filenameToNetworkName,
     formatFileSize,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
     ImportFileValidation,
@@ -27,7 +26,6 @@ import {
     ImportNetworkModal,
     ImportNetworkModalProps,
     jsonToNetworkDefinition,
-    nextAvailableNetworkName,
     parseNetworkFileContent,
     summarizeNetworkDefinition,
     validateImportFile,
@@ -77,11 +75,11 @@ describe("ImportNetworkModal", () => {
 
     const getDropZone = () => screen.getByRole("button", {name: DROP_ZONE})
 
-    // Drop a file onto the modal, synchronously advancing from step 1 to the review step (step 2).
+    // Drop a file onto the modal, synchronously advancing from the select-file step to the review step.
     const dropFileOnModal = (filename = "my_network.json", content = '{"agents": {}}') =>
         dropFile(getDropZone(), filename, content)
 
-    // Drop a file then click Continue, advancing all the way to the confirm step (step 3).
+    // Drop a file then click Continue, advancing all the way to the confirm step.
     const advanceToConfirmStep = async (filename = "my_network.json", content = '{"agents": {}}') => {
         dropFileOnModal(filename, content)
         await user.click(await screen.findByRole("button", {name: CONTINUE_BUTTON}))
@@ -199,18 +197,18 @@ describe("ImportNetworkModal", () => {
         expect(fileInput.value).toBe("")
     })
 
-    // Step 2: Review
+    // Review step
     it("should show a loading spinner after a file is dropped", async () => {
         renderModal()
         dropFileOnModal()
         await screen.findByRole("progressbar")
     })
 
-    it("should advance to step 2 after a file is dropped", () => {
+    it("should advance to the review step after a file is dropped", () => {
         renderModal()
         const dropZone = getDropZone()
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        // The drop synchronously advances to step 2, unmounting the drop zone.
+        // The drop synchronously advances to the review step, unmounting the drop zone.
         expect(dropZone).not.toBeInTheDocument()
     })
 
@@ -250,7 +248,7 @@ describe("ImportNetworkModal", () => {
         expect(screen.queryByRole("button", {name: CONTINUE_BUTTON})).not.toBeInTheDocument()
     })
 
-    it("should go back to step 1 from step 2 when Back is clicked", async () => {
+    it("should go back to the select-file step from review when Back is clicked", async () => {
         renderModal()
         dropFileOnModal()
         await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
@@ -292,8 +290,8 @@ describe("ImportNetworkModal", () => {
         expect(readSpy).not.toHaveBeenCalled()
     })
 
-    // Step 3: Confirm
-    it("should advance to step 3 on Continue and pre-fill the network name from the filename", async () => {
+    // Confirm step
+    it("should advance to the confirm step on Continue and pre-fill the network name from the filename", async () => {
         renderModal()
         await advanceToConfirmStep("ecommerce_support.json")
         await screen.findByRole("button", {name: IMPORT_BUTTON})
@@ -301,24 +299,32 @@ describe("ImportNetworkModal", () => {
         expect(nameInput).toHaveValue("Ecommerce Support")
     })
 
-    it("should navigate from step 3 all the way back to step 1 via Back", async () => {
+    it("should pre-fill the raw filename stem when useNativeNames is on", async () => {
+        renderModal({useNativeNames: true})
+        await advanceToConfirmStep("ecommerce_support.json")
+        await screen.findByRole("button", {name: IMPORT_BUTTON})
+        const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
+        expect(nameInput).toHaveValue("ecommerce_support")
+    })
+
+    it("should navigate from confirm all the way back to select-file via Back", async () => {
         renderModal()
         await advanceToConfirmStep()
         await screen.findByRole("button", {name: IMPORT_BUTTON})
-        // Step 3 -> step 2
+        // Confirm -> Review
         await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
         await screen.findByRole("button", {name: CONTINUE_BUTTON})
-        // Step 2 -> step 1
+        // Review -> Select file
         await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
         await screen.findByRole("button", {name: DROP_ZONE})
     })
 
-    it("should re-advance to step 3 after going back to step 2", async () => {
+    it("should re-advance to confirm after going back to review", async () => {
         renderModal()
         await advanceToConfirmStep("ecommerce_support.json")
-        // Step 3 -> step 2
+        // Confirm -> Review
         await user.click(await screen.findByRole("button", {name: BACK_BUTTON}))
-        // Step 2 -> step 3 again
+        // Review -> Confirm again
         await user.click(await screen.findByRole("button", {name: CONTINUE_BUTTON}))
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         expect(nameInput).toHaveValue("Ecommerce Support")
@@ -654,57 +660,6 @@ describe("formatFileSize", () => {
         {name: "megabytes", bytes: 2 * 1024 * 1024, expected: "2.0 MB"},
     ])("should format $name", ({bytes, expected}) => {
         expect(formatFileSize(bytes)).toBe(expected)
-    })
-})
-
-describe("nextAvailableNetworkName", () => {
-    it.each([
-        {
-            name: "appends ' (2)' when only the base name is taken",
-            existing: ["My Network"],
-            expected: "My Network (2)",
-        },
-        {
-            name: "skips to the next free index when ' (2)' is also taken",
-            existing: ["My Network", "My Network (2)"],
-            expected: "My Network (3)",
-        },
-        {
-            name: "starts at ' (2)' even when the base name itself is free",
-            existing: ["Something Else"],
-            expected: "My Network (2)",
-        },
-        {
-            name: "compares names ignoring separators and case",
-            existing: ["my_network", "MY-NETWORK-(2)"],
-            expected: "My Network (3)",
-        },
-    ])("$name", ({existing, expected}) => {
-        expect(nextAvailableNetworkName("My Network", existing)).toBe(expected)
-    })
-})
-
-describe("filenameToNetworkName", () => {
-    it.each([
-        {
-            name: "converts an underscore filename to a spaced, capitalized name",
-            filename: "ecommerce_support.json",
-            expected: "Ecommerce Support",
-        },
-        {name: "converts a hyphenated filename", filename: "my-network.json", expected: "My Network"},
-        {name: "handles a filename with no extension", filename: "mynetwork", expected: "Mynetwork"},
-        {
-            name: "strips a trailing UUID from the filename",
-            filename: "autonomous_venture_studio_ops_683b0dfb_4816_464d_9c83_7e59ce6497d3.json",
-            expected: "Autonomous Venture Studio Ops",
-        },
-        {
-            name: "keeps a normal filename unchanged aside from formatting",
-            filename: "my_network.json",
-            expected: "My Network",
-        },
-    ])("$name", ({filename, expected}) => {
-        expect(filenameToNetworkName(filename)).toBe(expected)
     })
 })
 

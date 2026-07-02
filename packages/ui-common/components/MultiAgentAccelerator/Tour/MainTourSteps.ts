@@ -29,6 +29,11 @@ export const MAIN_TOUR_STEPS: Step[] = [
         placement: "bottom",
     },
     {
+        content: "Import Network Definition: Click here to import a network definition file from your computer.",
+        target: () => document.querySelector("#import-network-icon"),
+        placement: "bottom",
+    },
+    {
         content:
             "This indicator shows the online status of the Neuro SAN backend service. " +
             "Mouse over it to see the current server URL, status, version, and any error details.",

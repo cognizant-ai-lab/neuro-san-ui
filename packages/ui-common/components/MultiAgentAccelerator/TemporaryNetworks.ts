@@ -11,8 +11,20 @@ import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
 import {sendNetworkDesignerRequest} from "../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {chatMessageFromChunk, removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {removeTrailingUuid} from "../../utils/AgentName"
+import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
+
+//#region: Constants
+
+export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
+    "invalid-definition": "The file does not contain a valid network definition.",
+    "no-reservation": "The network designer did not return a reservation. Please try again.",
+}
+
+//#endregion: Constants
+
+//#region: Types
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -31,6 +43,13 @@ export type AgentReservation = {
     readonly lifetime_in_seconds: number
     readonly expiration_time_in_seconds: number
 }
+
+/** Reasons an import can fail before its networks reach the store. */
+export type ImportFailureReason = "invalid-definition" | "no-reservation"
+
+export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
+
+//#endregion: Types
 
 /**
  * Extracts agent reservations from a chat message, if they exist.
@@ -196,21 +215,14 @@ export const streamNetworkDesignerUpsert = async (
     agentNetworkName: string | undefined,
     username: string
 ): Promise<TemporaryNetwork[]> => {
+    // Accumulator reassigned by the per-chunk callback below as the stream arrives.
     let newNetworks: TemporaryNetwork[] = []
     await sendNetworkDesignerRequest(neuroSanURL, signal, frontman, networkDef, agentNetworkName, username, (chunk) => {
+        // Fold each streamed chunk into the running set of networks. In practice the designer returns a
+        // single network, but we accumulate into an array to stay robust if it ever returns more.
         newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
     })
     return newNetworks
-}
-
-/** Reasons an import can fail before its networks reach the store. */
-export type ImportFailureReason = "invalid-definition" | "no-reservation"
-
-export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
-
-export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
-    "invalid-definition": "The file does not contain a valid network definition.",
-    "no-reservation": "The network designer did not return a reservation. Please try again.",
 }
 
 /**
