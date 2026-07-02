@@ -2,8 +2,10 @@
 import "fake-indexeddb/auto"
 
 import {AIMessage, HumanMessage, SystemMessage} from "@langchain/core/messages"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {ChatContext} from "../../../generated/neuro-san/NeuroSanClient"
 import {MAX_CHAT_HISTORY_ITEMS, useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {indexedDBStorage} from "../../../state/IndexedDBStorage"
@@ -14,12 +16,9 @@ const TEST_MESSAGES = [
     new SystemMessage("system message"),
 ]
 
-jest.mock("../../../state/IndexedDBStorage", () => ({
-    ...jest.requireActual("../../../state/IndexedDBStorage"),
-}))
-
 describe("ChatHistory", () => {
     withStrictMocks()
+
     beforeEach(() => {
         // Clear the chat history before each test
         const allHistory = useAgentChatHistoryStore.getState().history
@@ -135,17 +134,17 @@ describe("ChatHistory", () => {
     })
 
     it("calls removeItem on clearStorage", () => {
-        const removeItemSpy = jest.spyOn(indexedDBStorage, "removeItem").mockResolvedValueOnce()
+        const removeItemSpy = vi.spyOn(indexedDBStorage, "removeItem").mockResolvedValueOnce()
         useAgentChatHistoryStore.persist.clearStorage()
         expect(removeItemSpy).toHaveBeenCalled()
     })
 
     it("should call getItem on rehydrate", async () => {
-        const getItemSpy = jest.spyOn(indexedDBStorage, "getItem").mockResolvedValueOnce("testItem")
+        const getItemSpy = vi.spyOn(indexedDBStorage, "getItem").mockResolvedValueOnce("testItem")
         await useAgentChatHistoryStore.persist.rehydrate()
         expect(getItemSpy).toHaveBeenCalled()
 
-        // Exercise path where item is missing (e.g. first time user).
+        // Exercise path where item is missing (e.g., first time user).
         getItemSpy.mockClear()
         getItemSpy.mockResolvedValueOnce(null)
         await useAgentChatHistoryStore.persist.rehydrate()
