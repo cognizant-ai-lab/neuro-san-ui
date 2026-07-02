@@ -16,8 +16,10 @@ limitations under the License.
 
 import {act, render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay"
 import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
@@ -387,11 +389,11 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle hover state changes", async () => {
         // Use fake timers so the 200ms debounce in handleHoverChange is deterministic.
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         // Re-initialise userEvent with advanceTimers so pointer-event delays
         // stay in sync with fake timers.
-        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
-        const onBubbleHoverChange = jest.fn()
+        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
+        const onBubbleHoverChange = vi.fn()
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
 
         render(
@@ -412,7 +414,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Unhover - advance past the 200ms debounce deterministically
         await localUser.unhover(bubble)
         await act(async () => {
-            jest.advanceTimersByTime(250)
+            vi.advanceTimersByTime(250)
         })
         expect(onBubbleHoverChange).toHaveBeenCalledWith(null)
     })
@@ -434,10 +436,10 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle onBubbleHoverChange not provided", async () => {
         // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
-        jest.useFakeTimers()
-        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
+        vi.useFakeTimers()
+        // Must be created after vi.useFakeTimers() with advanceTimers so userEvent's
         // own internal pointer-event delays are driven by fake time, not real setTimeout.
-        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         render(
@@ -458,7 +460,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Advance past the debounce so the timeout callback fires and covers
         // the branch where onBubbleHoverChange is absent.
         await act(async () => {
-            jest.advanceTimersByTime(250)
+            vi.advanceTimersByTime(250)
         })
 
         expect(bubble).toBeInTheDocument()
@@ -466,10 +468,10 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle edges changing while a bubble is hovered", async () => {
         // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
-        jest.useFakeTimers()
-        // Must be created after jest.useFakeTimers() with advanceTimers so userEvent's
+        vi.useFakeTimers()
+        // Must be created after vi.useFakeTimers() with advanceTimers so userEvent's
         // own internal pointer-event delays are driven by fake time, not real setTimeout.
-        const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Original message")]
         const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Updated message")]
 
@@ -907,9 +909,9 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should render SVG lines after entrance delay and update coordinates", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
         // Start system time at 0 so enteredAt is deterministic
-        jest.setSystemTime(0)
+        vi.setSystemTime(0)
 
         const edges = [createMockEdge("edge-lines", "node1", "node2", "Line message")]
 
@@ -951,7 +953,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Advance timers past the per-bubble animation delay (120ms) to allow lines to appear
         await act(async () => {
-            jest.advanceTimersByTime(200)
+            vi.advanceTimersByTime(200)
         })
 
         // Rerender to force recalculation of shouldShowLines
@@ -977,8 +979,8 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should not render lines for HUMAN message type or when agent is not active via getConversations", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
+        vi.useFakeTimers()
+        vi.setSystemTime(0)
 
         // HUMAN type should skip lines entirely
         const humanEdge: ThoughtBubbleEdgeShape = {
@@ -997,7 +999,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        await act(async () => jest.advanceTimersByTime(200))
+        await act(async () => vi.advanceTimersByTime(200))
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
@@ -1038,7 +1040,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        await act(async () => jest.advanceTimersByTime(200))
+        await act(async () => vi.advanceTimersByTime(200))
         r2(
             <ThoughtBubbleOverlay
                 nodes={nodesWithProvider}
@@ -1051,8 +1053,8 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should use fallback bubble coordinates when bubble DOM element is missing", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
+        vi.useFakeTimers()
+        vi.setSystemTime(0)
 
         // Ensure predictable viewport width for fallback calculation
         // (expected x = innerWidth - 20 - BUBBLE_WIDTH(260))
@@ -1072,7 +1074,7 @@ describe("ThoughtBubbleOverlay", () => {
         const bubbleEl = container.querySelector('[data-bubble-id="edge-fallback"]')
         if (bubbleEl) bubbleEl.remove()
 
-        await act(async () => jest.advanceTimersByTime(200))
+        await act(async () => vi.advanceTimersByTime(200))
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
@@ -1135,7 +1137,7 @@ describe("ThoughtBubbleOverlay", () => {
         }
 
         const now = Date.now()
-        const spy = jest.spyOn(Date, "now").mockImplementation(() => now + 10000)
+        const spy = vi.spyOn(Date, "now").mockImplementation(() => now + 10000)
 
         const {container, unmount} = render(
             <ThoughtBubbleOverlay
@@ -1154,9 +1156,9 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should call document.querySelectorAll for agent lookup when appropriate", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
-        const spy = jest.spyOn(document, "querySelectorAll")
+        const spy = vi.spyOn(document, "querySelectorAll")
 
         const edges = [createMockEdge("edge-qs", "node1", "node2", "QS test")]
 
@@ -1191,7 +1193,7 @@ describe("ThoughtBubbleOverlay", () => {
                 showThoughtBubbles={true}
             />
         )
-        await act(async () => jest.advanceTimersByTime(200))
+        await act(async () => vi.advanceTimersByTime(200))
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
@@ -1212,8 +1214,8 @@ describe("ThoughtBubbleOverlay", () => {
     it("Should catch and debug-log errors from updateAllLines without throwing", async () => {
         // This test forces updateAllLines to encounter a DOM write error (setAttribute)
         // and verifies the component swallows the error and logs via console.error.
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
+        vi.useFakeTimers()
+        vi.setSystemTime(0)
 
         const edges = [createMockEdge("edge-debug", "node1", "node2", "Debug test")]
 
@@ -1234,7 +1236,7 @@ describe("ThoughtBubbleOverlay", () => {
         })
         document.body.append(agentEl)
 
-        const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
 
         // Render component normally first so React can mount without our failure injection
         const {rerender} = render(
@@ -1246,7 +1248,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Fast-forward time so bubble entrance animation delay passes and re-render so lines are added
-        jest.setSystemTime(10000)
+        vi.setSystemTime(10000)
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
@@ -1330,7 +1332,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should start streaming loop with no agent elements and not crash", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         const edges = [createMockEdge("edge-stream-no-agent", "node1", "node2", "Stream no agent")]
 
@@ -1344,14 +1346,14 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Let a few RAF cycles run (component should guard against missing agent elements)
-        await act(async () => jest.advanceTimersByTime(50))
+        await act(async () => vi.advanceTimersByTime(50))
 
         expect(() => unmount()).not.toThrow()
     })
 
     it("Should handle duplicate agent ids in edge.data.agents without crashing", async () => {
-        jest.useFakeTimers()
-        jest.setSystemTime(0)
+        vi.useFakeTimers()
+        vi.setSystemTime(0)
 
         const dupEdge: ThoughtBubbleEdgeShape = {
             id: "edge-dup-agents",
@@ -1378,7 +1380,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         // Suppress expected React warnings about duplicate keys for this test
-        const consoleErrSpy = jest.spyOn(console, "error").mockImplementation(() => undefined)
+        const consoleErrSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
 
         const {container, rerender} = render(
             <ThoughtBubbleOverlay
@@ -1388,7 +1390,7 @@ describe("ThoughtBubbleOverlay", () => {
             />
         )
 
-        await act(async () => jest.advanceTimersByTime(200))
+        await act(async () => vi.advanceTimersByTime(200))
         rerender(
             <ThoughtBubbleOverlay
                 nodes={mockNodes}
@@ -1405,7 +1407,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should not crash when unmounting immediately while streaming is running", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         const edges = [createMockEdge("edge-unmount-stream", "node1", "node2", "Unmount stream")]
 
@@ -1423,7 +1425,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should toggle streaming on and off without errors", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         const edges = [createMockEdge("edge-toggle-stream", "node1", "node2", "Toggle stream")]
 
@@ -1464,7 +1466,7 @@ describe("ThoughtBubbleOverlay", () => {
     })
 
     it("Should remove bubble after exit animation timeout when edges are removed (alternate)", async () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         const edge = createMockEdge("edge-exit-remove", "node1", "node2", "Exit remove")
 
@@ -1486,7 +1488,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         // Advance past the 400ms exit animation delay
-        await act(async () => jest.advanceTimersByTime(450))
+        await act(async () => vi.advanceTimersByTime(450))
 
         expect(container).not.toHaveTextContent(/Exit remove/u)
     })
