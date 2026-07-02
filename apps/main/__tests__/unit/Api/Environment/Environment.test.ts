@@ -16,10 +16,15 @@ limitations under the License.
 
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it} from "vitest"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import handler from "../../../../pages/api/environment"
 
 describe("Environment API handler", () => {
+    withStrictMocks()
+
     const originalEnv = process.env
 
     beforeEach(() => {
