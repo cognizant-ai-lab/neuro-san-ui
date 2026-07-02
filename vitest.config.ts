@@ -29,10 +29,10 @@ export default defineConfig({
             // These values are meaningless during migration to vitest as we are running tests in both jest and vitest.
             // Instead, use the combined coverage nunmbers from RunCombinedTests.sh.
             thresholds: {
-                statements: -13,
-                branches: -7,
-                functions: -9,
-                lines: -9,
+                statements: -104,
+                branches: -156,
+                functions: -25,
+                lines: -76,
             },
         },
         environment: "jsdom",

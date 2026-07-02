@@ -2,14 +2,19 @@ import {ChatPromptTemplate} from "@langchain/core/prompts"
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 import {createMocks} from "node-mocks-http"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import agentIconSuggestionsHandler from "../../../../pages/api/agentIconSuggestions"
 import brandingHandler from "../../../../pages/api/branding"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"
 import networkIconSuggestionsHandler from "../../../../pages/api/networkIconSuggestions"
-jest.mock("../../../../pages/api/Common/LlmHandler")
+vi.mock("../../../../pages/api/Common/LlmHandler")
 
 describe("branding API handler", () => {
+    withStrictMocks()
+
     type HandlerType = (req: NextApiRequest, res: NextApiResponse<unknown>) => Promise<void>
 
     const handlers: [string, HandlerType][] = [
@@ -25,7 +30,7 @@ describe("branding API handler", () => {
             body: {company: "Test Company"},
         })
 
-        ;(handleLLMRequest as jest.Mock).mockImplementationOnce(async (request, response, args) => {
+        vi.mocked(handleLLMRequest).mockImplementationOnce(async (request, response, args) => {
             // exercise the supplied extractVariables function
             const variables = args.extractVariables(request)
             response.status(httpStatus.OK)
@@ -47,7 +52,7 @@ describe("branding API handler", () => {
             body: {company: "Test Company"},
         })
 
-        ;(handleLLMRequest as jest.Mock).mockImplementationOnce(async (_req, response) => {
+        vi.mocked(handleLLMRequest).mockImplementationOnce(async (_req, response) => {
             response.status(httpStatus.INTERNAL_SERVER_ERROR)
             response.end("Internal Server Error")
         })

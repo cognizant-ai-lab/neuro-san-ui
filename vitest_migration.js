@@ -5,6 +5,7 @@ export const TESTS_MIGRATED_TO_VITEST = [
     "apps/main/__tests__/pages/IndexPage.test.tsx",
     "apps/main/__tests__/pages/MultiAgentAcceleratorPage.test.tsx",
     "apps/main/__tests__/pages/UserGuide.test.tsx",
+    "apps/main/__tests__/pages/api/handlers/Handlers.test.ts",
     "apps/main/__tests__/unit/Api/Common/LlmHandler.test.ts",
     "apps/main/__tests__/unit/Api/Environment/Environment.test.ts",
     "apps/main/__tests__/unit/Api/Logout/Logout.test.ts",
