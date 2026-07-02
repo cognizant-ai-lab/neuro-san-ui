@@ -15,12 +15,17 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it} from "vitest"
 
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {NeuroAIBreadcrumbs} from "../../../components/Common/Breadcrumbs"
 
 const MOCK_PATHNAME = "mockPath1/mockPath2/mockPath3/mockPath4"
 
 describe("NeuroAIBreadcrumbs", () => {
+    withStrictMocks()
+
     it("should render breadcrumbs with the correct redirect links", () => {
         render(<NeuroAIBreadcrumbs pathname={MOCK_PATHNAME} />)
 
