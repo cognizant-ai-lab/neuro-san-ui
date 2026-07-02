@@ -16,12 +16,17 @@ limitations under the License.
 
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import handler from "../../../../pages/api/userInfo"
 
 const AWS_OIDC_HEADER = "x-amzn-oidc-data"
 
 describe("UserInfo API handler", () => {
+    withStrictMocks()
+
     it("returns user info when OIDC header is valid for Github provider", async () => {
         const userInfo = {nickname: "testUser", picture: "https://example.com/avatar.png"}
 
@@ -31,7 +36,7 @@ describe("UserInfo API handler", () => {
             },
         })
 
-        jest.spyOn(Buffer, "from").mockImplementationOnce(() => Buffer.from(JSON.stringify(userInfo)))
+        vi.spyOn(Buffer, "from").mockImplementationOnce(() => Buffer.from(JSON.stringify(userInfo)))
 
         await handler(req, res)
 
@@ -89,7 +94,7 @@ describe("UserInfo API handler", () => {
             },
         })
 
-        jest.spyOn(Buffer, "from").mockImplementationOnce(() => Buffer.from(JSON.stringify(userInfo)))
+        vi.spyOn(Buffer, "from").mockImplementationOnce(() => Buffer.from(JSON.stringify(userInfo)))
 
         await handler(req, res)
 
