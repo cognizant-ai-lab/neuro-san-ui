@@ -16,23 +16,27 @@ limitations under the License.
 
 import {act, render} from "@testing-library/react"
 import {Position} from "@xyflow/react"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {PlasmaEdge} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
 
 describe("PlasmaEdge", () => {
+    withStrictMocks()
     it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
-        const errSpy = jest.spyOn(console, "error").mockImplementation()
+        const errSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         // Mock getContext to provide minimal API used by the component
         const fakeCtx: Partial<CanvasRenderingContext2D> = {
-            setTransform: jest.fn(),
-            scale: jest.fn(),
-            clearRect: jest.fn(),
-            beginPath: jest.fn(),
-            arc: jest.fn(),
-            fill: jest.fn(),
-            save: jest.fn(),
-            restore: jest.fn(),
+            setTransform: vi.fn(),
+            scale: vi.fn(),
+            clearRect: vi.fn(),
+            beginPath: vi.fn(),
+            arc: vi.fn(),
+            fill: vi.fn(),
+            save: vi.fn(),
+            restore: vi.fn(),
         }
 
         // Keep originals so we can restore later (use explicit narrow types instead of `any`)
