@@ -21,7 +21,6 @@ import {cleanup} from "@testing-library/react"
 // eslint-disable-next-line no-shadow
 import {ReadableStream} from "node:stream/web"
 import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
-// eslint-disable-next-line no-shadow
 import {afterEach, vi} from "vitest"
 import failOnConsole from "vitest-fail-on-console"
 

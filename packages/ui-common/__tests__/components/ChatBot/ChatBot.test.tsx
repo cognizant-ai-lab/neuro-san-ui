@@ -1,7 +1,6 @@
 import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {render, screen, waitFor} from "@testing-library/react"
 import userEvent, {UserEvent} from "@testing-library/user-event"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

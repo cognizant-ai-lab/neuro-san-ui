@@ -2,7 +2,6 @@
 import "fake-indexeddb/auto"
 
 import {AIMessage, HumanMessage, SystemMessage} from "@langchain/core/messages"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

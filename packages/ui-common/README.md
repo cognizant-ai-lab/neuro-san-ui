@@ -72,7 +72,7 @@ via the chat interface, and visualize the agent network flow.
 Among the technologies and libraries used in this package are:
 
 - ESLint and Prettier (for code quality)
-- Jest and React Testing Library (for testing)
+- Vitest and React Testing Library (for testing)
 - MUI
 - next-auth (for authentication)
 - React

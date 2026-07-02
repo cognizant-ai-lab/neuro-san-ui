@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {createMocks} from "node-mocks-http"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"

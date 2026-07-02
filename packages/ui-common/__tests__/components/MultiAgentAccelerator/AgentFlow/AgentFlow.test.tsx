@@ -19,7 +19,6 @@ import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
