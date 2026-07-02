@@ -473,8 +473,10 @@ describe("parseNetworkFileContent", () => {
     ])("should parse $name", ({content, parsed}) => {
         const result = parseNetworkFileContent(content)
         expect(result.success).toBe(true)
-        // Use type assertion — jest assertions don't narrow TypeScript types
-        expect((result as {success: true; data: unknown}).data).toEqual(parsed)
+        if (result.success === false) {
+            throw new Error(`Expected parse success, got error: ${result.error}`)
+        }
+        expect(result.data).toEqual(parsed)
     })
 
     it.each([
