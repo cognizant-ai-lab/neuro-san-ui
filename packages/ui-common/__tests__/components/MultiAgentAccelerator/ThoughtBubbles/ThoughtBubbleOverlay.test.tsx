@@ -392,7 +392,7 @@ describe("ThoughtBubbleOverlay", () => {
         vi.useFakeTimers()
         // Re-initialise userEvent with advanceTimers so pointer-event delays
         // stay in sync with fake timers.
-        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
+        const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
         const onBubbleHoverChange = vi.fn()
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
 
@@ -408,11 +408,11 @@ describe("ThoughtBubbleOverlay", () => {
         const bubble = screen.getByText("Hover test message")
 
         // Hover over the bubble
-        await localUser.hover(bubble)
+        await vi.waitFor(() => localUser.hover(bubble))
         expect(onBubbleHoverChange).toHaveBeenCalledWith("edge1")
 
         // Unhover - advance past the 200ms debounce deterministically
-        await localUser.unhover(bubble)
+        await vi.waitFor(() => localUser.unhover(bubble))
         await act(async () => {
             vi.advanceTimersByTime(250)
         })
@@ -437,9 +437,10 @@ describe("ThoughtBubbleOverlay", () => {
     it("Should handle onBubbleHoverChange not provided", async () => {
         // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
         vi.useFakeTimers()
+
         // Must be created after vi.useFakeTimers() with advanceTimers so userEvent's
         // own internal pointer-event delays are driven by fake time, not real setTimeout.
-        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
+        const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         render(
@@ -454,8 +455,8 @@ describe("ThoughtBubbleOverlay", () => {
         const bubble = screen.getByText("Test message")
 
         // Hover should not crash even without callback
-        await localUser.hover(bubble)
-        await localUser.unhover(bubble)
+        await vi.waitFor(() => localUser.hover(bubble))
+        await vi.waitFor(() => localUser.unhover(bubble))
 
         // Advance past the debounce so the timeout callback fires and covers
         // the branch where onBubbleHoverChange is absent.
@@ -468,10 +469,11 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle edges changing while a bubble is hovered", async () => {
         // Fake timers prevent the 200ms debounce from leaking into subsequent tests.
+
         vi.useFakeTimers()
         // Must be created after vi.useFakeTimers() with advanceTimers so userEvent's
         // own internal pointer-event delays are driven by fake time, not real setTimeout.
-        const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime.bind(jest)})
+        const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Original message")]
         const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Updated message")]
 
@@ -484,7 +486,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         const bubble = screen.getByText("Original message")
-        await localUser.hover(bubble)
+        await vi.waitFor(() => localUser.hover(bubble))
 
         // Change edges while hovering
         rerender(
