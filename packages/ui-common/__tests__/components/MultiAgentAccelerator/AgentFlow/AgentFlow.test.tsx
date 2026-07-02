@@ -21,7 +21,7 @@ import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/r
 import {FC, useEffect} from "react"
 import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {

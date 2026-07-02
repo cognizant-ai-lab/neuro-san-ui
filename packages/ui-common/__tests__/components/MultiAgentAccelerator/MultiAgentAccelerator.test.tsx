@@ -32,7 +32,7 @@ import {
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"

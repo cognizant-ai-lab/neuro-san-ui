@@ -17,8 +17,8 @@ limitations under the License.
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
-import {mockFetch} from "../../../../../../__tests__/common/vitest/TestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,

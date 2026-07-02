@@ -4,7 +4,7 @@ import {NextApiRequest, NextApiResponse} from "next"
 import {createMocks} from "node-mocks-http"
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import agentIconSuggestionsHandler from "../../../../pages/api/agentIconSuggestions"
 import brandingHandler from "../../../../pages/api/branding"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"

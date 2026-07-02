@@ -16,8 +16,8 @@ limitations under the License.
 
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
-import {mockFetch} from "../../../../../../__tests__/common/vitest/TestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../../../controller/agent/IconSuggestions"
 import {AgentInfo, ConnectivityResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useIconSuggestionsStore} from "../../../../state/IconSuggestions"

@@ -3,7 +3,7 @@ import "fake-indexeddb/auto"
 
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {DB_NAME, indexedDBStorage} from "../../../state/IndexedDBStorage"
 
 // Open the DB with a higher version number to trigger the onupgradeneeded event

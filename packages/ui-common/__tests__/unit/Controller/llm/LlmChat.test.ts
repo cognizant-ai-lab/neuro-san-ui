@@ -17,7 +17,7 @@ limitations under the License.
 import httpStatus from "http-status"
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 
 const mockFetch = (mockChunks: Uint8Array<ArrayBuffer>[]) => {

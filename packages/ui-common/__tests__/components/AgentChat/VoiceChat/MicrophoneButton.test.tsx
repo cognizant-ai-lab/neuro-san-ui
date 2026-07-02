@@ -19,8 +19,8 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ReactNode} from "react"
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {MicrophoneButton, MicrophoneButtonProps} from "../../../../components/AgentChat/VoiceChat/MicrophoneButton"
 import {
     checkSpeechSupport,

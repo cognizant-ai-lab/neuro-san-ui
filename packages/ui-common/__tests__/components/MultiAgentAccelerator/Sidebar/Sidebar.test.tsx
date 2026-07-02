@@ -38,7 +38,7 @@ import {
     TEST_DEEP_AGENT,
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,

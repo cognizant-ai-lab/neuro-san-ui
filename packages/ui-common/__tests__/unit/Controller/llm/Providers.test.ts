@@ -16,8 +16,8 @@ limitations under the License.
 
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
-import {mockFetch} from "../../../../../../__tests__/common/vitest/TestUtils"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../../../controller/llm/Providers"
 
 describe("Providers controller", () => {
