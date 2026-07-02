@@ -13,6 +13,7 @@ export const TESTS_MIGRATED_TO_VITEST = [
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentConversations.test.ts",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentCounts.test.ts",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentFlow/AgentFlow.test.tsx",
+    "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentFlow/AgentNode.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/AgentNodePopup.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/ImportNetworkModal.test.tsx",
     "packages/ui-common/__tests__/components/MultiAgentAccelerator/MultiAgentAccelerator.test.tsx",
