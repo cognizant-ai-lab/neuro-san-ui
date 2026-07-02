@@ -16,15 +16,17 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {ConfirmationModal} from "../../../components/Common/ConfirmationModal"
 
 describe("ConfirmationModal", () => {
     withStrictMocks()
 
-    const handleCancelMock = jest.fn()
-    const handleConfirmMock = jest.fn()
+    const handleCancelMock = vi.fn()
+    const handleConfirmMock = vi.fn()
     const id = "test-confirmation-modal"
 
     const defaultConfirmationModalComponent = (

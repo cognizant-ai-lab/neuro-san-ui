@@ -21,8 +21,10 @@ limitations under the License.
 import {createTheme, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {Navbar} from "../../../components/Common/Navbar"
 import {getContactUsConfirmationText} from "../../../const"
 import {useSettingsStore} from "../../../state/Settings"
@@ -52,7 +54,7 @@ describe("Navbar", () => {
                         image: "",
                     }}
                     authenticationType=""
-                    signOut={jest.fn()}
+                    signOut={vi.fn()}
                     logoServiceToken={MOCK_LOGO_SERVICE_TOKEN}
                     supportEmailAddress={MOCK_EMAIL_ADDRESS}
                 />
@@ -60,8 +62,6 @@ describe("Navbar", () => {
         )
 
     beforeEach(() => {
-        jest.spyOn(BrowserNavigation, "navigateToUrl")
-        ;(navigateToUrl as jest.Mock).mockImplementation()
         user = userEvent.setup()
 
         // Reset settings to default before each test to avoid state leakage between tests
@@ -101,6 +101,8 @@ describe("Navbar", () => {
     })
 
     it("should redirect to email client when confirmation is clicked", async () => {
+        vi.spyOn(BrowserNavigation, "navigateToUrl")
+
         renderNavbar()
 
         const helpToggle = await screen.findByText("Help")
