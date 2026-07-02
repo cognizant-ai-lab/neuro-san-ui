@@ -16,16 +16,18 @@ limitations under the License.
 
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
 
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
-    const onClose = jest.fn()
-    const onSave = jest.fn()
+    const onClose = vi.fn()
+    const onSave = vi.fn()
 
     render(
         <AgentNodePopup
@@ -136,8 +138,8 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={jest.fn()}
-                onSave={jest.fn()}
+                onClose={vi.fn()}
+                onSave={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
@@ -156,8 +158,8 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={jest.fn()}
-                    onSave={jest.fn()}
+                    onClose={vi.fn()}
+                    onSave={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -168,8 +170,8 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={jest.fn()}
-                    onSave={jest.fn()}
+                    onClose={vi.fn()}
+                    onSave={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -189,8 +191,8 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={jest.fn()}
-                onSave={jest.fn()}
+                onClose={vi.fn()}
+                onSave={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
@@ -208,8 +210,8 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={jest.fn()}
-                    onSave={jest.fn()}
+                    onClose={vi.fn()}
+                    onSave={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -229,8 +231,8 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={jest.fn()}
-                onSave={jest.fn()}
+                onClose={vi.fn()}
+                onSave={vi.fn()}
                 initialInstructions=""
             />
         )
@@ -245,8 +247,8 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={jest.fn()}
-                    onSave={jest.fn()}
+                    onClose={vi.fn()}
+                    onSave={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )

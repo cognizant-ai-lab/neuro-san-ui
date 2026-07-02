@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {
     AgentConversation,
     createConversation,
@@ -23,7 +26,7 @@ import {
 } from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 
-jest.mock("../../../components/Common/notification")
+vi.mock("../../../components/Common/notification")
 
 describe("agentConversations", () => {
     withStrictMocks()
