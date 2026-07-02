@@ -1,7 +1,10 @@
 // Include mock for IndexedDB
 import "fake-indexeddb/auto"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {DB_NAME, indexedDBStorage} from "../../../state/IndexedDBStorage"
 
 // Open the DB with a higher version number to trigger the onupgradeneeded event
@@ -22,6 +25,7 @@ const openDBForUpgrade = async () => {
 
 describe("idbStorage", () => {
     withStrictMocks()
+
     it("Sets and gets items in the store", async () => {
         const testItem = {foo: "bar"}
         const testKey = "testKey"
@@ -85,7 +89,7 @@ describe("idbStorage", () => {
             },
         } as unknown as IDBObjectStore
         const fakeTx = {objectStore: () => fakeStore, oncomplete: null} as unknown as IDBTransaction
-        const fakeDB = {transaction: () => fakeTx, close: jest.fn()} as unknown as IDBDatabase
+        const fakeDB = {transaction: () => fakeTx, close: vi.fn()} as unknown as IDBDatabase
         const fakeRequest = {result: fakeDB} as IDBOpenDBRequest
         globalThis.indexedDB = {
             open: () => {
