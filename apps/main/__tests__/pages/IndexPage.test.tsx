@@ -17,7 +17,6 @@ limitations under the License.
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {NextRouter, useRouter} from "next/router"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"

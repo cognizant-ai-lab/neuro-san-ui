@@ -18,7 +18,6 @@ import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 import {ComponentProps} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {

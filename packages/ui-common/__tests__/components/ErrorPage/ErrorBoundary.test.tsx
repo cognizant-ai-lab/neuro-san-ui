@@ -1,5 +1,4 @@
 import {render, screen} from "@testing-library/react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"

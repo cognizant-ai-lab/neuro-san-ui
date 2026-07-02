@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-// eslint-disable-next-line no-shadow
 import {afterEach, describe, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"

@@ -16,7 +16,6 @@ limitations under the License.
 
 import type {RefObject} from "react"
 import {Dispatch, SetStateAction} from "react"
-// eslint-disable-next-line no-shadow
 import {afterAll, beforeAll, beforeEach, describe, expect, it, Mock, MockedFunction, vi} from "vitest"
 
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
