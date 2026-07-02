@@ -16,7 +16,7 @@ limitations under the License.
 
 import type {RefObject} from "react"
 import {Dispatch, SetStateAction} from "react"
-import {afterAll, beforeAll, beforeEach, describe, expect, it, Mock, MockedFunction, vi} from "vitest"
+import {Mock, MockedFunction} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"

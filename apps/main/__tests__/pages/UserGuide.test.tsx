@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import {afterEach, describe, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {UserGuide} from "../../pages/UserGuide"

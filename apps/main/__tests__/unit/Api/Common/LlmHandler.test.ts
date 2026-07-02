@@ -18,7 +18,6 @@ import {ChatPromptTemplate} from "@langchain/core/prompts"
 import {ChatOpenAI} from "@langchain/openai"
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
-import {describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"

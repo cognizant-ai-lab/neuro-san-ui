@@ -19,7 +19,6 @@ import {createTheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
-import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
     MOCK_CONNECTIVITY_INFO,

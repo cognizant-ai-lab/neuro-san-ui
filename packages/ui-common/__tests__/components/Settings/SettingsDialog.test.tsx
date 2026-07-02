@@ -1,7 +1,6 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"

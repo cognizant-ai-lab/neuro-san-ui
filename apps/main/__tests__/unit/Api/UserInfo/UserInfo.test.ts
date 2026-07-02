@@ -16,7 +16,6 @@ limitations under the License.
 
 import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
-import {describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import handler from "../../../../pages/api/userInfo"

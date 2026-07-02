@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {describe, expect, it, vi} from "vitest"
-
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../../../controller/llm/Providers"

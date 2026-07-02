@@ -1,6 +1,5 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, userEvent} from "@testing-library/user-event"
-import {describe, expect, it, vi} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {useCheckmarkFade} from "../../../components/Settings/FadingCheckmark"

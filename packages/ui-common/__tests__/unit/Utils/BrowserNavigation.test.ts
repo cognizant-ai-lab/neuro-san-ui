@@ -1,5 +1,3 @@
-import {describe, expect, it, vi} from "vitest"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import * as Nav from "../../../utils/BrowserNavigation"
 
