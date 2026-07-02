@@ -15,20 +15,21 @@
 #  limitations under the License.
 
 #
-# This script updates the coverage thresholds in jest.config.ts based on the latest test run results.
-# It runs the tests with coverage, extracts the counts from the summary report, then updates jest.config.ts with the
+# This script updates the coverage thresholds in vitest.config.ts based on the latest test run results.
+# It runs the tests with coverage, extracts the counts from the summary report, then updates vitest.config.ts with the
 # new uncovered counts. Note that it adjusts the counts up or down depending on whether coverage improved or worsened.
 #
-# This scripts makes some opinionated assumptions: that jest.config.ts is the config file for jest, that there is a
-# coverageThreshold block in the config file with a global section, and that tools like sed and jq are available.
-# It also makes no attempt to "tread lightly" and will happily overwrite the current coverage values in jest.config.ts.
-# After it runs, it is up to the developer what he or she wants to do with the updated jest.config.ts file: add it
+# This scripts makes some opinionated assumptions: that vitest.config.ts is the config file for vitest, that there is a
+# coverage.thresholds block in the config file, and that tools like sed and jq are available.
+# It also makes no attempt to "tread lightly" and will happily overwrite the current coverage values in vitest.config.ts.
+# After it runs, it is up to the developer what he or she wants to do with the updated vitest.config.ts file: add it
 # their PR, roll it back, etc.
 
 # See https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html for what these do
 set -o errtrace
 set -o nounset
 set -o pipefail
+set -o errexit
 
 # Handle differences in sed -i syntax between GNU and BSD (macOS) versions of sed.
 if sed --version >/dev/null 2>&1; then
@@ -38,9 +39,9 @@ else
 fi
 
 main() {
-    # If jest.config.ts not present, exit with error
-    if [ ! -f jest.config.ts ]; then
-        echo "Error: jest.config.ts not found. Please run this script from the root of the repository." >&2
+    # If vitest.config.ts not present, exit with error
+    if [ ! -f vitest.config.ts ]; then
+        echo "Error: vitest.config.ts not found. Please run this script from the root of the repository." >&2
         exit 1
     fi
 
@@ -94,9 +95,11 @@ main() {
     new_coverage_values="${output_dir}/new_coverage_values.txt"
 
     # Run the tests with coverage
-    if ! jest --config ./jest_quiet.config.ts --collectCoverage --coverageReporters=json-summary \
-        --coverageThreshold '{}' --coverageDirectory="${output_dir}" ; then
-        # If jest failed, don't update
+    if ! yarn vitest run --coverage \
+             --coverage.reporter=json-summary \
+             --coverage.thresholds='{}' \
+             --coverage.reportsDirectory="${output_dir}" ; then
+        # If vitest failed, don't update
         echo "Tests failed. Coverage not updated." >&2
         exit 1
     fi
@@ -107,18 +110,16 @@ main() {
         exit 1
     fi
 
-    # Use jq to extract the uncovered counts and format them as a new global block for jest.config.ts.
+    # Use jq to extract the uncovered counts and format them as a new thresholds block for vitest.config.ts.
     jq -r '
-    "        global: {",
-    "            statements: -\(.total.statements.total - .total.statements.covered),",
-    "            branches: -\(.total.branches.total - .total.branches.covered),",
-    "            functions: -\(.total.functions.total - .total.functions.covered),",
-    "            lines: -\(.total.lines.total - .total.lines.covered),",
-    "        },"
+    "                statements: -\(.total.statements.total - .total.statements.covered),",
+    "                branches: -\(.total.branches.total - .total.branches.covered),",
+    "                functions: -\(.total.functions.total - .total.functions.covered),",
+    "                lines: -\(.total.lines.total - .total.lines.covered),"
   ' "${coverage_summary}" >"${new_coverage_values}"
 
-    # Regex for locating the global block in jest.config.ts.
-    global_block_range='/^[[:space:]]*global:[[:space:]]*{/,/^[[:space:]]*},[[:space:]]*$/'
+    # Regex for locating the thresholds block in vitest.config.ts.
+    thresholds_block_range='/^[[:space:]]*thresholds:[[:space:]]*{/,/^[[:space:]]*},[[:space:]]*$/'
 
     # Extract old and new uncovered counts for each metric.
     metrics=(statements branches functions lines)
@@ -130,9 +131,9 @@ main() {
         sed -nE "s/^[[:space:]]*${metric}:[[:space:]]*(-?[0-9]+),[[:space:]]*$/\1/p" "${file}" | head -n1
     }
 
-    # Capture the existing global block into a temp file for parsing and comparison.
+    # Capture the existing thresholds block into a temp file for parsing and comparison.
     old_coverage_values="${output_dir}/old_coverage_values.txt"
-    sed -n "${global_block_range}p" jest.config.ts > "${old_coverage_values}"
+    sed -n "${thresholds_block_range}p" vitest.config.ts > "${old_coverage_values}"
 
     worsened_counts=0
     improved_counts=0
@@ -165,21 +166,23 @@ main() {
     # Something changed. Clarify how.
     msg=""
     if [ "${worsened_counts}" -gt 0 ] && [ "${improved_counts}" -gt 0 ]; then
-        msg="😐 Mixed coverage changes (some improved, some worsened). Updated jest.config.ts."
+        msg="😐 Mixed coverage changes (some improved, some worsened). Updated vitest.config.ts."
     elif [ "${worsened_counts}" -gt 0 ] && [ "${improved_counts}" -eq 0 ]; then
-        msg="😢 Coverage worsened across all changed metrics. Updated jest.config.ts"
+        msg="😢 Coverage worsened across all changed metrics. Updated vitest.config.ts"
     elif [ "${improved_counts}" -gt 0 ] && [ "${worsened_counts}" -eq 0 ]; then
-        msg="🎉 Coverage improved across all changed metrics. Updated jest.config.ts."
+        msg="🎉 Coverage improved across all changed metrics. Updated vitest.config.ts."
     fi
 
-    # Update coverage numbers in jest.config.ts.
-    if sed "${sed_inplace[@]}" "${global_block_range}{
-    /^[[:space:]]*global:[[:space:]]*{/r ${new_coverage_values}
-    d
-    }" jest.config.ts; then
+    # Update coverage numbers in vitest.config.ts.
+    if sed "${sed_inplace[@]}" "${thresholds_block_range}{
+        /^[[:space:]]*thresholds:[[:space:]]*{/p
+        /^[[:space:]]*thresholds:[[:space:]]*{/r ${new_coverage_values}
+        /^[[:space:]]*},[[:space:]]*$/p
+        d
+        }" vitest.config.ts; then
         echo "$msg"
     else
-        echo "Error: Failed to update coverage in jest.config.ts" >&2
+        echo "Error: Failed to update coverage in vitest.config.ts" >&2
         exit 1
     fi
 }

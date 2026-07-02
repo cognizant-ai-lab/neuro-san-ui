@@ -19,7 +19,6 @@ import {createTheme} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
@@ -27,8 +26,8 @@ import {
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MUSIC_NERD,
 } from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {USER_AGENTS} from "../../../../../../__tests__/common/UserAgentTestUtils"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {
     ChatCommon,
     ChatCommonHandle,

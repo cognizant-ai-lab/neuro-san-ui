@@ -18,7 +18,6 @@ import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 import {ComponentProps} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
@@ -39,7 +38,7 @@ import {
     TEST_DEEP_AGENT,
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,

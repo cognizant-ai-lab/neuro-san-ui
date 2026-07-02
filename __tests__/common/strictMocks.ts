@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import "fake-indexeddb/auto"
-// eslint-disable-next-line no-shadow
 import {beforeEach, vi} from "vitest"
 
 /**

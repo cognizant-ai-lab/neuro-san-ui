@@ -19,7 +19,6 @@ import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
@@ -33,7 +32,7 @@ import {
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
 import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"

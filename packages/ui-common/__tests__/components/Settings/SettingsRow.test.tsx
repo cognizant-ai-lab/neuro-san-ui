@@ -1,9 +1,8 @@
 import {render, screen} from "@testing-library/react"
 import {UserEvent, userEvent} from "@testing-library/user-event"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {useCheckmarkFade} from "../../../components/Settings/FadingCheckmark"
 import {SettingsRow} from "../../../components/Settings/SettingsRow"
 

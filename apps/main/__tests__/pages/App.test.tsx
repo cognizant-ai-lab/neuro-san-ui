@@ -19,11 +19,10 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NextRouter, Router, useRouter} from "next/router"
 import {ReactNode} from "react"
-// eslint-disable-next-line no-shadow
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
-import {mockFetch} from "../../../../__tests__/common/vitest/TestUtils"
+import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"

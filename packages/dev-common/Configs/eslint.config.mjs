@@ -5,8 +5,6 @@ import next from "@next/eslint-plugin-next"
 import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import {importX} from "eslint-plugin-import-x"
-import eslintJest from "eslint-plugin-jest"
-import jestDom from "eslint-plugin-jest-dom-ya"
 import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
 import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
@@ -15,19 +13,9 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
 
-import {TESTS_MIGRATED_TO_VITEST} from "../../../vitest_migration.js"
-
 /** @type {import("eslint").Linter.Config[]} */
 export default defineConfig([
-    globalIgnores([
-        "**/*.d.mts",
-        "**/*.d.ts",
-        "**/.next",
-        "**/babel.jest.config.cjs",
-        "**/coverage*/",
-        "**/dist",
-        "**/generated",
-    ]),
+    globalIgnores(["**/*.d.mts", "**/*.d.ts", "**/.next", "**/coverage/", "**/dist", "**/generated"]),
 
     // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
     // "rules" section below.
@@ -44,7 +32,6 @@ export default defineConfig([
     importX.flatConfigs.recommended,
     importX.flatConfigs.typescript,
 
-    eslintJest.configs["flat/recommended"],
     reactHooks.configs.flat.recommended,
     eslintPluginReact.configs.flat["all"],
 
@@ -59,7 +46,6 @@ export default defineConfig([
         plugins: {
             "typescript-eslint": typescriptEslint.plugin,
             "@next/next": next,
-            jest: eslintJest,
             react: eslintPluginReact,
             "testing-library": testingLibrary,
         },
@@ -73,7 +59,6 @@ export default defineConfig([
             globals: {
                 ...globals.browser,
                 ...globals.node,
-                ...globals.jest,
                 React: "readonly",
                 JSX: "readonly",
                 // Speech Recognition API globals
@@ -164,7 +149,7 @@ export default defineConfig([
             // with other plugins we're using?
             // Also, the place for rules we want to explicitly enable.
             //
-            // How to see which rules are enabled: ./node_modules/.bin/eslint --print-config jest.config.ts
+            // How to see which rules are enabled: yarn lint-rules
             // In any case, more rules keep us safe, so explicitly enable them here.
             "@typescript-eslint/array-type": "error",
 
@@ -285,13 +270,7 @@ export default defineConfig([
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: [
-                        "**/__tests__/**",
-                        "jest*.*",
-                        "vitest*.*",
-                        "**/eslint.config.mjs",
-                        "**/knip.config.ts",
-                    ],
+                    devDependencies: ["**/__tests__/**", "vitest*.*", "**/eslint.config.mjs", "**/knip.config.ts"],
                 },
             ],
 
@@ -526,19 +505,11 @@ export default defineConfig([
 
         // Pull in RTL plugin
         ...testingLibrary.configs["flat/react"],
-        plugins: {
-            "jest-dom-ya": jestDom,
-        },
         rules: {
             // Pull in RTL rules
             ...testingLibrary.configs["flat/react"].rules,
 
-            ...jestDom.configs["flat/all"].rules,
-
-            // Indicate that the findBy calls are implicit assertions
-            "jest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
-
-            // Extra rules for Jest tests
+            // Extra rules for tests
             "testing-library/await-async-queries": "error",
             "testing-library/no-await-sync-queries": "error",
             "testing-library/no-dom-import": "error",
@@ -555,12 +526,6 @@ export default defineConfig([
             "react/display-name": "off",
             "react/no-array-index-key": "off",
             "react/no-multi-comp": "off",
-        },
-    },
-    {
-        files: TESTS_MIGRATED_TO_VITEST,
-        rules: {
-            "jest/expect-expect": "off",
         },
     },
     {

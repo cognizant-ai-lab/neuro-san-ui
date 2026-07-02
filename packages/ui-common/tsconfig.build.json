@@ -1,7 +1,7 @@
 {
     "extends": "../../tsconfig.json",
     "include": ["."],
-    "exclude": ["__tests__", "**jest**", "build_scripts", "coverage", "dist", "eslint*", "tsconfig.*"],
+    "exclude": ["__tests__", "**vitest**", "build_scripts", "coverage", "dist", "eslint*", "tsconfig.*"],
     "compilerOptions": {
         "declaration": true,
         "declarationDir": "./dist",

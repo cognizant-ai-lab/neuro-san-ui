@@ -16,10 +16,9 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {useSession} from "next-auth/react"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {MultiAgentAcceleratorProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {MultiAgentAcceleratorPage} from "../../pages/multiAgentAccelerator"

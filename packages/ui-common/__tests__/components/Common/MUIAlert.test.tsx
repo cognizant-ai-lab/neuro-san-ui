@@ -16,10 +16,9 @@ limitations under the License.
 
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {MUIAlert} from "../../../components/Common/MUIAlert"
 
 describe("MUIAlert Component", () => {

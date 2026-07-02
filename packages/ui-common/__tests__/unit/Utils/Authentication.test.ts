@@ -16,11 +16,10 @@ limitations under the License.
 
 import {renderHook} from "@testing-library/react"
 import {signOut} from "next-auth/react"
-// eslint-disable-next-line no-shadow
 import {afterEach, beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/vitest/TestUtils"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
 import {AD_TENANT_ID, smartSignOut, useAuthentication} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"

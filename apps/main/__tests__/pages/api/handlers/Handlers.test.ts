@@ -2,10 +2,9 @@ import {ChatPromptTemplate} from "@langchain/core/prompts"
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 import {createMocks} from "node-mocks-http"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import agentIconSuggestionsHandler from "../../../../pages/api/agentIconSuggestions"
 import brandingHandler from "../../../../pages/api/branding"
 import {handleLLMRequest} from "../../../../pages/api/Common/LlmHandler"

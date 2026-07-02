@@ -18,10 +18,9 @@ import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
-// eslint-disable-next-line no-shadow
 import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
 
 // Mock useSnackbar hook

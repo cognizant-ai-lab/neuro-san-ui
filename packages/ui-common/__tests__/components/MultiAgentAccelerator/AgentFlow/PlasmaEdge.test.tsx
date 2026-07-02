@@ -16,10 +16,9 @@ limitations under the License.
 
 import {act, render} from "@testing-library/react"
 import {Position} from "@xyflow/react"
-// eslint-disable-next-line no-shadow
 import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {PlasmaEdge} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
 
 describe("PlasmaEdge", () => {
