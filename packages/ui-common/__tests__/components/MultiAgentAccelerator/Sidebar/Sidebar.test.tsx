@@ -38,7 +38,6 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,
     SidebarProps,
@@ -48,6 +47,7 @@ import {testConnection, TestConnectionResult} from "../../../../controller/agent
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
+import {cleanUpAgentName} from "../../../../utils/AgentName"
 import {downloadFile} from "../../../../utils/File"
 
 const DEFAULT_EXAMPLE_URL = "https://default.example.com"

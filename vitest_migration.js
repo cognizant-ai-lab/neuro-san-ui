@@ -17,6 +17,7 @@ export const TESTS_MIGRATED_TO_VITEST = [
     "packages/ui-common/__tests__/unit/Controller/agent/Agent.test.ts",
     "packages/ui-common/__tests__/unit/Controller/agent/IconSuggestions.test.ts",
     "packages/ui-common/__tests__/unit/Theme/Theme.test.ts",
+    "packages/ui-common/__tests__/unit/Utils/AgentName.test.ts",
     "packages/ui-common/__tests__/unit/Utils/Authentication.test.ts",
     "packages/ui-common/__tests__/unit/Utils/BrowserNavigation.test.ts",
     "packages/ui-common/__tests__/unit/Utils/File.test.ts",

@@ -21,7 +21,6 @@ import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/r
 import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {
     AgentFlow,
@@ -35,6 +34,7 @@ import {sendChatQuery} from "../../../../controller/agent/Agent"
 import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
+import {cleanUpAgentName} from "../../../../utils/AgentName"
 
 jest.mock("../../../../controller/agent/Agent")
 

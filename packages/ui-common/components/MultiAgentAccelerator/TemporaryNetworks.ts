@@ -11,7 +11,8 @@ import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
 import {sendNetworkDesignerRequest} from "../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {chatMessageFromChunk, removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {removeTrailingUuid} from "../../utils/AgentName"
+import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
 
 //#region: Constants

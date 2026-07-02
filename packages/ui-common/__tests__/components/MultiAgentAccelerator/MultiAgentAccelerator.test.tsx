@@ -34,7 +34,6 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
-import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
@@ -67,6 +66,7 @@ import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
+import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const MOCK_USER = "mock-user"
 

@@ -2,12 +2,12 @@
  * Common test data for agent-related tests, for consistency.
  */
 
-import {cleanUpAgentName} from "../../packages/ui-common/components/AgentChat/Common/Utils"
 import {
     AgentNetworkDefinitionEntry,
     TEMPORARY_NETWORK_FOLDER,
 } from "../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {TemporaryNetwork} from "../../packages/ui-common/state/TemporaryNetworks"
+import {cleanUpAgentName} from "../../packages/ui-common/utils/AgentName"
 
 // Define some test agents and associated display names
 export const TEST_AGENT_MATH_GUY = "math-guy"

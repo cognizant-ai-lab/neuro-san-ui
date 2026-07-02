@@ -63,11 +63,12 @@ import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
+import {toDisplayName} from "../../utils/AgentName"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
 import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
-import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
@@ -141,7 +142,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [networkDescription, setNetworkDescription] = useState<string>("")
 
     const networkDisplayName = useMemo(
-        () => (useNativeNames ? selectedNetwork : cleanUpAgentName(removeTrailingUuid(selectedNetwork))),
+        () => toDisplayName(selectedNetwork, useNativeNames),
         [selectedNetwork, useNativeNames]
     )
 
@@ -920,7 +921,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <ConfirmationModal
                 id="delete-network-confirmation-modal"
                 content={
-                    `The network "${cleanUpAgentName(removeTrailingUuid(networkToBeDeleted))}" will be deleted. ` +
+                    `The network "${toDisplayName(networkToBeDeleted)}" will be deleted. ` +
                     "This action cannot be undone. Are you sure you want to proceed?"
                 }
                 handleCancel={() => {
@@ -950,6 +951,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             isOpen={importModalOpen}
             onClose={() => setImportModalOpen(false)}
             onImport={handleImportNetwork}
+            useNativeNames={useNativeNames}
         />
     )
 

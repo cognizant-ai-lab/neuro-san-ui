@@ -31,9 +31,14 @@ import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
+import {
+    filenameToNetworkName,
+    networkNamesConflict,
+    networkNameToApiName,
+    nextAvailableNetworkName,
+} from "../../../utils/AgentName"
 import {splitFilename} from "../../../utils/File"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {getFrontman} from "../AgentFlow/GraphStructure"
@@ -45,12 +50,6 @@ export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
-
-/** Trailing UUID on a filename stem. Separator is `[_-]` because filename sanitization
- * (`toSafeFilename`, neuro-san exports) flattens the UUID's hyphens to underscores.
- */
-const FILENAME_TRAILING_UUID_PATTERN =
-    /[_-][0-9a-fA-F]{8}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{4}[_-][0-9a-fA-F]{12}$/u
 
 //#endregion: Constants
 
@@ -64,6 +63,9 @@ export interface ImportNetworkModalProps {
     readonly isOpen: boolean
     readonly onClose: () => void
     readonly onImport?: (name: string, content: string) => void
+    // Honors the appearance preference: when true the name is pulled from the filename verbatim
+    // rather than beautified (see `filenameToNetworkName`).
+    readonly useNativeNames?: boolean
 }
 
 // High-level counts shown on the review step so the user can sanity-check the import.
@@ -202,38 +204,6 @@ export const importFileValidationMessage = (validation: ImportFileValidation, fi
     }
 }
 
-/** Convert a filename stem to a display-friendly network name.
- *
- * Strips a trailing UUID that neuro-san appends to exported filenames (e.g.
- * `my_network_683b0dfb_4816_464d_9c83_7e59ce6497d3.json` → `My Network`).
- */
-export const filenameToNetworkName = (filename: string): string => {
-    const {name: stem} = splitFilename(filename)
-    return startCase(stem.replace(FILENAME_TRAILING_UUID_PATTERN, ""))
-}
-
-// Normalize a network name for conflict comparison: underscores, hyphens, parentheses and whitespace
-// all collapse to single spaces, so the display form "My Network (2)" and its API form "My_Network_2"
-// compare equal.
-const normalizeForComparison = (rawName: string): string => {
-    const spaced = rawName.replaceAll(/[\s_()-]+/gu, " ").toLowerCase()
-    return spaced.trim()
-}
-
-/** Pick the first non-colliding name by appending an incrementing index (" 2", " 3", …).
- *
- * Starts at 2 and skips any index already in use, so importing "My Network" alongside an existing
- * "My Network" yields "My Network (2)" — or "My Network (3)" if "My Network (2)" is also taken.
- */
-export const nextAvailableNetworkName = (baseName: string, existingNames: readonly string[]): string => {
-    const taken = new Set(existingNames.map((existing) => normalizeForComparison(existing)))
-    let index = 2
-    while (taken.has(normalizeForComparison(`${baseName} (${index})`))) {
-        index += 1
-    }
-    return `${baseName} (${index})`
-}
-
 //#endregion: Helpers
 
 //#region: Styled Components
@@ -280,6 +250,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     isOpen,
     onClose,
     onImport,
+    useNativeNames = false,
 }) => {
     const [activeStep, setActiveStep] = useState<number>(0)
     // When the imported name conflicts, how the user wants to resolve it.
@@ -337,7 +308,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             }
             setParsedData(result.data)
             setParseState("success")
-            setNetworkName(filenameToNetworkName(file.name))
+            setNetworkName(filenameToNetworkName(file.name, useNativeNames))
             setConflictResolution("keep-both")
         })
         reader.addEventListener("error", () => {
@@ -350,16 +321,16 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         reader.readAsText(file)
 
         return () => reader.abort()
-    }, [file])
+    }, [file, useNativeNames])
 
     // True if `candidate` collides with any existing network name (normalized for comparison).
     const nameConflictsWith = (candidate: string): boolean =>
-        existingNetworkNames.some((existing) => normalizeForComparison(existing) === normalizeForComparison(candidate))
+        existingNetworkNames.some((existing) => networkNamesConflict(existing, candidate))
 
     // The name pulled from the filename — fixed for the selected file. Whether it collides with an
     // existing network is what drives the conflict-resolution UI (it stays visible while the user
     // types a replacement, so we can't key it off the editable name).
-    const importedName = file ? filenameToNetworkName(file.name) : ""
+    const importedName = file ? filenameToNetworkName(file.name, useNativeNames) : ""
     const importedNameHasConflict = nameConflictsWith(importedName)
     const trimmedName = networkName.trim()
     const newNameHasConflict = nameConflictsWith(trimmedName)
@@ -419,11 +390,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         // "Replace existing" overwrites the colliding network, so always send the original
         // imported name; "Keep both" sends whatever unique name the user typed.
         const nameToImport = importedNameHasConflict && conflictResolution === "replace" ? importedName : networkName
-        // The API echoes back agent_network_name as-is, and the UI splits on underscores to
-        // produce display names — so send underscores instead of spaces. Parentheses around an
-        // auto-appended index ("My Network (2)") are dropped so the API name reads "My_Network_2".
-        const apiName = nameToImport.trim().replaceAll(" ", "_").replaceAll(/[()]/gu, "")
-        onImport?.(apiName, JSON.stringify(parsedData))
+        onImport?.(networkNameToApiName(nameToImport), JSON.stringify(parsedData))
         onClose()
     }
 
@@ -531,7 +498,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Stepper>
     )
 
-    // Step 1: the drag-and-drop / browse file picker, plus the restriction callout beneath it.
+    // The drag-and-drop / browse file picker, plus the restriction callout beneath it.
     const renderSelectFileStep = () => (
         <>
             <DropZone
@@ -652,7 +619,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </>
     )
 
-    // Step 2: parsing/validation outcome — loading spinner, success summary, or error banner.
+    // The parsing/validation outcome — loading spinner, success summary, or error banner.
     const renderReviewParsing = () => (
         <>
             <CircularProgress
@@ -882,7 +849,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Box>
     )
 
-    // Step 3: name the network and resolve any collision with an existing one.
+    // Name the network and resolve any collision with an existing one.
     const renderConflictKeepBothField = () => (
         <Box>
             <Typography
@@ -1084,11 +1051,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
             footer={renderFooter()}
         >
             {renderStepper()}
-            {/* Step 1: Select file */}
             {activeStep === 0 && renderSelectFileStep()}
-            {/* Step 2: Review */}
             {activeStep === 1 && renderReviewStep()}
-            {/* Step 3: Confirm */}
             {activeStep === 2 && renderConfirmStep()}
         </MUIDialog>
     )

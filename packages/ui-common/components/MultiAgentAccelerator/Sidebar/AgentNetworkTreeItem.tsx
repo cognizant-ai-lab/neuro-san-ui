@@ -23,8 +23,8 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
+import {removeTrailingUuid} from "../../../utils/AgentName"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
-import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",

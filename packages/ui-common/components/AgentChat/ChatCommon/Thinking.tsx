@@ -5,8 +5,8 @@ import ReactMarkdown from "react-markdown"
 
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {toDisplayName} from "../../../utils/AgentName"
 import {AccordionLite} from "../../Common/AccordionLite"
-import {cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
 
 interface ThinkingProps {
     readonly id: string
@@ -28,7 +28,7 @@ const DEFAULT_AGENT_NAME = "agent"
 
 const formatTurn = (turn: ConversationTurn, useNativeNames: boolean) => {
     const agentName = turn.agentName ?? DEFAULT_AGENT_NAME
-    const displayName = useNativeNames ? agentName : cleanUpAgentName(removeTrailingUuid(agentName))
+    const displayName = toDisplayName(agentName, useNativeNames)
 
     const headerLine = `**${displayName}**: ${turn.text || ""}`
     const structureLine = turn.structure == null ? "" : `\n\`${JSON.stringify(turn.structure, null, 2)}\``
