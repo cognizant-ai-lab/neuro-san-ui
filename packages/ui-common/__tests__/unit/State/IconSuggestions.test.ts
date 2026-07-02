@@ -1,7 +1,10 @@
 // Include mock for IndexedDB
 import "fake-indexeddb/auto"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {MAX_SUGGESTIONS, useIconSuggestionsStore} from "../../../state/IconSuggestions"
 
 describe("IconSuggestions", () => {
