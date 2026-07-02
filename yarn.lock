@@ -1554,6 +1554,7 @@ __metadata:
     remark-toc: "npm:9.0.0"
     sharp: "npm:0.33.2"
     typescript: "catalog:default"
+    vitest: "catalog:default"
   languageName: unknown
   linkType: soft
 

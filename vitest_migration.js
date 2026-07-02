@@ -1,4 +1,10 @@
 export const TESTS_MIGRATED_TO_VITEST = [
+    "apps/main/__tests__/pages/App.test.tsx",
+    "apps/main/__tests__/pages/ErrorPage.test.tsx",
+    "apps/main/__tests__/pages/IndexPage.test.tsx",
+    "apps/main/__tests__/pages/IndexPage.test.tsx",
+    "apps/main/__tests__/pages/MultiAgentAcceleratorPage.test.tsx",
+    "apps/main/__tests__/pages/UserGuide.test.tsx",
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/ChatCommon.test.tsx",
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/ControlButtons.test.tsx",
     "packages/ui-common/__tests__/components/AgentChat/ChatCommon/Conversation.test.tsx",

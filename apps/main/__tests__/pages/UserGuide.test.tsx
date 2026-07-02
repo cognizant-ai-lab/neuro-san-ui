@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
+// eslint-disable-next-line no-shadow
+import {afterEach, describe, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
 import {UserGuide} from "../../pages/UserGuide"
 
 const originalFetch = window.fetch
@@ -30,7 +32,7 @@ describe("User Guide", () => {
 
     it("Renders the User Guide correctly", async () => {
         const userGuideContent = "Sample User Guide Content"
-        window.fetch = jest.fn().mockImplementation(() => {
+        window.fetch = vi.fn().mockImplementation(() => {
             return Promise.resolve({
                 ok: true,
                 text: async () => userGuideContent,
@@ -42,7 +44,7 @@ describe("User Guide", () => {
     })
 
     it("Displays an error message when failing to fetch the User Guide", async () => {
-        window.fetch = jest.fn().mockImplementation(() => {
+        window.fetch = vi.fn().mockImplementation(() => {
             return Promise.resolve({
                 ok: false,
             })
