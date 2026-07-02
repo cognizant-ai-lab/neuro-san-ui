@@ -22,6 +22,7 @@ import {createTheme, Theme} from "@mui/material/styles"
 // eslint-disable-next-line no-shadow
 import {describe, expect, it} from "vitest"
 
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {createAppTheme} from "../../../theme"
 
 // MUI types the override callbacks as broad unions (style object | callback), so narrow them to the
@@ -35,6 +36,8 @@ const getMuiButton = () => {
 }
 
 describe("createAppTheme MuiButton overrides", () => {
+    withStrictMocks()
+
     describe("root hover override", () => {
         const root = getMuiButton()?.styleOverrides?.root as unknown as RootStyleFn
 
