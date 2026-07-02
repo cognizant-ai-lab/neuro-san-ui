@@ -124,13 +124,13 @@ vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => (
     },
 }))
 
-vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async () => {
-    const originalModule = await vi.importActual<
-        typeof import("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")
-    >("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")
+vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async (importOriginal) => {
+    const originalModule =
+        await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")>()
 
     return {
         __esModule: true,
+        ...originalModule,
         Sidebar: (props: SidebarProps) => {
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
@@ -143,10 +143,9 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async () =>
     }
 })
 
-vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", async () => {
-    const originalModule = await vi.importActual<
-        typeof import("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
-    >("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
+vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", async (importOriginal) => {
+    const originalModule =
+        await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")>()
 
     return {
         __esModule: true,
