@@ -19,9 +19,9 @@ set -o pipefail
 # branches: -152,
 # functions: -27,
 # lines: -85,
-STATEMENTS=1476
-BRANCHES=1299
-FUNCTIONS=497
+STATEMENTS=1833
+BRANCHES=1450
+FUNCTIONS=596
 MAX_LINES=86
 
 rm -rf coverage-jest coverage-vitest coverage-combined-input coverage-combined
