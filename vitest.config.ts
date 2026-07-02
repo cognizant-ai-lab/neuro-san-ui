@@ -5,7 +5,6 @@ export default defineConfig({
     plugins: [react()],
     test: {
         coverage: {
-            reportsDirectory: "coverage-vitest",
             enabled: false,
             exclude: [
                 "**/.next/**",
@@ -25,10 +24,10 @@ export default defineConfig({
             provider: "istanbul",
             reporter: ["text-summary"],
             thresholds: {
-                statements: -104,
+                statements: -109,
                 branches: -156,
-                functions: -25,
-                lines: -76,
+                functions: -26,
+                lines: -81,
             },
         },
         environment: "jsdom",

@@ -23,7 +23,7 @@
         "lint-summary": "eslint --format summary",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
         "test": "vitest run",
-        "update-coverage:vitest": "./build_scripts/vitest/UpdateCoverage.sh"
+        "update-coverage": "./build_scripts/UpdateCoverage.sh"
     },
     "packageManager": "yarn@4.12.0",
     "devDependencies": {

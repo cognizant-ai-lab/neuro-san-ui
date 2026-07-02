@@ -204,7 +204,7 @@ parse_bool() {
 
 usage() {
     cat <<'EOF'
-Usage: build_scripts/vitest/UpdateCoverage.sh [--overwrite[=BOOL]]
+Usage: build_scripts/UpdateCoverage.sh [--overwrite[=BOOL]]
 
 Options:
   --overwrite            Overwrite ./coverage (same as --overwrite=true)
