@@ -7,13 +7,13 @@
 **/tsconfig.tsbuildinfo
 
 # Coverage directory used by tools like lcov
-**/coverage*/
+coverage/
 
 # generated files
 **/generated/
 
 # IntelliJ IDE
-.idea
+.idea/
 
 # VS Code
 *.code-workspace

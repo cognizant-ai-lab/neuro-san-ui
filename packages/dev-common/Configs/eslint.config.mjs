@@ -15,7 +15,7 @@ import typescriptEslint from "typescript-eslint"
 
 /** @type {import("eslint").Linter.Config[]} */
 export default defineConfig([
-    globalIgnores(["**/*.d.mts", "**/*.d.ts", "**/.next", "**/coverage*/", "**/dist", "**/generated"]),
+    globalIgnores(["**/*.d.mts", "**/*.d.ts", "**/.next", "**/coverage/", "**/dist", "**/generated"]),
 
     // This enables *all* base ESLint rules. We selectively disable those we are not yet ready for in the
     // "rules" section below.
