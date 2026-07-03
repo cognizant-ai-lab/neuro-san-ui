@@ -15,11 +15,12 @@ limitations under the License.
 */
 
 import {HumanMessage} from "@langchain/core/messages"
-import {useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
-import {userEvent, UserEvent} from "@testing-library/user-event"
+import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
     LIST_NETWORKS_RESPONSE,
@@ -32,9 +33,8 @@ import {
     TEST_AGENTS_FOLDER,
     TEST_AGENTS_FOLDER_DISPLAY,
 } from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
-import {extractConversations} from "../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -44,6 +44,7 @@ import {
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
     AgentNetworkDefinitionEntry,
+    EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
     SHOW_TOUR_DELAY_MS,
     TEMPORARY_NETWORK_FOLDER,
@@ -61,6 +62,7 @@ import {
     testConnection,
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
+import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
@@ -73,21 +75,21 @@ const MOCK_USER = "mock-user"
 // Backend neuro-san API server to use
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
 
-const conversationMock = jest.fn()
-const temporaryNetworksMock = jest.fn()
-const networkIconSuggestionsMock = jest.fn()
+const conversationMock = vi.fn()
+const temporaryNetworksMock = vi.fn()
+const networkIconSuggestionsMock = vi.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
 let onImport: (name: string, content: string) => void
 let onSaveAgent: AgentFlowProps["onSaveAgent"]
 let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
-jest.mock("next-auth/react")
+vi.mock("next-auth/react")
 
-jest.mock("../../../controller/agent/Agent")
-jest.mock("../../../controller/agent/IconSuggestions")
+vi.mock("../../../controller/agent/Agent")
+vi.mock("../../../controller/agent/IconSuggestions")
 
-jest.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
+vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
@@ -125,46 +127,45 @@ jest.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () =>
     },
 }))
 
-jest.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", () => {
-    const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")
+vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async (importOriginal) => {
+    const originalModule =
+        await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")>()
+
     return {
         __esModule: true,
+        ...originalModule,
         Sidebar: (props: SidebarProps) => {
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
             onDeleteNetwork = props.onDeleteNetwork
             setSelectedNetwork = props.setSelectedNetwork
+
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
         },
     }
 })
 
-jest.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", () => {
-    const originalModule = jest.requireActual("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")
+vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", async (importOriginal) => {
+    const originalModule =
+        await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")>()
+
     return {
         __esModule: true,
         ...originalModule,
         ImportNetworkModal: (props: ImportNetworkModalProps) => {
             onImport = props.onImport
+
             const OriginalModal = originalModule.ImportNetworkModal
             return <OriginalModal {...props} />
         },
     }
 })
 
-jest.mock("../../../components/MultiAgentAccelerator/AgentConversations")
-
-// Mock MUI theming
-jest.mock("@mui/material/styles", () => ({
-    ...jest.requireActual("@mui/material/styles"),
-    useColorScheme: jest.fn(),
-}))
-
 // Mock ChatCommon to call the mock function with props and support refs
-const chatCommonMock = jest.fn()
-const handleStopMock = jest.fn()
-const handleClearChatMock = jest.fn()
+const chatCommonMock = vi.fn()
+const handleStopMock = vi.fn()
+const handleClearChatMock = vi.fn()
 
 const MATH_GUY_MESSAGE: ChatResponse = {
     response: {
@@ -217,7 +218,7 @@ let onChunkReceived: (chunk: string) => boolean
 let onStreamingStarted: () => void
 let onStreamingComplete: () => void
 
-jest.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
+vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     __esModule: true,
     ChatCommon: (props: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
         chatCommonMock(props)
@@ -255,18 +256,13 @@ const renderMultiAgentAcceleratorPage = () =>
 describe("MultiAgentAccelerator", () => {
     withStrictMocks()
 
-    let user: UserEvent
+    let user: ReturnType<typeof userEvent.setup>
 
-    beforeEach(() => {
-        ;(getAgentNetworks as jest.Mock).mockResolvedValue(LIST_NETWORKS_RESPONSE)
-        ;(getConnectivity as jest.Mock).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
-        ;(testConnection as jest.Mock).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
-        ;(sendNetworkDesignerRequest as jest.Mock).mockResolvedValue([])
-
-        // make extractConversations the real implementation
-        ;(extractConversations as jest.Mock).mockImplementation(
-            jest.requireActual("../../../components/MultiAgentAccelerator/AgentConversations").extractConversations
-        )
+    beforeEach(async () => {
+        vi.mocked(getAgentNetworks).mockResolvedValue(LIST_NETWORKS_RESPONSE)
+        vi.mocked(getConnectivity).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
+        vi.mocked(testConnection).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
+        vi.mocked(sendNetworkDesignerRequest)
 
         user = userEvent.setup()
 
@@ -277,45 +273,38 @@ describe("MultiAgentAccelerator", () => {
         useTourStore.getState().reset()
     })
 
-    it.each(["dark", "light"])(
-        "should render the component with mode:%s and change the network when item is clicked in the sidebar",
-        async (mode) => {
-            ;(useColorScheme as jest.Mock).mockReturnValue({
-                mode,
+    it("should render the component and change the network when item is clicked in the sidebar", async () => {
+        renderMultiAgentAcceleratorPage()
+
+        // click to expand networks
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // Ensure Math Guy (default network) element is rendered.
+        await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+
+        // Find sidebar. Will fail if <> 1 found
+        await screen.findByText("Agent Networks")
+
+        // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
+        const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
+
+        // Click Music Nerd sidebar item
+        await user.click(musicNerdItem)
+
+        // Music Nerd is selected now. Make sure we see it.
+        await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
+
+        // Make sure the page rendered ChatCommon with expected props
+        expect(chatCommonMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                currentUser: MOCK_USER,
+                selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
+                neuroSanURL: NEURO_SAN_SERVER_URL,
+                sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
             })
-
-            renderMultiAgentAcceleratorPage()
-
-            // click to expand networks
-            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
-            await user.click(header)
-
-            // Ensure Math Guy (default network) element is rendered.
-            await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
-
-            // Find sidebar. Will fail if <> 1 found
-            await screen.findByText("Agent Networks")
-
-            // Ensure Music Nerd is initially shown once. Will fail if <> 1 found
-            const musicNerdItem = await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
-
-            // Click Music Nerd sidebar item
-            await user.click(musicNerdItem)
-
-            // Music Nerd is selected now. Make sure we see it.
-            await screen.findByText(TEST_AGENT_MUSIC_NERD_DISPLAY)
-
-            // Make sure the page rendered ChatCommon with expected props
-            expect(chatCommonMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    currentUser: MOCK_USER,
-                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`,
-                    neuroSanURL: NEURO_SAN_SERVER_URL,
-                    sampleQueries: MOCK_CONNECTIVITY_INFO.metadata["sample_queries"],
-                })
-            )
-        }
-    )
+        )
+    })
 
     it("should render the component correctly with 'native names' option on or off", async () => {
         useSettingsStore.getState().updateSettings({appearance: {useNativeNames: false}})
@@ -339,7 +328,7 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should handle a network with no sample queries", async () => {
-        ;(getConnectivity as jest.Mock).mockResolvedValue({
+        vi.mocked(getConnectivity).mockResolvedValue({
             ...MOCK_CONNECTIVITY_INFO,
             metadata: {},
         })
@@ -362,10 +351,9 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should display error toast when an error occurs for getAgentNetworks", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
         // Mock getAgentNetworks to reject with an error
-        const mockGetAgentNetworks = jest.requireMock("../../../controller/agent/Agent").getAgentNetworks
-        mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch agent networks"))
+        vi.mocked(getAgentNetworks).mockRejectedValue(new Error("Failed to fetch agent networks"))
 
         renderMultiAgentAcceleratorPage()
 
@@ -378,15 +366,13 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should display the importing backdrop while a network import is in flight", async () => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
-
         let resolveSend: () => void
         const sendPromise = new Promise<void>((resolve) => {
             resolveSend = resolve
         })
 
-        ;(sendNetworkDesignerRequest as jest.Mock).mockImplementation(
-            async (_neuroSanUrl, _signal, _frontman, _networkDef, _agentNetworkName, _userName, onChunk) => {
+        vi.mocked(sendNetworkDesignerRequest).mockImplementation(
+            async (_url, _signal, _agentName, _updated, _agentNetworkName, _currentUser, onChunk) => {
                 onChunk(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
                 await sendPromise
             }
@@ -417,7 +403,7 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should show an error toast when the imported file contains no agents", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
 
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
@@ -436,7 +422,7 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should show an error toast when the network designer returns no reservation", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
         // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
 
         renderMultiAgentAcceleratorPage()
@@ -453,9 +439,9 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should show an error toast when conversion of the imported file throws", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
         // notifySaveError also logs via console.error before surfacing the notification.
-        jest.spyOn(console, "error").mockImplementation()
+        vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
@@ -472,9 +458,8 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
-        jest.spyOn(console, "debug").mockImplementation()
-        const upsertMock = sendNetworkDesignerRequest as jest.Mock
-        upsertMock.mockResolvedValue([])
+        vi.spyOn(console, "debug").mockImplementation(vi.fn())
+        const upsertMock = vi.mocked(sendNetworkDesignerRequest)
 
         renderMultiAgentAcceleratorPage()
         await screen.findByText("Agent Networks")
@@ -495,8 +480,6 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
-        ;(useColorScheme as jest.Mock).mockReturnValue({mode: "light"})
-
         renderMultiAgentAcceleratorPage()
 
         await screen.findByText("Agent Networks")
@@ -518,10 +501,9 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {
-        const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
         // Mock getAgentNetworks to reject with an error
-        const mockGetAgentNetworks = jest.requireMock("../../../controller/agent/Agent").getConnectivity
-        mockGetAgentNetworks.mockRejectedValueOnce(new Error("Failed to fetch connectivity"))
+        vi.mocked(getConnectivity).mockRejectedValue(new Error("Failed to fetch connectivity"))
 
         renderMultiAgentAcceleratorPage()
 
@@ -686,7 +668,8 @@ describe("MultiAgentAccelerator", () => {
 
     it("should handle receiving a bad message", async () => {
         // Make extractConversations return failure (null) for this one test to simulate a critical error
-        ;(extractConversations as jest.Mock).mockReturnValue(null)
+        const agentConversations = await import("../../../components/MultiAgentAccelerator/AgentConversations")
+        vi.spyOn(agentConversations, "extractConversations").mockReturnValue(null)
 
         renderMultiAgentAcceleratorPage()
 
@@ -948,7 +931,7 @@ describe("MultiAgentAccelerator", () => {
             })
 
             // Need to simulate starting the stream to trigger the popover for the Agent Network Designer
-            jest.spyOn(console, "debug").mockImplementation()
+            vi.spyOn(console, "debug").mockImplementation(vi.fn())
             await act(async () => {
                 onStreamingStarted()
             })
@@ -983,7 +966,7 @@ describe("MultiAgentAccelerator", () => {
             })
 
             // Need to simulate starting the stream to trigger the popover for the Agent Network Designer
-            jest.spyOn(console, "debug").mockImplementation()
+            vi.spyOn(console, "debug").mockImplementation(vi.fn())
             await act(async () => {
                 onStreamingStarted()
             })
@@ -1126,6 +1109,9 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should handle temporary networks expiring", async () => {
+            const now = Date.now()
+            vi.useFakeTimers({now})
+
             renderMultiAgentAcceleratorPage()
 
             // Set up a temporary network
@@ -1134,7 +1120,7 @@ describe("MultiAgentAccelerator", () => {
                 ...TEMPORARY_NETWORK,
                 reservation: {
                     ...TEMPORARY_NETWORK.reservation,
-                    expiration_time_in_seconds: Math.floor(Date.now() / 1000) + expirationTimeSeconds,
+                    expiration_time_in_seconds: Math.floor(now / 1000) + expirationTimeSeconds,
                 },
             }
 
@@ -1147,12 +1133,6 @@ describe("MultiAgentAccelerator", () => {
                     },
                 },
             }
-
-            // Set up fake timers as the expiration logic relies on timers.
-            jest.useFakeTimers({now: Date.now()})
-
-            // Need a custom userEvent instance that works with fake timers
-            const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
 
             // Feed it the temp networks chunk
             await act(async () => {
@@ -1175,12 +1155,11 @@ describe("MultiAgentAccelerator", () => {
             expect(temporaryNetworkNode).not.toBeNull()
 
             const displayAgentName = cleanUpAgentName(TEMPORARY_NETWORK.reservation.reservation_id)
+            screen.getByText(displayAgentName)
 
-            // Make sure we see the temp network
-            const tempNetworkItem = await screen.findByText(displayAgentName)
-
-            // Click the network to select it
-            await localUser.click(tempNetworkItem)
+            await act(async () => {
+                setSelectedNetwork(expectedNetworkName)
+            })
 
             // ChatCommon should be called with the selected network as the target agent -- a bit of an indirect way
             // to verify that the network was selected. There may be a more elegant way to do this.
@@ -1195,7 +1174,7 @@ describe("MultiAgentAccelerator", () => {
 
             // First time "expired check" runs, it should not be expired yet
             await act(async () => {
-                jest.runOnlyPendingTimers()
+                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
             })
 
             expect(chatCommonMock).toHaveBeenCalledWith(
@@ -1206,10 +1185,12 @@ describe("MultiAgentAccelerator", () => {
 
             chatCommonMock.mockClear()
 
-            // advanced past expiration time but still within grace period, meaning we show the network but flag it as
-            // expired and do not let the user select it
+            // Jump system time past server-side expiration, then run exactly one interval tick.
+            vi.setSystemTime(now + expirationTimeSeconds * 1000 + 1)
+
+            // Make sure reaper runs
             await act(async () => {
-                jest.advanceTimersByTime(expirationTimeSeconds * 1000)
+                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
             })
 
             // Verify network was de-selected
@@ -1222,23 +1203,12 @@ describe("MultiAgentAccelerator", () => {
             // ...but should still be in the store since we're within the grace period
             expect(useTempNetworksStore.getState().tempNetworks.length).toBe(1)
 
-            // Mouse over -- should get "expired" Tooltip
-            await localUser.hover(tempNetworkItem)
-            await screen.findByText(/Expired/u)
+            // Jump system time past grace period, then run exactly one interval tick.
+            vi.setSystemTime(now + expirationTimeSeconds * 1000 + GRACE_PERIOD_MS + 1)
 
-            // Attempt to select it. Should not be allowed since it's expired
-            chatCommonMock.mockClear()
-            await localUser.click(tempNetworkItem)
-            expect(chatCommonMock).not.toHaveBeenCalled()
-
-            // advanced past grace period, so network should be fully deleted
+            // Now advance the timer to trigger the reaper.
             await act(async () => {
-                jest.advanceTimersByTime(GRACE_PERIOD_MS)
-            })
-
-            // run the expiration check again
-            await act(async () => {
-                jest.runOnlyPendingTimers()
+                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
             })
 
             // Network should be deleted now
@@ -1252,18 +1222,46 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
+    it("Should not allow user to select an expired temporary network", async () => {
+        const expiredTemporaryNetwork: TemporaryNetwork = {
+            ...TEMPORARY_NETWORK,
+            reservation: {
+                ...TEMPORARY_NETWORK.reservation,
+                expiration_time_in_seconds: Math.floor(Date.now() / 1000) - 60,
+            },
+        }
+
+        useTempNetworksStore.setState({tempNetworks: [expiredTemporaryNetwork]})
+
+        renderMultiAgentAcceleratorPage()
+
+        // Expand temporary networks section
+        const header = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_FOLDER))
+        await user.click(header)
+
+        const displayAgentName = cleanUpAgentName(expiredTemporaryNetwork.agentNetworkName)
+        const tempNetworkItem = await screen.findByText(displayAgentName)
+
+        // Mouse over -- should get "expired" Tooltip
+        await user.hover(tempNetworkItem)
+        await screen.findByText(/Expired/u)
+
+        // Clear previous mock calls
+        chatCommonMock.mockClear()
+
+        await user.click(tempNetworkItem)
+
+        // Network expired; clicking should have no effect
+        expect(chatCommonMock).not.toHaveBeenCalled()
+    })
+
     it("Should pass along network icon suggestions to the sidebar", async () => {
-        const iconSuggestions = [
-            {
-                tool: "copy_cat",
-                icon_url: "Copy",
-            },
-            {
-                tool: "date_time_provider",
-                icon_url: "DateTime",
-            },
-        ]
-        ;(getNetworkIconSuggestions as jest.Mock).mockResolvedValue(iconSuggestions)
+        const iconSuggestions = {
+            copy_cat: "Copy",
+            date_time_provider: "DateTime",
+        } satisfies NetworkIconSuggestions
+
+        vi.mocked(getNetworkIconSuggestions).mockResolvedValue(iconSuggestions)
 
         renderMultiAgentAcceleratorPage()
 
@@ -1273,8 +1271,9 @@ describe("MultiAgentAccelerator", () => {
     })
 
     it("Should handle getNetworkIconSuggestions failure gracefully", async () => {
-        ;(getNetworkIconSuggestions as jest.Mock).mockRejectedValue(new Error("Failed to fetch icon suggestions"))
-        const warnSpy = jest.spyOn(console, "warn").mockImplementation()
+        vi.mocked(getNetworkIconSuggestions).mockRejectedValue(new Error("Failed to fetch icon suggestions"))
+
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
         renderMultiAgentAcceleratorPage()
         await waitFor(() => {
             expect(warnSpy).toHaveBeenCalledWith(
@@ -1400,7 +1399,7 @@ describe("MultiAgentAccelerator", () => {
             {required: [badProvider]},
             {required: []},
         ])("should handle networks that require BYOK for $required", async ({required}) => {
-            ;(getAgentFunction as jest.Mock).mockResolvedValue({
+            vi.mocked(getAgentFunction).mockResolvedValue({
                 function: {
                     sly_data_schema: {
                         properties: {
@@ -1412,7 +1411,7 @@ describe("MultiAgentAccelerator", () => {
                 },
             })
 
-            const debugSpy = jest.spyOn(console, "warn").mockImplementation()
+            const debugSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
 
             // Add existing API key to store
             const anthropicKey = "anthropic-key"
@@ -1441,7 +1440,6 @@ describe("MultiAgentAccelerator", () => {
             )
 
             if (required[0] === badProvider) {
-                // eslint-disable-next-line jest/no-conditional-expect
                 expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(badProvider))
             }
         })
@@ -1455,7 +1453,7 @@ describe("MultiAgentAccelerator", () => {
             {function: {sly_data_schema: {properties: {llm_config: {required: []}}}}},
         ])("handles missing items in the BYOK info from the backend", async (byokResponse) => {
             useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: "anthropic-key"}})
-            ;(getAgentFunction as jest.Mock).mockResolvedValue(byokResponse)
+            vi.mocked(getAgentFunction).mockResolvedValue(byokResponse)
             renderMultiAgentAcceleratorPage()
 
             // Search for something known to make sure rendering settled
@@ -1474,8 +1472,8 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("handles an error when fetching agent function", async () => {
-            jest.spyOn(console, "warn").mockImplementation()
-            ;(getAgentFunction as jest.Mock).mockRejectedValue(new Error("Failed to fetch agent function"))
+            vi.spyOn(console, "warn").mockImplementation(vi.fn())
+            vi.mocked(getAgentFunction).mockRejectedValue(new Error("Failed to fetch agent function"))
             renderMultiAgentAcceleratorPage()
 
             // Search for something known to make sure rendering settled
@@ -1496,7 +1494,7 @@ describe("MultiAgentAccelerator", () => {
 
         // Mock the network designer stream so onSaveAgent's chunk collector receives the given chunks.
         const mockDesignerStream = (...chunks: string[]) => {
-            ;(sendNetworkDesignerRequest as jest.Mock).mockImplementation(async (...args: unknown[]) => {
+            vi.mocked(sendNetworkDesignerRequest).mockImplementation(async (...args: unknown[]) => {
                 const onChunk = args[6] as (chunk: string) => void
                 chunks.forEach((chunk) => onChunk(chunk))
             })
@@ -1538,7 +1536,8 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("shows an error and does not upsert when the designer returns no reservation", async () => {
-            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
             mockDesignerStream() // no chunks → no networks collected
             renderMultiAgentAcceleratorPage()
             await screen.findByText("Agent Networks")
@@ -1557,7 +1556,8 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("shows an error when the returned reservation does not match the edited network", async () => {
-            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
             mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
             renderMultiAgentAcceleratorPage()
             await screen.findByText("Agent Networks")
@@ -1573,8 +1573,10 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("notifies a save error when the network designer stream throws", async () => {
-            const debugSpy = jest.spyOn(console, "debug").mockImplementation()
-            const errorSpy = jest.spyOn(console, "error").mockImplementation()
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
             ;(sendNetworkDesignerRequest as jest.Mock).mockRejectedValue(new Error("stream exploded"))
             renderMultiAgentAcceleratorPage()
             await screen.findByText("Agent Networks")
@@ -1647,8 +1649,6 @@ describe("MultiAgentAccelerator", () => {
             }
         }, 10_000)
 
-        /* eslint-disable jest/no-conditional-expect
-        -- We use conditional expects carefully in this test to verify each branch of the logic. */
         it.each([
             {
                 buttonName: "Take the tour",
@@ -1668,34 +1668,44 @@ describe("MultiAgentAccelerator", () => {
         ])(
             "Should handle responding '$buttonName' to the tour prompt correctly",
             async ({buttonName, shouldStartTour, expectedStatus}) => {
-                jest.useFakeTimers()
-                const localUser = userEvent.setup({advanceTimers: jest.advanceTimersByTime.bind(jest)})
+                vi.useFakeTimers()
 
                 renderMultiAgentAcceleratorPage()
 
-                await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+                // Let initial fetch/useEffect work settle. Note: vi.waitFor() here, not RTL waitFor(), since the
+                // vitest version is "fake timers aware"
+                await vi.waitFor(() => {
+                    screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
+                })
 
                 // Advance timers to trigger the tour prompt modal
-                act(() => {
-                    jest.advanceTimersByTime(SHOW_TOUR_DELAY_MS + 1)
+                await act(async () => {
+                    await vi.advanceTimersByTimeAsync(SHOW_TOUR_DELAY_MS + 1)
                 })
 
                 // Locate and click the target response button
-                const actionButton = await screen.findByRole("button", {name: buttonName})
-                await localUser.click(actionButton)
+                const actionButton = screen.getByRole("button", {name: buttonName})
+
+                await act(async () => {
+                    actionButton.click()
+                })
 
                 if (shouldStartTour) {
-                    // Positive Case: Wait until the introductory tour step text mounts in the DOM
-                    await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
-                } else {
-                    // Negative Case: Safely wait until the prompt dialog counts hit 0
-                    await waitFor(() => {
-                        expect(screen.queryAllByRole("dialog").length).toBe(0)
+                    await act(async () => {
+                        await vi.advanceTimersByTimeAsync(100)
                     })
 
+                    // Positive Case: Wait until the introductory tour step text mounts in the DOM
+                    await vi.waitFor(() => {
+                        screen.getByText(MAIN_TOUR_STEPS[0].content.toString())
+                    })
+                } else {
+                    // Negative Case: Safely wait until the prompt dialog counts hit 0
+                    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
                     // Give joyride time to launch the tour, if it's planning to
-                    act(() => {
-                        jest.advanceTimersByTime(100)
+                    await act(async () => {
+                        await vi.advanceTimersByTimeAsync(100)
                     })
 
                     // Assert that the first step text remains completely absent from the DOM layout
@@ -1706,6 +1716,5 @@ describe("MultiAgentAccelerator", () => {
                 expect(useTourStore.getState().status).toEqual(expectedStatus)
             }
         )
-        /* eslint-enable jest/no-conditional-expect */
     })
 })

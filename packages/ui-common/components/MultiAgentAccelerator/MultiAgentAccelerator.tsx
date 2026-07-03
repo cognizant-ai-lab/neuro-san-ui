@@ -38,6 +38,7 @@ import {
     AGENT_NETWORK_HOCON,
     AGENT_NETWORK_NAME_KEY,
     AgentNetworkDefinitionEntry,
+    EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
     SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
@@ -77,9 +78,6 @@ export interface MultiAgentAcceleratorProps {
     readonly username: string
     readonly defaultNeuroSanUrl: string
 }
-
-// Check for expired networks every this many milliseconds
-const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000
 
 // Animation time for the left and right panels to slide in or out when launching the animation
 const GROW_ANIMATION_TIME_MS = 800

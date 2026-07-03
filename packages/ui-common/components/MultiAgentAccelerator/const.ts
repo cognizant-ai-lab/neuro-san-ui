@@ -73,3 +73,6 @@ export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
 
 // We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
 export const SHOW_TOUR_DELAY_MS = 5000
+
+// Check for expired networks every this many milliseconds
+export const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000

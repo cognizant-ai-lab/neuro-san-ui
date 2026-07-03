@@ -18,24 +18,30 @@ import {hexToRgb} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentNode, AgentNodeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
 import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../../state/Settings"
 import {PALETTES} from "../../../../Theme/Palettes"
 
-// Mock the Handle component since we don't want to invite reactflow (now @xyflow/react) to this party
-jest.mock("@xyflow/react", () => ({
-    ...jest.requireActual("@xyflow/react"),
-    Handle: (props: {type: unknown; id: unknown; style: CSSProperties}) => (
-        <div
-            data-testid={`handle-${props.type}-${props.id}`}
-            style={props.style}
-        />
-    ),
-}))
+// Mock the Handle component since we don't want to invite @xyflow/react to this party
+vi.mock("@xyflow/react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@xyflow/react")>()
+
+    return {
+        ...actual,
+        Handle: (props: {type: unknown; id: unknown; style: CSSProperties}) => (
+            <div
+                data-testid={`handle-${props.type}-${props.id}`}
+                style={props.style}
+            />
+        ),
+    }
+})
 
 const AGENT_NAME = "Test Agent"
 const AGENT_ID = "testNode"
@@ -93,7 +99,7 @@ describe("AgentNode", () => {
         expect(nodeDiv).toBeInTheDocument()
         const style = window.getComputedStyle(nodeDiv)
 
-        // Heatmap color should be applied based on agent count. No other agents so it should be the last color
+        // Heatmap color should be applied based on agent count. No other agents, so it should be the last color
         // of the default (blue) palette
         const bluePalette = PALETTES["blue"]
         const expectedColor = bluePalette[bluePalette.length - 1]
@@ -183,7 +189,7 @@ describe("AgentNode", () => {
     })
 
     it("renders a custom MUI icon when agentIconSuggestion is a valid icon name", async () => {
-        // "Star" is a real named export in @mui/icons-material; MUI renders it with testid "StarIcon"
+        // "Star" is a real-named export in @mui/icons-material; MUI renders it with testid "StarIcon"
         renderAgentNode({agentIconSuggestion: "Star"})
         await screen.findByTestId("StarIcon")
     })

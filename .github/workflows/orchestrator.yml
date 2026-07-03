@@ -79,6 +79,7 @@ jobs:
         with:
             revision: ${{ github.ref }}
             DISPLAY_VERSION: ${{ needs.setup.outputs.version }}
+            is_release: ${{ github.event_name == 'release' }}
 
     # Step 3: Deploy to environment (only for main/release)
     # Triggers neuro-san-deploy to update the UI image tag in the target environment

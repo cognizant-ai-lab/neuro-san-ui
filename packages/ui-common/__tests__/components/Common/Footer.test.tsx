@@ -1,7 +1,9 @@
 import {render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {Footer} from "../../../components/Common/Footer"
 import * as Nav from "../../../utils/BrowserNavigation"
 
@@ -53,7 +55,7 @@ describe("Footer", () => {
         within(emailDialog).getByText("Contact Us")
         within(emailDialog).getByText(new RegExp(supportEmailAddress, "u"))
 
-        const navigationSpy = jest.spyOn(Nav, "navigateToUrl").mockImplementation(() => undefined)
+        const navigationSpy = vi.spyOn(Nav, "navigateToUrl").mockImplementation(() => undefined)
 
         // Simulate clicking the Confirm button
         const confirmButton = within(emailDialog).getByText("Confirm")

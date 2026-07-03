@@ -16,8 +16,10 @@ limitations under the License.
 
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {
     formatFileSize,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,
@@ -31,8 +33,8 @@ import {
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 
-const onCloseMock = jest.fn()
-const onImportMock = jest.fn()
+const onCloseMock = vi.fn()
+const onImportMock = vi.fn()
 
 const DEFAULT_PROPS: ImportNetworkModalProps = {
     isOpen: true,
@@ -130,7 +132,7 @@ describe("ImportNetworkModal", () => {
     ])("should trigger file input click when $name", async ({button}) => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        const clickSpy = jest.spyOn(fileInput, "click")
+        const clickSpy = vi.spyOn(fileInput, "click")
 
         await user.click(screen.getByRole("button", {name: button}))
 
@@ -142,7 +144,7 @@ describe("ImportNetworkModal", () => {
         ({key}) => {
             renderModal()
             const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-            const clickSpy = jest.spyOn(fileInput, "click")
+            const clickSpy = vi.spyOn(fileInput, "click")
 
             fireEvent.keyDown(getDropZone(), {key})
 
@@ -153,7 +155,7 @@ describe("ImportNetworkModal", () => {
     it("should not trigger file input click on an unrelated key", () => {
         renderModal()
         const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-        const clickSpy = jest.spyOn(fileInput, "click")
+        const clickSpy = vi.spyOn(fileInput, "click")
 
         fireEvent.keyDown(getDropZone(), {key: "a"})
 
@@ -170,7 +172,7 @@ describe("ImportNetworkModal", () => {
         renderModal()
         const dropZone = getDropZone()
         // The styled drop zone re-renders on these events; we only assert it survives without crashing.
-        events.forEach((event) => fireEvent[event](dropZone, {preventDefault: jest.fn()}))
+        events.forEach((event) => fireEvent[event](dropZone, {preventDefault: vi.fn()}))
         expect(dropZone).toBeInTheDocument()
     })
 
@@ -256,9 +258,10 @@ describe("ImportNetworkModal", () => {
     })
 
     it("should show an error when the file cannot be read", async () => {
-        const readSpy = jest.spyOn(FileReader.prototype, "readAsText").mockImplementation(() => {
-            const reader = readSpy.mock.contexts.at(-1)
-            reader?.dispatchEvent(new Event("error"))
+        vi.spyOn(FileReader.prototype, "readAsText").mockImplementation(function (this: FileReader) {
+            // Mimicking readAsText behavior: it receives FileReader as "this".
+            // eslint-disable-next-line unicorn/no-this-outside-of-class
+            this.dispatchEvent(new Event("error"))
         })
         renderModal()
         dropFileOnModal("unreadable.json", '{"agents": {}}')
@@ -281,7 +284,7 @@ describe("ImportNetworkModal", () => {
             error: /File is too large/u,
         },
     ])("should reject a dropped file with $name before reading it", async ({makeFile, error}) => {
-        const readSpy = jest.spyOn(FileReader.prototype, "readAsText")
+        const readSpy = vi.spyOn(FileReader.prototype, "readAsText")
         renderModal()
         fireEvent.drop(getDropZone(), {dataTransfer: {files: [makeFile()]}})
         await screen.findByText(error)
@@ -476,8 +479,10 @@ describe("parseNetworkFileContent", () => {
     ])("should parse $name", ({content, parsed}) => {
         const result = parseNetworkFileContent(content)
         expect(result.success).toBe(true)
-        // Use type assertion — jest assertions don't narrow TypeScript types
-        expect((result as {success: true; data: unknown}).data).toEqual(parsed)
+        if (result.success === false) {
+            throw new Error(`Expected parse success, got error: ${result.error}`)
+        }
+        expect(result.data).toEqual(parsed)
     })
 
     it.each([

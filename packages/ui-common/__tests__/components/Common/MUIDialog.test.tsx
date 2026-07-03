@@ -16,14 +16,16 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {MUIDialog} from "../../../components/Common/MUIDialog"
 
 describe("Dialog", () => {
     withStrictMocks()
 
-    const onClose = jest.fn()
+    const onClose = vi.fn()
 
     it("should render Dialog title, close button, and body when open", async () => {
         render(
