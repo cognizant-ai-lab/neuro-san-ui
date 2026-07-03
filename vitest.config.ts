@@ -4,6 +4,26 @@ import {defineConfig} from "vitest/config"
 export default defineConfig({
     plugins: [react()],
     test: {
+        deps: {
+            optimizer: {
+                web: {
+                    enabled: true,
+                    include: [
+                        "@emotion/react",
+                        "@emotion/styled",
+                        "@mui/material",
+                        "@mui/material/styles",
+                        "@testing-library/react",
+                        "@testing-library/user-event",
+                        "@xyflow/react",
+                        "notistack",
+                        "react",
+                        "react-dom",
+                        "zustand",
+                    ],
+                },
+            },
+        },
         coverage: {
             enabled: false,
             exclude: [
