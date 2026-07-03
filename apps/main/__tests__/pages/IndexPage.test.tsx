@@ -16,33 +16,54 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
-import {useRouter} from "next/router"
+import {NextRouter, useRouter} from "next/router"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../__tests__/common/vitest/strictMocks"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {Index} from "../../pages"
 
+const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
+    basePath: "",
+    pathname: "/",
+    route: "/",
+    query: {},
+    asPath: "/",
+    isFallback: undefined,
+    isReady: true,
+    isPreview: undefined,
+    isLocaleDomain: undefined,
+    push: undefined,
+    replace: undefined,
+    reload: undefined,
+    back: undefined,
+    forward: undefined,
+    prefetch: undefined,
+    beforePopState: undefined,
+    events: undefined,
+    ...overrides,
+})
+
 // Mock dependencies
-jest.mock("../../../../packages/ui-common/state/Environment", () => ({
+vi.mock("../../../../packages/ui-common/state/Environment", () => ({
     __esModule: true,
-    useEnvironmentStore: jest.fn(),
+    useEnvironmentStore: vi.fn(),
 }))
 
-jest.mock("next/router", () => ({
+vi.mock("next/router", () => ({
     __esModule: true,
-    useRouter: jest.fn(),
+    useRouter: vi.fn(),
 }))
 
 describe("Index Page", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        ;(useEnvironmentStore as unknown as jest.Mock).mockReturnValue({
+        vi.mocked(useEnvironmentStore).mockReturnValue({
             supportEmailAddress: "support@example.com",
         })
-        ;(useRouter as jest.Mock).mockReturnValue({
-            query: {key: "value"},
-        })
+        vi.mocked(useRouter).mockReturnValue(createMockRouter())
     })
 
     it("renders the page correctly", async () => {

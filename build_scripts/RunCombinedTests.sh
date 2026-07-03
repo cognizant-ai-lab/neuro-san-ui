@@ -19,10 +19,10 @@ set -o pipefail
 # branches: -152,
 # functions: -27,
 # lines: -85,
-STATEMENTS=1833
-BRANCHES=1450
-FUNCTIONS=600
-MAX_LINES=86
+STATEMENTS=104
+BRANCHES=156
+FUNCTIONS=25
+MAX_LINES=76
 
 rm -rf coverage-jest coverage-vitest coverage-combined-input coverage-combined
 
@@ -30,7 +30,8 @@ yarn test:jest \
   --coverage \
   --coverageDirectory=coverage-jest \
   --coverageReporters=json \
-  --coverageThreshold='{}'
+  --coverageThreshold='{}' \
+  --passWithNoTests
 
 yarn test:vitest \
   --coverage \
