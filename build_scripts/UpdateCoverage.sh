@@ -98,7 +98,7 @@ main() {
     if ! yarn vitest run --coverage \
              --coverage.reporter=json-summary \
              --coverage.thresholds='{}' \
-             --coverage.reportsDirectory="${output_dir}" ; then
+             --coverage.reportsDirectory="${output_dir}" 1> /dev/null ; then
         # If vitest failed, don't update
         echo "Tests failed. Coverage not updated." >&2
         exit 1

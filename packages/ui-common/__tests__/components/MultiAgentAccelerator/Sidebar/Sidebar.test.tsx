@@ -134,6 +134,13 @@ describe("SideBar", () => {
     })
 
     beforeEach(() => {
+        // This has nothing to do with Jest itself and everything to do with a bug in React Testing Library.
+        // See: https://github.com/testing-library/user-event/issues/1115#issuecomment-1565730917
+        // @ts-expect-error -- it's an ugly workaround to be removed when the above issue is fixed in RTL.
+        globalThis["jest"] = {
+            advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+        }
+
         mockSelectedTreeItemId = undefined
 
         user = userEvent.setup()
@@ -595,14 +602,14 @@ describe("SideBar", () => {
         })
 
         // Now the sparkle class should have been applied
-        expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
+        await waitFor(() => expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS))
 
         act(() => {
             vi.advanceTimersByTime(5001)
         })
 
         // Make sure the sparkle highlight class is removed after the next timer runs
-        expect(treeItem).not.toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
+        await waitFor(() => expect(treeItem).not.toHaveClass(SPARKLE_HIGHLIGHT_CLASS))
     })
 
     it("Should be a no-op when the highlight callback finds no matching tree item", async () => {
@@ -625,6 +632,6 @@ describe("SideBar", () => {
             vi.advanceTimersByTime(50)
         })
 
-        expect(screen.queryByRole("treeitem")).not.toBeInTheDocument()
+        await waitFor(() => expect(screen.queryByRole("treeitem")).not.toBeInTheDocument())
     })
 })

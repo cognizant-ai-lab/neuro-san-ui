@@ -121,6 +121,13 @@ describe("AgentFlow", () => {
     withStrictMocks()
 
     beforeEach(() => {
+        // This has nothing to do with Jest itself and everything to do with a bug in React Testing Library.
+        // See: https://github.com/testing-library/user-event/issues/1115#issuecomment-1565730917
+        // @ts-expect-error -- it's an ugly workaround to be removed when the above issue is fixed in RTL.
+        globalThis["jest"] = {
+            advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+        }
+
         user = userEvent.setup()
         vi.mocked(useColorScheme).mockReturnValue({
             colorScheme: undefined,
@@ -2031,9 +2038,11 @@ describe("AgentFlow", () => {
         it("shows a timeout error banner that persists when the dock apply request times out", async () => {
             vi.useFakeTimers()
 
-            // Re-initialise userEvent with advanceTimers so its internal delays stay in sync with
-            // fake timers (the module-level `user` is bound to real timers and would stall here).
-            const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
+            // Create a custom UserEvent that is synced with Vitest's fake timers
+            const localUser = userEvent.setup({
+                advanceTimers: vi.advanceTimersByTime,
+            })
+
             mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
                 return new Promise<ChatResponse>((_resolve, reject) => {
                     signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
@@ -2049,18 +2058,18 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await vi.waitFor(async () => localUser.type(promptField, "add a node"))
+            await localUser.type(promptField, "add a node")
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
-            await vi.waitFor(async () => localUser.click(applyButton))
+            await localUser.click(applyButton)
 
             // Advance past the 120-second dock apply timeout
-            await act(async () => {
+            act(() => {
                 vi.advanceTimersByTime(121_000)
             })
 
             // The user sees an error banner explaining the request timed out...
-            screen.getByText(/timed out/u)
+            await screen.findByText(/timed out/u)
 
             // ...and, unlike success/cancel banners, it does not auto-dismiss
             act(() => {
@@ -2303,7 +2312,10 @@ describe("AgentFlow", () => {
         it("auto-dismisses the success banner after the timeout elapses", async () => {
             vi.useFakeTimers()
 
-            const localUser = userEvent.setup({advanceTimers: (ms) => vi.advanceTimersByTime(ms)})
+            // Create a custom UserEvent that is synced with Vitest's fake timers
+            const localUser = userEvent.setup({
+                advanceTimers: vi.advanceTimersByTime,
+            })
 
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -2314,20 +2326,19 @@ describe("AgentFlow", () => {
             })
 
             const editInput = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-
-            await vi.waitFor(() => localUser.type(editInput, "add a node"))
+            await localUser.type(editInput, "add a node")
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
-            await vi.waitFor(() => localUser.click(applyButton))
+            await localUser.click(applyButton)
 
-            screen.getByText(APPLIED_BANNER)
+            await screen.findByText(APPLIED_BANNER)
 
             // Once the auto-dismiss timer fires, the banner disappears
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+            act(() => {
+                vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
             })
 
-            await vi.waitFor(() => {
+            await waitFor(() => {
                 expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
             })
         })

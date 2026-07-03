@@ -254,6 +254,13 @@ describe("MultiAgentAccelerator", () => {
     let user: ReturnType<typeof userEvent.setup>
 
     beforeEach(async () => {
+        // This has nothing to do with Jest itself and everything to do with a bug in React Testing Library.
+        // See: https://github.com/testing-library/user-event/issues/1115#issuecomment-1565730917
+        // @ts-expect-error -- it's an ugly workaround to be removed when the above issue is fixed in RTL.
+        globalThis["jest"] = {
+            advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
+        }
+
         vi.mocked(getAgentNetworks).mockResolvedValue(LIST_NETWORKS_RESPONSE)
         vi.mocked(getConnectivity).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
         vi.mocked(testConnection).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
@@ -1107,6 +1114,10 @@ describe("MultiAgentAccelerator", () => {
             const now = Date.now()
             vi.useFakeTimers({now})
 
+            const localUser = userEvent.setup({
+                advanceTimers: vi.advanceTimersByTime,
+            })
+
             renderMultiAgentAcceleratorPage()
 
             // Set up a temporary network
@@ -1146,15 +1157,20 @@ describe("MultiAgentAccelerator", () => {
             expect(useAgentChatHistoryStore.getState().history[expectedNetworkName]).toBeDefined()
 
             // Not expired yet so we should see the network
-            const temporaryNetworkNode = document.querySelector(`[data-itemid="${CSS.escape(expectedNetworkName)}"]`)
+            const temporaryNetworkNode = document.querySelector(
+                `[data-itemid="${CSS.escape(expectedNetworkName)}"]`
+            ) satisfies HTMLElement
+
             expect(temporaryNetworkNode).not.toBeNull()
 
             const displayAgentName = cleanUpAgentName(TEMPORARY_NETWORK.reservation.reservation_id)
             screen.getByText(displayAgentName)
 
-            await act(async () => {
-                setSelectedNetwork(expectedNetworkName)
-            })
+            // Make sure we see the temp network
+            const tempNetworkItem = await within(temporaryNetworkNode).findByText(displayAgentName)
+
+            // Click the network to select it
+            await localUser.click(tempNetworkItem)
 
             // ChatCommon should be called with the selected network as the target agent -- a bit of an indirect way
             // to verify that the network was selected. There may be a more elegant way to do this.
@@ -1168,46 +1184,69 @@ describe("MultiAgentAccelerator", () => {
             chatCommonMock.mockClear()
 
             // First time "expired check" runs, it should not be expired yet
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
+            act(() => {
+                vi.advanceTimersByTime(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
             })
 
+            // Verify that ChatCommon was called with the selected network still intact, meaning it was not expired yet.
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
                     selectedNetwork: expectedNetworkName,
                 })
             )
 
+            // Reset mock calls so we have a clean slate
             chatCommonMock.mockClear()
 
-            // Jump system time past server-side expiration, then run exactly one interval tick.
-            vi.setSystemTime(now + expirationTimeSeconds * 1000 + 1)
-
-            // Make sure reaper runs
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
+            // advanced past expiration time but still within grace period, meaning we show the network but flag it as
+            // expired and do not let the user select it
+            act(() => {
+                vi.advanceTimersByTime(expirationTimeSeconds * 1000)
             })
 
-            // Verify network was de-selected
-            expect(chatCommonMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    selectedNetwork: null,
-                })
-            )
+            // Wait for post-expiry renders to settle and verify network was deselected (null was passed to ChatCommon)
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenLastCalledWith(
+                    expect.objectContaining({
+                        selectedNetwork: null,
+                    })
+                )
+            })
 
             // ...but should still be in the store since we're within the grace period
             expect(useTempNetworksStore.getState().tempNetworks.length).toBe(1)
 
-            // Jump system time past grace period, then run exactly one interval tick.
-            vi.setSystemTime(now + expirationTimeSeconds * 1000 + GRACE_PERIOD_MS + 1)
+            // Requery for stability
+            const expiredTemporaryNetworkNode = document.querySelector(
+                `[data-itemid="${CSS.escape(expectedNetworkName)}"]`
+            ) satisfies HTMLElement
 
-            // Now advance the timer to trigger the reaper.
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(EXPIRED_NETWORKS_CHECK_INTERVAL_MS)
+            expect(expiredTemporaryNetworkNode).not.toBeNull()
+
+            const expiredTempNetworkItem = await within(expiredTemporaryNetworkNode).findByText(displayAgentName)
+
+            // Mouse over -- should get "expired" Tooltip
+            await localUser.hover(expiredTempNetworkItem)
+            await waitFor(() => within(expiredTemporaryNetworkNode).getByLabelText("Expired"))
+
+            // Attempt to select it. Should not be allowed since it's expired
+            chatCommonMock.mockClear()
+
+            await localUser.click(expiredTempNetworkItem)
+
+            expect(chatCommonMock).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    selectedNetwork: expectedNetworkName,
+                })
+            )
+
+            // advanced past grace period + next reaper interval, so network should be fully deleted
+            act(() => {
+                vi.advanceTimersByTime(GRACE_PERIOD_MS + EXPIRED_NETWORKS_CHECK_INTERVAL_MS + 1)
             })
 
             // Network should be deleted now
-            expect(useTempNetworksStore.getState().tempNetworks.length).toBe(0)
+            await waitFor(() => expect(useTempNetworksStore.getState().tempNetworks.length).toBe(0))
 
             // ...and removed from the list
             expect(screen.queryByText(displayAgentName)).not.toBeInTheDocument()
@@ -1538,42 +1577,40 @@ describe("MultiAgentAccelerator", () => {
             async ({buttonName, shouldStartTour, expectedStatus}) => {
                 vi.useFakeTimers()
 
+                const localUser = userEvent.setup({
+                    advanceTimers: vi.advanceTimersByTime,
+                })
+
                 renderMultiAgentAcceleratorPage()
 
                 // Let initial fetch/useEffect work settle. Note: vi.waitFor() here, not RTL waitFor(), since the
                 // vitest version is "fake timers aware"
-                await vi.waitFor(() => {
-                    screen.getByText(TEST_AGENTS_FOLDER_DISPLAY)
-                })
+                await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
 
                 // Advance timers to trigger the tour prompt modal
-                await act(async () => {
-                    await vi.advanceTimersByTimeAsync(SHOW_TOUR_DELAY_MS + 1)
+                act(() => {
+                    vi.advanceTimersByTime(SHOW_TOUR_DELAY_MS + 1)
                 })
 
                 // Locate and click the target response button
                 const actionButton = screen.getByRole("button", {name: buttonName})
 
-                await act(async () => {
-                    actionButton.click()
-                })
+                await localUser.click(actionButton)
 
                 if (shouldStartTour) {
-                    await act(async () => {
-                        await vi.advanceTimersByTimeAsync(100)
+                    act(() => {
+                        vi.advanceTimersByTime(100)
                     })
 
                     // Positive Case: Wait until the introductory tour step text mounts in the DOM
-                    await vi.waitFor(() => {
-                        screen.getByText(MAIN_TOUR_STEPS[0].content.toString())
-                    })
+                    await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
                 } else {
                     // Negative Case: Safely wait until the prompt dialog counts hit 0
                     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
 
                     // Give joyride time to launch the tour, if it's planning to
-                    await act(async () => {
-                        await vi.advanceTimersByTimeAsync(100)
+                    act(() => {
+                        vi.advanceTimersByTime(100)
                     })
 
                     // Assert that the first step text remains completely absent from the DOM layout
