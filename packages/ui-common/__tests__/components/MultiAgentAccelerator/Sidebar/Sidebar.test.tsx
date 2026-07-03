@@ -112,6 +112,9 @@ const DEFAULT_PROPS: SidebarProps = {
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
+// Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
 describe("SideBar", () => {
     withStrictMocks()
 
