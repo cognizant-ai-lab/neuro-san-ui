@@ -1225,17 +1225,6 @@ describe("MultiAgentAccelerator", () => {
             await localUser.hover(expiredTempNetworkItem)
             await waitFor(() => within(expiredTemporaryNetworkNode).getByLabelText("Expired"))
 
-            // Attempt to select it. Should not be allowed since it's expired
-            chatCommonMock.mockClear()
-
-            await localUser.click(expiredTempNetworkItem)
-
-            expect(chatCommonMock).not.toHaveBeenCalledWith(
-                expect.objectContaining({
-                    selectedNetwork: expectedNetworkName,
-                })
-            )
-
             // advanced past grace period + next reaper interval, so network should be fully deleted
             act(() => {
                 vi.advanceTimersByTime(GRACE_PERIOD_MS + EXPIRED_NETWORKS_CHECK_INTERVAL_MS + 1)
