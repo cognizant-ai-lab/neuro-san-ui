@@ -344,7 +344,6 @@ __metadata:
     "@eslint/js": "npm:10.0.1"
     "@next/eslint-plugin-next": "npm:16.2.9"
     "@testing-library/jest-dom": "npm:6.9.1"
-    "@testing-library/react": "catalog:default"
     "@types/dom-speech-recognition": "npm:0.0.6"
     "@types/node": "catalog:default"
     "@vitejs/plugin-react": "npm:^6.0.3"
