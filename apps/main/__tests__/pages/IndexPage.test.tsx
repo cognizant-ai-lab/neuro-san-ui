@@ -45,12 +45,10 @@ const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
 
 // Mock dependencies
 vi.mock("../../../../packages/ui-common/state/Environment", () => ({
-    __esModule: true,
     useEnvironmentStore: vi.fn(),
 }))
 
 vi.mock("next/router", () => ({
-    __esModule: true,
     useRouter: vi.fn(),
 }))
 

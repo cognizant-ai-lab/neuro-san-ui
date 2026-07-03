@@ -38,7 +38,6 @@ vi.mock("../../../../packages/ui-common/controller/agent/Agent")
 const mockMultiAgentAcceleratorSpy = vi.fn()
 
 vi.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator", () => ({
-    __esModule: true,
     MultiAgentAccelerator: (props: MultiAgentAcceleratorProps) => {
         mockMultiAgentAcceleratorSpy(props)
         return <div>{MAA_TEXT}</div>

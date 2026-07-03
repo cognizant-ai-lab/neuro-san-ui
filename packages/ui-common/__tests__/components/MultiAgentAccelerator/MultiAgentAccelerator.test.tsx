@@ -86,7 +86,6 @@ vi.mock("../../../controller/agent/Agent")
 vi.mock("../../../controller/agent/IconSuggestions")
 
 vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
-    __esModule: true,
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
         return (
@@ -127,7 +126,6 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async (impo
         await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/Sidebar")>()
 
     return {
-        __esModule: true,
         ...originalModule,
         Sidebar: (props: SidebarProps) => {
             temporaryNetworksMock(props.temporaryNetworks)
@@ -146,7 +144,6 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", 
         await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")>()
 
     return {
-        __esModule: true,
         ...originalModule,
         ImportNetworkModal: (props: ImportNetworkModalProps) => {
             onImport = props.onImport
@@ -214,7 +211,6 @@ let onStreamingStarted: () => void
 let onStreamingComplete: () => void
 
 vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
-    __esModule: true,
     ChatCommon: (props: ChatCommonProps & {ref?: Ref<ChatCommonHandle>}) => {
         chatCommonMock(props)
         setIsAwaitingLlm = props.setIsAwaitingLlm

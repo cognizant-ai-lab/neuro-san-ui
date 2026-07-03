@@ -37,7 +37,6 @@ vi.mock("@mui/material/styles", async () => ({
 }))
 
 vi.mock("@mui/material/Grow", () => ({
-    __esModule: true,
     default: ({children, in: inProp}: {children: unknown; in: boolean}) => (inProp ? children : null),
 }))
 

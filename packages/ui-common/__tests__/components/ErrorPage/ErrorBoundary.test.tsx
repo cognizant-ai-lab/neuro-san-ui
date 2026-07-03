@@ -6,7 +6,6 @@ import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores
 vi.mock("../../../components/ErrorPage/ErrorPage", () => ({
-    __esModule: true,
     default: ({errorText}: {errorText: string}) => <div data-testid="mock-error">{errorText}</div>,
 }))
 
