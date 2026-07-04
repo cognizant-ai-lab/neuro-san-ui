@@ -16,6 +16,7 @@ limitations under the License.
 
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
+import {createElement} from "react"
 import failOnConsole from "vitest-fail-on-console"
 
 // Next hack: allows us to test react-flow components.
@@ -62,6 +63,87 @@ Object.defineProperties(global.HTMLElement.prototype, {
     offsetWidth: {
         get: () => 1,
     },
+})
+
+/**
+ * Global mock for MUI icons. Why? Because in a couple of places in the code we import the whole MUI Icons barrel
+ * via `import * as Icons from "@mui/icons-material"` in order to choose icons dynamically at runtime. This is slow
+ * for tests and unnecessary, so we mock the whole module here.
+ */
+
+// Tests should use this constant to test for invalid icon names.
+export const INVALID_MUI_ICON_NAME = "NonExistentIcon"
+
+vi.mock("@mui/icons-material", () => {
+    const moduleBase = {
+        __esModule: true,
+    }
+
+    const iconCache = new Map<string, unknown>()
+
+    const createMockMuiIcon = (iconName: string) => {
+        const MockMuiIcon = (props: Record<string, unknown>) =>
+            createElement("svg", {
+                ...props,
+                "data-testid": (props["data-testid"] as string | undefined) ?? `${iconName}Icon`,
+            })
+
+        MockMuiIcon.displayName = `${iconName}Icon`
+
+        return MockMuiIcon
+    }
+
+    const getMockIcon = (iconName: string) => {
+        if (iconName === INVALID_MUI_ICON_NAME) {
+            return undefined
+        }
+
+        if (!iconCache.has(iconName)) {
+            iconCache.set(iconName, createMockMuiIcon(iconName))
+        }
+
+        return iconCache.get(iconName)
+    }
+
+    return new Proxy(moduleBase, {
+        get: (target, prop) => {
+            if (prop === "then") {
+                return undefined
+            }
+
+            if (prop in target) {
+                return target[prop as keyof typeof target]
+            }
+
+            return typeof prop === "string" ? getMockIcon(prop) : undefined
+        },
+
+        has: (target, prop) => {
+            if (prop === "then") {
+                return false
+            }
+
+            return prop in target || typeof prop === "string"
+        },
+
+        getOwnPropertyDescriptor: (target, prop) => {
+            // Return undefined for "then" to avoid treating the module as a Promise
+            if (prop === "then") {
+                return undefined
+            }
+
+            return {
+                configurable: true,
+                enumerable: true,
+                value:
+                    prop in target
+                        ? target[prop as keyof typeof target]
+                        : typeof prop === "string"
+                          ? getMockIcon(prop)
+                          : undefined,
+            }
+        },
+    })
 })
 
 // Make tests fail if any output is sent to the console
