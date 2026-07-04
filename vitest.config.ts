@@ -11,8 +11,12 @@ export default defineConfig({
                     include: [
                         "@emotion/react",
                         "@emotion/styled",
+                        "@mui/icons-material",
                         "@mui/material",
                         "@mui/material/styles",
+                        "@mui/system",
+                        "@mui/x-tree-view",
+                        "@testing-library/dom",
                         "@testing-library/react",
                         "@testing-library/user-event",
                         "@xyflow/react",
@@ -53,7 +57,10 @@ export default defineConfig({
         environment: "jsdom",
         exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/coverage/**"],
         globals: true,
-        include: ["**/__tests__/**/*.test.{ts,tsx}"],
+        include: ["apps/**/__tests__/**/*.test.{ts,tsx}", "packages/**/__tests__/**/*.test.{ts,tsx}"],
+        // Have to manually specify GitHub Actions reporter when configuring reporters manually.
+        // See: https://vitest.dev/guide/reporters.html#github-actions-reporter
+        reporters: process.env["GITHUB_ACTIONS"] === "true" ? ["minimal", "github-actions"] : ["minimal"],
         setupFiles: ["./vitest.setup.ts"],
     },
 })

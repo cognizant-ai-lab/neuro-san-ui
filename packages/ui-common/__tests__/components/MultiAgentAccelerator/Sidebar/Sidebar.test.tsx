@@ -38,6 +38,7 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {INVALID_MUI_ICON_NAME} from "../../../../../../vitest.setup"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,
@@ -338,7 +339,7 @@ describe("SideBar", () => {
             // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
             networkIconSuggestions: {
                 ...NETWORK_ICON_SUGGESTIONS,
-                [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: "NonExistentIcon",
+                [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: INVALID_MUI_ICON_NAME,
             },
         })
 
