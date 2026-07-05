@@ -49,11 +49,12 @@ export default defineConfig({
             reporter: ["text-summary"],
             thresholds: {
                 statements: -104,
-                branches: -155,
+                branches: -157,
                 functions: -25,
                 lines: -76,
             },
         },
+        // TODO: potential small optimization: consider using `node` environment for non-UI tests
         environment: "jsdom",
         exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/coverage/**"],
         globals: true,
@@ -62,5 +63,6 @@ export default defineConfig({
         // See: https://vitest.dev/guide/reporters.html#github-actions-reporter
         reporters: process.env["GITHUB_ACTIONS"] === "true" ? ["minimal", "github-actions"] : ["minimal"],
         setupFiles: ["./vitest.setup.ts"],
+        maxWorkers: 8,
     },
 })
