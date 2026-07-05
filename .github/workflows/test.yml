@@ -131,5 +131,5 @@ jobs:
               if: success() || failure()
               run: |
                   node --version
-                  yarn test --version
+                  yarn vitest --version
                   yarn test
