@@ -38,71 +38,71 @@ describe("PlasmaEdge", () => {
             restore: vi.fn(),
         }
 
-        // Keep originals so we can restore later (use explicit narrow types instead of `any`)
-        const origGetContext = HTMLCanvasElement.prototype.getContext as unknown as (
-            contextId?: string | null
-        ) => CanvasRenderingContext2D | null
+        const origGetContext = HTMLCanvasElement.prototype.getContext
         const origRAF = global.requestAnimationFrame
         const origCAF = global.cancelAnimationFrame
-        const origGetTotalLength = (SVGElement.prototype as unknown as {getTotalLength?: () => number}).getTotalLength
+        const origGetTotalLength = (Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength
         const origGetPointAtLength = (
-            SVGElement.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}
+            Element.prototype as unknown as {getPointAtLength?: (length: number) => {x: number; y: number}}
         ).getPointAtLength
 
-        // Monkeypatch getContext on canvas prototype for the test
-        HTMLCanvasElement.prototype.getContext = function () {
-            return fakeCtx as CanvasRenderingContext2D
-        } as unknown as typeof HTMLCanvasElement.prototype.getContext
+        let rafCallback: FrameRequestCallback | undefined
 
-        // Provide simple implementations for SVG element methods used by the particle generator
-        ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = () => 100
-        ;(Element.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}).getPointAtLength =
-            (l: number) => ({x: l, y: l})
+        try {
+            HTMLCanvasElement.prototype.getContext = vi.fn(
+                () => fakeCtx as CanvasRenderingContext2D
+            ) as unknown as typeof HTMLCanvasElement.prototype.getContext
+            ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = vi.fn(() => 100)
+            ;(
+                Element.prototype as unknown as {getPointAtLength?: (length: number) => {x: number; y: number}}
+            ).getPointAtLength = vi.fn((length: number) => ({x: length, y: length}))
 
-        // Mock RAF to run callback immediately once
-        global.requestAnimationFrame = (cb: FrameRequestCallback) => {
-            try {
-                cb(0)
-            } catch {
-                // ignore
+            global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+                rafCallback = callback
+                return 1
+            })
+
+            global.cancelAnimationFrame = vi.fn()
+
+            const {unmount, container} = render(
+                <PlasmaEdge
+                    // edge props are minimally required for rendering
+                    id="test-edge"
+                    source="test-source"
+                    target="test-target"
+                    sourceX={0}
+                    sourceY={0}
+                    targetX={200}
+                    targetY={120}
+                    sourcePosition={Position.Left}
+                    targetPosition={Position.Right}
+                />
+            )
+
+            expect(container.querySelector("canvas")).not.toBeNull()
+            expect(container.querySelector("path")).not.toBeNull()
+            expect(global.requestAnimationFrame).toHaveBeenCalled()
+
+            act(() => {
+                rafCallback?.(16)
+            })
+
+            expect(fakeCtx.clearRect).toHaveBeenCalled()
+            expect(fakeCtx.arc).toHaveBeenCalled()
+
+            unmount()
+            expect(global.cancelAnimationFrame).toHaveBeenCalled()
+        } finally {
+            HTMLCanvasElement.prototype.getContext = origGetContext
+            global.requestAnimationFrame = origRAF
+            global.cancelAnimationFrame = origCAF
+            const elementPrototype = Element.prototype as unknown as {
+                getTotalLength?: () => number
+                getPointAtLength?: (length: number) => {x: number; y: number}
             }
-            return 1
+            elementPrototype.getTotalLength = origGetTotalLength
+            elementPrototype.getPointAtLength = origGetPointAtLength
+            errSpy.mockRestore()
         }
-        global.cancelAnimationFrame = () => undefined
-
-        const {unmount, container} = render(
-            <PlasmaEdge
-                // edge props are minimally required for rendering
-                id="test-edge"
-                source="test-source"
-                target="test-target"
-                sourceX={0}
-                sourceY={0}
-                targetX={200}
-                targetY={120}
-                sourcePosition={Position.Left}
-                targetPosition={Position.Right}
-            />
-        )
-
-        // Allow effects to run
-        act(() => undefined)
-
-        // Ensure canvas and path are present
-        const canvas = container.querySelector("canvas")
-        const path = container.querySelector("path")
-        expect(canvas).not.toBeNull()
-        expect(path).not.toBeNull()
-
-        // Cleanup and restore
-        unmount()
-        ;(HTMLCanvasElement.prototype as unknown as {getContext?: typeof origGetContext}).getContext = origGetContext
-        global.requestAnimationFrame = origRAF
-        global.cancelAnimationFrame = origCAF
-        ;(SVGElement.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = origGetTotalLength
-        ;(
-            SVGElement.prototype as unknown as {getPointAtLength?: (l: number) => {x: number; y: number}}
-        ).getPointAtLength = origGetPointAtLength
-        errSpy.mockRestore()
     })
 })
