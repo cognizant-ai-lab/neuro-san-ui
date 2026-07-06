@@ -2,6 +2,8 @@
 
 const MAX_FILENAME_LENGTH = 1000
 
+type MimeType = `${string}/${string}`
+
 /**
  * // Sanitize filename for saving
  * @param input Filename as string
@@ -56,24 +58,22 @@ export const splitFilename = (filename: string): {ext: string; name: string} => 
  * @param path The path to be parsed
  * @return The filename part of the path only
  */
-export const getFileName = (path: string): string =>
-    // conflicts with ESLint newline-per-chained-call rule
-    // prettier-ignore
-    path.split("\\")
-        .pop()
-        .split("/")
-        .pop()
+export const getFileName = (path: string): string => path.split("\\").pop().split("/").pop()
 
 /**
  * Downloads a file containing the supplied content with the specified filename
  * @param messageContents The contents of the file to be downloaded
  * @param fileName Local filename for the file to be downloaded
+ * @param mimeType Optional MIME type for the file to be downloaded, defaults to "application/octet-stream"
  */
-export const downloadFile = (messageContents: string | Uint8Array, fileName: string) => {
+export const downloadFile = (
+    messageContents: string | Uint8Array,
+    fileName: string,
+    mimeType: MimeType = "application/octet-stream"
+) => {
     const downloadLink = document.createElement("a")
 
-    const blob = new Blob([messageContents] as BlobPart[])
-
+    const blob = new Blob([messageContents] as BlobPart[], {type: mimeType})
     // Apply the url and filename to the anchor tag
     downloadLink.href = URL.createObjectURL(blob)
     downloadLink.download = fileName

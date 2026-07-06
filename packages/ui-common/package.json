@@ -47,7 +47,8 @@
         "openapi-typescript": "7.8.0",
         "react": "catalog:default",
         "react-dom": "catalog:default",
-        "typescript": "catalog:default"
+        "typescript": "catalog:default",
+        "vitest": "catalog:default"
     },
     "peerDependencies": {
         "@emotion/react": "^11.14.0",

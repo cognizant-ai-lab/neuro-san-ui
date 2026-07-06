@@ -15,14 +15,16 @@ limitations under the License.
 */
 
 import httpStatus from "http-status"
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 
 const mockFetch = (mockChunks: Uint8Array<ArrayBuffer>[]) => {
     let readIndex = 0
 
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         body: {
             getReader: () => ({
@@ -59,7 +61,7 @@ describe("LlmChat", () => {
         const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2"), encoder.encode("")]
         mockFetch(mockChunks)
 
-        const callback = jest.fn()
+        const callback = vi.fn()
         const result = await sendLlmRequest(
             callback,
             null,
@@ -82,7 +84,7 @@ describe("LlmChat", () => {
         const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2\n"), encoder.encode("chunk3")]
         mockFetch(mockChunks)
 
-        const callback = jest.fn()
+        const callback = vi.fn()
         const result = await sendLlmRequest(
             callback,
             null,
@@ -106,7 +108,7 @@ describe("LlmChat", () => {
         const mockChunks = [encoder.encode("chunk1"), encoder.encode("chunk2\n")]
         mockFetch(mockChunks)
 
-        const callback = jest.fn()
+        const callback = vi.fn()
         const result = await sendLlmRequest(
             callback,
             null,
@@ -134,7 +136,7 @@ describe("LlmChat", () => {
         ]
         mockFetch(mockChunks)
 
-        const callback = jest.fn()
+        const callback = vi.fn()
         const result = await sendLlmRequest(
             callback,
             null,
@@ -156,7 +158,7 @@ describe("LlmChat", () => {
 
     it("should throw if fetch throws", async () => {
         const exceptionText = "Network error"
-        global.fetch = jest.fn().mockImplementationOnce(() => {
+        global.fetch = vi.fn().mockImplementationOnce(() => {
             throw new Error(exceptionText)
         })
         await expect(sendLlmRequest(null, null, "dummy URL", {}, "dummy query", [], "dummyUserId")).rejects.toThrow(
@@ -167,7 +169,7 @@ describe("LlmChat", () => {
     it("should throw if fetch returns an error status", async () => {
         const errorStatus = httpStatus.INTERNAL_SERVER_ERROR
         const errorMessage = "Expected error message"
-        global.fetch = jest.fn().mockResolvedValue({
+        global.fetch = vi.fn().mockResolvedValue({
             ok: false,
             status: errorStatus,
             statusText: errorMessage,
@@ -179,7 +181,7 @@ describe("LlmChat", () => {
 
     it("should return the JSON payload if no callback supplied", async () => {
         const jsonResult = {result: "success"}
-        global.fetch = jest.fn().mockResolvedValue({
+        global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             json: () => Promise.resolve(jsonResult),
         })

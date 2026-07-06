@@ -80,6 +80,12 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
+            "This button allows you to download the chat with this agent, including history, as a plain text file.",
+        target: () => document.querySelector("#save-chat-button"),
+        placement: "bottom",
+    },
+    {
+        content:
             "Access Settings from this icon. Here you can change the look and feel of the application, including " +
             "auto branding for a particular customer, enter API keys for providers like OpenAI and Anthropic, and " +
             "configure the URL used to access Neuro SAN services!",

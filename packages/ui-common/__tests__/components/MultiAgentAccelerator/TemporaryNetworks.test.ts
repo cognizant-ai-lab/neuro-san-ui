@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it} from "vitest"
+
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_RESERVATIONS_KEY,
@@ -79,6 +82,19 @@ describe("convertReservationsToNetworks", () => {
 
     it("returns an empty array for an empty input", () => {
         expect(convertReservationsToNetworks([], null)).toEqual([])
+    })
+
+    it("drops un-vetted reservations that lack a usable reservation_id", () => {
+        const valid = makeReservation("good-1")
+        // reservation_id is typed as a string, but it is echoed from un-vetted backend data and may be
+        // missing or empty at runtime; such entries must not produce a "temporary/undefined" network.
+        const missingId: AgentReservation = {...makeReservation("ignored"), reservation_id: undefined}
+        const emptyId = makeReservation("")
+
+        const networks = convertReservationsToNetworks([missingId, valid, emptyId], null)
+
+        expect(networks).toHaveLength(1)
+        expect(networks[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/good-1`)
     })
 
     it("forwards the agentNetworkDefinition to each network", () => {

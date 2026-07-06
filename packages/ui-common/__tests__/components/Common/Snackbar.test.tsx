@@ -18,20 +18,26 @@ import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {useSnackbar} from "notistack"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
 
 // Mock useSnackbar hook
-jest.mock("notistack", () => ({
-    ...jest.requireActual("notistack"),
-    useSnackbar: jest.fn(),
-}))
+vi.mock("notistack", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("notistack")>()
+
+    return {
+        ...actual,
+        useSnackbar: vi.fn(),
+    }
+})
 
 describe("Snackbar Component", () => {
     withStrictMocks()
 
-    const mockCloseSnackbar = jest.fn()
+    const mockCloseSnackbar = vi.fn()
 
     const renderSnackbar = (props?: Partial<SnackbarProps>, mode: PaletteMode = "light") =>
         render(
@@ -55,13 +61,10 @@ describe("Snackbar Component", () => {
         )
 
     beforeEach(() => {
-        ;(useSnackbar as jest.Mock).mockReturnValue({
+        vi.mocked(useSnackbar).mockReturnValue({
+            enqueueSnackbar: undefined,
             closeSnackbar: mockCloseSnackbar,
         })
-    })
-
-    afterEach(() => {
-        jest.clearAllMocks()
     })
 
     it("renders all elements", () => {

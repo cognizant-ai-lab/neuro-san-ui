@@ -1,9 +1,11 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../__tests__/common/TestUtils"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {mockFetch} from "../../../../../__tests__/common/vitest/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {BrandingSuggestions} from "../../../controller/Types/Branding"
@@ -11,7 +13,7 @@ import {useEnvironmentStore} from "../../../state/Environment"
 import {DEFAULT_SETTINGS, LogoSource, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
-jest.mock("../../../components/Common/notification")
+vi.mock("../../../components/Common/notification")
 
 const TEST_API_KEY = "test-api-key-123"
 
@@ -88,7 +90,7 @@ describe("SettingsDialog", () => {
     })
 
     it("triggers onClose when the dialog is closed", async () => {
-        const onCloseMock = jest.fn()
+        const onCloseMock = vi.fn()
         render(
             <SettingsDialog
                 id="settings-dialog"
@@ -585,8 +587,6 @@ describe("SettingsDialog", () => {
     })
 
     it("resets settings to default when reset button is confirmed", async () => {
-        ;(sendNotification as jest.Mock).mockClear()
-
         // Set some non-default values first
         useSettingsStore.getState().updateSettings({
             appearance: {
@@ -774,7 +774,7 @@ describe("SettingsDialog", () => {
 
     it("Handles exception when retrieving branding suggestions", async () => {
         const networkError = "Network error"
-        global.fetch = jest.fn().mockRejectedValue(new Error(networkError))
+        global.fetch = vi.fn().mockRejectedValue(new Error(networkError))
         render(
             <SettingsDialog
                 id="settings-dialog"
@@ -783,7 +783,7 @@ describe("SettingsDialog", () => {
         )
 
         // Spy on console.warn to suppress output during test
-        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         const customerName = "Acme"
         await enterCustomerName(customerName)

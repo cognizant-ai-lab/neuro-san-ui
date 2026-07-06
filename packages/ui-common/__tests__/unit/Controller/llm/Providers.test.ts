@@ -14,8 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
+// eslint-disable-next-line no-shadow
+import {describe, expect, it, vi} from "vitest"
+
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
+import {mockFetch} from "../../../../../../__tests__/common/vitest/TestUtils"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../../../controller/llm/Providers"
 
 describe("Providers controller", () => {
@@ -37,8 +40,8 @@ describe("Providers controller", () => {
 
     it("should handle when fetch throws exceptions", async () => {
         const errorText = "Network error"
-        global.fetch = jest.fn().mockRejectedValue(new Error(errorText))
-        jest.spyOn(console, "error").mockImplementation()
+        global.fetch = vi.fn().mockRejectedValue(new Error(errorText))
+        vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         expect(await isOpenAIKeyValid("fake-key")).toBe(false)
         expect(await isAnthropicKeyValid("fake-key")).toBe(false)

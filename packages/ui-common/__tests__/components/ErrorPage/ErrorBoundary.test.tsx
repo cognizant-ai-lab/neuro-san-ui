@@ -1,10 +1,12 @@
 import {render, screen} from "@testing-library/react"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
 import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores
-jest.mock("../../../components/ErrorPage/ErrorPage", () => ({
+vi.mock("../../../components/ErrorPage/ErrorPage", () => ({
     __esModule: true,
     default: ({errorText}: {errorText: string}) => <div data-testid="mock-error">{errorText}</div>,
 }))
@@ -18,12 +20,12 @@ const ErrorChild = ({shouldThrow}: {shouldThrow: boolean}) => {
 }
 
 describe("ErrorBoundary", () => {
-    let consoleErrorSpy: jest.SpyInstance<void, [message?: unknown, ...optionalParams: unknown[]]>
+    let consoleErrorSpy: MockInstance
 
     withStrictMocks()
 
     beforeEach(() => {
-        consoleErrorSpy = jest.spyOn(console, "error").mockImplementation()
+        consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => vi.fn())
     })
 
     it("renders fallback ErrorPage when child throws", () => {

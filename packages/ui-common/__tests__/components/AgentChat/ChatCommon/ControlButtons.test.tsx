@@ -16,24 +16,29 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {UserEvent, userEvent} from "@testing-library/user-event"
+// eslint-disable-next-line no-shadow
+import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {ControlButtons} from "../../../../components/AgentChat/ChatCommon/ControlButtons"
 
 describe("ControlButtons", () => {
     withStrictMocks()
 
     let user: UserEvent
-    const mockClearChat = jest.fn()
-    const mockHandleSend = jest.fn()
-    const mockHandleStop = jest.fn()
+    const mockClearChat = vi.fn()
+    const mockHandleSend = vi.fn()
+    const mockHandleStop = vi.fn()
+    const mockHandleSave = vi.fn()
 
     const defaultProps = {
-        handleClearChat: mockClearChat,
         enableClearChatButton: true,
-        isAwaitingLlm: false,
+        enableSaveChatButton: true,
+        handleClearChat: mockClearChat,
+        handleSave: mockHandleSave,
         handleSend: mockHandleSend,
         handleStop: mockHandleStop,
+        isAwaitingLlm: false,
         previousUserQuery: "Previous query",
         shouldEnableRegenerateButton: true,
     }

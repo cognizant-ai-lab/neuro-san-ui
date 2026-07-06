@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 import "fake-indexeddb/auto"
+// eslint-disable-next-line no-shadow
+import {beforeEach, vi} from "vitest"
 
 /**
  * This function is used to clear and reset all mocks before each test.
@@ -32,11 +34,11 @@ export const withStrictMocks = (options: StrictMockOptions = {}) => {
     const {resetModules = false} = options
 
     beforeEach(() => {
-        jest.resetAllMocks()
-        jest.restoreAllMocks()
-        jest.useRealTimers()
+        vi.resetAllMocks()
+        vi.restoreAllMocks()
+        vi.useRealTimers()
         if (resetModules) {
-            jest.resetModules()
+            vi.resetModules()
         }
 
         localStorage.clear()

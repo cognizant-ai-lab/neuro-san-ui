@@ -1,3 +1,4 @@
+import {getFrontman} from "./AgentFlow/GraphStructure"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_HOCON,
@@ -6,9 +7,12 @@ import {
     DisplayAs,
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
+import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
+import {sendNetworkDesignerRequest} from "../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {chatMessageFromChunk, removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -76,17 +80,23 @@ export const convertReservationsToNetworks = (
     agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
     agentNetworkName?: string
 ): TemporaryNetwork[] => {
-    return agentReservations.map((reservation) => ({
-        reservation,
-        agentInfo: {
-            agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
-        },
-        // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
-        // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
-        agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
-        networkHocon,
-        agentNetworkDefinition,
-    }))
+    return (
+        agentReservations
+            // reservation_id is typed as required but is echoed from un-vetted backend data; skip entries
+            // missing it rather than build a "temporary/undefined" network.
+            .filter((reservation) => Boolean(reservation?.reservation_id))
+            .map((reservation) => ({
+                reservation,
+                agentInfo: {
+                    agent_name: `${TEMPORARY_NETWORK_FOLDER}/${reservation.reservation_id}`,
+                },
+                // Use the explicit name when provided; fall back to extracting it from the reservation_id so that
+                // networks are always deduplicated by name even when the backend omits AGENT_NETWORK_NAME_KEY.
+                agentNetworkName: agentNetworkName ?? removeTrailingUuid(reservation.reservation_id),
+                networkHocon,
+                agentNetworkDefinition,
+            }))
+    )
 }
 
 export const isEditableAgent = (displayAs: string | undefined): boolean => displayAs === DisplayAs.LLM_AGENT
@@ -138,3 +148,97 @@ export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNet
         },
         [...target]
     )
+
+/**
+ * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
+ * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
+ */
+const collectNetworksFromChunk = (
+    chunk: string,
+    updated: AgentNetworkDefinitionEntry[],
+    accumulated: TemporaryNetwork[]
+): TemporaryNetwork[] => {
+    try {
+        const chatMessage = chatMessageFromChunk(chunk)
+        if (!chatMessage) return accumulated
+
+        // Always use the user's edited definition as the authoritative value.
+        const converted = extractTemporaryNetworksFromMessage(chatMessage, updated)
+        if (converted.length === 0) return accumulated
+        return mergeNetworks(accumulated, converted)
+    } catch (e: unknown) {
+        console.warn("Failed to process chunk from network designer:", e)
+        return accumulated
+    }
+}
+
+/** Logs and notifies about a save error. Suppresses AbortError (user-canceled). */
+export const notifySaveError = (agentName: string, e: unknown): void => {
+    if (e instanceof DOMException && e.name === "AbortError") return
+    console.error("Failed to submit agent network update:", e)
+    const detail =
+        e instanceof DOMException && e.name === "TimeoutError"
+            ? "The request timed out waiting for the server. Please try again."
+            : String(e)
+    sendNotification(NotificationType.error, `Failed to update network "${agentName}".`, detail)
+}
+
+/**
+ * Streams a network definition through the network designer, collecting the
+ * reservations returned across every chunk. Returns the accumulated networks
+ * (empty if the designer returned no reservation).
+ */
+export const streamNetworkDesignerUpsert = async (
+    neuroSanURL: string,
+    signal: AbortSignal,
+    frontman: string,
+    networkDef: AgentNetworkDefinitionEntry[],
+    agentNetworkName: string | undefined,
+    username: string
+): Promise<TemporaryNetwork[]> => {
+    let newNetworks: TemporaryNetwork[] = []
+    await sendNetworkDesignerRequest(neuroSanURL, signal, frontman, networkDef, agentNetworkName, username, (chunk) => {
+        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
+    })
+    return newNetworks
+}
+
+/** Reasons an import can fail before its networks reach the store. */
+export type ImportFailureReason = "invalid-definition" | "no-reservation"
+
+export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
+
+export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
+    "invalid-definition": "The file does not contain a valid network definition.",
+    "no-reservation": "The network designer did not return a reservation. Please try again.",
+}
+
+/**
+ * Converts imported JSON into a network definition and streams it through the
+ * network designer to obtain reservations. Returns the resulting networks, or a
+ * failure reason if the content is not a valid definition or no reservation is returned.
+ */
+export const importNetworkFromJson = async (
+    content: string,
+    agentNetworkName: string,
+    neuroSanURL: string,
+    username: string
+): Promise<ImportNetworkResult> => {
+    const networkDef = jsonToNetworkDefinition(JSON.parse(content))
+    if (networkDef.length === 0) {
+        return {failure: "invalid-definition"}
+    }
+    const frontman = getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "agent"
+    const networks = await streamNetworkDesignerUpsert(
+        neuroSanURL,
+        new AbortController().signal,
+        frontman,
+        networkDef,
+        agentNetworkName,
+        username
+    )
+    if (networks.length === 0) {
+        return {failure: "no-reservation"}
+    }
+    return {networks}
+}

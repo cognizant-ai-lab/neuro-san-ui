@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {isEmpty} from "lodash-es"
-import startCase from "lodash-es/startCase.js"
+import startCase from "lodash-es/startCase"
 
 import {AgentErrorProps} from "./Types"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../../generated/neuro-san/NeuroSanClient"
@@ -74,6 +74,10 @@ export const checkError = (chatMessageJson: Record<string, unknown>): string | n
     return `Error occurred. Error: "${error}", traceback: "${traceback}", tool: "${tool}"`
 }
 
+/**
+ * Strip a trailing canonical (hyphen-delimited) UUID appended to an agent name or
+ * reservation_id, e.g. `copy_cat-hello_world-14ecb260-4389-44f3-afad-ea315dfa1966`.
+ */
 export const removeTrailingUuid = (agentName: string): string => {
     return agentName?.replace(/-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/u, "")
 }

@@ -15,6 +15,8 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn"
 import globals from "globals"
 import typescriptEslint from "typescript-eslint"
 
+import {TESTS_MIGRATED_TO_VITEST} from "../../../vitest_migration.js"
+
 /** @type {import("eslint").Linter.Config[]} */
 export default defineConfig([
     globalIgnores([
@@ -22,7 +24,7 @@ export default defineConfig([
         "**/*.d.ts",
         "**/.next",
         "**/babel.jest.config.cjs",
-        "**/coverage",
+        "**/coverage*/",
         "**/dist",
         "**/generated",
     ]),
@@ -283,7 +285,13 @@ export default defineConfig([
                 {
                     includeInternal: true,
                     includeTypes: true,
-                    devDependencies: ["**/__tests__/**", "jest*.*", "**/eslint.config.mjs", "**/knip.config.ts"],
+                    devDependencies: [
+                        "**/__tests__/**",
+                        "jest*.*",
+                        "vitest*.*",
+                        "**/eslint.config.mjs",
+                        "**/knip.config.ts",
+                    ],
                 },
             ],
 
@@ -547,6 +555,12 @@ export default defineConfig([
             "react/display-name": "off",
             "react/no-array-index-key": "off",
             "react/no-multi-comp": "off",
+        },
+    },
+    {
+        files: TESTS_MIGRATED_TO_VITEST,
+        rules: {
+            "jest/expect-expect": "off",
         },
     },
     {

@@ -3,6 +3,7 @@ import {TreeViewDefaultItemModelProperties} from "@mui/x-tree-view/models"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {cleanUpAgentName, removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region Types and Interfaces
 
@@ -17,13 +18,14 @@ export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModel
     readonly isNetwork: boolean
     readonly tags?: readonly string[]
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkHocon?: string | null
+    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
 }
 
 interface NetworkTreeItemMetadata {
     readonly iconSuggestion?: string
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkHocon?: string | null
+    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
+    readonly displayNameOverride?: string
 }
 
 interface TreeBuildState {
@@ -31,7 +33,7 @@ interface TreeBuildState {
     readonly uncategorizedItems: readonly AgentNetworkTreeItemModel[]
 }
 
-//#endregion
+//#endregion Types and Interfaces
 
 /**
  * Recursively searches for a tree item with the specified ID within the given list of tree items.
@@ -70,6 +72,25 @@ const toDisplayName = (itemName: string, useNativeNames: boolean): string =>
     useNativeNames ? itemName : cleanUpAgentName(removeTrailingUuid(itemName))
 
 /**
+ * Computes the display name for a network (leaf) node.
+ * @param label - The label to use for the tree item (usually derived from the agent name)
+ * @param useNativeNames - Whether to use native names or cleaned-up names for display
+ * @param displayNameOverride - For temporary networks, `label` is the raw reservation_id, which is canonicalized and
+ * may have lost the word separators (_/-) that cleanUpAgentName relies on. When provided (the temp network's
+ * agentNetworkName), it is used as the basis for the cleaned name instead of the path part.
+ * @returns The display name to show in the tree view
+ */
+const toLeafDisplayName = (label: string, useNativeNames: boolean, displayNameOverride?: string): string => {
+    // Native mode shows the raw agent name part, unmodified.
+    if (useNativeNames) {
+        return label
+    }
+
+    const cleanedName = cleanUpAgentName(displayNameOverride ?? removeTrailingUuid(label))
+    return cleanedName
+}
+
+/**
  * Converts an AgentInfo object into a tree item model representing a network (leaf node).
  * @param network - The AgentInfo object containing details about the network
  * @param label - The label to use for the tree item (usually derived from the agent name)
@@ -85,12 +106,12 @@ const toNetworkLeaf = (
 ): AgentNetworkTreeItemModel => ({
     id: network.agent_name,
     label,
-    displayName: toDisplayName(label, useNativeNames),
+    displayName: toLeafDisplayName(label, useNativeNames, metadata.displayNameOverride),
     iconSuggestion: metadata.iconSuggestion,
     isNetwork: true,
     tags: network.tags,
     temporaryNetworkExpirationTime: metadata.temporaryNetworkExpirationTime,
-    temporaryNetworkHocon: metadata.temporaryNetworkHocon,
+    temporaryNetworkDefinition: metadata.temporaryNetworkDefinition,
 })
 
 /**
@@ -243,7 +264,10 @@ export const buildTreeViewItems = (
         tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, {
             iconSuggestion: "HourglassTop",
             temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
-            temporaryNetworkHocon: temporaryNetwork.networkHocon,
+            // The structured definition is carried through and serialized at download time (it's the same shape
+            // the import modal reads back in).
+            temporaryNetworkDefinition: temporaryNetwork.agentNetworkDefinition,
+            displayNameOverride: temporaryNetwork.agentNetworkName,
         })
     }
 

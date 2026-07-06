@@ -18,6 +18,8 @@ import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 import {ComponentProps} from "react"
+// eslint-disable-next-line no-shadow
+import {beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
 
 import {
     LEVEL_1_FOLDER,
@@ -26,6 +28,7 @@ import {
     LEVEL_2_FOLDER_DISPLAY,
     LIST_NETWORKS_RESPONSE,
     TEMPORARY_NETWORK,
+    TEMPORARY_NETWORK_DEFINITION,
     TEMPORARY_NETWORK_NAME,
     TEST_AGENT_MATH_GUY,
     TEST_AGENT_MATH_GUY_DISPLAY,
@@ -36,7 +39,7 @@ import {
     TEST_DEEP_AGENT,
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {withStrictMocks} from "../../../../../../__tests__/common/vitest/strictMocks"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,
@@ -53,13 +56,13 @@ const DEFAULT_EXAMPLE_URL = "https://default.example.com"
 
 // mock MUI TreeView so we can generate normally impossible values
 let mockSelectedTreeItemId: string | null | undefined
-jest.mock("@mui/x-tree-view/RichTreeView", () => {
-    const OriginalModule = jest.requireActual("@mui/x-tree-view/RichTreeView")
+vi.mock("@mui/x-tree-view/RichTreeView", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@mui/x-tree-view/RichTreeView")>()
 
     return {
-        ...OriginalModule,
-        RichTreeView: (props: ComponentProps<typeof OriginalModule.RichTreeView>) => {
-            const OriginalRichTreeView = OriginalModule.RichTreeView
+        ...actual,
+        RichTreeView: (props: ComponentProps<typeof actual.RichTreeView>) => {
+            const OriginalRichTreeView = actual.RichTreeView
 
             return (
                 <>
@@ -75,11 +78,15 @@ jest.mock("@mui/x-tree-view/RichTreeView", () => {
     }
 })
 
-jest.mock("../../../../controller/agent/Agent")
-jest.mock("../../../../utils/File", () => ({
-    ...jest.requireActual("../../../../utils/File"),
-    downloadFile: jest.fn(),
-}))
+vi.mock("../../../../controller/agent/Agent")
+vi.mock("../../../../utils/File", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../../../utils/File")>()
+
+    return {
+        ...actual,
+        downloadFile: vi.fn(),
+    }
+})
 
 // Simulated Neuro-san version for testing
 const TEST_VERSION = "1.2.3.4a"
@@ -89,18 +96,21 @@ const NETWORK_ICON_SUGGESTIONS: NetworkIconSuggestions = {
     [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`]: "Settings",
 }
 
-const onDeleteNetworkMock = jest.fn()
-const setSelectedNetworkMock = jest.fn()
+const onDeleteNetworkMock = vi.fn()
+const onImportClickMock = vi.fn()
+const setSelectedNetworkMock = vi.fn()
 
 const DEFAULT_PROPS: SidebarProps = {
     id: "test-flow-id",
     isAwaitingLlm: false,
+    isImporting: false,
     networkIconSuggestions: NETWORK_ICON_SUGGESTIONS,
     networks: LIST_NETWORKS_RESPONSE,
     neuroSanServerURL: DEFAULT_EXAMPLE_URL,
     newlyAddedTemporaryNetworks: undefined,
     onDeleteNetwork: onDeleteNetworkMock,
-    onEditNetwork: jest.fn(),
+    onEditNetwork: vi.fn(),
+    onImportClick: onImportClickMock,
     setSelectedNetwork: setSelectedNetworkMock,
 }
 
@@ -129,7 +139,7 @@ describe("SideBar", () => {
         mockSelectedTreeItemId = undefined
 
         user = userEvent.setup()
-        const testConnectionMock = jest.mocked(testConnection)
+        const testConnectionMock = vi.mocked(testConnection)
         testConnectionMock.mockResolvedValue({
             httpStatus: httpStatus.OK,
             status: "ok",
@@ -180,7 +190,7 @@ describe("SideBar", () => {
         // Now mock testConnection to return failure and re-render the component
         const statusMessage = "expected error string"
 
-        const testConnectionMock = jest.mocked(testConnection)
+        const testConnectionMock = vi.mocked(testConnection)
         testConnectionMock.mockResolvedValue({
             success: false,
             status: statusMessage,
@@ -253,7 +263,7 @@ describe("SideBar", () => {
             expectedMessage: "Simulated string error",
         },
     ])("handles errors from testConnection when $caseName is thrown", async ({exception, expectedMessage}) => {
-        const testConnectionMock = jest.mocked(testConnection)
+        const testConnectionMock = vi.mocked(testConnection)
 
         testConnectionMock.mockRejectedValue(exception)
 
@@ -418,7 +428,11 @@ describe("SideBar", () => {
         const downloadButton = screen.getByTestId("DownloadIcon")
         await user.click(downloadButton)
 
-        expect(downloadFile).toHaveBeenCalledWith(TEMPORARY_NETWORK.networkHocon, `${TEMPORARY_NETWORK_NAME}.hocon`)
+        expect(downloadFile).toHaveBeenCalledWith(
+            JSON.stringify(TEMPORARY_NETWORK_DEFINITION, null, 2),
+            `${TEMPORARY_NETWORK_NAME}.json`,
+            "application/json"
+        )
     })
 
     it("Should handle expired temporary networks correctly", async () => {
@@ -471,7 +485,7 @@ describe("SideBar", () => {
     })
 
     it("Should select the network and call onEditNetwork when edit is clicked on a non-selected network", async () => {
-        const onEditNetworkMock = jest.fn()
+        const onEditNetworkMock = vi.fn()
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
             temporaryNetworks: [TEMPORARY_NETWORK],
@@ -496,7 +510,7 @@ describe("SideBar", () => {
     })
 
     it("Should not re-select the network when edit is clicked on the already-selected network", async () => {
-        const onEditNetworkMock = jest.fn()
+        const onEditNetworkMock = vi.fn()
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
             temporaryNetworks: [TEMPORARY_NETWORK],
@@ -534,6 +548,25 @@ describe("SideBar", () => {
         expect(setSelectedNetworkMock).not.toHaveBeenCalled()
     })
 
+    it("should disable the import button when isAwaitingLlm is true", async () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should disable the import button when isImporting is true", async () => {
+        renderSidebarComponent({isImporting: true})
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        expect(importButton).toBeDisabled()
+    })
+
+    it("should render the import button and call onImportClick when the import button is clicked", async () => {
+        renderSidebarComponent()
+        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
+        await user.click(importButton)
+        expect(onImportClickMock).toHaveBeenCalledTimes(1)
+    })
+
     it("should not break if networks is empty", async () => {
         renderSidebarComponent({networks: []})
         await screen.findByText("Agent Networks")
@@ -542,7 +575,7 @@ describe("SideBar", () => {
 
     it("Should add sparkle-highlight to the selected tree item after the 50ms timeout", async () => {
         // Fake timers make the 50ms highlight callback fire deterministically.
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         renderSidebarComponent({
             networks: [...LIST_NETWORKS_RESPONSE],
@@ -552,21 +585,22 @@ describe("SideBar", () => {
 
         // Flush pending state updates; findByText succeeds on the first poll (element
         // already present), so no fake-timer conflict.
-        const treeItem = (await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))).closest(
-            '[role="treeitem"]'
-        )
+        const treeItem = screen.getByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME)).closest('[role="treeitem"]')
+
+        // Class only gets applied after 50 ms elapsed, which they haven't yet (in our simulated timeline)
+        expect(treeItem).not.toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
 
         // Fire the pending 50ms timer — covers the true arm of `if (selectedNode)`.
-        // runOnlyPendingTimers fires only timers already in the queue, so the
         // 5000ms sparkle-remove timer registered inside the callback won't fire here.
         act(() => {
-            jest.advanceTimersByTime(50)
+            vi.advanceTimersByTime(50)
         })
 
+        // Now the sparkle class should have been applied
         expect(treeItem).toHaveClass(SPARKLE_HIGHLIGHT_CLASS)
 
         act(() => {
-            jest.advanceTimersByTime(5001)
+            vi.advanceTimersByTime(5001)
         })
 
         // Make sure the sparkle highlight class is removed after the next timer runs
@@ -575,7 +609,7 @@ describe("SideBar", () => {
 
     it("Should be a no-op when the highlight callback finds no matching tree item", async () => {
         // Fake timers make the 50ms callback fire deterministically.
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         // Render with empty networks, so there are NO treeitem elements in the DOM.
         // When the 50ms timer fires, querySelector returns null → covers the false
@@ -586,11 +620,11 @@ describe("SideBar", () => {
             newlyAddedTemporaryNetworks: new Set(["any-name"]),
         })
 
-        await screen.findByText("Agent Networks")
+        screen.getByText("Agent Networks")
 
         // Fire the 50ms timer — selectedNode is null, so the callback is a no-op.
         act(() => {
-            jest.advanceTimersByTime(50)
+            vi.advanceTimersByTime(50)
         })
 
         expect(screen.queryByRole("treeitem")).not.toBeInTheDocument()
