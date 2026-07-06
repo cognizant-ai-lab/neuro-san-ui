@@ -1,13 +1,11 @@
 import {render, screen} from "@testing-library/react"
-// eslint-disable-next-line no-shadow
-import {beforeEach, describe, expect, it, MockInstance, vi} from "vitest"
+import {MockInstance} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores
 vi.mock("../../../components/ErrorPage/ErrorPage", () => ({
-    __esModule: true,
     default: ({errorText}: {errorText: string}) => <div data-testid="mock-error">{errorText}</div>,
 }))
 

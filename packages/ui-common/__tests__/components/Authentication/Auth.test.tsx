@@ -16,10 +16,8 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {signIn, useSession} from "next-auth/react"
-// eslint-disable-next-line no-shadow
-import {describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Auth} from "../../../components/Authentication/Auth"
 
 const AUTH_CHILDREN_TEXT = "Mock Auth"
@@ -36,23 +34,28 @@ describe("Auth Component", () => {
     withStrictMocks()
 
     it("should render a spinner when status is loading", () => {
-        ;(useSession as jest.Mock).mockReturnValue({status: "loading"})
+        vi.mocked(useSession).mockReturnValue({data: null, status: "loading", update: undefined})
         render(AUTH_ELEMENT)
 
         expect(screen.getByText("Loading... Please wait")).toBeInTheDocument()
     })
 
     it("should call signIn when user is not authenticated", () => {
-        ;(useSession as jest.Mock).mockReturnValue({data: {session: {user: undefined}}})
+        vi.mocked(useSession).mockReturnValue({
+            data: {user: undefined, expires: undefined},
+            status: undefined,
+            update: undefined,
+        })
         render(AUTH_ELEMENT)
 
         expect(signIn).toHaveBeenCalledWith("auth0")
     })
 
     it("should pass through children when user is authenticated", async () => {
-        ;(useSession as jest.Mock).mockReturnValue({
-            data: {user: {name: "Test User", email: "test@example.com"}},
+        vi.mocked(useSession).mockReturnValue({
+            data: {user: {name: "Test User", email: "test@example.com"}, expires: undefined},
             status: "authenticated",
+            update: undefined,
         })
         render(AUTH_ELEMENT)
 

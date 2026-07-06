@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {vi} from "vitest"
-
 // Mock Fetch for NodeJs environment
 export const mockFetch = (data: Record<string, unknown>, ok: boolean = true) => {
     return vi.fn().mockImplementation(() =>

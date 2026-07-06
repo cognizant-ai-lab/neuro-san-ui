@@ -15,8 +15,6 @@ limitations under the License.
 */
 
 import "fake-indexeddb/auto"
-// eslint-disable-next-line no-shadow
-import {beforeEach, vi} from "vitest"
 
 /**
  * This function is used to clear and reset all mocks before each test.

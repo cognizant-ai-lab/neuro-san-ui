@@ -15,10 +15,8 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-// eslint-disable-next-line no-shadow
-import {describe, expect, it} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {NeuroAIBreadcrumbs} from "../../../components/Common/Breadcrumbs"
 
 const MOCK_PATHNAME = "mockPath1/mockPath2/mockPath3/mockPath4"

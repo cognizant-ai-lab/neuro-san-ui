@@ -1,7 +1,4 @@
-// eslint-disable-next-line no-shadow
-import {describe, expect, it} from "vitest"
-
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {adjustBrightness, isLightColor} from "../../../Theme/Theme"
 
 describe("adjustBrightness", () => {

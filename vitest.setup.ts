@@ -16,29 +16,7 @@ limitations under the License.
 
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
-
-import {cleanup} from "@testing-library/react"
-// eslint-disable-next-line no-shadow
-import {ReadableStream} from "node:stream/web"
-import {TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder} from "node:util"
-// eslint-disable-next-line no-shadow
-import {afterEach, vi} from "vitest"
 import failOnConsole from "vitest-fail-on-console"
-
-/*
-This next part is a hack to get around "ReferenceError: TextEncoder is not defined" errors when running Jest.
-See: https://stackoverflow.com/questions/68468203/why-am-i-getting-textencoder-is-not-defined-in-jest
- */
-
-Object.defineProperties(globalThis, {
-    ReadableStream: {value: ReadableStream},
-})
-
-// Use the Node.js TextEncoder for Jest, with a type cast to satisfy TypeScript
-global.TextEncoder = NodeTextEncoder as unknown as typeof global.TextEncoder
-global.TextDecoder = NodeTextDecoder
-
-// End of hack
 
 // Next hack: allows us to test react-flow components.
 // See: https://github.com/xyflow/xyflow/issues/716#issuecomment-1246602067
@@ -88,51 +66,8 @@ Object.defineProperties(global.HTMLElement.prototype, {
     },
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-;(global.SVGElement as any).prototype.getBBox = () => ({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-})
-
-// End of hack
-
-// Cheesy mock implementation of structuredClone since it's not available in jsdom
-// See: https://github.com/jsdom/jsdom/issues/3363
-// eslint-disable-next-line unicorn/prefer-structured-clone
-global.structuredClone = (val: object) => JSON.parse(JSON.stringify(val))
-
 // Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
 window.HTMLElement.prototype.scrollIntoView = vi.fn()
-
-// Polyfill SVGPathElement for testing SVG stuff
-if (global.SVGPathElement === undefined) {
-    class FakeSVGPathElement {
-        // eslint-disable-next-line @typescript-eslint/class-methods-use-this
-        getTotalLength(): number {
-            return 100
-        }
-
-        getPointAtLength(len: number): DOMPoint {
-            return {
-                x: len,
-                y: len,
-                z: 0,
-                w: 1,
-                matrixTransform: () => this as unknown as DOMPoint,
-                toJSON: () => ({x: len, y: len, z: 0, w: 1}),
-            }
-        }
-    }
-
-    global.SVGPathElement = FakeSVGPathElement as unknown as typeof SVGPathElement
-}
-
-// We've disabled globals for Vitest during migration so have to do this here
-afterEach(() => {
-    cleanup()
-})
 
 // Make tests fail if any output is sent to the console
 failOnConsole({

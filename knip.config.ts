@@ -26,53 +26,22 @@ import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 const config: KnipConfig = {
     ...baseConfig,
 
-    ignore: [
-        ...(baseConfig.ignore as string[]),
-
-        // Used in a sneaky way by jest
-        "babel.jest.config.cjs",
-
-        // Used by CommitCheck script
-        "jest_quiet.config.ts",
-    ],
     ignoreDependencies: [
         ...baseConfig.ignoreDependencies,
 
         // Used internally by eslint
         "globals",
 
-        // Used by jest
-        "@babel/core",
-        "@babel/preset-env",
-        "babel-jest",
-
-        // Used for Speech Recognition API types
-        "@types/dom-speech-recognition",
-
-        // Used internally by eslint
-        "globals",
-
-        // Used by RunCombinedTests.sh during Jest-to-Vitest migration
-        "nyc",
-
         // Used by do_openapi_generate.sh
         "openapi-typescript",
 
-        // Used by CommitCheck script
-        "jest-silent-reporter",
-
         // Used by Next.js image optimization,
         "sharp",
-
-        // Used by Jest for TS format config file
-        "ts-node",
 
         // Peer dependencies of @cognizant-ai-lab/dev-common; installed here because ESLint runs from the monorepo root
         "@eslint/js",
         "@next/eslint-plugin-next",
         "eslint-config-prettier",
-        "eslint-plugin-jest",
-        "eslint-plugin-jest-dom-ya",
         "eslint-plugin-prefer-arrow-functions",
         "eslint-plugin-react",
         "eslint-plugin-react-hooks",

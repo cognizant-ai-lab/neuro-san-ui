@@ -16,10 +16,8 @@ limitations under the License.
 
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {default as userEvent, UserEvent} from "@testing-library/user-event"
-// eslint-disable-next-line no-shadow
-import {beforeEach, describe, expect, it, vi} from "vitest"
 
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     formatFileSize,
     IMPORT_MODAL_MAX_FILE_SIZE_BYTES,

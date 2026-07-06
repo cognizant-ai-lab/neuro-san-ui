@@ -30,8 +30,6 @@
         "zustand": "4.5.7"
     },
     "devDependencies": {
-        "@babel/core": "catalog:default",
-        "@babel/preset-env": "catalog:default",
         "@testing-library/dom": "catalog:default",
         "@testing-library/react": "catalog:default",
         "@testing-library/user-event": "catalog:default",
@@ -40,7 +38,6 @@
         "@types/react": "catalog:default",
         "@types/react-dom": "catalog:default",
         "@types/react-syntax-highlighter": "15.5.13",
-        "babel-jest": "catalog:default",
         "fake-indexeddb": "catalog:default",
         "fix-esm-import-path": "1.10.3",
         "globals": "catalog:default",

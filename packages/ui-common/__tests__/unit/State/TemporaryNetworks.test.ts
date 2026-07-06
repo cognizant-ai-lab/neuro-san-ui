@@ -14,10 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// eslint-disable-next-line no-shadow
-import {beforeEach, describe, expect, it} from "vitest"
-
-import {withStrictMocks} from "../../../../../__tests__/common/vitest/strictMocks"
+import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 
 const makeNetwork = (reservationId: string, agentNetworkName?: string): TemporaryNetwork => ({
