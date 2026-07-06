@@ -27,7 +27,7 @@ import {authenticationEnabled} from "../../packages/ui-common/const"
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
  * exit with an error message.
  */
-export const REQUIRED_ENV_VARS = ["NEURO_SAN_SERVER_URL", "OPENAI_API_KEY", "SUPPORT_EMAIL_ADDRESS"]
+export const REQUIRED_ENV_VARS = ["NEURO_SAN_SERVER_URL", "SUPPORT_EMAIL_ADDRESS"]
 
 export const REQUIRED_FOR_AUTH_ENV_VARS = [
     "AUTH0_CLIENT_ID",
@@ -42,7 +42,7 @@ export const REQUIRED_FOR_AUTH_ENV_VARS = [
  * List of environment variables that are optional. If any of these are not set, the app will log a warning but will
  * continue to run. These are typically used for optional features that have a fallback if the env var is not set.
  */
-export const OPTIONAL_ENV_VARS = ["LOGO_SERVICE_TOKEN"]
+export const OPTIONAL_ENV_VARS = ["LOGO_SERVICE_TOKEN", "OPENAI_API_KEY"]
 
 export const register = () => {
     // Always required env vars
