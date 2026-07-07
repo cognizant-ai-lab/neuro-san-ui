@@ -19,6 +19,7 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 import {ComponentProps} from "react"
 
+import {INVALID_MUI_ICON_NAME} from "../../../../../../__tests__/common/MuiIconsMock"
 import {
     LEVEL_1_FOLDER,
     LEVEL_1_FOLDER_DISPLAY,
@@ -38,7 +39,6 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {INVALID_MUI_ICON_NAME} from "../../../../../../vitest.setup"
 import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,

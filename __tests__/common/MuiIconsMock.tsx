@@ -1,8 +1,7 @@
-// Tests should use this constant to test for invalid icon names.
 import {createElement} from "react"
 
 // Tests should use this constant to test for invalid icon names.
-const INVALID_MUI_ICON_NAME = "NonExistentIcon"
+export const INVALID_MUI_ICON_NAME = "NonExistentIcon"
 
 /**
  * Global mock for MUI icons. Why? Because in a couple of places in the code we import the whole MUI Icons barrel
