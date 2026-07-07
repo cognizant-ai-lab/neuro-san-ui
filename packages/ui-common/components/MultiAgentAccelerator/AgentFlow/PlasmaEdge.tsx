@@ -164,7 +164,11 @@ export const PlasmaEdge: FC<EdgeProps & PlasmaEdgeProps> = ({
 
         animate()
         return () => {
-            if (animationRef.current !== undefined) cancelAnimationFrame(animationRef.current)
+            if (animationRef.current !== undefined) {
+                cancelAnimationFrame(animationRef.current)
+                animationRef.current = undefined
+            }
+            particles.current = []
         }
     }, [edgePath, width, height, plasmaColor, x, y, particlesPerFrame, maxParticles])
 
