@@ -20,8 +20,8 @@ import {FC, useEffect, useRef} from "react"
 import {useSettingsStore} from "../../../state/Settings"
 
 //#region Constants
-export const DEFAULT_MAX_PARTICLES = 250
-export const DEFAULT_PARTICLES_PER_FRAME = 25
+const DEFAULT_MAX_PARTICLES = 250
+const DEFAULT_PARTICLES_PER_FRAME = 25
 //#endregion Constants
 
 //#region Interfaces and Types
@@ -135,7 +135,7 @@ export const PlasmaEdge: FC<EdgeProps & PlasmaEdgeProps> = ({
         canvas.height = height * dpr
         canvas.style.width = `${width}px`
         canvas.style.height = `${height}px`
-        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        ctx.etTransform(1, 0, 0, 1, 0, 0)
         ctx.scale(dpr, dpr)
 
         const canvasOffset = {x, y}
