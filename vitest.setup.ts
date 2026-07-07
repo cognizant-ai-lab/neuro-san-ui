@@ -17,8 +17,9 @@ limitations under the License.
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
 import failOnConsole from "vitest-fail-on-console"
+import "./__tests__/common/MuiIconsMock"
 
-// Next hack: allows us to test react-flow components.
+// This mock allows us to test react-flow components.
 // See: https://github.com/xyflow/xyflow/issues/716#issuecomment-1246602067
 // eslint-disable-next-line no-shadow
 class ResizeObserver {
@@ -32,15 +33,17 @@ class ResizeObserver {
         this.callback([{target} as globalThis.ResizeObserverEntry], this)
     }
 
-    // Just a stub for testing so disable warnings
-    /* eslint-disable-next-line
-        no-empty-function,@typescript-eslint/no-empty-function,@typescript-eslint/class-methods-use-this */
-    unobserve() {}
+    /* Just a stub for testing so disable warnings */
+    /* eslint-disable-next-line @typescript-eslint/class-methods-use-this */
+    unobserve() {
+        // just a stub
+    }
 
     // Just a stub for testing so disable warnings
-    /* eslint-disable-next-line
-        no-empty-function,@typescript-eslint/no-empty-function,@typescript-eslint/class-methods-use-this */
-    disconnect() {}
+    /* eslint-disable-next-line @typescript-eslint/class-methods-use-this */
+    disconnect() {
+        // just a stub
+    }
 }
 
 global.ResizeObserver = ResizeObserver
@@ -65,9 +68,6 @@ Object.defineProperties(global.HTMLElement.prototype, {
         get: () => 1,
     },
 })
-
-// Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
-window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
 // Make tests fail if any output is sent to the console
 failOnConsole({

@@ -156,7 +156,8 @@ describe("ChatCommon", () => {
         const userQueryInput = screen.getByPlaceholderText(`Chat with ${agent}`)
 
         // Type a query
-        await user.type(userQueryInput, query)
+        await user.click(userQueryInput)
+        await user.paste(query)
 
         // Find "Send" button
         const sendButton = screen.getByRole("button", {name: "Send"})
@@ -340,7 +341,9 @@ describe("ChatCommon", () => {
             const userInput = await screen.findByPlaceholderText(CHAT_WITH_MATH_GUY)
 
             // Type user input
-            await user.type(userInput, strToCheck)
+            await user.click(userInput)
+            await user.paste(strToCheck)
+
             // Check that user input is correct
             expect(userInput).toHaveValue(strToCheck)
 
@@ -363,7 +366,9 @@ describe("ChatCommon", () => {
             const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
 
             // Type user input
-            await user.type(userInput, strToCheck)
+            await user.click(userInput)
+            await user.paste(strToCheck)
+
             // Press enter
             fireEvent.keyDown(userInput, {key: "Enter"})
 
@@ -383,7 +388,8 @@ describe("ChatCommon", () => {
             const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
 
             // Type line 1
-            await user.type(userInput, strToCheckLine1)
+            await user.click(userInput)
+            await user.paste(strToCheckLine1)
             // Type enter + shift
             await user.type(userInput, "{Shift>}{Enter}{/Shift}")
 
@@ -392,7 +398,7 @@ describe("ChatCommon", () => {
             await waitFor(() => expect(mockSendFunction).not.toHaveBeenCalledWith(strToCheckLine1))
 
             // Type line 2
-            await user.type(userInput, strToCheckLine2)
+            await user.paste(strToCheckLine2)
 
             // Press enter
             fireEvent.keyDown(userInput, {key: "Enter"})
@@ -660,7 +666,8 @@ describe("ChatCommon", () => {
         it("clears input when clear button is clicked", async () => {
             renderChatCommonComponent()
             const input = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
-            await user.type(input, "hello")
+            await user.click(input)
+            await user.paste("hello")
             // Find the clear input button by id (since it has no accessible name)
             const clearBtn = document.getElementById("clear-input-button")
             expect(clearBtn).toBeTruthy()
@@ -680,12 +687,13 @@ describe("ChatCommon", () => {
             expect(sendButton).toBeDisabled()
 
             // Try with whitespace only
-            await user.type(userInput, " ".repeat(3))
+            await user.click(userInput)
+            await user.paste(" ".repeat(3))
             expect(sendButton).toBeDisabled()
 
             // Clear and add actual content
             await user.clear(userInput)
-            await user.type(userInput, "actual content")
+            await user.paste("actual content")
             expect(sendButton).toBeEnabled()
         })
 
@@ -1252,7 +1260,8 @@ describe("ChatCommon", () => {
                 const micButton = screen.getByTestId("microphone-button")
 
                 // Type some initial text
-                await user.type(userInput, "initial text")
+                await user.click(userInput)
+                await user.paste("initial text")
                 expect(userInput).toHaveValue("initial text")
 
                 // Start voice recognition

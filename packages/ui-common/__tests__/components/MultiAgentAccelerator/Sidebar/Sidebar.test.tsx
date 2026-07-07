@@ -19,6 +19,7 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 import {ComponentProps} from "react"
 
+import {INVALID_MUI_ICON_NAME} from "../../../../../../__tests__/common/MuiIconsMock"
 import {
     LEVEL_1_FOLDER,
     LEVEL_1_FOLDER_DISPLAY,
@@ -111,6 +112,9 @@ const DEFAULT_PROPS: SidebarProps = {
     onImportClick: onImportClickMock,
     setSelectedNetwork: setSelectedNetworkMock,
 }
+
+// Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
 
 describe("SideBar", () => {
     withStrictMocks()
@@ -335,7 +339,7 @@ describe("SideBar", () => {
             // Override networkIconSuggestions to include an invalid icon name for TEST_AGENT_MUSIC_NERD
             networkIconSuggestions: {
                 ...NETWORK_ICON_SUGGESTIONS,
-                [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: "NonExistentIcon",
+                [`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MUSIC_NERD}`]: INVALID_MUI_ICON_NAME,
             },
         })
 

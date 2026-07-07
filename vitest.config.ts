@@ -1,8 +1,6 @@
-import react from "@vitejs/plugin-react"
 import {defineConfig} from "vitest/config"
 
 export default defineConfig({
-    plugins: [react()],
     test: {
         coverage: {
             enabled: false,
@@ -30,10 +28,16 @@ export default defineConfig({
                 lines: -75,
             },
         },
+        // TODO: potential small optimization: consider using `node` environment for non-UI tests
         environment: "jsdom",
         exclude: ["**/node_modules/**", "**/dist/**", "**/.next/**", "**/coverage/**"],
         globals: true,
-        include: ["**/__tests__/**/*.test.{ts,tsx}"],
+        // Let maxWorkers default to the number of CPU cores in CI, but set 8 for local development (best by test)
+        include: ["apps/**/__tests__/**/*.test.{ts,tsx}", "packages/**/__tests__/**/*.test.{ts,tsx}"],
+        maxWorkers: process.env["CI"] === "true" ? undefined : (process.env["VITEST_MAX_WORKERS"] ?? 8),
+        // Have to manually specify GitHub Actions reporter when configuring reporters manually.
+        // See: https://vitest.dev/guide/reporters.html#github-actions-reporter
+        reporters: process.env["GITHUB_ACTIONS"] === "true" ? ["minimal", "github-actions"] : ["minimal"],
         setupFiles: ["./vitest.setup.ts"],
     },
 })
