@@ -18,10 +18,26 @@ import {act, render} from "@testing-library/react"
 import {Position} from "@xyflow/react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {PlasmaEdge} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
+import {PlasmaEdge, PlasmaEdgeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
 
 describe("PlasmaEdge", () => {
     withStrictMocks()
+
+    const renderPlasmaEdge = (overrides: Partial<PlasmaEdgeProps> = {}) =>
+        render(
+            <PlasmaEdge
+                id="test-edge"
+                source="test-source"
+                target="test-target"
+                sourceX={0}
+                sourceY={0}
+                targetX={200}
+                targetY={120}
+                sourcePosition={Position.Left}
+                targetPosition={Position.Right}
+                {...overrides}
+            />
+        )
 
     it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
         const errSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
@@ -64,26 +80,23 @@ describe("PlasmaEdge", () => {
 
             global.cancelAnimationFrame = vi.fn()
 
-            const {unmount, container} = render(
-                <PlasmaEdge
-                    // edge props are minimally required for rendering
-                    id="test-edge"
-                    source="test-source"
-                    target="test-target"
-                    sourceX={0}
-                    sourceY={0}
-                    targetX={200}
-                    targetY={120}
-                    sourcePosition={Position.Left}
-                    targetPosition={Position.Right}
-                />
-            )
+            // First render with default props
+            const view = renderPlasmaEdge()
+            expect(view.container.querySelector("canvas")).not.toBeNull()
+            view.unmount()
+
+            // Now render with specific props to test animation
+            const {unmount, container} = renderPlasmaEdge({
+                maxParticles: 1,
+                particlesPerFrame: 1,
+            })
 
             expect(container.querySelector("canvas")).not.toBeNull()
             expect(container.querySelector("path")).not.toBeNull()
             expect(global.requestAnimationFrame).toHaveBeenCalled()
 
             act(() => {
+                rafCallback?.(0)
                 rafCallback?.(16)
             })
 

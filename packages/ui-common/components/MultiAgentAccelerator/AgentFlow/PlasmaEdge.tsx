@@ -19,6 +19,18 @@ import {FC, useEffect, useRef} from "react"
 
 import {useSettingsStore} from "../../../state/Settings"
 
+//#region Constants
+export const DEFAULT_MAX_PARTICLES = 250
+export const DEFAULT_PARTICLES_PER_FRAME = 25
+//#endregion Constants
+
+//#region Interfaces and Types
+export type PlasmaEdgeProps = {
+    readonly maxParticles?: number
+    readonly particlesPerFrame?: number
+}
+//#endregion Interfaces and Types
+
 const createFunnelParticleOnPath = (
     pathEl: SVGPathElement,
     canvasOffset: {x: number; y: number},
@@ -81,14 +93,16 @@ const createFunnelParticleOnPath = (
     return {update, draw, isAlive}
 }
 
-export const PlasmaEdge: FC<EdgeProps> = ({
+export const PlasmaEdge: FC<EdgeProps & PlasmaEdgeProps> = ({
+    maxParticles = DEFAULT_MAX_PARTICLES,
+    particlesPerFrame = DEFAULT_PARTICLES_PER_FRAME,
+    sourcePosition,
     sourceX,
     sourceY,
+    targetPosition,
     targetX,
     targetY,
-    sourcePosition,
-    targetPosition,
-}: EdgeProps) => {
+}: EdgeProps & PlasmaEdgeProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const pathRef = useRef<SVGPathElement>(null)
     const animationRef = useRef<number>(null)
@@ -125,14 +139,12 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         ctx.scale(dpr, dpr)
 
         const canvasOffset = {x, y}
-        const MAX_PARTICLES = 250
-        const PARTICLES_PER_FRAME = 25
 
         const animate = () => {
             ctx.clearRect(0, 0, width, height)
 
-            for (let i = 0; i < PARTICLES_PER_FRAME; i += 1) {
-                if (particles.current.length < MAX_PARTICLES) {
+            for (let i = 0; i < particlesPerFrame; i += 1) {
+                if (particles.current.length < maxParticles) {
                     const t = Math.random()
                     if (Math.random() < 1 - t) {
                         particles.current.push(createFunnelParticleOnPath(pathEl, canvasOffset, t, plasmaColor))
@@ -154,7 +166,7 @@ export const PlasmaEdge: FC<EdgeProps> = ({
         return () => {
             if (animationRef.current !== undefined) cancelAnimationFrame(animationRef.current)
         }
-    }, [edgePath, width, height, plasmaColor, x, y])
+    }, [edgePath, width, height, plasmaColor, x, y, particlesPerFrame, maxParticles])
 
     return (
         <>
