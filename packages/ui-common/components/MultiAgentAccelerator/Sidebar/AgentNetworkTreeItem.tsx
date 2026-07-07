@@ -23,8 +23,7 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
-import {removeTrailingUuid} from "../../../utils/AgentName"
-import {downloadFile, toSafeFilename} from "../../../utils/File"
+import {downloadFile} from "../../../utils/File"
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -83,9 +82,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     onEditNetwork,
 }) => {
     const item = useTreeItemModel<AgentNetworkTreeItemModel>(itemId)
-
-    // We know all labels are strings because we set them that way in the tree view items
-    const labelString = label as string
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -205,14 +201,9 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 onClick={(e) => {
                                                     // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-                                                    // Strip the reservation UUID before building the filename so
-                                                    // exported files carry a clean name (toSafeFilename would
-                                                    // otherwise flatten the UUID's hyphens to underscores).
-                                                    const cleanName = removeTrailingUuid(labelString)
-                                                    const fileName = `${toSafeFilename(cleanName)}.json`
                                                     downloadFile(
                                                         JSON.stringify(networkDefinition, null, 2),
-                                                        fileName,
+                                                        item.downloadFileName,
                                                         "application/json"
                                                     )
                                                 }}

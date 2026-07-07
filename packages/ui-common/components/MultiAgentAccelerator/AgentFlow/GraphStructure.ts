@@ -14,7 +14,7 @@ export const getParentAgents = <T extends ConnectivityInfo>(agents: readonly T[]
  *
  * Consumed by the graph layouts (to seed the depth-0 node) and by the network import flow.
  */
-export const getFrontman = <T extends ConnectivityInfo>(agents: readonly T[]): T | undefined => {
+export const getFrontman = (agents: readonly ConnectivityInfo[]): ConnectivityInfo | undefined => {
     const parentAgents = getParentAgents(agents)
     // Child agents are everything referenced as a tool by a parent.
     const childAgents = new Set(parentAgents.flatMap((agent) => agent.tools ?? []))

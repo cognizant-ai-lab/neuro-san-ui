@@ -3,6 +3,7 @@ import {TreeViewDefaultItemModelProperties} from "@mui/x-tree-view/models"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {cleanUpAgentName, removeTrailingUuid, toDisplayName} from "../../../utils/AgentName"
+import {toSafeFilename} from "../../../utils/File"
 import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region Types and Interfaces
@@ -14,6 +15,7 @@ import {AgentNetworkDefinitionEntry} from "../const"
 export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModelProperties, "children"> {
     readonly children?: readonly AgentNetworkTreeItemModel[]
     readonly displayName: string
+    readonly downloadFileName?: string
     readonly iconSuggestion?: string
     readonly isNetwork: boolean
     readonly tags?: readonly string[]
@@ -81,6 +83,15 @@ const toLeafDisplayName = (label: string, useNativeNames: boolean, displayNameOv
 }
 
 /**
+ * Computes the filename used when exporting a network's definition to disk. The trailing reservation
+ * UUID is stripped first so the export carries a clean name (toSafeFilename would otherwise flatten
+ * the UUID's hyphens to underscores).
+ * @param label - The label to use for the tree item (usually derived from the agent name)
+ * @returns The sanitized `.json` filename for the exported network definition
+ */
+const toDownloadFileName = (label: string): string => `${toSafeFilename(removeTrailingUuid(label))}.json`
+
+/**
  * Converts an AgentInfo object into a tree item model representing a network (leaf node).
  * @param network - The AgentInfo object containing details about the network
  * @param label - The label to use for the tree item (usually derived from the agent name)
@@ -97,6 +108,7 @@ const toNetworkLeaf = (
     id: network.agent_name,
     label,
     displayName: toLeafDisplayName(label, useNativeNames, metadata.displayNameOverride),
+    downloadFileName: metadata.temporaryNetworkDefinition ? toDownloadFileName(label) : undefined,
     iconSuggestion: metadata.iconSuggestion,
     isNetwork: true,
     tags: network.tags,
