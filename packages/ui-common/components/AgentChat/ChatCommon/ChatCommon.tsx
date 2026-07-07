@@ -1318,18 +1318,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
 
     const allApiKeysPresent = missingApiKeys?.size === 0
 
-    const getMissingApiKeysOverlayBody = () => (
-        <Typography
-            component="span"
-            sx={{color: "error.main"}}
-        >
-            API key(s) required for at least one of these providers: <br />
-            <strong>{[...missingApiKeys].join(", ")}</strong>
-            <br />
-            Please add the required key(s) in &quot;Settings&quot; to use this Network.
-        </Typography>
-    )
-
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -1341,7 +1329,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             {selectedNetwork
                 ? allApiKeysPresent
                     ? getChatBox()
-                    : getErrorOverlay(getMissingApiKeysOverlayBody())
+                    : getErrorOverlay("") // Parent will display error for this case
                 : getErrorOverlay(getSelectNetworkOverlayBody())}
         </Box>
     )
