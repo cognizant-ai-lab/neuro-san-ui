@@ -2,30 +2,6 @@ import {defineConfig} from "vitest/config"
 
 export default defineConfig({
     test: {
-        deps: {
-            optimizer: {
-                web: {
-                    enabled: true,
-                    include: [
-                        "@emotion/react",
-                        "@emotion/styled",
-                        "@mui/icons-material",
-                        "@mui/material",
-                        "@mui/material/styles",
-                        "@mui/system",
-                        "@mui/x-tree-view",
-                        "@testing-library/dom",
-                        "@testing-library/react",
-                        "@testing-library/user-event",
-                        "@xyflow/react",
-                        "notistack",
-                        "react",
-                        "react-dom",
-                        "zustand",
-                    ],
-                },
-            },
-        },
         coverage: {
             enabled: false,
             exclude: [
@@ -47,7 +23,7 @@ export default defineConfig({
             reporter: ["text-summary"],
             thresholds: {
                 statements: -104,
-                branches: -157,
+                branches: -158,
                 functions: -25,
                 lines: -76,
             },

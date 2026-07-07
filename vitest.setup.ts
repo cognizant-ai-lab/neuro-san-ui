@@ -77,7 +77,7 @@ export const INVALID_MUI_ICON_NAME = "NonExistentIcon"
 vi.mock("@mui/icons-material", () => {
     const moduleBase = {
         __esModule: true,
-    }
+    } as const
 
     const iconCache = new Map<string, unknown>()
 
@@ -105,44 +105,27 @@ vi.mock("@mui/icons-material", () => {
         return iconCache.get(iconName)
     }
 
+    const getMockExport = (target: typeof moduleBase, prop: PropertyKey) => {
+        if (prop in target) {
+            return target[prop as keyof typeof moduleBase]
+        }
+
+        return typeof prop === "string" ? getMockIcon(prop) : undefined
+    }
+
     return new Proxy(moduleBase, {
-        get: (target, prop) => {
-            if (prop === "then") {
-                return undefined
-            }
+        get: (target, prop) => (prop === "then" ? undefined : getMockExport(target, prop)),
 
-            if (prop in target) {
-                return target[prop as keyof typeof target]
-            }
+        has: (target, prop) => prop !== "then" && (prop in target || typeof prop === "string"),
 
-            return typeof prop === "string" ? getMockIcon(prop) : undefined
-        },
-
-        has: (target, prop) => {
-            if (prop === "then") {
-                return false
-            }
-
-            return prop in target || typeof prop === "string"
-        },
-
-        getOwnPropertyDescriptor: (target, prop) => {
-            // Return undefined for "then" to avoid treating the module as a Promise
-            if (prop === "then") {
-                return undefined
-            }
-
-            return {
-                configurable: true,
-                enumerable: true,
-                value:
-                    prop in target
-                        ? target[prop as keyof typeof target]
-                        : typeof prop === "string"
-                          ? getMockIcon(prop)
-                          : undefined,
-            }
-        },
+        getOwnPropertyDescriptor: (target, prop) =>
+            prop === "then"
+                ? undefined
+                : {
+                      configurable: true,
+                      enumerable: true,
+                      value: getMockExport(target, prop),
+                  },
     })
 })
 
