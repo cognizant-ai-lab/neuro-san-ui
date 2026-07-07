@@ -33,12 +33,16 @@ class ResizeObserver {
         this.callback([{target} as globalThis.ResizeObserverEntry], this)
     }
 
+    /* Just a stub for testing so disable warnings */
+    /* eslint-disable-next-line @typescript-eslint/class-methods-use-this */
     unobserve() {
-        return this
+        // just a stub
     }
 
+    // Just a stub for testing so disable warnings
+    /* eslint-disable-next-line @typescript-eslint/class-methods-use-this */
     disconnect() {
-        return this
+        // just a stub
     }
 }
 
