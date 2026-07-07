@@ -16,10 +16,10 @@ limitations under the License.
 
 // eslint-disable-next-line max-classes-per-file
 import "@testing-library/jest-dom/vitest"
-import {createElement} from "react"
 import failOnConsole from "vitest-fail-on-console"
+import "./__tests__/common/MuiIconsMock"
 
-// Next hack: allows us to test react-flow components.
+// This mock allows us to test react-flow components.
 // See: https://github.com/xyflow/xyflow/issues/716#issuecomment-1246602067
 // eslint-disable-next-line no-shadow
 class ResizeObserver {
@@ -67,70 +67,6 @@ Object.defineProperties(global.HTMLElement.prototype, {
     offsetWidth: {
         get: () => 1,
     },
-})
-
-/**
- * Global mock for MUI icons. Why? Because in a couple of places in the code we import the whole MUI Icons barrel
- * via `import * as Icons from "@mui/icons-material"` in order to choose icons dynamically at runtime. This is slow
- * for tests and unnecessary, so we mock the whole module here.
- */
-
-// Tests should use this constant to test for invalid icon names.
-export const INVALID_MUI_ICON_NAME = "NonExistentIcon"
-
-vi.mock("@mui/icons-material", () => {
-    const moduleBase = {
-        __esModule: true,
-    } as const
-
-    const iconCache = new Map<string, unknown>()
-
-    const createMockMuiIcon = (iconName: string) => {
-        const MockMuiIcon = (props: Record<string, unknown>) =>
-            createElement("svg", {
-                ...props,
-                "data-testid": (props["data-testid"] as string | undefined) ?? `${iconName}Icon`,
-            })
-
-        MockMuiIcon.displayName = `${iconName}Icon`
-
-        return MockMuiIcon
-    }
-
-    const getMockIcon = (iconName: string) => {
-        if (iconName === INVALID_MUI_ICON_NAME) {
-            return undefined
-        }
-
-        if (!iconCache.has(iconName)) {
-            iconCache.set(iconName, createMockMuiIcon(iconName))
-        }
-
-        return iconCache.get(iconName)
-    }
-
-    const getMockExport = (target: typeof moduleBase, prop: PropertyKey) => {
-        if (prop in target) {
-            return target[prop as keyof typeof moduleBase]
-        }
-
-        return typeof prop === "string" ? getMockIcon(prop) : undefined
-    }
-
-    return new Proxy(moduleBase, {
-        get: (target, prop) => (prop === "then" ? undefined : getMockExport(target, prop)),
-
-        has: (target, prop) => prop !== "then" && (prop in target || typeof prop === "string"),
-
-        getOwnPropertyDescriptor: (target, prop) =>
-            prop === "then"
-                ? undefined
-                : {
-                      configurable: true,
-                      enumerable: true,
-                      value: getMockExport(target, prop),
-                  },
-    })
 })
 
 // Make tests fail if any output is sent to the console
