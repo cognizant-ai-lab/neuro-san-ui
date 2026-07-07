@@ -193,7 +193,7 @@ export interface ChatCommonProps {
     /**
      * Array of LLM providers for which API keys are required but missing. Only applies to BYOK networks.
      */
-    readonly missingApiKeys?: LLMProvider[]
+    readonly missingApiKeys?: ReadonlySet<LLMProvider>
 }
 
 // Type for forward ref to expose the handleStop and handleClearChat functions
@@ -257,7 +257,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
-        missingApiKeys = [],
+        missingApiKeys = new Set(),
         networkDescription,
         neuroSanURL,
         onChunkReceived,
@@ -1316,12 +1316,17 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Typography>
     )
 
-    const allApiKeysPresent = missingApiKeys?.length === 0
+    const allApiKeysPresent = missingApiKeys?.size === 0
 
     const getMissingApiKeysOverlayBody = () => (
-        <Typography component="span">
-            {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
-                              "Settings" to use this Network.`}
+        <Typography
+            component="span"
+            sx={{color: "error.main"}}
+        >
+            API key(s) required for at least one of these providers: <br />
+            <strong>{[...missingApiKeys].join(", ")}</strong>
+            <br />
+            Please add the required key(s) in &quot;Settings&quot; to use this Network.
         </Typography>
     )
 

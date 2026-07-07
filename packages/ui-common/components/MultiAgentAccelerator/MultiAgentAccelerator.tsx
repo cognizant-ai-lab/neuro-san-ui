@@ -742,8 +742,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
-    const getMissingApiKeys = () => {
-        return providerKeysRequired.size > 0 ? [...providerKeysRequired].filter((provider) => !apiKeys?.[provider]) : []
+    const getMissingApiKeys = (): ReadonlySet<LLMProvider> => {
+        // Calculate intersection of what we have (apiKeys) and what is required (providerKeysRequired)
+        const intersection = new Set([...providerKeysRequired].filter((x) => apiKeys[x]))
+        return intersection.size === 0 ? providerKeysRequired : new Set()
     }
 
     const getLeftPanel = () => {
