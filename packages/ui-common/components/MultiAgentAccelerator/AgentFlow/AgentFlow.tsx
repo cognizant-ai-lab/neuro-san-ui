@@ -129,7 +129,10 @@ type Layout = "radial" | "linear"
 
 //#region: Constants
 
-// Timeout for thought bubbles is set to 10 seconds
+const AGENT_SAVE_TIMEOUT_MS = 60_000
+
+const DOCK_STREAM_TIMEOUT_MS = 120_000
+
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // How long the dock's status banner stays visible before auto-dismissing. Error banners persist until dismissed.
@@ -163,10 +166,14 @@ const streamNetworkDesignerPrompt = async (
         AGENT_NETWORK_DESIGNER_ID,
         (chunk: string) => {
             const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) return
+            if (!chatMessage) {
+                return
+            }
 
             const reservations = extractReservations(chatMessage)
-            if (reservations.length === 0) return
+            if (reservations.length === 0) {
+                return
+            }
 
             const networkHocon = extractNetworkHocon(chatMessage)
             const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
@@ -543,7 +550,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
      * Applies the networks returned by the designer: upserts them and triggers navigation if needed.
      * Returns true when a matching reservation was applied, false (and surfaces an error banner) otherwise.
      */
-    const applyNetworkSaveResult = useCallback(
+    const saveUpdates = useCallback(
         (newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined): boolean => {
             if (newNetworksFromSave.length === 0) {
                 showDockBanner({
@@ -590,7 +597,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         const timeoutId = setTimeout(() => {
             hasTimedOut = true
             controller.abort()
-        }, 120_000) // 2 min timeout
+        }, DOCK_STREAM_TIMEOUT_MS)
         try {
             const newNetworks = await streamNetworkDesignerPrompt(
                 neuroSanURL,
@@ -600,7 +607,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 currentTempNetwork?.agentNetworkName,
                 currentUser
             )
-            const applied = applyNetworkSaveResult(newNetworks, currentTempNetwork?.agentNetworkName)
+            const applied = saveUpdates(newNetworks, currentTempNetwork?.agentNetworkName)
             if (applied) {
                 setDockPrompt("")
                 showDockBanner({
@@ -627,7 +634,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             dockAbortControllerRef.current = null
             setIsDockStreaming(false)
         }
-    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
+    }, [saveUpdates, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
@@ -637,6 +644,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
         onExitEditMode?.()
     }, [isDockStreaming, onExitEditMode])
+
+    // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
+    // node popup is open so Escape closes the popup first rather than the whole edit mode.
+    useEffect(() => {
+        if (!isEditMode || isPopupOpen) return undefined
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") handleExitEditMode()
+        }
+        document.addEventListener("keydown", handleEscape)
+        return () => document.removeEventListener("keydown", handleEscape)
+    }, [isEditMode, isPopupOpen, handleExitEditMode])
 
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
@@ -668,7 +686,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             saveAbortControllerRef.current = saveController
             const saveTimeoutId = setTimeout(
                 () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
-                60_000 // 1 min timeout
+                AGENT_SAVE_TIMEOUT_MS
             )
             try {
                 await onSaveAgent(agentName, updated, currentTempNetwork?.agentNetworkName, saveController.signal)

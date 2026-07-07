@@ -8,6 +8,7 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
+import {styled} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
@@ -22,8 +23,8 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
+import {removeTrailingUuid} from "../../../utils/AgentName"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
-import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -42,6 +43,17 @@ type TagColor = (typeof TAG_COLORS)[number]
 
 // Keep track of which tags have which colors so that the same tag always has the same color
 const tagsToColors = new Map<string, TagColor>()
+
+// Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
+// color and only dims via opacity.
+const ActionIconButton = styled(IconButton)({
+    padding: 0,
+    color: "var(--bs-secondary)",
+    "&:hover": {color: "var(--bs-secondary-dark)"},
+    "&.Mui-disabled": {
+        opacity: 0.3,
+    },
+})
 
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
@@ -189,10 +201,10 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 {networkDefinition && (
                                     <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
                                         <span>
-                                            <IconButton
+                                            <ActionIconButton
                                                 onClick={(e) => {
+                                                    // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-
                                                     // Strip the reservation UUID before building the filename so
                                                     // exported files carry a clean name (toSafeFilename would
                                                     // otherwise flatten the UUID's hyphens to underscores).
@@ -207,42 +219,24 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 disabled={isExpired}
                                                 aria-label="Download network definition"
                                                 size="small"
-                                                sx={{
-                                                    padding: 0,
-                                                    color: "var(--bs-secondary)",
-                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                    "&.Mui-disabled": {
-                                                        color: "var(--bs-secondary)",
-                                                        opacity: 0.3,
-                                                    },
-                                                }}
                                             >
                                                 <DownloadIcon sx={{fontSize: "0.75rem"}} />
-                                            </IconButton>
+                                            </ActionIconButton>
                                         </span>
                                     </Tooltip>
                                 )}
                                 <Tooltip title="Edit this network">
                                     <span>
-                                        <IconButton
+                                        <ActionIconButton
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 onEditNetwork?.(itemId)
                                             }}
                                             disabled={isExpired}
                                             size="small"
-                                            sx={{
-                                                padding: 0,
-                                                color: "var(--bs-secondary)",
-                                                "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                "&.Mui-disabled": {
-                                                    color: "var(--bs-secondary)",
-                                                    opacity: 0.3,
-                                                },
-                                            }}
                                         >
                                             <Edit sx={{fontSize: "0.75rem"}} />
-                                        </IconButton>
+                                        </ActionIconButton>
                                     </span>
                                 </Tooltip>
                                 <Tooltip title="Delete network">
@@ -255,7 +249,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             color: "var(--bs-secondary)",
                                             "&:hover": {color: (theme) => theme.palette.warning.main},
                                             "&.Mui-disabled": {
-                                                color: "var(--bs-secondary)",
                                                 opacity: 0.3,
                                             },
                                             cursor: "pointer",

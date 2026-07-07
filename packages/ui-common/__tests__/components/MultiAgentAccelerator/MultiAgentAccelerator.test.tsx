@@ -33,7 +33,6 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
-import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -42,6 +41,7 @@ import {
     AGENT_NETWORK_NAME_KEY,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
+    AgentNetworkDefinitionEntry,
     EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
     SHOW_TOUR_DELAY_MS,
@@ -66,6 +66,7 @@ import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
+import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const MOCK_USER = "mock-user"
 
@@ -77,6 +78,7 @@ const temporaryNetworksMock = vi.fn()
 const networkIconSuggestionsMock = vi.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
 let onImport: (name: string, content: string) => void
+let onSaveAgent: AgentFlowProps["onSaveAgent"]
 let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
@@ -88,6 +90,7 @@ vi.mock("../../../controller/agent/IconSuggestions")
 vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
+        onSaveAgent = props.onSaveAgent
         return (
             <div id="app-container">
                 <div id="settings-icon" />
@@ -1505,6 +1508,133 @@ describe("MultiAgentAccelerator", () => {
                 expect.stringContaining(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`),
                 expect.any(Error)
             )
+        })
+    })
+
+    describe("onSaveAgent", () => {
+        const UPDATED_DEFINITION: AgentNetworkDefinitionEntry[] = [{origin: "copy_cat", tools: []}]
+
+        // Mock the network designer stream so onSaveAgent's chunk collector receives the given chunks.
+        const mockDesignerStream = (...chunks: string[]) => {
+            vi.mocked(sendNetworkDesignerRequest).mockImplementation(async (...args: unknown[]) => {
+                const onChunk = args[6] as (chunk: string) => void
+                chunks.forEach((chunk) => onChunk(chunk))
+            })
+        }
+
+        it("upserts the returned network and reselects it when a matching reservation is streamed", async () => {
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            renderMultiAgentAcceleratorPage()
+
+            // Select a network so onSaveAgent has a selectedNetwork to copy chat history from.
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+            await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            // The returned reservation was upserted into the temp networks store...
+            expect(useTempNetworksStore.getState().tempNetworks).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        agentInfo: expect.objectContaining({agent_name: expectedAgentName}),
+                    }),
+                ])
+            )
+            // ...and the newly-saved network became the selected target.
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({selectedNetwork: expectedAgentName})
+                )
+            })
+        })
+
+        it("shows an error and does not upsert when the designer returns no reservation", async () => {
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
+            mockDesignerStream() // no chunks → no networks collected
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
+        })
+
+        it("shows an error when the returned reservation does not match the edited network", async () => {
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                // agentNetworkName does not match the streamed reservation's derived name → no replacement found.
+                const signal = new AbortController().signal
+                await onSaveAgent("copy_cat", UPDATED_DEFINITION, "some-other-network", signal)
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not match the current network"))
+        })
+
+        it("notifies a save error when the network designer stream throws", async () => {
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
+            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+            vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(new Error("stream exploded"))
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(errorSpy).toHaveBeenCalled()
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("stream exploded"))
+        })
+
+        it("suppresses the error notification when the save is aborted by the user", async () => {
+            vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(
+                new DOMException("The operation was aborted", "AbortError")
+            )
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+
+            // No console spies: an AbortError must be swallowed silently (no console.error / notification),
+            // so any logging here would fail the test via jest-fail-on-console.
+            await act(async () => {
+                await onSaveAgent(
+                    "copy_cat",
+                    UPDATED_DEFINITION,
+                    RESERVATION.reservation_id,
+                    new AbortController().signal
+                )
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
         })
     })
 

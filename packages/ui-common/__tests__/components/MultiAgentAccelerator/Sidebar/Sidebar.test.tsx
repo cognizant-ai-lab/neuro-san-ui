@@ -38,7 +38,6 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {cleanUpAgentName} from "../../../../components/AgentChat/Common/Utils"
 import {
     Sidebar,
     SidebarProps,
@@ -48,6 +47,7 @@ import {testConnection, TestConnectionResult} from "../../../../controller/agent
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
+import {cleanUpAgentName} from "../../../../utils/AgentName"
 import {downloadFile} from "../../../../utils/File"
 
 const DEFAULT_EXAMPLE_URL = "https://default.example.com"
@@ -365,6 +365,27 @@ describe("SideBar", () => {
         }
     })
 
+    it("Should render a child network without tags and omit the bookmark icon", async () => {
+        renderSidebarComponent({
+            networks: [
+                {
+                    agent_name: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                    description: "",
+                    // Intentionally omit `tags` to exercise the `agentNode?.tags || []` fallback
+                },
+            ],
+        })
+
+        // Expand the folder
+        const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+        await user.click(header)
+
+        // The network renders, but with no tags there should be no bookmark icon
+        const networkElement = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+        const networkContainer = networkElement.closest('[role="treeitem"]')
+        expect(within(networkContainer as HTMLElement).queryByTestId("BookmarkIcon")).not.toBeInTheDocument()
+    })
+
     it("Should render uncategorized networks correctly", async () => {
         renderSidebarComponent()
 
@@ -462,6 +483,19 @@ describe("SideBar", () => {
 
         // Tooltip should indicate that the network is expired
         await screen.findByText(/Expired/u)
+
+        // The download and edit action buttons should be disabled while the network is expired
+        const treeItem = tempNetworkName.closest('[role="treeitem"]')
+        expect(
+            within(treeItem as HTMLElement)
+                .getByTestId("DownloadIcon")
+                .closest("button")
+        ).toBeDisabled()
+        expect(
+            within(treeItem as HTMLElement)
+                .getByTestId("EditIcon")
+                .closest("button")
+        ).toBeDisabled()
 
         setSelectedNetworkMock.mockClear()
 
