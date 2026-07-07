@@ -1113,14 +1113,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <MUIAlert
                 closeable={false}
                 id="llm-chat-missing-api-keys-alert"
-                severity="error"
+                severity="warning"
                 sx={{
                     my: 1.5,
                     maxWidth: "100%",
                     maxHeight: "100%",
-                    "& .MuiAlert-icon": {
-                        display: "none",
-                    },
                     "& .MuiAlert-message": {
                         width: "100%",
                         textAlign: "center",
@@ -1129,10 +1126,11 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             >
                 <Typography
                     component="span"
-                    sx={{color: "error.main", fontWeight: "bold"}}
+                    sx={{color: "error.main"}}
                 >
-                    API key(s) required for at least one of these providers: {[...getMissingApiKeys()].join(", ")}.
-                    Please add the required key(s) in &quot;Settings&quot; to use this Network.
+                    API key(s) required for at least one of these providers:{" "}
+                    <strong>{[...getMissingApiKeys()].join(", ")}</strong>. Please add the required key(s) in
+                    &quot;Settings&quot; to use this Network.
                 </Typography>
             </MUIAlert>
         )
