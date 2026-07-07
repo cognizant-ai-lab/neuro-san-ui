@@ -70,6 +70,7 @@ import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk, cleanUpAgentName, removeTrailingUuid} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
+import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
@@ -353,11 +354,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 const schema = agentFunction?.function?.sly_data_schema
                 const llmConfigRequired = isRecord(schema) ? "required" in schema : false
                 if (llmConfigRequired) {
-                    console.debug(`LLM config required for network ${selectedNetwork}:`, llmConfigRequired)
-
                     const providerKeys = Object.keys(schema?.["properties"]?.llm_config?.properties)
-                    console.debug(`LLM provider keys accepted for network ${selectedNetwork}:`, providerKeys)
-
                     setProviderKeysRequired(
                         new Set(
                             providerKeys.flatMap((key): LLMProvider[] => {
@@ -748,6 +745,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return intersection.size === 0 ? providerKeysRequired : new Set()
     }
 
+    const missingApiKeys = getMissingApiKeys()
+
     const getLeftPanel = () => {
         return (
             <Slide
@@ -1109,8 +1108,38 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         </Box>
     )
 
+    const getMissingApiKeysAlert = () =>
+        missingApiKeys.size > 0 && (
+            <MUIAlert
+                closeable={false}
+                id="llm-chat-missing-api-keys-alert"
+                severity="error"
+                sx={{
+                    my: 1.5,
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    "& .MuiAlert-icon": {
+                        display: "none",
+                    },
+                    "& .MuiAlert-message": {
+                        width: "100%",
+                        textAlign: "center",
+                    },
+                }}
+            >
+                <Typography
+                    component="span"
+                    sx={{color: "error.main", fontWeight: "bold"}}
+                >
+                    API key(s) required for at least one of these providers: {[...getMissingApiKeys()].join(", ")}.
+                    Please add the required key(s) in &quot;Settings&quot; to use this Network.
+                </Typography>
+            </MUIAlert>
+        )
+
     return (
         <>
+            {getMissingApiKeysAlert()}
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
