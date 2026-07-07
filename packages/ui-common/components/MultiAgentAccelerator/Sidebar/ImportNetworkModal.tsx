@@ -16,7 +16,6 @@ limitations under the License.
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined"
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined"
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined"
 import WarningAmberIcon from "@mui/icons-material/WarningAmber"
 import Box from "@mui/material/Box"
@@ -498,125 +497,76 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Stepper>
     )
 
-    // The drag-and-drop / browse file picker, plus the restriction callout beneath it.
+    // The drag-and-drop / browse file picker.
     const renderSelectFileStep = () => (
-        <>
-            <DropZone
-                isDragOver={isDragOver}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={handleBrowseClick}
-                onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault()
+        <DropZone
+            isDragOver={isDragOver}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={handleBrowseClick}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    handleBrowseClick()
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Drop zone for network definition file"
+        >
+            <CloudUploadOutlinedIcon
+                id="import-network-modal-upload-icon"
+                sx={{color: "var(--bs-gray-medium)", fontSize: "4rem"}}
+            />
+            <Typography
+                id="import-network-modal-drop-text"
+                variant="subtitle1"
+                sx={{color: "primary.main", fontWeight: "bold"}}
+            >
+                Drag &amp; drop a network definition
+            </Typography>
+            <Typography variant="body2">
+                {"or "}
+                <Box
+                    component="button"
+                    id="import-network-modal-browse-link"
+                    onClick={(event) => {
+                        event.stopPropagation()
                         handleBrowseClick()
-                    }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="Drop zone for network definition file"
-            >
-                <Box
+                    }}
                     sx={{
-                        alignItems: "center",
-                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.16),
-                        borderRadius: 2,
-                        color: "primary.main",
-                        display: "flex",
-                        height: 64,
-                        justifyContent: "center",
-                        marginBottom: 1,
-                        width: 64,
+                        background: "none",
+                        border: "none",
+                        color: "var(--bs-secondary)",
+                        cursor: "pointer",
+                        font: "inherit",
+                        padding: 0,
+                        textDecoration: "underline",
+                        "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
                     }}
                 >
-                    <CloudUploadOutlinedIcon
-                        id="import-network-modal-upload-icon"
-                        sx={{fontSize: "2rem"}}
-                    />
+                    browse your files
                 </Box>
-                <Typography
-                    id="import-network-modal-drop-text"
-                    variant="subtitle1"
-                    sx={{color: "primary.main", fontWeight: "bold"}}
-                >
-                    Drag &amp; drop a network definition
-                </Typography>
-                <Typography variant="body2">
-                    {"or "}
-                    <Box
-                        component="button"
-                        id="import-network-modal-browse-link"
-                        onClick={(event) => {
-                            event.stopPropagation()
-                            handleBrowseClick()
-                        }}
-                        sx={{
-                            background: "none",
-                            border: "none",
-                            color: "var(--bs-secondary)",
-                            cursor: "pointer",
-                            font: "inherit",
-                            padding: 0,
-                            textDecoration: "underline",
-                            "&:hover": {color: "var(--bs-primary)", textDecoration: "none"},
-                        }}
-                    >
-                        browse your files
-                    </Box>
-                </Typography>
-                <Box
-                    id="import-network-modal-file-types"
-                    sx={{
-                        alignItems: "center",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        borderRadius: 999,
-                        color: "text.secondary",
-                        display: "inline-flex",
-                        gap: 0.75,
-                        marginTop: 1,
-                        padding: "4px 12px",
-                    }}
-                >
-                    <InsertDriveFileOutlinedIcon sx={{fontSize: "1rem"}} />
-                    <Typography variant="caption">Accepts .json up to 5 MB</Typography>
-                </Box>
-                <VisuallyHiddenInput
-                    accept={ACCEPTED_MIME_TYPES}
-                    aria-hidden="true"
-                    data-testid="import-network-file-input"
-                    onChange={handleFileChange}
-                    onClick={(event) => event.stopPropagation()}
-                    ref={fileInputRef}
-                    tabIndex={-1}
-                    type="file"
-                />
-            </DropZone>
-            <Box
-                id="import-network-modal-file-restriction"
-                sx={{
-                    alignItems: "flex-start",
-                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.04),
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    display: "flex",
-                    gap: 1.5,
-                    marginTop: 2,
-                    padding: "14px 16px",
-                }}
+            </Typography>
+            <Typography
+                id="import-network-modal-file-types"
+                variant="caption"
+                sx={{color: "text.secondary"}}
             >
-                <InfoOutlinedIcon sx={{color: "text.secondary", fontSize: "1.25rem", flexShrink: 0, marginTop: 0.25}} />
-                <Typography
-                    variant="caption"
-                    sx={{color: "text.secondary"}}
-                >
-                    Must be a JSON file previously exported from an <strong>Agent Network Designer</strong>–created
-                    network. General Neuro SAN HOCON files are not currently supported.
-                </Typography>
-            </Box>
-        </>
+                Accepts .json up to 5 MB.
+            </Typography>
+            <VisuallyHiddenInput
+                accept={ACCEPTED_MIME_TYPES}
+                aria-hidden="true"
+                data-testid="import-network-file-input"
+                onChange={handleFileChange}
+                onClick={(event) => event.stopPropagation()}
+                ref={fileInputRef}
+                tabIndex={-1}
+                type="file"
+            />
+        </DropZone>
     )
 
     // The parsing/validation outcome — loading spinner, success summary, or error banner.
@@ -673,35 +623,16 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     const renderReviewFileInfo = () => (
         <Box
             sx={{
-                alignItems: "center",
-                backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.04),
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 2,
+                alignItems: "flex-start",
                 display: "flex",
                 gap: 1.5,
                 marginTop: 3,
-                padding: "12px 16px",
             }}
         >
-            <Box
-                sx={{
-                    alignItems: "center",
-                    backgroundColor: (theme) => alpha(theme.palette.text.primary, 0.06),
-                    borderRadius: 1.5,
-                    color: "text.secondary",
-                    display: "flex",
-                    flexShrink: 0,
-                    height: 44,
-                    justifyContent: "center",
-                    width: 44,
-                }}
-            >
-                <InsertDriveFileOutlinedIcon
-                    id="import-network-modal-file-icon"
-                    sx={{fontSize: "1.5rem"}}
-                />
-            </Box>
+            <InsertDriveFileOutlinedIcon
+                id="import-network-modal-file-icon"
+                sx={{color: "text.secondary", fontSize: "2rem"}}
+            />
             {/* Keep the filename on one line: truncate the stem with an ellipsis
                 but pin the extension so ".json" stays visible. The full name is
                 available on hover via the tooltip. */}
