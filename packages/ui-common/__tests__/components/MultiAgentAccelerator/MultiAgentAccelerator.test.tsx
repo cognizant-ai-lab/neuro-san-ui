@@ -157,6 +157,9 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", 
     }
 })
 
+// Not available in JSDom. See: https://github.com/jsdom/jsdom/issues/1695
+window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
 // Mock ChatCommon to call the mock function with props and support refs
 const chatCommonMock = vi.fn()
 const handleStopMock = vi.fn()

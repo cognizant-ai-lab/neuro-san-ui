@@ -1490,7 +1490,8 @@ describe("AgentFlow", () => {
 
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
+            await user.click(instructionsField)
+            await user.paste("Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             // While the API call is in-flight the button should show "Applying changes..." and Save should be gone
@@ -1534,7 +1535,8 @@ describe("AgentFlow", () => {
             clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, EDITED_INSTRUCTIONS)
+            await user.click(instructionsField)
+            await user.paste(EDITED_INSTRUCTIONS)
             await user.click(screen.getByRole("button", {name: "Save"}))
             await waitFor(() => {
                 expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
@@ -1572,7 +1574,8 @@ describe("AgentFlow", () => {
             clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
+            await user.click(instructionsField)
+            await user.paste("Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -1598,7 +1601,8 @@ describe("AgentFlow", () => {
             clickFlowNode(container.querySelector('[data-id="agent1"]'))
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions")
+            await user.click(instructionsField)
+            await user.paste("Updated instructions")
             await user.click(screen.getByRole("button", {name: "Save"}))
             await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
         })
@@ -1625,7 +1629,8 @@ describe("AgentFlow", () => {
             // The popup should now be open — make the form dirty then save
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions.")
+            await user.click(instructionsField)
+            await user.paste("Updated instructions.")
             const saveButton = screen.getByRole("button", {name: "Save"})
             expect(saveButton).toBeInTheDocument()
 
@@ -1947,7 +1952,9 @@ describe("AgentFlow", () => {
                 onExitEditMode,
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Wait until the overlay appears (streaming started)
@@ -1985,7 +1992,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a new agent")
+            await user.click(promptField)
+            await user.paste("Add a new agent")
 
             expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
         })
@@ -2008,7 +2016,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a legal review agent")
+            await user.click(promptField)
+            await user.paste("Add a legal review agent")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The typed prompt is forwarded to the designer...
@@ -2030,7 +2039,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a node")
+            await user.click(promptField)
+            await user.paste("Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner explaining no reservation came back
@@ -2062,7 +2072,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a node")
+            await user.click(promptField)
+            await user.paste("Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner explaining the reservation did not match, and no navigation occurs
@@ -2083,7 +2094,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a node")
+            await user.click(promptField)
+            await user.paste("Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner carrying the underlying failure
@@ -2116,7 +2128,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await localUser.type(promptField, "add a node")
+            await localUser.click(promptField)
+            await localUser.paste("Add a node")
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
             await localUser.click(applyButton)
@@ -2177,7 +2190,8 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a node")
+            await user.click(promptField)
+            await user.paste("Add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The higher-expiry reservation should win
@@ -2223,7 +2237,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add some elves to check work")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add some elves to check work")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The overlay is shown with its title and the in-flight prompt text
@@ -2242,7 +2258,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add some elves to check work")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add some elves to check work")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
             expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
 
@@ -2266,7 +2284,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Stop button should appear while backdrop is open, with no confirm card yet
@@ -2297,7 +2317,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             await user.click(screen.getByRole("button", {name: STOP_BUTTON}))
@@ -2327,7 +2349,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Open confirm card, then discard
@@ -2357,7 +2381,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees a success banner confirming their changes were applied...
@@ -2384,7 +2410,8 @@ describe("AgentFlow", () => {
             })
 
             const editInput = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await localUser.type(editInput, "add a node")
+            await localUser.click(editInput)
+            await localUser.paste("add a node")
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
             await localUser.click(applyButton)
@@ -2410,7 +2437,9 @@ describe("AgentFlow", () => {
                 currentUser: "test-user",
             })
 
-            await user.type(screen.getByPlaceholderText(PROMPT_PLACEHOLDER), "add a node")
+            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+            await user.click(instructionsField)
+            await user.paste("add a node")
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
@@ -2463,7 +2492,8 @@ describe("AgentFlow", () => {
             // Edit the instructions and save
             const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
             await user.clear(instructionsField)
-            await user.type(instructionsField, "Updated instructions for Network A.")
+            await user.click(instructionsField)
+            await user.paste("Updated instructions for Network A.")
             await user.click(screen.getByRole("button", {name: "Save"}))
             await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
 

@@ -19,6 +19,7 @@ import {render, screen} from "@testing-library/react"
 import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
 
+import {INVALID_MUI_ICON_NAME} from "../../../../../../__tests__/common/MuiIconsMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentNode, AgentNodeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
@@ -193,7 +194,7 @@ describe("AgentNode", () => {
     })
 
     it("warns and falls back to default icon when agentIconSuggestion is invalid", async () => {
-        renderAgentNode({agentIconSuggestion: "NotARealMuiIconAtAll"})
+        renderAgentNode({agentIconSuggestion: INVALID_MUI_ICON_NAME})
 
         // check for fallback icon
         await screen.findByTestId("AutoAwesomeIcon")

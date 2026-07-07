@@ -1,5 +1,6 @@
 import {render, screen} from "@testing-library/react"
 
+import {INVALID_MUI_ICON_NAME} from "../../../../../__tests__/common/MuiIconsMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {CustomerLogo, LOGO_DEV_URL} from "../../../components/Logo/CustomerLogo"
 
@@ -34,7 +35,7 @@ describe("CustomerLogo", () => {
             <CustomerLogo
                 customer="Test Customer"
                 logoSource="generic"
-                iconSuggestion="InvalidIconName" // Invalid MUI icon name
+                iconSuggestion={INVALID_MUI_ICON_NAME}
             />
         )
         expect(screen.queryByRole("img")).not.toBeInTheDocument()
