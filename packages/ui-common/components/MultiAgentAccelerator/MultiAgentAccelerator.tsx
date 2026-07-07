@@ -351,28 +351,32 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setNetworkDescription(agentFunction?.function?.description || "")
 
                 const schema = agentFunction?.function?.sly_data_schema
-                const schemaProperties = isRecord(schema) ? schema["properties"] : undefined
-                const llmConfig = isRecord(schemaProperties) ? schemaProperties["llm_config"] : undefined
-                const llmConfigRequired = isRecord(llmConfig) ? llmConfig["required"] : undefined
+                const llmConfigRequired = isRecord(schema) ? "required" in schema : false
+                if (llmConfigRequired) {
+                    console.debug(`LLM config required for network ${selectedNetwork}:`, llmConfigRequired)
 
-                setProviderKeysRequired(
-                    new Set(
-                        (Array.isArray(llmConfigRequired) ? llmConfigRequired : []).flatMap((key): LLMProvider[] => {
-                            if (key === "openai_api_key") {
-                                return ["OpenAI"]
-                            }
-                            if (key === "anthropic_api_key") {
-                                return ["Anthropic"]
-                            }
+                    const providerKeys = Object.keys(schema?.["properties"]?.llm_config?.properties)
+                    console.debug(`LLM provider keys accepted for network ${selectedNetwork}:`, providerKeys)
 
-                            console.warn(
-                                `Unknown API key requirement "${key}" for network ${selectedNetwork}. Skipping.`
-                            )
-                            // Will get dropped by flatMap
-                            return []
-                        })
+                    setProviderKeysRequired(
+                        new Set(
+                            providerKeys.flatMap((key): LLMProvider[] => {
+                                if (key === "openai_api_key") {
+                                    return ["OpenAI"]
+                                }
+                                if (key === "anthropic_api_key") {
+                                    return ["Anthropic"]
+                                }
+
+                                console.warn(
+                                    `Unknown API key requirement "${key}" for network ${selectedNetwork}. Skipping.`
+                                )
+                                // Will get dropped by flatMap
+                                return []
+                            })
+                        )
                     )
-                )
+                }
             } catch (e) {
                 console.warn(`Unable to get agent details for network ${selectedNetwork}:`, e)
             }
