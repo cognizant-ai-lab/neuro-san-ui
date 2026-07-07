@@ -135,7 +135,7 @@ export const PlasmaEdge: FC<EdgeProps & PlasmaEdgeProps> = ({
         canvas.height = height * dpr
         canvas.style.width = `${width}px`
         canvas.style.height = `${height}px`
-        ctx.etTransform(1, 0, 0, 1, 0, 0)
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
         ctx.scale(dpr, dpr)
 
         const canvasOffset = {x, y}
