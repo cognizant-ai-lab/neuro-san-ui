@@ -17,16 +17,18 @@ limitations under the License.
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
-import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
+import {AgentNetworkDefinitionEntry, TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
     getAgentNetworks,
+    getBrandingSuggestions,
     getConnectivity,
     sendChatQuery,
     sendNetworkDesignerRequest,
     testConnection,
     TestConnectionResult,
 } from "../../../../controller/agent/Agent"
+import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../../../controller/agent/IconSuggestions"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {
     ApiPaths,
@@ -74,6 +76,31 @@ describe("Controller/Agent/testConnection", () => {
 
         const result: TestConnectionResult = await testConnection("www.example.com")
         expect(result.success).toBe(false)
+    })
+
+    it("Should abort and report failure when the request exceeds the timeout", async () => {
+        vi.useFakeTimers()
+
+        // A fetch that only settles when its AbortSignal fires — simulates a hung request.
+        global.fetch = vi.fn(
+            (_url, options) =>
+                new Promise<Response>((_resolve, reject) => {
+                    options?.signal?.addEventListener("abort", () =>
+                        reject(new DOMException("The operation was aborted", "AbortError"))
+                    )
+                })
+        )
+
+        const resultPromise = testConnection("https://slow.example.com")
+
+        // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
+        vi.advanceTimersByTime(2500)
+
+        const result = await resultPromise
+        expect(result.success).toBe(false)
+        expect(result.status).toContain("aborted")
+
+        vi.useRealTimers()
     })
 })
 
@@ -216,6 +243,21 @@ describe("Controller/Agent/getConnectivity", () => {
         // Make sure getConnectivity logged the error to the console
         expect(errorSpy).toHaveBeenCalled()
     })
+
+    it("Should strip the temporary/ prefix from the network name before calling the server", async () => {
+        global.fetch = mockFetch({connections: []})
+
+        await getConnectivity(
+            NEURO_SAN_EXAMPLE_URL,
+            `${TEMPORARY_NETWORK_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+            TEST_USERNAME
+        )
+
+        // The server doesn't know about the "temporary/" UI convention, so it must be removed from the path.
+        const calledUrl = vi.mocked(global.fetch).mock.calls[0][0] as string
+        expect(calledUrl).toContain(TEST_AGENT_MATH_GUY)
+        expect(calledUrl).not.toContain(`${TEMPORARY_NETWORK_FOLDER}/`)
+    })
 })
 
 describe("Controller/Agent/getAgentFunction", () => {
@@ -332,5 +374,83 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
         const requestParams = sendLlmRequestMock.mock.calls[0][3]
         expect(requestParams).toHaveProperty("sly_data")
         expect(requestParams["sly_data"]).not.toHaveProperty("agent_network_name")
+    })
+})
+
+describe("Controller/Agent suggestion endpoints (postJsonRequest)", () => {
+    withStrictMocks()
+
+    beforeEach(() => {
+        oldFetch = global.fetch
+    })
+
+    afterEach(() => {
+        global.fetch = oldFetch
+    })
+
+    it("getNetworkIconSuggestions POSTs the networks and returns the suggestions", async () => {
+        const suggestions = {"test-agents/math-guy": "Calculate"}
+        global.fetch = mockFetch(suggestions)
+
+        const result = await getNetworkIconSuggestions(LIST_NETWORKS_RESPONSE)
+
+        expect(result).toEqual(suggestions)
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/networkIconSuggestions",
+            expect.objectContaining({
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({networks: LIST_NETWORKS_RESPONSE}),
+            })
+        )
+    })
+
+    it("getAgentIconSuggestions POSTs the connectivity info and returns the suggestions", async () => {
+        const suggestions = {agent1: "SmartToy"}
+        global.fetch = mockFetch(suggestions)
+        const connectivity = {connectivity_info: [{origin: "agent1", tools: [] as string[]}], metadata: {foo: "bar"}}
+
+        const result = await getAgentIconSuggestions(connectivity)
+
+        expect(result).toEqual(suggestions)
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/agentIconSuggestions",
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({
+                    connectivity_info: connectivity.connectivity_info,
+                    metadata: connectivity.metadata,
+                }),
+            })
+        )
+    })
+
+    it("getBrandingSuggestions POSTs the company name and returns the suggestions", async () => {
+        const suggestions = {primary: "#123456"}
+        global.fetch = mockFetch(suggestions)
+
+        const result = await getBrandingSuggestions("Acme")
+
+        expect(result).toEqual(suggestions)
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/branding",
+            expect.objectContaining({method: "POST", body: JSON.stringify({company: "Acme"})})
+        )
+    })
+
+    it("throws the error field from the response body when present", async () => {
+        global.fetch = mockFetch({error: "LLM unavailable"})
+        await expect(getBrandingSuggestions("Acme")).rejects.toThrow("LLM unavailable")
+    })
+
+    it("throws the statusText when the response is not ok and has no error field", async () => {
+        global.fetch = vi.fn(() =>
+            Promise.resolve({
+                ok: false,
+                statusText: "Internal Server Error",
+                json: () => Promise.resolve({}),
+            } as unknown as Response)
+        )
+        await expect(getNetworkIconSuggestions(LIST_NETWORKS_RESPONSE)).rejects.toThrow("Internal Server Error")
     })
 })
