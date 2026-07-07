@@ -12,10 +12,6 @@
     "dependencies": {
         "@dagrejs/dagre": "1.0.4",
         "@langchain/core": "catalog:default",
-        "@mui/icons-material": "catalog:default",
-        "@mui/material": "catalog:default",
-        "@mui/system": "catalog:default",
-        "@mui/x-tree-view": "catalog:default",
         "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",
@@ -30,6 +26,10 @@
         "zustand": "4.5.7"
     },
     "devDependencies": {
+        "@mui/icons-material": "catalog:default",
+        "@mui/material": "catalog:default",
+        "@mui/system": "catalog:default",
+        "@mui/x-tree-view": "catalog:default",
         "@testing-library/dom": "catalog:default",
         "@testing-library/react": "catalog:default",
         "@testing-library/user-event": "catalog:default",
