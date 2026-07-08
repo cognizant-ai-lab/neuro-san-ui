@@ -763,7 +763,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         return intersection.size === 0 ? supportedByokProviders : new Set()
     }
 
-    const missingApiKeys = getMissingApiKeys()
+    const hasMissingApiKeys = getMissingApiKeys().size > 0
 
     const getLeftPanel = () => {
         return (
@@ -883,7 +883,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
                         key={selectedNetwork ?? "no-network"}
-                        missingApiKeys={getMissingApiKeys()}
+                        hasMissingApiKeys={hasMissingApiKeys}
                         networkDescription={networkDescription}
                         neuroSanURL={neuroSanURL}
                         onChunkReceived={onChunkReceived}
@@ -1127,25 +1127,20 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     )
 
     const getMissingApiKeysAlert = () =>
-        missingApiKeys.size > 0 && (
+        hasMissingApiKeys && (
             <MUIAlert
                 closeable={false}
                 id="llm-chat-missing-api-keys-alert"
                 severity="warning"
                 sx={{
                     my: 1.5,
-                    maxWidth: "100%",
-                    maxHeight: "100%",
                     "& .MuiAlert-message": {
                         width: "100%",
                         textAlign: "center",
                     },
                 }}
             >
-                <Typography
-                    component="span"
-                    sx={{color: "error.main"}}
-                >
+                <Typography sx={{fontSize: "larger"}}>
                     API key(s) required for at least one of these providers:{" "}
                     <strong>{[...getMissingApiKeys()].join(", ")}</strong>. Please add the required key(s) in
                     &quot;Settings&quot; to use this Network.

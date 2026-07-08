@@ -62,7 +62,7 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {useSettingsStore} from "../../../state/Settings"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
@@ -191,9 +191,9 @@ export interface ChatCommonProps {
     readonly sampleQueries?: string[]
 
     /**
-     * Array of LLM providers for which API keys are required but missing. Only applies to BYOK networks.
+     * If true, indicates that the user is missing API keys for one or more LLM providers.
      */
-    readonly missingApiKeys?: ReadonlySet<LLMProvider>
+    readonly hasMissingApiKeys?: boolean
 }
 
 // Type for forward ref to expose the handleStop and handleClearChat functions
@@ -257,7 +257,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
-        missingApiKeys = new Set(),
+        hasMissingApiKeys = false,
         networkDescription,
         neuroSanURL,
         onChunkReceived,
@@ -1316,8 +1316,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Typography>
     )
 
-    const allApiKeysPresent = missingApiKeys?.size === 0
-
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -1327,9 +1325,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }}
         >
             {selectedNetwork
-                ? allApiKeysPresent
-                    ? getChatBox()
-                    : getErrorOverlay("") // Parent will display error for this case
+                ? hasMissingApiKeys
+                    ? getErrorOverlay("")
+                    : getChatBox() // Parent will display error for this case
                 : getErrorOverlay(getSelectNetworkOverlayBody())}
         </Box>
     )

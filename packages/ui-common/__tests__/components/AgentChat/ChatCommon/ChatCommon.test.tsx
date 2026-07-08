@@ -424,7 +424,7 @@ describe("ChatCommon", () => {
         })
 
         it("Should refuse interaction when API keys are required but not present", async () => {
-            renderChatCommonComponent({missingApiKeys: new Set(["OpenAI"])})
+            renderChatCommonComponent({hasMissingApiKeys: true})
 
             // Should be no "Chat with"
             expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
