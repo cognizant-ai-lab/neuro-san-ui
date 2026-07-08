@@ -19,6 +19,7 @@ import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
+import * as z from "zod"
 
 import {
     LIST_NETWORKS_RESPONSE,
@@ -62,7 +63,12 @@ import {
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
-import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {
+    ChatMessageType,
+    ChatResponse,
+    ConnectivityInfo,
+    FunctionResponse,
+} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
@@ -1445,9 +1451,9 @@ describe("MultiAgentAccelerator", () => {
                             },
                         },
                         required: ["llm_config"],
-                    },
+                    } satisfies z.infer<typeof BYOK>,
                 },
-            })
+            } satisfies FunctionResponse)
 
             // Validate against schema. Mostly just to "test our test".
             BYOK.parse((await getAgentFunction(null, null, null)).function?.sly_data_schema)
