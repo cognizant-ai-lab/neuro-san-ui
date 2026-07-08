@@ -1429,6 +1429,7 @@ describe("MultiAgentAccelerator", () => {
             {required: [LLM_PROVIDER_API_KEY_FIELD["Anthropic"]], expectedMissing: new Set()},
             {required: [badProvider as ByokKeyField], expectedMissing: new Set()},
             {required: [], expectedMissing: new Set()},
+            {required: undefined, expectedMissing: new Set()},
         ])("should handle networks that require BYOK for $required", async ({expectedMissing, required}) => {
             vi.mocked(getAgentFunction).mockResolvedValue({
                 function: {
@@ -1438,7 +1439,9 @@ describe("MultiAgentAccelerator", () => {
                             llm_config: {
                                 type: "object",
                                 // Create a subkey for each provider in "required".
-                                properties: {...Object.fromEntries(required.map((key) => [key, {type: "string"}]))},
+                                properties: required
+                                    ? {...Object.fromEntries(required.map((key) => [key, {type: "string"}]))}
+                                    : undefined,
                             },
                         },
                         required: ["llm_config"],
@@ -1460,8 +1463,8 @@ describe("MultiAgentAccelerator", () => {
 
             await screen.findByText(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
-            // We simulated that this network requires an OpenAI key, but we only provided Anthropic, so ChatCommon
-            // should have been notified about the missing key
+            // Make sure the missingApiKeys set (as passed to the ChatCommon mock) matches what we expect based on
+            // the required keys and the existing keys in the store.
             expect(chatCommonMock).toHaveBeenCalledWith(
                 expect.objectContaining({
                     selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
