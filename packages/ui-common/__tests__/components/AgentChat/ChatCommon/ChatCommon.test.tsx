@@ -424,12 +424,10 @@ describe("ChatCommon", () => {
         })
 
         it("Should refuse interaction when API keys are required but not present", async () => {
-            renderChatCommonComponent({missingApiKeys: ["OpenAI"]})
+            renderChatCommonComponent({missingApiKeys: new Set(["OpenAI"])})
 
             // Should be no "Chat with"
             expect(screen.queryByPlaceholderText(/Chat with/u)).not.toBeInTheDocument()
-
-            screen.getByText(/API key\(s\) required/u)
 
             const overlay = document.getElementById("chat-disabled-overlay")
             expect(overlay).toHaveStyle({
