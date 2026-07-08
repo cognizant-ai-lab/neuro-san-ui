@@ -70,7 +70,7 @@ import {
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
 
@@ -1423,19 +1423,19 @@ describe("MultiAgentAccelerator", () => {
 
         type ByokTestCase = {
             readonly required: ByokKeyField[]
-            readonly expectedMissing: Set<LLMProvider>
+            readonly expectedMissing: boolean
         }
 
         it.each<ByokTestCase>([
-            {required: [LLM_PROVIDER_API_KEY_FIELD["OpenAI"]], expectedMissing: new Set(["OpenAI"])},
+            {required: [LLM_PROVIDER_API_KEY_FIELD["OpenAI"]], expectedMissing: true},
             {
                 required: [LLM_PROVIDER_API_KEY_FIELD["OpenAI"], LLM_PROVIDER_API_KEY_FIELD["Anthropic"]],
-                expectedMissing: new Set(),
+                expectedMissing: false,
             },
-            {required: [LLM_PROVIDER_API_KEY_FIELD["Anthropic"]], expectedMissing: new Set()},
-            {required: [badProvider as ByokKeyField], expectedMissing: new Set()},
-            {required: [], expectedMissing: new Set()},
-            {required: undefined, expectedMissing: new Set()},
+            {required: [LLM_PROVIDER_API_KEY_FIELD["Anthropic"]], expectedMissing: false},
+            {required: [badProvider as ByokKeyField], expectedMissing: false},
+            {required: [], expectedMissing: false},
+            {required: undefined, expectedMissing: false},
         ])("should handle networks that require BYOK for $required", async ({expectedMissing, required}) => {
             vi.mocked(getAgentFunction).mockResolvedValue({
                 function: {
@@ -1472,9 +1472,9 @@ describe("MultiAgentAccelerator", () => {
             // Make sure the missingApiKeys set (as passed to the ChatCommon mock) matches what we expect based on
             // the required keys and the existing keys in the store.
             expect(chatCommonMock).toHaveBeenCalledWith(
-                expect.objectContaining({
+                expect.objectContaining<Partial<ChatCommonProps>>({
                     selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                    missingApiKeys: expectedMissing,
+                    hasMissingApiKeys: expectedMissing,
                 })
             )
         })
