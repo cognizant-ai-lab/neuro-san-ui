@@ -162,13 +162,15 @@ describe("Controller/Agent/sendChatQuery", () => {
             expect(callbackMock).toHaveBeenCalledWith("line 1 of mocked chunk data")
             expect(callbackMock).toHaveBeenCalledWith("line 2 of mocked chunk data")
         }
+
+        return true
     }
 
     it.each([
         ["should correctly construct and send a request", TEST_USERNAME, true],
         ["should correctly send a request without a user ID", null, false],
     ])("%s", async (_desc, username, mockChunks) => {
-        await runSentChatQueryTest(username, mockChunks)
+        expect(await runSentChatQueryTest(username, mockChunks)).toBe(true)
     })
 })
 

@@ -2,9 +2,11 @@
 
 import js from "@eslint/js"
 import next from "@next/eslint-plugin-next"
+import eslintVitest from "@vitest/eslint-plugin"
 import {defineConfig, globalIgnores} from "eslint/config"
 import eslintConfigPrettier from "eslint-config-prettier/flat"
 import {importX} from "eslint-plugin-import-x"
+import jestDom from "eslint-plugin-jest-dom-ya"
 import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions"
 import eslintPluginReact from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
@@ -21,9 +23,6 @@ export default defineConfig([
     // "rules" section below.
     js.configs.all,
 
-    // See: https://github.com/typescript-eslint/typescript-eslint/issues/9724
-    // and https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/pull/70
-    // @ts-expect-error see issues linked above
     preferArrowFunctions.configs["all"],
     eslintPluginUnicorn.configs.all,
 
@@ -35,7 +34,7 @@ export default defineConfig([
     reactHooks.configs.flat.recommended,
     eslintPluginReact.configs.flat["all"],
 
-    // This next one has to be included or else the React rules will complain that "React is not in scope".
+    // This next one has to be included, or else the React rules will complain that "React is not in scope".
     // But those rules are wrong -- as of React 17, "React" automatically gets included in the transpilation
     // process and doesn't *need* to be in scope.
     eslintPluginReact.configs.flat["jsx-runtime"],
@@ -506,9 +505,22 @@ export default defineConfig([
 
         // Pull in RTL plugin
         ...testingLibrary.configs["flat/react"],
+        plugins: {
+            "jest-dom-ya": jestDom,
+            vitest: eslintVitest,
+        },
         rules: {
             // Pull in RTL rules
             ...testingLibrary.configs["flat/react"].rules,
+
+            // All Jest DOM rules. Note: these work for Vitests as well since they only look at syntax
+            ...jestDom.configs["flat/all"].rules,
+
+            // Pull in Vitest rules.
+            ...eslintVitest.configs.all.rules,
+
+            // Indicate that these queries are implicit assertions
+            "vitest/expect-expect": ["error", {assertFunctionNames: ["expect", "screen.findBy*", "screen.getBy*"]}],
 
             // Extra rules for tests
             "testing-library/await-async-queries": "error",
@@ -527,6 +539,34 @@ export default defineConfig([
             "react/display-name": "off",
             "react/no-array-index-key": "off",
             "react/no-multi-comp": "off",
+
+            // Too noisy for now, but we should gradually enable and fix these
+            "vitest/max-expects": "off",
+            "vitest/no-conditional-expect": "off",
+            "vitest/no-conditional-in-test": "off",
+            "vitest/no-hooks": "off",
+            "vitest/padding-around-all": "off",
+            "vitest/padding-around-expect-groups": "off",
+            "vitest/padding-around-test-blocks": "off",
+            "vitest/prefer-called-with": "off",
+            "vitest/prefer-describe-function-title": "off",
+            "vitest/prefer-expect-assertions": "off",
+            "vitest/prefer-expect-resolves": "off",
+            "vitest/prefer-expect-type-of": "off",
+            "vitest/prefer-import-in-mock": "off",
+            "vitest/prefer-importing-vitest-globals": "off",
+            "vitest/prefer-lowercase-title": "off",
+            "vitest/prefer-mock-promise-shorthand": "off",
+            "vitest/prefer-spy-on": "off",
+            "vitest/prefer-strict-boolean-matchers": "off",
+            "vitest/prefer-strict-equal": "off",
+            "vitest/prefer-to-be": "off",
+            "vitest/prefer-to-have-length": "off",
+            "vitest/require-hook": "off",
+            "vitest/require-mock-type-parameters": "off",
+            "vitest/require-to-throw-message": "off",
+            "vitest/require-top-level-describe": "off",
+            "vitest/unbound-method": "off",
         },
     },
     {
