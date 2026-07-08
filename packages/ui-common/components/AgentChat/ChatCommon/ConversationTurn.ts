@@ -4,11 +4,11 @@ import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
  * The various messages roles in a conversation turn.
  */
 export enum MessageRole {
-    "Agent" = "Agent",
-    "Error" = "Error",
-    "FinalAnswer" = "FinalAnswer",
-    "User" = "User",
-    "Warning" = "Warning",
+    Agent = "Agent",
+    Error = "Error",
+    FinalAnswer = "FinalAnswer",
+    User = "User",
+    Warning = "Warning",
 }
 
 /**

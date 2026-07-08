@@ -19,10 +19,10 @@ import {JSX as ReactJSX} from "react"
 import {renderToString} from "react-dom/server"
 
 export enum NotificationType {
-    "success",
-    "info",
-    "warning",
-    "error",
+    success,
+    info,
+    warning,
+    error,
 }
 
 // Display warning and error notification popups for this many seconds

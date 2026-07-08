@@ -546,8 +546,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                     // Calculate fresh coordinates for this line (may return multiple targets)
                     const coordsArray = calculateLineCoordinates(edge, index) as
-                        | {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[]
-                        | null
+                        {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null
 
                     if (!coordsArray || coordsArray.length === 0) return null
 
