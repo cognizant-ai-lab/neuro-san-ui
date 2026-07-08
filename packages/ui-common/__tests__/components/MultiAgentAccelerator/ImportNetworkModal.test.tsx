@@ -77,6 +77,10 @@ describe("ImportNetworkModal", () => {
 
     const getDropZone = () => screen.getByRole("button", {name: DROP_ZONE})
 
+    // File inputs have no ARIA role and this one is aria-hidden (the drop-zone button is the
+    // accessible control), so a test id is the only handle.
+    const getFileInput = () => screen.getByTestId<HTMLInputElement>("import-network-file-input")
+
     // Drop a file onto the modal, synchronously advancing from step 1 to the review step (step 2).
     const dropFileOnModal = (filename = "my_network.json", content = '{"agents": {}}') =>
         dropFile(getDropZone(), filename, content)
@@ -131,11 +135,12 @@ describe("ImportNetworkModal", () => {
         {name: "the browse link is clicked", button: BROWSE_LINK},
     ])("should trigger file input click when $name", async ({button}) => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         const clickSpy = vi.spyOn(fileInput, "click")
 
         await user.click(screen.getByRole("button", {name: button}))
 
+        // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make sense.
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
@@ -143,18 +148,20 @@ describe("ImportNetworkModal", () => {
         "should trigger file input click when the drop zone receives a $key keydown",
         ({key}) => {
             renderModal()
-            const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+            const fileInput = getFileInput()
             const clickSpy = vi.spyOn(fileInput, "click")
 
             fireEvent.keyDown(getDropZone(), {key})
 
+            // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make
+            // sense.
             expect(clickSpy).toHaveBeenCalledTimes(1)
         }
     )
 
     it("should not trigger file input click on an unrelated key", () => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         const clickSpy = vi.spyOn(fileInput, "click")
 
         fireEvent.keyDown(getDropZone(), {key: "a"})
@@ -184,13 +191,13 @@ describe("ImportNetworkModal", () => {
 
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         expect(fileInput.accept).toBe(".json")
     })
 
     it("should process a file chosen via the hidden file input", async () => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         await user.upload(fileInput, new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"}))
 
         // Should advance to the review step and parse successfully
@@ -200,18 +207,28 @@ describe("ImportNetworkModal", () => {
     })
 
     // Step 2: Review
-    it("should show a loading spinner after a file is dropped", async () => {
+    it("should show a loading spinner after a file is dropped, then remove it once parsing finishes", async () => {
         renderModal()
         dropFileOnModal()
+
+        // The spinner shows while the dropped file is being read...
         await screen.findByRole("progressbar")
+
+        // ...and once the async read resolves it must give way to the parsed-successfully state and
+        // not hang around forever. (loading and success are mutually exclusive render branches.)
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
     })
 
     it("should advance to step 2 after a file is dropped", () => {
         renderModal()
         const dropZone = getDropZone()
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        // The drop synchronously advances to step 2, unmounting the drop zone.
+        // The drop synchronously advances to the Review step: the drop zone unmounts and the
+        // step's Back control appears (the Select-file step offered only Cancel).
         expect(dropZone).not.toBeInTheDocument()
+        expect(screen.getByRole("button", {name: BACK_BUTTON})).toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: CANCEL_BUTTON})).not.toBeInTheDocument()
     })
 
     it("should show success banner and a Continue button after a valid JSON file is dropped", async () => {
@@ -278,7 +295,7 @@ describe("ImportNetworkModal", () => {
             name: "a size that exceeds the max",
             makeFile: () => {
                 const oversized = new File(['{"agents": {}}'], "huge.json", {type: "application/json"})
-                Object.defineProperty(oversized, "size", {value: 6 * 1024 * 1024})
+                Object.defineProperty(oversized, "size", {value: IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1})
                 return oversized
             },
             error: /File is too large/u,

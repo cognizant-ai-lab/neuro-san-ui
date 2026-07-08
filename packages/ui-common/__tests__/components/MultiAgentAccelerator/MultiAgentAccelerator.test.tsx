@@ -250,6 +250,14 @@ const renderMultiAgentAcceleratorPage = () =>
         </SnackbarProvider>
     )
 
+// Fire an import through the mocked ImportNetworkModal once the sidebar has loaded.
+const importThroughModal = async (networkName: string, content: string) => {
+    await screen.findByText("Agent Networks")
+    await act(async () => {
+        onImport(networkName, content)
+    })
+}
+
 describe("MultiAgentAccelerator", () => {
     withStrictMocks()
 
@@ -406,77 +414,59 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
-    it("should show an error toast when the imported file contains no agents", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+    it.each([
+        {
+            scenario: "the imported file contains no agents",
+            networkName: "Empty Network",
+            content: JSON.stringify([]),
+            expectedLog: "does not contain a valid network definition",
+            designerCalls: 0,
+        },
+        {
+            scenario: "the network designer returns no reservation",
+            networkName: "Reservationless Network",
+            // Default mock resolves to [] without ever invoking onChunk, so no reservation comes back.
+            content: JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]),
+            expectedLog: "did not return a reservation",
+            designerCalls: 1,
+        },
+        {
+            scenario: "conversion of the imported file throws",
+            // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
+            networkName: "Broken Network",
+            content: "this is not json",
+            expectedLog: 'Failed to update network "Broken Network"',
+            designerCalls: 0,
+        },
+    ])(
+        "logs an error and makes $designerCalls designer call(s) when $scenario",
+        async ({networkName, content, expectedLog, designerCalls}) => {
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+            // The invalid-JSON path also logs via console.error before surfacing the toast.
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
 
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
+            renderMultiAgentAcceleratorPage()
+            await importThroughModal(networkName, content)
 
-        await act(async () => {
-            onImport("Empty Network", JSON.stringify([]))
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining("does not contain a valid network definition")
-            )
-        })
-        // The designer should never be contacted when the definition is empty
-        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
-    })
-
-    it("should show an error toast when the network designer returns no reservation", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-        // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
-
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        await act(async () => {
-            onImport("Reservationless Network", JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]))
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
-        })
-        expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(1)
-    })
-
-    it("should show an error toast when conversion of the imported file throws", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-        // notifySaveError also logs via console.error before surfacing the notification.
-        vi.spyOn(console, "error").mockImplementation(vi.fn())
-
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
-        await act(async () => {
-            onImport("Broken Network", "this is not json")
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update network "Broken Network"'))
-        })
-        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
-    })
+            await waitFor(() => {
+                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedLog))
+            })
+            expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(designerCalls)
+        }
+    )
 
     it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
         vi.spyOn(console, "debug").mockImplementation(vi.fn())
         const upsertMock = vi.mocked(sendNetworkDesignerRequest)
 
         renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        await act(async () => {
-            onImport(
-                "Two Agent Network",
-                JSON.stringify([
-                    {origin: "boss", tools: ["worker"], instructions: "lead"},
-                    {origin: "worker", instructions: "work"},
-                ])
-            )
-        })
+        await importThroughModal(
+            "Two Agent Network",
+            JSON.stringify([
+                {origin: "boss", tools: ["worker"], instructions: "lead"},
+                {origin: "worker", instructions: "work"},
+            ])
+        )
 
         await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1))
         // Third positional arg to sendNetworkDesignerRequest is the frontman name.
