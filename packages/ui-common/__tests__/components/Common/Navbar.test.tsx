@@ -99,7 +99,7 @@ describe("Navbar", () => {
     })
 
     it("should redirect to email client when confirmation is clicked", async () => {
-        vi.spyOn(BrowserNavigation, "navigateToUrl")
+        vi.spyOn(BrowserNavigation, "navigateToUrl").mockImplementation(vi.fn())
 
         renderNavbar()
 
