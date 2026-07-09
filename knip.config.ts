@@ -41,6 +41,7 @@ const config: KnipConfig = {
         // Peer dependencies of @cognizant-ai-lab/dev-common; installed here because ESLint runs from the monorepo root
         "@eslint/js",
         "@next/eslint-plugin-next",
+        "@vitest/eslint-plugin",
         "eslint-config-prettier",
         "eslint-plugin-jest-dom-ya",
         "eslint-plugin-prefer-arrow-functions",
@@ -48,7 +49,6 @@ const config: KnipConfig = {
         "eslint-plugin-react-hooks",
         "eslint-plugin-testing-library",
         "eslint-plugin-unicorn",
-        "@vitest/eslint-plugin",
         "typescript-eslint",
     ],
     workspaces: {
