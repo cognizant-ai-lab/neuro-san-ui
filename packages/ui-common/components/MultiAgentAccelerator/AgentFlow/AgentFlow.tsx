@@ -180,8 +180,7 @@ const streamNetworkDesignerPrompt = async (
             const networkName = agentNetworkName ?? agentNetworkNameFromMessage
 
             const definitionFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as
-                | AgentNetworkDefinitionEntry[]
-                | undefined
+                AgentNetworkDefinitionEntry[] | undefined
 
             const converted = convertReservationsToNetworks(
                 reservations,
@@ -387,13 +386,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         // Add any missing agents from bubbles as minimal ConnectivityInfo
         const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
         const missing = [...bubbleAgentIds].filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
-        const minimalAgents = missing.map(
-            (missingId): ConnectivityInfo => ({
-                origin: missingId,
-                tools: [] as string[],
-                display_as: undefined,
-            })
-        )
+        const minimalAgents = missing.map((missingId): ConnectivityInfo => ({
+            origin: missingId,
+            tools: [] as string[],
+            display_as: undefined,
+        }))
         return [...agentsInNetwork, ...minimalAgents]
     }, [agentsInNetwork, bubbleAgentIds])
 

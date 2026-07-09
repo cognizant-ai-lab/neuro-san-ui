@@ -62,7 +62,7 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {useSettingsStore} from "../../../state/Settings"
 import {toDisplayName} from "../../../utils/AgentName"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
@@ -192,9 +192,9 @@ export interface ChatCommonProps {
     readonly sampleQueries?: string[]
 
     /**
-     * Array of LLM providers for which API keys are required but missing. Only applies to BYOK networks.
+     * If true, indicates that the user is missing API keys for one or more LLM providers.
      */
-    readonly missingApiKeys?: LLMProvider[]
+    readonly hasMissingApiKeys?: boolean
 }
 
 // Type for forward ref to expose the handleStop and handleClearChat functions
@@ -258,7 +258,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         id,
         isAwaitingLlm,
         legacyAgentEndpoint,
-        missingApiKeys = [],
+        hasMissingApiKeys = false,
         networkDescription,
         neuroSanURL,
         onChunkReceived,
@@ -1317,15 +1317,6 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         </Typography>
     )
 
-    const allApiKeysPresent = missingApiKeys?.length === 0
-
-    const getMissingApiKeysOverlayBody = () => (
-        <Typography component="span">
-            {`API key(s) required for: ${missingApiKeys.join(", ")}. Please add the required key(s) in
-                              "Settings" to use this Network.`}
-        </Typography>
-    )
-
     return (
         <Box
             id={`llm-chat-${id}`}
@@ -1335,9 +1326,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             }}
         >
             {selectedNetwork
-                ? allApiKeysPresent
-                    ? getChatBox()
-                    : getErrorOverlay(getMissingApiKeysOverlayBody())
+                ? hasMissingApiKeys
+                    ? getErrorOverlay("")
+                    : getChatBox() // Parent will display error for this case
                 : getErrorOverlay(getSelectNetworkOverlayBody())}
         </Box>
     )

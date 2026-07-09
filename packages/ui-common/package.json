@@ -23,6 +23,7 @@
         "rehype-slug": "catalog:default",
         "remark-gfm": "4.0.1",
         "uuid": "14.0.0",
+        "zod": "catalog:default",
         "zustand": "4.5.7"
     },
     "devDependencies": {

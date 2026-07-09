@@ -61,7 +61,7 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {LLMProvider, useSettingsStore} from "../../state/Settings"
+import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
 import {toDisplayName} from "../../utils/AgentName"
@@ -71,8 +71,10 @@ import {LlmChatButton} from "../AgentChat/Common/LlmChatButton"
 import {isLegacyAgentType} from "../AgentChat/Common/Types"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
+import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
+import {BYOK} from "./Schema/SlyData"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -144,7 +146,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         [selectedNetwork, useNativeNames]
     )
 
-    const [providerKeysRequired, setProviderKeysRequired] = useState<ReadonlySet<LLMProvider>>(new Set())
+    // LLM providers for which BYOK keys are supported by the current network
+    const [supportedByokProviders, setSupportedByokProviders] = useState<ReadonlySet<LLMProvider>>(new Set())
 
     const neuroSanURL = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl) ?? defaultNeuroSanUrl
 
@@ -256,19 +259,18 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
      * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
      * by the currently selected network. Only includes keys for providers that are required.
      */
-    const getApiKeys = () => {
-        const llmConfig: Record<string, string | undefined> = {}
-
-        if (providerKeysRequired.has("OpenAI")) {
-            llmConfig["openai_api_key"] = apiKeys["OpenAI"]
-        }
-
-        if (providerKeysRequired.has("Anthropic")) {
-            llmConfig["anthropic_api_key"] = apiKeys["Anthropic"]
-        }
-
-        return {llm_config: llmConfig}
-    }
+    const getApiKeys = (): {llm_config: Partial<Record<ByokKeyField, string>>} => ({
+        llm_config: Object.fromEntries(
+            [...supportedByokProviders]
+                .map((provider): [ByokKeyField, string | undefined] => [
+                    LLM_PROVIDER_API_KEY_FIELD[provider],
+                    apiKeys[provider],
+                ])
+                .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
+                    Boolean(entry[1])
+                )
+        ),
+    })
 
     /**
      * Builds the extraSlyData object to be sent with each request, including information for Agent Network Designer
@@ -302,7 +304,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }
 
     // Whether any API keys are required
-    const anyApiKeysRequired = providerKeysRequired.size > 0
+    const anyApiKeysRequired = supportedByokProviders.size > 0
 
     // Build base extraSlyData
     const baseExtraSlyData = buildExtraSlyData()
@@ -322,8 +324,41 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         resetState()
     }, [resetState])
 
-    const isRecord = (value: unknown): value is Record<string, unknown> =>
-        typeof value === "object" && value !== null && !Array.isArray(value)
+    /**
+     * Maps an API key name to the corresponding LLM provider
+     */
+    const apiKeyToProvider = useCallback((key: string): LLMProvider | null => {
+        switch (key) {
+            case "openai_api_key":
+                return "OpenAI"
+            case "anthropic_api_key":
+                return "Anthropic"
+            default:
+                return null
+        }
+    }, [])
+
+    /**
+     * Given a SlyData schema, returns the set of LLM providers that are supported by the agent network.
+     * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers
+     */
+    const getSupportedLlmProviders = useCallback(
+        (schema: unknown): ReadonlySet<LLMProvider> => {
+            const parsed = BYOK.safeParse(schema)
+
+            if (!parsed.success || !parsed.data.required?.includes("llm_config")) {
+                return new Set()
+            }
+
+            const providerKeys = Object.keys(parsed.data.properties?.llm_config?.properties ?? {})
+            return new Set(
+                providerKeys
+                    .map((key) => apiKeyToProvider(key))
+                    .filter((provider): provider is LLMProvider => provider !== null)
+            )
+        },
+        [apiKeyToProvider]
+    )
 
     useEffect(() => {
         ;(async () => {
@@ -348,32 +383,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         const fetchAgentDetails = async () => {
             // It is a Neuro-san agent, so get the function and connectivity info
             try {
+                // Reset before fetching
+                setNetworkDescription("")
+                setSupportedByokProviders(new Set())
+
+                // Get agent function from server
                 const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, username)
                 setNetworkDescription(agentFunction?.function?.description || "")
 
                 const schema = agentFunction?.function?.sly_data_schema
-                const schemaProperties = isRecord(schema) ? schema["properties"] : undefined
-                const llmConfig = isRecord(schemaProperties) ? schemaProperties["llm_config"] : undefined
-                const llmConfigRequired = isRecord(llmConfig) ? llmConfig["required"] : undefined
-
-                setProviderKeysRequired(
-                    new Set(
-                        (Array.isArray(llmConfigRequired) ? llmConfigRequired : []).flatMap((key): LLMProvider[] => {
-                            if (key === "openai_api_key") {
-                                return ["OpenAI"]
-                            }
-                            if (key === "anthropic_api_key") {
-                                return ["Anthropic"]
-                            }
-
-                            console.warn(
-                                `Unknown API key requirement "${key}" for network ${selectedNetwork}. Skipping.`
-                            )
-                            // Will get dropped by flatMap
-                            return []
-                        })
-                    )
-                )
+                setSupportedByokProviders(getSupportedLlmProviders(schema))
             } catch (e) {
                 console.warn(`Unable to get agent details for network ${selectedNetwork}:`, e)
             }
@@ -384,7 +403,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         if (selectedNetwork && !isLegacyAgentType(selectedNetwork)) {
             void fetchAgentDetails()
         }
-    }, [neuroSanURL, selectedNetwork, username])
+    }, [getSupportedLlmProviders, neuroSanURL, selectedNetwork, username])
 
     useEffect(() => {
         ;(async () => {
@@ -686,7 +705,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
-            // It's expired so just delete it without confirmation
+            // It's expired, so just delete it without confirmation
             const tempNetworksWithoutThisOne = temporaryNetworks.filter(
                 (network) => network.agentInfo.agent_name !== networkId
             )
@@ -739,9 +758,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [tourRequested, selectedNetwork, agentsInNetwork, networks, controls, setTourStatus])
 
-    const getMissingApiKeys = () => {
-        return providerKeysRequired.size > 0 ? [...providerKeysRequired].filter((provider) => !apiKeys?.[provider]) : []
+    const getMissingApiKeys = (): ReadonlySet<LLMProvider> => {
+        // Calculate intersection of what we have (apiKeys) and what is required (providerKeysRequired)
+        const intersection = new Set([...supportedByokProviders].filter((x) => apiKeys[x]))
+        return intersection.size === 0 ? supportedByokProviders : new Set()
     }
+
+    const hasMissingApiKeys = getMissingApiKeys().size > 0
 
     const getLeftPanel = () => {
         return (
@@ -861,7 +884,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="agent-network-ui"
                         isAwaitingLlm={isAwaitingLlm}
                         key={selectedNetwork ?? "no-network"}
-                        missingApiKeys={getMissingApiKeys()}
+                        hasMissingApiKeys={hasMissingApiKeys}
                         networkDescription={networkDescription}
                         neuroSanURL={neuroSanURL}
                         onChunkReceived={onChunkReceived}
@@ -1105,8 +1128,31 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         </Box>
     )
 
+    const getMissingApiKeysAlert = () =>
+        hasMissingApiKeys && (
+            <MUIAlert
+                closeable={false}
+                id="llm-chat-missing-api-keys-alert"
+                severity="warning"
+                sx={{
+                    my: 1.5,
+                    "& .MuiAlert-message": {
+                        width: "100%",
+                        textAlign: "center",
+                    },
+                }}
+            >
+                <Typography sx={{fontSize: "larger"}}>
+                    API key(s) required for at least one of these providers:{" "}
+                    <strong>{[...getMissingApiKeys()].join(", ")}</strong>. Please add the required key(s) in
+                    &quot;Settings&quot; to use this Network.
+                </Typography>
+            </MUIAlert>
+        )
+
     return (
         <>
+            {getMissingApiKeysAlert()}
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
