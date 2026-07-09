@@ -95,7 +95,7 @@ main() {
     new_coverage_values="${output_dir}/new_coverage_values.txt"
 
     # Run the tests with coverage
-    if ! yarn vitest run --coverage \
+    if ! yarn test --coverage \
              --coverage.reporter=json-summary \
              --coverage.thresholds='{}' \
              --coverage.reportsDirectory="${output_dir}" 1> /dev/null ; then
