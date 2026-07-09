@@ -20,10 +20,10 @@
 # It uses multi-stage builds for a smaller resulting image 
 #
 
-# This is the major version of NodeJS we will enforce
-# Check in CI to see what the variable is set to if you want to see the official version of NodeJS we are targeting
-ARG NODEJS_VERSION=22
-
+# This is the major version of NodeJS we will use
+# The currently supported version(s) of Node.js are those in the `engines` field of the package.json file.
+# Note that the "distroless" image in the "builder" section will likely need to be adjusted for different node versions.
+ARG NODEJS_VERSION
 FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 
 ENV NODE_ENV=development
@@ -33,6 +33,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 COPY .yarnrc.yml ./
+COPY .yarn/plugins/CheckNodeVersion.mjs .yarn/plugins/CheckNodeVersion.mjs
 COPY package.json ./
 COPY yarn.lock ./
 COPY tsconfig.json ./
@@ -59,6 +60,7 @@ WORKDIR /app
 
 # Install only production dependencies
 COPY .yarnrc.yml ./
+COPY .yarn/plugins/CheckNodeVersion.mjs .yarn/plugins/CheckNodeVersion.mjs
 COPY package.json ./
 COPY packages/ui-common/package.json ./packages/ui-common/package.json
 COPY packages/dev-common/package.json ./packages/dev-common/package.json
