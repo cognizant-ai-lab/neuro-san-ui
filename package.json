@@ -22,10 +22,13 @@
         "lint-rules": "./build_scripts/eslint_list_rules.sh",
         "lint-summary": "eslint --format summary",
         "start": "yarn workspace @cognizant-ai-lab/neuro-san-web start",
-        "test": "vitest run",
+        "test": "NODE_OPTIONS=\"--localstorage-file=$(mktemp --directory)/node-storage\" vitest run",
         "update-coverage": "./build_scripts/UpdateCoverage.sh"
     },
     "packageManager": "yarn@4.12.0",
+    "engines": {
+        "node": "^22.0.0 || ^26.0.0"
+    },
     "devDependencies": {
         "@eslint/js": "10.0.1",
         "@next/eslint-plugin-next": "16.2.10",
@@ -49,7 +52,7 @@
         "eslint-plugin-unicorn": "65.0.1",
         "fake-indexeddb": "catalog:default",
         "globals": "catalog:default",
-        "jsdom": "^29.1.1",
+        "jsdom": "29.1.1",
         "knip": "6.25.0",
         "prettier": "3.9.4",
         "react": "catalog:default",

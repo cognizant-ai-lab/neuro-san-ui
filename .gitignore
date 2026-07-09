@@ -23,7 +23,7 @@ coverage/
 **/dist/
 package.tgz
 yarn-error.log
-.yarn
+.yarn/install-state.gz
 
 # Claude Code
 .claude/
