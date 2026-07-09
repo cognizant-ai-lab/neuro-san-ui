@@ -18,6 +18,8 @@ limitations under the License.
  * Navigate to the specified URL by setting window.location.href
  * @param url The URL to navigate to
  */
+// See: https://github.com/jsdom/jsdom/issues/2112
+/* istanbul ignore next -- JSDom doesn't support simulated navigation */
 export const navigateToUrl = (url: string): void => {
     window.location.href = url
 }

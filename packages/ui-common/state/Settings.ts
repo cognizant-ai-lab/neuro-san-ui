@@ -33,6 +33,16 @@ type DeepPartial<T> = {
 export type LLMProvider = "OpenAI" | "Anthropic"
 export type LogoSource = "none" | "generic" | "auto"
 
+// Mapping of LLM providers to their corresponding API key field names in the settings store.
+export const LLM_PROVIDER_API_KEY_FIELD = {
+    OpenAI: "openai_api_key",
+    Anthropic: "anthropic_api_key",
+} as const satisfies Record<LLMProvider, string>
+
+// Type representing the API key field name for a given LLM provider, derived from the mapping above.
+// Not to be confused: API "key" vs. the "key" in the map.
+export type ByokKeyField = (typeof LLM_PROVIDER_API_KEY_FIELD)[LLMProvider]
+
 /**
  * User preference settings
  */

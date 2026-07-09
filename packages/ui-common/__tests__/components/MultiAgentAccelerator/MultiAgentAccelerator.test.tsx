@@ -19,6 +19,7 @@ import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Ref} from "react"
+import * as z from "zod"
 
 import {
     LIST_NETWORKS_RESPONSE,
@@ -49,6 +50,7 @@ import {
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "../../../components/MultiAgentAccelerator/const"
 import {MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
+import {BYOK} from "../../../components/MultiAgentAccelerator/Schema/SlyData"
 import {ImportNetworkModalProps} from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
@@ -61,9 +63,14 @@ import {
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
-import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {
+    ChatMessageType,
+    ChatResponse,
+    ConnectivityInfo,
+    FunctionResponse,
+} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {useSettingsStore} from "../../../state/Settings"
+import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
 
@@ -1414,35 +1421,47 @@ describe("MultiAgentAccelerator", () => {
 
         const badProvider = "not_a_known_provider"
 
-        it.each([
-            {required: ["openai_api_key"]},
-            {required: ["openai_api_key", "anthropic_api_key"]},
-            {required: ["anthropic_api_key"]},
-            {required: [badProvider]},
-            {required: []},
-        ])("should handle networks that require BYOK for $required", async ({required}) => {
+        type ByokTestCase = {
+            readonly required: ByokKeyField[]
+            readonly expectedMissing: boolean
+        }
+
+        it.each<ByokTestCase>([
+            {required: [LLM_PROVIDER_API_KEY_FIELD["OpenAI"]], expectedMissing: true},
+            {
+                required: [LLM_PROVIDER_API_KEY_FIELD["OpenAI"], LLM_PROVIDER_API_KEY_FIELD["Anthropic"]],
+                expectedMissing: false,
+            },
+            {required: [LLM_PROVIDER_API_KEY_FIELD["Anthropic"]], expectedMissing: false},
+            {required: [badProvider as ByokKeyField], expectedMissing: false},
+            {required: [], expectedMissing: false},
+            {required: undefined, expectedMissing: false},
+        ])("should handle networks that require BYOK for $required", async ({expectedMissing, required}) => {
             vi.mocked(getAgentFunction).mockResolvedValue({
                 function: {
                     sly_data_schema: {
+                        type: "object",
                         properties: {
                             llm_config: {
-                                required,
+                                type: "object",
+                                // Create a subkey for each provider in "required".
+                                properties: required
+                                    ? {...Object.fromEntries(required.map((key) => [key, {type: "string"}]))}
+                                    : undefined,
                             },
                         },
-                    },
+                        required: ["llm_config"],
+                    } satisfies z.infer<typeof BYOK>,
                 },
-            })
+            } satisfies FunctionResponse)
 
-            const debugSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+            // Validate against schema. Mostly just to "test our test".
+            BYOK.parse((await getAgentFunction(null, null, null)).function?.sly_data_schema)
 
-            // Add existing API key to store
-            const anthropicKey = "anthropic-key"
-            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: anthropicKey}})
+            // Add an existing API key to the store. This represents the key that the user has supplied
+            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: "anthropic-key"}})
 
             renderMultiAgentAcceleratorPage()
-
-            // Search for something known to make sure rendering settled
-            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
 
             await act(async () => {
                 setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
@@ -1450,45 +1469,12 @@ describe("MultiAgentAccelerator", () => {
 
             await screen.findByText(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
 
-            const expectedMissingKeys = required.includes("openai_api_key") ? ["OpenAI"] : []
-
-            // We simulated that this network requires an OpenAI key, but we only provided Anthropic, so ChatCommon
-            // should have been notified about the missing key
+            // Make sure the missingApiKeys set (as passed to the ChatCommon mock) matches what we expect based on
+            // the required keys and the existing keys in the store.
             expect(chatCommonMock).toHaveBeenCalledWith(
-                expect.objectContaining({
+                expect.objectContaining<Partial<ChatCommonProps>>({
                     selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                    missingApiKeys: expectedMissingKeys,
-                })
-            )
-
-            if (required[0] === badProvider) {
-                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(badProvider))
-            }
-        })
-
-        it.each([
-            {},
-            {function: {}},
-            {function: {sly_data_schema: {}}},
-            {function: {sly_data_schema: {properties: {}}}},
-            {function: {sly_data_schema: {properties: {llm_config: {}}}}},
-            {function: {sly_data_schema: {properties: {llm_config: {required: []}}}}},
-        ])("handles missing items in the BYOK info from the backend", async (byokResponse) => {
-            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: "anthropic-key"}})
-            vi.mocked(getAgentFunction).mockResolvedValue(byokResponse)
-            renderMultiAgentAcceleratorPage()
-
-            // Search for something known to make sure rendering settled
-            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
-
-            await act(async () => {
-                setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
-            })
-
-            expect(chatCommonMock).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
-                    missingApiKeys: [],
+                    hasMissingApiKeys: expectedMissing,
                 })
             )
         })
