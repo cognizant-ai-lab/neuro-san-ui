@@ -32,6 +32,7 @@ import {
     summarizeNetworkDefinition,
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
+import {useSettingsStore} from "../../../state/Settings"
 
 const onCloseMock = vi.fn()
 const onImportMock = vi.fn()
@@ -102,6 +103,7 @@ describe("ImportNetworkModal", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
+        useSettingsStore.getState().resetSettings()
     })
 
     it("should not render content when isOpen is false", () => {
@@ -242,7 +244,7 @@ describe("ImportNetworkModal", () => {
     it("should show the network summary (counts + frontman) on the review step", async () => {
         renderModal()
         const definition = JSON.stringify([
-            {origin: "lead", display_as: "llm_agent", tools: ["worker", "search"]},
+            {origin: "onboarding_lead", display_as: "llm_agent", tools: ["worker", "search"]},
             {origin: "worker", display_as: "llm_agent", tools: []},
             {origin: "search", display_as: "coded_tool", tools: []},
         ])
@@ -251,11 +253,27 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("CheckCircleOutlinedIcon")
         const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
         if (!summaryEl) throw new Error("Network summary was not rendered")
-        // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = lead
+        // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = onboarding_lead
         expectStat(summaryEl, "Agents", "2")
         expectStat(summaryEl, "Coded tools", "1")
         expectStat(summaryEl, "External agents", "0")
-        expectStat(summaryEl, "Front man", "lead")
+        // Beautified by default, matching the "use native names" appearance preference.
+        expectStat(summaryEl, "Frontman", "Onboarding Lead")
+    })
+
+    it("should show the raw frontman name when the native-names preference is on", async () => {
+        useSettingsStore.getState().updateSettings({appearance: {useNativeNames: true}})
+        renderModal()
+        const definition = JSON.stringify([
+            {origin: "onboarding_lead", display_as: "llm_agent", tools: ["worker"]},
+            {origin: "worker", display_as: "llm_agent", tools: []},
+        ])
+        dropFileOnModal("my_network.json", definition)
+
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
+        if (!summaryEl) throw new Error("Network summary was not rendered")
+        expectStat(summaryEl, "Frontman", "onboarding_lead")
     })
 
     it("should show a parse error banner when the file content is unparseable", async () => {

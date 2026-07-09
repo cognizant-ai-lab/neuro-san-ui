@@ -34,6 +34,8 @@ import Typography from "@mui/material/Typography"
 import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
+import {useSettingsStore} from "../../../state/Settings"
+import {toDisplayName} from "../../../utils/AgentName"
 import {splitFilename} from "../../../utils/File"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {getFrontman} from "../AgentFlow/GraphStructure"
@@ -45,6 +47,9 @@ export const IMPORT_MODAL_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
+
+// Placeholder shown for the frontman when a network has none. Kept out of name beautification.
+const NO_FRONTMAN_LABEL = "—"
 
 /** Trailing UUID on a filename stem. Separator is `[_-]` because filename sanitization
  * (`toSafeFilename`, neuro-san exports) flattens the UUID's hyphens to underscores.
@@ -149,7 +154,7 @@ export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEnt
         agents,
         codedTools,
         externalAgents,
-        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "—",
+        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? NO_FRONTMAN_LABEL,
     }
 }
 
@@ -281,6 +286,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     onClose,
     onImport,
 }) => {
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
     const [activeStep, setActiveStep] = useState<number>(0)
     // When the imported name conflicts, how the user wants to resolve it.
     const [conflictResolution, setConflictResolution] = useState<ConflictResolution>("keep-both")
@@ -780,8 +786,15 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Box>
     )
 
-    const renderReviewSummary = () =>
-        networkSummary && (
+    const renderReviewSummary = () => {
+        if (!networkSummary) return null
+        // Beautify the frontman like every other agent name in the app (respecting the appearance
+        // preference), but leave the "no frontman" placeholder untouched — it isn't a name.
+        const frontmanDisplay =
+            networkSummary.frontman === NO_FRONTMAN_LABEL
+                ? NO_FRONTMAN_LABEL
+                : toDisplayName(networkSummary.frontman, useNativeNames)
+        return (
             <Box
                 id="import-network-modal-summary"
                 sx={{
@@ -799,7 +812,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         {label: "Agents", value: networkSummary.agents},
                         {label: "Coded tools", value: networkSummary.codedTools},
                         {label: "External agents", value: networkSummary.externalAgents},
-                        {label: "Front man", value: networkSummary.frontman, isFrontman: true},
+                        {label: "Frontman", value: frontmanDisplay, isFrontman: true},
                     ] as const
                 ).map((stat, index) => (
                     <Box
@@ -823,7 +836,8 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         </Typography>
                         <Typography
                             sx={{
-                                fontFamily: "isFrontman" in stat ? "monospace" : undefined,
+                                // Monospace suits the raw snake_case identifier, but not a beautified name.
+                                fontFamily: "isFrontman" in stat && useNativeNames ? "monospace" : undefined,
                                 fontSize: "isFrontman" in stat ? 15 : 18,
                                 lineHeight: 1.4,
                                 marginTop: 0.5,
@@ -836,6 +850,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                 ))}
             </Box>
         )
+    }
 
     const renderReviewSuccess = () => (
         <Box sx={{width: "100%"}}>
