@@ -19,6 +19,8 @@ import {persist} from "zustand/middleware"
 
 import {PALETTES} from "../Theme/Palettes"
 
+//#region Interfaces and Types
+
 /**
  * A utility type that makes all properties in T deeply optional, since TypeScript's built-in Partial<T>
  * only makes the top-level properties optional.
@@ -31,17 +33,21 @@ type DeepPartial<T> = {
 }
 
 export type LLMProvider = "OpenAI" | "Anthropic"
-export type LogoSource = "none" | "generic" | "auto"
 
-// Mapping of LLM providers to their corresponding API key field names in the settings store.
-export const LLM_PROVIDER_API_KEY_FIELD = {
-    OpenAI: "openai_api_key",
-    Anthropic: "anthropic_api_key",
-} as const satisfies Record<LLMProvider, string>
+export type LogoSource = "none" | "generic" | "auto"
 
 // Type representing the API key field name for a given LLM provider, derived from the mapping above.
 // Not to be confused: API "key" vs. the "key" in the map.
 export type ByokKeyField = (typeof LLM_PROVIDER_API_KEY_FIELD)[LLMProvider]
+
+interface ApiKeyEntry {
+    readonly value: string
+    readonly expiresAt: number
+}
+
+type ApiKeys = Partial<Record<LLMProvider, ApiKeyEntry>>
+
+export type PaletteKey = keyof typeof PALETTES | "brand"
 
 /**
  * User preference settings
@@ -67,7 +73,7 @@ interface Settings {
     readonly behavior: {
         readonly enableZenMode: boolean
     }
-    readonly apiKeys: Partial<Record<LLMProvider, string>>
+    readonly apiKeys: ApiKeys
     readonly externalServices: {
         neuroSanUrl: string | null
     }
@@ -81,6 +87,16 @@ interface SettingsStore {
     readonly updateSettings: (updates: DeepPartial<Settings>) => void
     readonly resetSettings: () => void
 }
+
+//#endregion Interfaces and Types
+
+//#region Constants
+
+// Mapping of LLM providers to their corresponding API key field names in the settings store.
+export const LLM_PROVIDER_API_KEY_FIELD = {
+    OpenAI: "openai_api_key",
+    Anthropic: "anthropic_api_key",
+} as const satisfies Record<LLMProvider, string>
 
 /**
  * Default settings, used on first load and on reset
@@ -112,14 +128,25 @@ export const DEFAULT_SETTINGS: Settings = {
         neuroSanUrl: null,
     },
 }
+
+// Name for key where main app settings are saved
 const APP_SETTINGS_STORAGE_KEY = "app-settings"
+
+// Name for key where API keys are saved in sessionStorage.
 const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
+
+// TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
+// This is a backstop for cases where users rarely close their browser or tabs
+export const API_KEYS_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
+//#endregion Constants
 
 /**
  * Purges any persisted API keys from localStorage. This cleans up from previous versions of the cdoe.
+ * Once we are "reasonably sure" that no users are on old versions, we can remove this function.
  */
 const purgePersistedApiKeys = () => {
-    // Protect against non-browser, SSR, test environments etc.
+    // Protect against non-browser, SSR, test environments, etc.
     if (typeof sessionStorage === "undefined") {
         return
     }
@@ -130,6 +157,20 @@ const purgePersistedApiKeys = () => {
         delete persisted.state.settings.apiKeys
         localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(persisted))
     }
+}
+
+/**
+ * Returns the API key for the given provider if it exists and is not expired, otherwise returns undefined.
+ * This helper should be used to retrieve API keys from the settings store, rather than accessing the store directly,
+ * to ensure that expired keys are not returned.
+ * @param apiKeys Set of API keys stored in the settings store
+ * @param provider The LLM provider for which to retrieve the API key
+ */
+export const getApiKey = (apiKeys: ApiKeys, provider: LLMProvider) => {
+    const now = Date.now()
+    const entry = apiKeys[provider]
+
+    return entry && entry.expiresAt > now ? entry.value : undefined
 }
 
 /**
@@ -145,6 +186,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
                     // Side effect: persist API keys in sessionStorage, unlike other Settings items which are persisted
                     // to localStorage (zustand default)
+                    // Timestamp the API keys so we can purge them after a TTL.
                     if (updates.apiKeys && typeof sessionStorage !== "undefined") {
                         sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(nextSettings.apiKeys))
                     }
@@ -173,14 +215,28 @@ export const useSettingsStore = create<SettingsStore>()(
                 // We use it to purge any persisted API keys from previous versions of the code.
                 purgePersistedApiKeys()
 
-                // Merge persisted settings with defaults to fill in any missing fields
-                const sessionApiKeys =
-                    typeof sessionStorage === "undefined"
-                        ? {}
-                        : JSON.parse(sessionStorage.getItem(SESSION_API_KEYS_STORAGE_KEY) ?? "{}")
+                const sessionApiKeys = (() => {
+                    if (typeof sessionStorage === "undefined") {
+                        return {}
+                    }
+
+                    const now = Date.now()
+                    const storedApiKeys = JSON.parse(
+                        sessionStorage.getItem(SESSION_API_KEYS_STORAGE_KEY) ?? "{}"
+                    ) as ApiKeys
+
+                    const validApiKeys = Object.fromEntries(
+                        Object.entries(storedApiKeys).filter(([, entry]) => entry.expiresAt > now)
+                    ) as ApiKeys
+
+                    sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(validApiKeys))
+
+                    return validApiKeys
+                })()
 
                 const persistedSettings = (persistedState as Partial<SettingsStore>).settings ?? {}
 
+                // Merge persisted settings with defaults to fill in any missing fields
                 return {
                     ...currentState,
                     settings: merge({}, DEFAULT_SETTINGS, persistedSettings, {
@@ -191,8 +247,6 @@ export const useSettingsStore = create<SettingsStore>()(
         }
     )
 )
-
-export type PaletteKey = keyof typeof PALETTES | "brand"
 
 /**
  * Custom hook to get the current color palette based on user settings.

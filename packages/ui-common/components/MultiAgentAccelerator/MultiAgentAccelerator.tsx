@@ -61,7 +61,6 @@ import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
-import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
 import {getZIndex} from "../../utils/zIndexLayers"
@@ -74,6 +73,7 @@ import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 import {BYOK} from "./Schema/SlyData"
+import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -263,7 +263,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             [...supportedByokProviders]
                 .map((provider): [ByokKeyField, string | undefined] => [
                     LLM_PROVIDER_API_KEY_FIELD[provider],
-                    apiKeys[provider],
+                    getApiKey(apiKeys, provider),
                 ])
                 .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
                     Boolean(entry[1])
@@ -759,7 +759,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const getMissingApiKeys = (): ReadonlySet<LLMProvider> => {
         // Calculate intersection of what we have (apiKeys) and what is required (providerKeysRequired)
-        const intersection = new Set([...supportedByokProviders].filter((x) => apiKeys[x]))
+        const intersection = new Set([...supportedByokProviders].filter((provider) => getApiKey(apiKeys, provider)))
         return intersection.size === 0 ? supportedByokProviders : new Set()
     }
 
