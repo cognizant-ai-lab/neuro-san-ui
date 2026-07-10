@@ -57,6 +57,9 @@ const config: KnipConfig = {
         "eslint-plugin-testing-library",
         "eslint-plugin-unicorn",
         "typescript-eslint",
+
+        // Supplied internally by yarn to plugins
+        "@yarnpkg/core",
     ],
     workspaces: {
         "packages/dev-common": {
