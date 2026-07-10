@@ -118,7 +118,7 @@ jobs:
               if: success() || failure()
               run: |
                   docker --version
-                  docker build --quiet --check --file apps/main/Dockerfile .
+                  docker build --quiet --check --build-arg NODEJS_VERSION=$NODEJS_VERSION --file apps/main/Dockerfile .
 
             - name: Run TypeScript compilation
               id: tsc
