@@ -28,7 +28,6 @@ import {
 
 import {ApiKeyInput} from "./ApiKeyInput"
 import {useCheckmarkFade} from "./FadingCheckmark"
-import InfoTip from "./InfoTip"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
@@ -529,15 +528,43 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getApiKeysSection = () => (
         <Section>
-            <Box sx={{display: "flex", alignItems: "center", gap: theme.spacing(2)}}>
+            <Box sx={{display: "flex", alignItems: "center", gap: theme.spacing(1)}}>
                 <SettingsSectionTitle>API Keys</SettingsSectionTitle>
-                <InfoTip
-                    title={
-                        "API keys are used to access external services. Some networks may require an API key for " +
-                        "you to use them. Your keys will be saved in your browser local storage and sent to " +
-                        "services that require them. Do not use this option if you are on a shared or public computer."
-                    }
-                />
+                <Tooltip
+                    title="API keys are stored in your browser's memory for the duration of your session only and are
+                    only sent to the Neuro SAN service for use with the associated LLM provider. Your keys are never
+                    sent to any other servers or services and are not stored on our servers.
+                    When you close this tab or your browser, your keys will be permanently cleared from memory and
+                    you will need to enter them again to use services that require them."
+                >
+                    <Typography
+                        sx={{
+                            alignSelf: "flex-start",
+                            color: "var(--bs-secondary)",
+                            cursor: "help",
+                            fontSize: "0.7rem",
+                            lineHeight: 1,
+                            mt: 0.5,
+                        }}
+                        variant="caption"
+                    >
+                        <Box
+                            component="span"
+                            sx={{mr: 0.5}}
+                        >
+                            ⓘ
+                        </Box>
+                        <Box
+                            component="span"
+                            sx={{
+                                borderBottom: "1px dashed",
+                                pb: 0.25,
+                            }}
+                        >
+                            How are my keys stored and used?
+                        </Box>
+                    </Typography>
+                </Tooltip>
             </Box>
             <SettingsSubsection title="LLM Providers">
                 <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
