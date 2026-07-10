@@ -131,5 +131,6 @@ jobs:
               id: unit
               if: success() || failure()
               run: |
+                  node --version
                   yarn vitest --version
                   yarn test

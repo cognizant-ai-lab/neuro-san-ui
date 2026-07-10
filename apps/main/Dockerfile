@@ -23,7 +23,7 @@
 # This is the major version of NodeJS we will use
 # The currently supported version(s) of Node.js are those in the `engines` field of the package.json file.
 # Note that the "distroless" image in the "builder" section will likely need to be adjusted for different node versions.
-ARG NODEJS_VERSION
+ARG NODEJS_VERSION=0
 FROM node:$NODEJS_VERSION-bookworm-slim AS deps
 
 ENV NODE_ENV=development
