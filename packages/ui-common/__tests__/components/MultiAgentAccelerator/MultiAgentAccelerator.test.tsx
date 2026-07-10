@@ -1457,7 +1457,14 @@ describe("MultiAgentAccelerator", () => {
             BYOK.parse((await getAgentFunction(null, null, null)).function?.sly_data_schema)
 
             // Add an existing API key to the store. This represents the key that the user has supplied
-            useSettingsStore.getState().updateSettings({apiKeys: {Anthropic: "anthropic-key"}})
+            useSettingsStore.getState().updateSettings({
+                apiKeys: {
+                    Anthropic: {
+                        expiresAt: Number.MAX_SAFE_INTEGER,
+                        value: "anthropic-key",
+                    },
+                },
+            })
 
             renderMultiAgentAcceleratorPage()
 

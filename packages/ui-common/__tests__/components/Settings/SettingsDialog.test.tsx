@@ -8,7 +8,7 @@ import {NotificationType, sendNotification} from "../../../components/Common/not
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {BrandingSuggestions} from "../../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../../state/Environment"
-import {DEFAULT_SETTINGS, LogoSource, useSettingsStore} from "../../../state/Settings"
+import {DEFAULT_SETTINGS, getApiKey, LogoSource, useSettingsStore} from "../../../state/Settings"
 
 // Mock notification system
 vi.mock("../../../components/Common/notification")
@@ -300,7 +300,7 @@ describe("SettingsDialog", () => {
 
             await user.click(saveButton)
 
-            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(testApiKey)
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(testApiKey)
         })
 
         it("allows user to test API keys", async () => {
@@ -348,7 +348,10 @@ describe("SettingsDialog", () => {
             // set an existing key value
             useSettingsStore.getState().updateSettings({
                 apiKeys: {
-                    OpenAI: TEST_API_KEY,
+                    OpenAI: {
+                        expiresAt: Number.MAX_SAFE_INTEGER, // "never expires""
+                        value: TEST_API_KEY,
+                    },
                 },
             })
 
@@ -369,7 +372,7 @@ describe("SettingsDialog", () => {
             await user.click(cancelButton)
 
             // Key should still be there
-            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBe(TEST_API_KEY)
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
 
             // Now click it again but this time confirm
             await user.click(forgetButton)
@@ -377,14 +380,17 @@ describe("SettingsDialog", () => {
             const confirmButton = screen.getByText("Yes, forget key")
             await user.click(confirmButton)
 
-            expect(useSettingsStore.getState().settings.apiKeys.OpenAI).toBeFalsy()
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
         })
 
         it("allows a user to show/hide keys", async () => {
             // set an existing key value
             useSettingsStore.getState().updateSettings({
                 apiKeys: {
-                    OpenAI: TEST_API_KEY,
+                    OpenAI: {
+                        expiresAt: Number.MAX_SAFE_INTEGER, // "never expires""
+                        value: TEST_API_KEY,
+                    },
                 },
             })
 
