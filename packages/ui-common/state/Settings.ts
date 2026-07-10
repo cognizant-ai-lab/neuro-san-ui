@@ -112,6 +112,25 @@ export const DEFAULT_SETTINGS: Settings = {
         neuroSanUrl: null,
     },
 }
+const APP_SETTINGS_STORAGE_KEY = "app-settings"
+const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
+
+/**
+ * Purges any persisted API keys from localStorage. This cleans up from previous versions of the cdoe.
+ */
+const purgePersistedApiKeys = () => {
+    // Protect against non-browser, SSR, test environments etc.
+    if (typeof sessionStorage === "undefined") {
+        return
+    }
+
+    const persisted = JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) ?? "{}")
+
+    if (persisted.state?.settings) {
+        delete persisted.state.settings.apiKeys
+        localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(persisted))
+    }
+}
 
 /**
  * The hook that lets apps use the store
@@ -121,18 +140,52 @@ export const useSettingsStore = create<SettingsStore>()(
         (set) => ({
             settings: DEFAULT_SETTINGS,
             updateSettings: (updates) =>
-                set((state) => ({
-                    settings: merge({}, state.settings, updates),
-                })),
+                set((state) => {
+                    const nextSettings = merge({}, state.settings, updates)
+
+                    // Side effect: persist API keys in sessionStorage, unlike other Settings items which are persisted
+                    // to localStorage (zustand default)
+                    if (updates.apiKeys && typeof sessionStorage !== "undefined") {
+                        sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(nextSettings.apiKeys))
+                    }
+
+                    return {
+                        settings: nextSettings,
+                    }
+                }),
             resetSettings: () => set({settings: DEFAULT_SETTINGS}),
         }),
         {
-            name: "app-settings",
+            name: APP_SETTINGS_STORAGE_KEY,
+
+            // We don't want to persist API keys in localStorage, so we remove them before saving the state.
+            partialize: (state) => {
+                const {apiKeys: _apiKeys, ...settingsWithoutApiKeys} = state.settings
+
+                return {
+                    ...state,
+                    settings: settingsWithoutApiKeys,
+                }
+            },
+
             merge: (persistedState, currentState) => {
+                // This is the hook that runs when the store is rehydrated from localStorage.
+                // We use it to purge any persisted API keys from previous versions of the code.
+                purgePersistedApiKeys()
+
                 // Merge persisted settings with defaults to fill in any missing fields
+                const sessionApiKeys =
+                    typeof sessionStorage === "undefined"
+                        ? {}
+                        : JSON.parse(sessionStorage.getItem(SESSION_API_KEYS_STORAGE_KEY) ?? "{}")
+
+                const persistedSettings = (persistedState as Partial<SettingsStore>).settings ?? {}
+
                 return {
                     ...currentState,
-                    settings: merge({}, DEFAULT_SETTINGS, (persistedState as SettingsStore).settings),
+                    settings: merge({}, DEFAULT_SETTINGS, persistedSettings, {
+                        apiKeys: sessionApiKeys,
+                    }),
                 }
             },
         }
