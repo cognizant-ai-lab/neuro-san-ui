@@ -1,6 +1,3 @@
-// Include mock for IndexedDB
-import "fake-indexeddb/auto"
-
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     APP_SETTINGS_STORAGE_KEY,
