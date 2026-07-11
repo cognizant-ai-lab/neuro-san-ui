@@ -23,6 +23,19 @@ import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgen
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
 
+// Accessible names of the dialog's fields and buttons. These are the full accessible names, so
+// getByRole's `name` string option matches them exactly — no regex needed.
+const INSTRUCTIONS_FIELD = "Instructions"
+const DESCRIPTION_FIELD = "Description"
+const SAVE_BUTTON = "Save"
+const APPLYING_CHANGES_BUTTON = "Applying changes..."
+const CANCEL_BUTTON = "Cancel"
+const DISCARD_CHANGES_BUTTON = "Discard changes"
+// MUIDialog's dismiss icon uses aria-label="close" (lowercase).
+const CLOSE_BUTTON = "close"
+// Instructions field placeholder — used to detect the field is absent when the dialog is closed.
+const INSTRUCTIONS_PLACEHOLDER = "Enter instructions for this agent…"
+
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
     const onClose = vi.fn()
     const onSave = vi.fn()
@@ -49,20 +62,20 @@ describe("AgentNodePopup", () => {
 
         // Agent name shown in dialog title only (no separate read-only field)
         expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
-        expect(screen.queryByRole("textbox", {name: /^agent$/iu})).not.toBeInTheDocument()
+        expect(screen.queryByRole("textbox", {name: "Agent"})).not.toBeInTheDocument()
     })
 
     it("does not render content when closed", () => {
         renderPopup({isOpen: false})
 
         expect(screen.queryByText(AGENT_NAME)).not.toBeInTheDocument()
-        expect(screen.queryByPlaceholderText(/instructions/iu)).not.toBeInTheDocument()
+        expect(screen.queryByPlaceholderText(INSTRUCTIONS_PLACEHOLDER)).not.toBeInTheDocument()
     })
 
     it("renders the initial instructions in the editable textarea", () => {
         renderPopup()
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         expect(instructionsField).toBeInTheDocument()
         expect(instructionsField).toHaveValue(INITIAL_INSTRUCTIONS)
     })
@@ -71,7 +84,7 @@ describe("AgentNodePopup", () => {
         const user = userEvent.setup()
         renderPopup()
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
         await user.type(instructionsField, "New instructions")
 
@@ -82,11 +95,11 @@ describe("AgentNodePopup", () => {
         const user = userEvent.setup()
         const {onSave} = renderPopup()
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
         await user.type(instructionsField, "Updated instructions text")
 
-        await user.click(screen.getByRole("button", {name: /^save$/iu}))
+        await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
         expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
     })
@@ -95,13 +108,13 @@ describe("AgentNodePopup", () => {
         const user = userEvent.setup()
         const {onClose} = renderPopup()
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
         await user.type(instructionsField, "Temporary edit")
 
         // Clicking Cancel when dirty shows the ConfirmationModal; "Discard changes" confirms close
-        await user.click(screen.getByRole("button", {name: /cancel/iu}))
-        await user.click(screen.getByRole("button", {name: /discard changes/iu}))
+        await user.click(screen.getByRole("button", {name: CANCEL_BUTTON}))
+        await user.click(screen.getByRole("button", {name: DISCARD_CHANGES_BUTTON}))
 
         expect(onClose).toHaveBeenCalled()
     })
@@ -110,7 +123,7 @@ describe("AgentNodePopup", () => {
         const user = userEvent.setup()
         const {onClose} = renderPopup()
 
-        const closeBtn = screen.getByRole("button", {name: /close/iu})
+        const closeBtn = screen.getByRole("button", {name: CLOSE_BUTTON})
         await user.click(closeBtn)
 
         expect(onClose).toHaveBeenCalled()
@@ -119,14 +132,14 @@ describe("AgentNodePopup", () => {
     it("renders an empty instructions field when no initialInstructions is provided", () => {
         renderPopup({initialInstructions: undefined})
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         expect(instructionsField).toHaveValue("")
     })
 
     it("renders the instructions field with no character limit", () => {
         renderPopup()
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         expect(instructionsField).not.toHaveAttribute("maxlength")
     })
 
@@ -143,7 +156,7 @@ describe("AgentNodePopup", () => {
         )
 
         // Edit the instructions
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
         await user.type(instructionsField, "Temporary")
         // Blur field explicitly so MUI FormControl settles before rerender
@@ -176,7 +189,7 @@ describe("AgentNodePopup", () => {
         })
 
         await waitFor(() => {
-            expect(screen.getByRole("textbox", {name: /^instructions$/iu})).toHaveValue(INITIAL_INSTRUCTIONS)
+            expect(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})).toHaveValue(INITIAL_INSTRUCTIONS)
         })
     })
 
@@ -195,7 +208,7 @@ describe("AgentNodePopup", () => {
             />
         )
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
         await user.type(instructionsField, "My edited instructions")
 
@@ -217,7 +230,7 @@ describe("AgentNodePopup", () => {
 
         // The textarea remains in JSDOM (no real exit animation), but must hold the edited
         // value — NOT initialInstructions — proving no flash occurred during close.
-        const fieldAfterClose = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const fieldAfterClose = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         expect(fieldAfterClose).toHaveValue("My edited instructions")
         expect(fieldAfterClose).not.toHaveValue(INITIAL_INSTRUCTIONS)
     })
@@ -235,7 +248,7 @@ describe("AgentNodePopup", () => {
             />
         )
 
-        const instructionsField = screen.getByRole("textbox", {name: /^instructions$/iu})
+        const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         expect(instructionsField).toHaveValue("")
 
         // Parent loads the real instructions and passes them in
@@ -253,18 +266,18 @@ describe("AgentNodePopup", () => {
         })
 
         await waitFor(() => {
-            expect(screen.getByRole("textbox", {name: /^instructions$/iu})).toHaveValue(INITIAL_INSTRUCTIONS)
+            expect(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})).toHaveValue(INITIAL_INSTRUCTIONS)
         })
     })
 
     it("updates description text when the description field is changed", () => {
         const {onSave} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
 
-        const descField = screen.getByRole("textbox", {name: /^description$/iu})
+        const descField = screen.getByRole("textbox", {name: DESCRIPTION_FIELD})
         fireEvent.change(descField, {target: {value: "New description"}})
         fireEvent.keyDown(descField, {key: "a"})
 
-        fireEvent.click(screen.getByRole("button", {name: /^save$/iu}))
+        fireEvent.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
         expect(onSave).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
     })
@@ -273,34 +286,34 @@ describe("AgentNodePopup", () => {
         it("disables both Save and Cancel buttons while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.getByRole("button", {name: /applying changes/iu})).toBeDisabled()
-            expect(screen.getByRole("button", {name: /cancel/iu})).toBeDisabled()
+            expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeDisabled()
+            expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeDisabled()
         })
 
         it("shows 'Applying changes\u2026' label on the Save button while isSaving is true", () => {
             renderPopup({isSaving: true})
 
-            expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
-            expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
+            expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeInTheDocument()
+            expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
         it("shows 'Save' label and enables buttons when isSaving is false", () => {
             renderPopup({isSaving: false})
 
             // Save is also gated on isDirty; make the form dirty so it is not disabled by !isDirty
-            fireEvent.change(screen.getByRole("textbox", {name: /^instructions$/iu}), {
+            fireEvent.change(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD}), {
                 target: {value: "Changed"},
             })
 
-            expect(screen.getByRole("button", {name: /^save$/iu})).toBeEnabled()
-            expect(screen.getByRole("button", {name: /cancel/iu})).toBeEnabled()
+            expect(screen.getByRole("button", {name: SAVE_BUTTON})).toBeEnabled()
+            expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeEnabled()
         })
 
         it("does not call onSave when the Save button is disabled (isSaving true)", () => {
             const {onSave} = renderPopup({isSaving: true})
 
             // The button is disabled so clicking it should not trigger onSave
-            const saveBtn = screen.getByRole("button", {name: /applying changes/iu})
+            const saveBtn = screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})
             fireEvent.click(saveBtn)
 
             expect(onSave).not.toHaveBeenCalled()
@@ -309,7 +322,7 @@ describe("AgentNodePopup", () => {
         it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {
             const {onClose} = renderPopup({isSaving: true})
 
-            const cancelBtn = screen.getByRole("button", {name: /cancel/iu})
+            const cancelBtn = screen.getByRole("button", {name: CANCEL_BUTTON})
             fireEvent.click(cancelBtn)
 
             expect(onClose).not.toHaveBeenCalled()
@@ -319,7 +332,7 @@ describe("AgentNodePopup", () => {
             renderPopup({isSaving: true})
 
             // The dialog is always dismissable — user can abort an in-flight save by closing.
-            expect(screen.getByRole("button", {name: /close/iu})).toBeInTheDocument()
+            expect(screen.getByRole("button", {name: CLOSE_BUTTON})).toBeInTheDocument()
         })
 
         it("disables the text fields while isSaving is true", () => {

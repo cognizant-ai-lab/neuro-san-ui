@@ -493,8 +493,12 @@ describe("ChatCommon", () => {
             const ref = createRef<ChatCommonHandle>()
             renderChatCommonComponent({ref})
 
-            // Wait for the component to initialize so the ref is set up
-            await screen.findByRole("button", {name: "Send"})
+            // First send a message so there is chat output to clear
+            const testMessage = "test message for ref clearing"
+            await sendQuery(TEST_AGENT_MATH_GUY, testMessage)
+
+            // Wait for the message to appear. It appears twice -- once in chat history, once "live"
+            expect(await screen.findAllByText(testMessage)).toHaveLength(2)
 
             // Verify handleClearChat is exposed via the imperative ref
             expect(typeof ref.current?.handleClearChat).toBe("function")
@@ -504,10 +508,9 @@ describe("ChatCommon", () => {
                 ref.current?.handleClearChat()
             })
 
-            // After clearing, connectivity info (rendered into chatOutput via updateOutput) is gone
-            // We wait for sample queries to re-appear (they're in agentSampleQueries state, not chatOutput,
-            // so they stay after clear and confirm the component is still functional)
-            await screen.findByText("Sample query 1")
+            // The previously sent message should be gone, while sample queries re-appear
+            expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
+            await screen.findByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])
         })
 
         it("Should handle Clear Chat functionality", async () => {

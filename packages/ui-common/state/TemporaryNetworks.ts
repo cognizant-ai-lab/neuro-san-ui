@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {keyBy} from "lodash-es"
 import {create} from "zustand"
 import {persist} from "zustand/middleware"
 
@@ -64,31 +65,22 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
             upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
-                set((state) => {
-                    const updated = [...state.tempNetworks]
-                    for (const incomingNetwork of incomingNetworks) {
-                        const existingIndex = updated.findIndex(
-                            (network) => network.agentNetworkName === incomingNetwork.agentNetworkName
-                        )
-                        if (existingIndex >= 0) {
-                            updated[existingIndex] = incomingNetwork // replace the existing entry in-place
-                        } else {
-                            updated.push(incomingNetwork) // no existing entry — add as new
-                        }
-                    }
-                    return {tempNetworks: updated}
-                })
+                set((state) => ({
+                    // Key both sides by name and let incoming win; existing entries keep their position,
+                    // new ones are appended.
+                    tempNetworks: Object.values({
+                        ...keyBy(state.tempNetworks, "agentNetworkName"),
+                        ...keyBy(incomingNetworks, "agentNetworkName"),
+                    }),
+                }))
                 return incomingNetworks
             },
             updateTempNetworkDefinition: (networkName: string, agentNetworkDefinition: AgentNetworkDefinitionEntry[]) =>
-                set((state) => {
-                    const updated = [...state.tempNetworks]
-                    const existingIndex = updated.findIndex((network) => network.agentInfo.agent_name === networkName)
-                    if (existingIndex >= 0) {
-                        updated[existingIndex] = {...updated[existingIndex], agentNetworkDefinition}
-                    }
-                    return {tempNetworks: updated}
-                }),
+                set((state) => ({
+                    tempNetworks: state.tempNetworks.map((network) =>
+                        network.agentInfo.agent_name === networkName ? {...network, agentNetworkDefinition} : network
+                    ),
+                })),
         }),
         {
             name: "temp-networks",

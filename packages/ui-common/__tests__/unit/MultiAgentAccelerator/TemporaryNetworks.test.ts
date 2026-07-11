@@ -136,6 +136,11 @@ describe("isTemporaryNetwork", () => {
     it("returns true when a network matches the agentName", () => {
         expect(isTemporaryNetwork("temporary/abc", [makeNetwork("temporary/abc")])).toBe(true)
     })
+
+    it("matches case-sensitively — names differing only in case do not match", () => {
+        // agent_name is an exact identifier derived from reservation_id, so casing is significant.
+        expect(isTemporaryNetwork("temporary/Abc", [makeNetwork("temporary/abc")])).toBe(false)
+    })
 })
 
 describe("isEditableAgent", () => {

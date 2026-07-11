@@ -1,3 +1,5 @@
+import {keyBy, mergeWith} from "lodash-es"
+
 import {getFrontman} from "./AgentFlow/GraphStructure"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -154,18 +156,17 @@ export const isTemporaryNetwork = (agentName: string | null, networks: Temporary
  * Returns a new array; does not mutate either argument.
  */
 export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): TemporaryNetwork[] =>
-    incoming.reduce<TemporaryNetwork[]>(
-        (result, n) => {
-            const existingIdx = result.findIndex((e) => e.agentNetworkName === n.agentNetworkName)
-            // No existing entry with this name - append.
-            if (existingIdx < 0) return [...result, n]
-            // Existing entry found - keep whichever reservation expires later.
-            if (n.reservation.expiration_time_in_seconds > result[existingIdx].reservation.expiration_time_in_seconds) {
-                return result.map((e, i) => (i === existingIdx ? n : e))
-            }
-            return result
-        },
-        [...target]
+    Object.values(
+        mergeWith(
+            keyBy(target, "agentNetworkName"),
+            keyBy(incoming, "agentNetworkName"),
+            // Both collections share a name: keep whichever reservation expires later, existing wins ties.
+            (existing: TemporaryNetwork | undefined, candidate: TemporaryNetwork) =>
+                existing &&
+                existing.reservation.expiration_time_in_seconds >= candidate.reservation.expiration_time_in_seconds
+                    ? existing
+                    : candidate
+        )
     )
 
 /**

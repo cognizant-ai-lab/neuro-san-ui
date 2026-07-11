@@ -149,7 +149,7 @@ const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
  * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
  * network definition, collecting any returned reservations.
  */
-const streamNetworkDesignerPrompt = async (
+const applyNetworkDesignerChanges = async (
     neuroSanURL: string,
     signal: AbortSignal,
     userPrompt: string,
@@ -522,13 +522,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             const currentTempNetwork = networkId
                 ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
                 : undefined
-            const found = (currentTempNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === node.id)
+            const currentAgentDefinition = currentTempNetwork?.agentNetworkDefinition?.find((e) => e.origin === node.id)
 
             setSelectedAgent({
                 agentId: node.id,
                 agentName: node.data.agentName,
-                initialInstructions: found?.instructions ?? "",
-                initialDescription: found?.description ?? "",
+                initialInstructions: currentAgentDefinition?.instructions ?? "",
+                initialDescription: currentAgentDefinition?.description ?? "",
             })
             setIsPopupOpen(true)
         },
@@ -558,6 +558,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return false
             }
 
+            // Find the returned reservation that stands in for the current network (matched by name). When
+            // present, persist every returned network, then carry the open network's chat history over to the
+            // replacement and notify the parent so it can navigate to the new reservation.
             const replacement = newNetworksFromSave.find((n) => n.agentNetworkName === currentAgentNetworkName)
             if (replacement) {
                 useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
@@ -580,7 +583,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     )
 
     const handleDockApply = useCallback(async () => {
-        if (!dockPrompt.trim() || !neuroSanURL || !currentUser) return
+        // Applying a dock edit needs a non-empty prompt plus an active connection and a signed-in user.
+        const readyToApplyEdit = Boolean(dockPrompt.trim() && neuroSanURL && currentUser)
+        if (!readyToApplyEdit) return
 
         const currentTempNetwork = networkId
             ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
@@ -596,7 +601,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             controller.abort()
         }, DOCK_STREAM_TIMEOUT_MS)
         try {
-            const newNetworks = await streamNetworkDesignerPrompt(
+            const newNetworks = await applyNetworkDesignerChanges(
                 neuroSanURL,
                 controller.signal,
                 dockPrompt,
@@ -604,8 +609,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 currentTempNetwork?.agentNetworkName,
                 currentUser
             )
-            const applied = saveUpdates(newNetworks, currentTempNetwork?.agentNetworkName)
-            if (applied) {
+            const appliedSuccess = saveUpdates(newNetworks, currentTempNetwork?.agentNetworkName)
+            if (appliedSuccess) {
                 setDockPrompt("")
                 showDockBanner({
                     severity: "success",
@@ -664,13 +669,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
             // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
             const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-            const updated = currentDefinitions.map((entry) =>
+            const updatedDefinitions = currentDefinitions.map((entry) =>
                 entry.origin === selectedAgent.agentId
                     ? {...entry, instructions: instructionsText, description: descriptionText}
                     : entry
             )
             if (networkId) {
-                updateTempNetworkDefinition(networkId, updated)
+                updateTempNetworkDefinition(networkId, updatedDefinitions)
             }
 
             if (!onSaveAgent) {
@@ -686,7 +691,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 AGENT_SAVE_TIMEOUT_MS
             )
             try {
-                await onSaveAgent(agentName, updated, currentTempNetwork?.agentNetworkName, saveController.signal)
+                await onSaveAgent(
+                    agentName,
+                    updatedDefinitions,
+                    currentTempNetwork?.agentNetworkName,
+                    saveController.signal
+                )
             } catch (e) {
                 console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
                 sendNotification(

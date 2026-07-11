@@ -40,22 +40,42 @@ import {cleanUpAgentName} from "../../../../utils/AgentName"
 //#region Constants
 const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
+// Accessible names of node-popup controls, reused across the editor test blocks below.
+const SAVE_BUTTON = "Save"
+const INSTRUCTIONS_FIELD = "Instructions"
+
 const mockPlasmaEdgeTestId = "mock-plasma-edge"
 const mockThoughtBubbleEdgeTestId = "mock-thought-bubble-edge"
 const mockThoughtBubbleOverlayTestId = "mock-thought-bubble-overlay"
 
+// Agent origin ids used throughout the fixtures, selectors and mock-call assertions below.
+const AGENT_1 = "agent1"
+const AGENT_2 = "agent2"
+const AGENT_3 = "agent3"
+
+// display_as value marking an editable LLM agent node.
+const LLM_AGENT_DISPLAY = "llm_agent"
+
+// React Flow edge type for thought-bubble edges (matches the source's edge `type`).
+const THOUGHT_BUBBLE_EDGE_TYPE = "thoughtBubbleEdge"
+
+// Conversation ids reused across the thought-bubble fixtures below (one-off ids stay inline).
+const CONV_1 = "conv-1"
+const CONV_2 = "conv-2"
+const CONV_WITH_TEXT = "conv-with-text"
+
 const NETWORK = [
     {
-        origin: "agent1",
-        display_as: "llm_agent",
-        tools: ["agent2", "agent3"],
+        origin: AGENT_1,
+        display_as: LLM_AGENT_DISPLAY,
+        tools: [AGENT_2, AGENT_3],
     },
     {
-        origin: "agent2",
-        tools: ["agent3"],
+        origin: AGENT_2,
+        tools: [AGENT_3],
     },
     {
-        origin: "agent3",
+        origin: AGENT_3,
         tools: [],
     },
 ] satisfies ConnectivityInfo[]
@@ -161,7 +181,7 @@ describe("AgentFlow", () => {
     const currentConversations2: AgentConversation[] = [
         {
             id: "test-conv-1",
-            agents: new Set(["agent1"]),
+            agents: new Set([AGENT_1]),
             startedAt: new Date(),
             type: ChatMessageType.AGENT,
         },
@@ -221,62 +241,76 @@ describe("AgentFlow", () => {
 
     describe("Basic Rendering", () => {
         it("Should show the network title when networkDisplayName is provided", async () => {
-            renderAgentFlowComponent({networkDisplayName: "My Network"})
-            expect(await screen.findByText("My Network")).toBeInTheDocument()
+            const networkName = "My Network"
+            renderAgentFlowComponent({networkDisplayName: networkName})
+            expect(await screen.findByText(networkName)).toBeInTheDocument()
         })
 
         it("Should show the network title in dark mode", async () => {
-            renderAgentFlowComponent({networkDisplayName: "Dark Network"}, "dark")
-            expect(await screen.findByText("Dark Network")).toBeInTheDocument()
+            const networkName = "Dark Network"
+            renderAgentFlowComponent({networkDisplayName: networkName}, "dark")
+            expect(await screen.findByText(networkName)).toBeInTheDocument()
         })
 
         it("Should not show the title bar when networkDisplayName is not provided", async () => {
-            const {container} = renderAgentFlowComponent()
-            expect(container.querySelector("#test-flow-id-network-title-bar")).not.toBeInTheDocument()
+            const networkName = "My Network"
+            renderAgentFlowComponent()
+
+            // Wait for the flow to render (the toolbar is always present)
+            await screen.findByRole("button", {name: "Heatmap"})
+
+            // The title bar's only content is the network display name; with none provided, none renders.
+            expect(screen.queryByText(networkName)).not.toBeInTheDocument()
         })
 
         it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
             const onEnterEditMode = vi.fn()
+            const networkName = "Temp Net"
             renderAgentFlowComponent({
-                networkDisplayName: "Temp Net",
+                networkDisplayName: networkName,
                 isSelectedNetworkTemporary: true,
                 isEditMode: false,
                 isAwaitingLlm: false,
                 onEnterEditMode,
             })
-            const editBtn = await screen.findByRole("button", {name: "Edit"})
+            // Target the dock's Edit button by its visible text; node hover-affordances share the "Edit"
+            // accessible name (via aria-label) but render no text.
+            const editBtn = await screen.findByText("Edit")
             await user.click(editBtn)
             expect(onEnterEditMode).toHaveBeenCalledTimes(1)
         })
 
         it("Should not show the Edit button for a non-temporary network", async () => {
+            const networkName = "Regular Net"
             renderAgentFlowComponent({
-                networkDisplayName: "Regular Net",
+                networkDisplayName: networkName,
                 isSelectedNetworkTemporary: false,
             })
-            await screen.findByText("Regular Net")
-            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+            await screen.findByText(networkName)
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
         it("Should not show the Edit button when already in edit mode", async () => {
+            const networkName = "Temp Net"
             renderAgentFlowComponent({
-                networkDisplayName: "Temp Net",
+                networkDisplayName: networkName,
                 isSelectedNetworkTemporary: true,
                 isEditMode: true,
             })
-            await screen.findByText("Temp Net")
-            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+            await screen.findByText(networkName)
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
         it("Should not show the Edit button when awaiting LLM", async () => {
+            const networkName = "Temp Net"
             renderAgentFlowComponent({
-                networkDisplayName: "Temp Net",
+                networkDisplayName: networkName,
                 isSelectedNetworkTemporary: true,
                 isEditMode: false,
                 isAwaitingLlm: true,
             })
-            await screen.findByText("Temp Net")
-            expect(screen.queryByRole("button", {name: "Edit"})).not.toBeInTheDocument()
+            await screen.findByText(networkName)
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
         it("Should allow switching between heatmap and depth displays", async () => {
@@ -390,7 +424,7 @@ describe("AgentFlow", () => {
                 currentConversations: [
                     {
                         id: "test-conv-frontman",
-                        agents: new Set(["agent3"]),
+                        agents: new Set([AGENT_3]),
                         startedAt: new Date(),
                     },
                 ],
@@ -430,7 +464,7 @@ describe("AgentFlow", () => {
                         currentConversations={[
                             {
                                 id: "test-conv-3",
-                                agents: new Set(["agent3"]),
+                                agents: new Set([AGENT_3]),
                                 startedAt: new Date(),
                                 type: ChatMessageType.AGENT,
                             },
@@ -520,7 +554,7 @@ describe("AgentFlow", () => {
                         currentConversations={[
                             {
                                 id: "test-conv-2",
-                                agents: new Set(["agent1", "agent3"]),
+                                agents: new Set([AGENT_1, AGENT_3]),
                                 startedAt: new Date(),
                                 type: ChatMessageType.AGENT,
                             },
@@ -532,21 +566,21 @@ describe("AgentFlow", () => {
             )
 
             // agent1 is active so should be highlighted
-            const agent1Node = container.querySelector('[data-id="agent1"]')
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             expect(agent1Node).toBeInTheDocument()
 
             // agent1 is active so should be highlighted
-            const agent1NodeBody = screen.getByTestId("agent1")
+            const agent1NodeBody = screen.getByTestId(AGENT_1)
             const computedStyleAgent1 = window.getComputedStyle(agent1NodeBody)
             expect(computedStyleAgent1.animation).toMatch(/animation-\w+ 2s infinite/u)
 
             // agent2 is not "active" so should not have the pulsing animation (or any animation in fact)
-            const agent2NodeBody = screen.getByTestId("agent2")
+            const agent2NodeBody = screen.getByTestId(AGENT_2)
             const computedStyleAgent2 = window.getComputedStyle(agent2NodeBody)
             expect(computedStyleAgent2.animation).toBe("")
 
             // agent3 is active so should be highlighted
-            const agent3NodeBody = screen.getByTestId("agent3")
+            const agent3NodeBody = screen.getByTestId(AGENT_3)
             const computedStyleAgent3 = window.getComputedStyle(agent3NodeBody)
             expect(computedStyleAgent3.animation).toMatch(/animation-\w+ 2s infinite/u)
         })
@@ -573,7 +607,7 @@ describe("AgentFlow", () => {
             const conversationsWithPlasma = [
                 {
                     id: "plasma-conv",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     type: ChatMessageType.AGENT,
                 },
@@ -631,7 +665,7 @@ describe("AgentFlow", () => {
             const conversationsWithText = [
                 {
                     id: "test-conv-with-text",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "What is the weather today?",
                 },
@@ -650,8 +684,8 @@ describe("AgentFlow", () => {
             const mockSetThoughtBubbleEdges = vi.fn()
             const conversationsWithText = [
                 {
-                    id: "conv-with-text",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_WITH_TEXT,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: Test message",
                     type: ChatMessageType.AGENT,
@@ -692,9 +726,9 @@ describe("AgentFlow", () => {
                     {
                         edge: {
                             id: "thought-bubble-test",
-                            source: "agent1",
-                            target: "agent2",
-                            type: "thoughtBubbleEdge",
+                            source: AGENT_1,
+                            target: AGENT_2,
+                            type: THOUGHT_BUBBLE_EDGE_TYPE,
                             data: {text: "Test thought bubble"},
                         },
                         timestamp: Date.now(),
@@ -724,17 +758,17 @@ describe("AgentFlow", () => {
             const mockSetThoughtBubbleEdges = vi.fn()
             const existingEdgesMap = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>([
                 [
-                    "conv-1",
+                    CONV_1,
                     {
                         edge: {
                             id: "thought-bubble-conv-1",
-                            source: "agent1",
-                            target: "agent2",
-                            type: "thoughtBubbleEdge",
+                            source: AGENT_1,
+                            target: AGENT_2,
+                            type: THOUGHT_BUBBLE_EDGE_TYPE,
                             data: {
                                 text: '{"inquiry": "What is the weather?"}',
                                 showAlways: true,
-                                conversationId: "conv-1",
+                                conversationId: CONV_1,
                             },
                         },
                         timestamp: Date.now(),
@@ -746,8 +780,8 @@ describe("AgentFlow", () => {
 
             const duplicateConversations: AgentConversation[] = [
                 {
-                    id: "conv-2",
-                    agents: new Set(["agent2", "agent3"]),
+                    id: CONV_2,
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: '{"inquiry": "What is the weather?"}', // Same parsed content
                     type: ChatMessageType.AGENT,
@@ -779,7 +813,7 @@ describe("AgentFlow", () => {
             // Create 6 conversations to exceed the MAX_THOUGHT_BUBBLES limit
             const manyConversations: AgentConversation[] = Array.from({length: 6}, (_, i) => ({
                 id: `conv-${i}`,
-                agents: new Set(["agent1", "agent2"]),
+                agents: new Set([AGENT_1, AGENT_2]),
                 startedAt: new Date(Date.now() + i * 1000), // Different startedAts so oldest is conv-0
                 text: `{"inquiry": "Message ${i}"}`, // Unique messages
                 type: ChatMessageType.AGENT,
@@ -812,7 +846,7 @@ describe("AgentFlow", () => {
             const conversationsWithText: AgentConversation[] = [
                 {
                     id: "conv-timeout-test",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: Test timeout message",
                     type: ChatMessageType.AGENT,
@@ -848,7 +882,7 @@ describe("AgentFlow", () => {
             const currentConversations: AgentConversation[] = [
                 {
                     id: "hover-test-conv",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: Hover test",
                     type: ChatMessageType.AGENT,
@@ -871,7 +905,7 @@ describe("AgentFlow", () => {
             const conversationsWithText: AgentConversation[] = [
                 {
                     id: "hover-prevent-expire-conv",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: Hover prevents expiry",
                     type: ChatMessageType.AGENT,
@@ -924,7 +958,7 @@ describe("AgentFlow", () => {
             // fake time
             const initialConversations: AgentConversation[] = Array.from({length: 5}, (_, i) => ({
                 id: `conv-expire-overflow-${i}`,
-                agents: new Set(["agent1", "agent2"]),
+                agents: new Set([AGENT_1, AGENT_2]),
                 startedAt: new Date(),
                 text: `Invoking Agent with inquiry: Initial overflow message ${i}`,
                 type: ChatMessageType.AGENT,
@@ -949,7 +983,7 @@ describe("AgentFlow", () => {
             // Now add a 6th conversation. allBubbles will be 6 (>MAX=5), so the overflow handler will run.
             const extraConversation: AgentConversation = {
                 id: "conv-expire-overflow-extra",
-                agents: new Set(["agent2", "agent3"]),
+                agents: new Set([AGENT_2, AGENT_3]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Extra overflow message",
                 type: ChatMessageType.AGENT,
@@ -974,14 +1008,14 @@ describe("AgentFlow", () => {
             const conversationsWithCaseVariations: AgentConversation[] = [
                 {
                     id: "conv-case-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: TEST MESSAGE",
                     type: ChatMessageType.AGENT,
                 },
                 {
                     id: "conv-case-2",
-                    agents: new Set(["agent2", "agent3"]),
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: test message", // Same but lowercase
                     type: ChatMessageType.AGENT,
@@ -1013,9 +1047,9 @@ describe("AgentFlow", () => {
                     {
                         edge: {
                             id: "thought-bubble-no-text",
-                            source: "agent1",
-                            target: "agent2",
-                            type: "thoughtBubbleEdge",
+                            source: AGENT_1,
+                            target: AGENT_2,
+                            type: THOUGHT_BUBBLE_EDGE_TYPE,
                             data: {
                                 // No text field
                                 showAlways: true,
@@ -1032,7 +1066,7 @@ describe("AgentFlow", () => {
             const conversationsWithText: AgentConversation[] = [
                 {
                     id: "new-conv",
-                    agents: new Set(["agent2", "agent3"]),
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: New message",
                     type: ChatMessageType.AGENT,
@@ -1059,7 +1093,7 @@ describe("AgentFlow", () => {
 
             const conversation1: AgentConversation = {
                 id: "conv-clear-test",
-                agents: new Set(["agent1", "agent2"]),
+                agents: new Set([AGENT_1, AGENT_2]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Clear test",
                 type: ChatMessageType.AGENT,
@@ -1072,9 +1106,9 @@ describe("AgentFlow", () => {
                     {
                         edge: {
                             id: "test-edge-1",
-                            source: "agent1",
-                            target: "agent2",
-                            type: "thoughtBubbleEdge",
+                            source: AGENT_1,
+                            target: AGENT_2,
+                            type: THOUGHT_BUBBLE_EDGE_TYPE,
                             data: {text: "Test"},
                         },
                         timestamp: Date.now(),
@@ -1125,13 +1159,13 @@ describe("AgentFlow", () => {
         it("Should handle conversations with multiple agents", () => {
             const multiAgentConversations = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                 },
                 {
-                    id: "conv-2",
-                    agents: new Set(["agent2", "agent3"]),
+                    id: CONV_2,
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                 },
             ]
@@ -1146,8 +1180,8 @@ describe("AgentFlow", () => {
         it("Should handle conversations with text field", () => {
             const conversationsWithText = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1]),
                     startedAt: new Date(),
                     text: "Test inquiry text",
                 },
@@ -1171,8 +1205,8 @@ describe("AgentFlow", () => {
         it("Should handle currentConversations becoming null (streaming complete)", () => {
             const initialConversations = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Test message",
                 },
@@ -1200,8 +1234,8 @@ describe("AgentFlow", () => {
         it("Should handle conversation with single agent", () => {
             const singleAgentConv = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1]),
                     startedAt: new Date(),
                     text: "Single agent message",
                 },
@@ -1217,8 +1251,8 @@ describe("AgentFlow", () => {
         it("Should handle conversation with three or more agents", () => {
             const multiAgentConv = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2", "agent3"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: "Multi-agent message",
                 },
@@ -1234,8 +1268,8 @@ describe("AgentFlow", () => {
         it("Should handle conversations without text field", () => {
             const conversationsWithoutText = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     // No text field
                 },
@@ -1251,7 +1285,7 @@ describe("AgentFlow", () => {
         it("Should handle empty agents set in conversation", () => {
             const conversationsWithEmptyAgents = [
                 {
-                    id: "conv-1",
+                    id: CONV_1,
                     agents: new Set<string>(),
                     startedAt: new Date(),
                     text: "Message with no agents",
@@ -1268,14 +1302,14 @@ describe("AgentFlow", () => {
         it("Should handle duplicate conversations with same parsed text", () => {
             const duplicateConversations = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: '{"inquiry": "Same message"}',
                 },
                 {
-                    id: "conv-2",
-                    agents: new Set(["agent2", "agent3"]),
+                    id: CONV_2,
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: '{"inquiry": "Same message"}', // Duplicate parsed content
                 },
@@ -1291,8 +1325,8 @@ describe("AgentFlow", () => {
         it("Should handle very long conversation text", () => {
             const longTextConv = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "a".repeat(1000), // Very long text
                 },
@@ -1308,8 +1342,8 @@ describe("AgentFlow", () => {
         it("Should handle special characters in conversation text", () => {
             const specialCharsConv = [
                 {
-                    id: "conv-1",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_1,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Test with émojis 🎉 and spëcial çharacters",
                 },
@@ -1328,8 +1362,8 @@ describe("AgentFlow", () => {
             // First render with a conversation that has text
             const currentConversations: AgentConversation[] = [
                 {
-                    id: "conv-with-text",
-                    agents: new Set(["agent1", "agent2"]),
+                    id: CONV_WITH_TEXT,
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Invoking Agent with inquiry: First message",
                     type: ChatMessageType.AGENT,
@@ -1351,7 +1385,7 @@ describe("AgentFlow", () => {
             const currentConversations1: AgentConversation[] = [
                 {
                     id: "conv-no-text",
-                    agents: new Set(["agent2", "agent3"]),
+                    agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     type: ChatMessageType.AGENT,
                 },
@@ -1376,7 +1410,7 @@ describe("AgentFlow", () => {
 
             const conversation: AgentConversation = {
                 id: "conv-duplicate-id",
-                agents: new Set(["agent1", "agent2"]),
+                agents: new Set([AGENT_1, AGENT_2]),
                 startedAt: new Date(),
                 text: "Invoking Agent with inquiry: Duplicate ID test",
                 type: ChatMessageType.AGENT,
@@ -1402,7 +1436,7 @@ describe("AgentFlow", () => {
             const conversationsWithEmptyText: AgentConversation[] = [
                 {
                     id: "empty-text-conv",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "",
                     type: ChatMessageType.AGENT,
@@ -1420,7 +1454,7 @@ describe("AgentFlow", () => {
             const conversationsWithWhitespace: AgentConversation[] = [
                 {
                     id: "whitespace-conv",
-                    agents: new Set(["agent1", "agent2"]),
+                    agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "   \n\t   ",
                     type: ChatMessageType.AI,
@@ -1462,6 +1496,9 @@ describe("AgentFlow", () => {
     describe("Node Editor", () => {
         const OLD_NETWORK_ID = "temporary/old-res"
         const OLD_NETWORK_NAME = "my_network"
+        const UPDATED_INSTRUCTIONS = "Updated instructions"
+        // Accessible name of the Save button while a save is in-flight.
+        const APPLYING_CHANGES_BUTTON = "Applying changes..."
 
         it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
             let resolveQuery: () => void
@@ -1476,7 +1513,7 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}], OLD_NETWORK_NAME),
+                        makeTempNetwork(OLD_NETWORK_ID, [{origin: AGENT_1, tools: []}], OLD_NETWORK_NAME),
                     ])
             })
 
@@ -1486,18 +1523,18 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
 
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
-            await user.paste("Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            await user.paste(UPDATED_INSTRUCTIONS)
+            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
             // While the API call is in-flight the button should show "Applying changes..." and Save should be gone
             await waitFor(() => {
-                expect(screen.getByRole("button", {name: /applying changes/iu})).toBeInTheDocument()
-                expect(screen.queryByRole("button", {name: /^save$/iu})).not.toBeInTheDocument()
+                expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
             })
 
             expect(onSaveAgent).toHaveBeenCalledTimes(1)
@@ -1506,13 +1543,13 @@ describe("AgentFlow", () => {
             act(() => resolveQuery())
 
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: APPLYING_CHANGES_BUTTON})).not.toBeInTheDocument()
             })
         })
 
         it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
             const onSaveAgent = vi.fn().mockResolvedValue(undefined)
-            const EDITED_INSTRUCTIONS = "Updated instructions for agent1"
+            const editedInstructions = "Updated instructions for agent1"
 
             act(() => {
                 useTempNetworksStore
@@ -1520,7 +1557,7 @@ describe("AgentFlow", () => {
                     .setTempNetworks([
                         makeTempNetwork(
                             OLD_NETWORK_ID,
-                            [{origin: "agent1", tools: [], instructions: "Original instructions."}],
+                            [{origin: AGENT_1, tools: [], instructions: "Original instructions."}],
                             OLD_NETWORK_NAME
                         ),
                     ])
@@ -1532,23 +1569,22 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
-            await user.paste(EDITED_INSTRUCTIONS)
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            await user.paste(editedInstructions)
+            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
             await waitFor(() => {
-                expect(screen.queryByRole("button", {name: /applying changes/iu})).not.toBeInTheDocument()
+                expect(screen.queryByRole("button", {name: APPLYING_CHANGES_BUTTON})).not.toBeInTheDocument()
             })
 
             expect(onSaveAgent).toHaveBeenCalledTimes(1)
             const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
-            // agentName is the display name (cleaned up from the raw ID)
-            expect(typeof calledAgentName).toBe("string")
-            expect(calledAgentName.length).toBeGreaterThan(0)
-            expect(calledUpdated.find((e: AgentNetworkDefinitionEntry) => e.origin === "agent1")?.instructions).toBe(
-                EDITED_INSTRUCTIONS
+            // calledAgentName is the display name (cleaned up from the raw AGENT_1 id)
+            expect(calledAgentName).toBe("Agent 1")
+            expect(calledUpdated.find((e: AgentNetworkDefinitionEntry) => e.origin === AGENT_1)?.instructions).toBe(
+                editedInstructions
             )
             expect(calledNetworkName).toBe(OLD_NETWORK_NAME)
             expect(calledSignal).toBeInstanceOf(AbortSignal)
@@ -1562,7 +1598,7 @@ describe("AgentFlow", () => {
             act(() => {
                 useTempNetworksStore
                     .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
+                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: AGENT_1, tools: []}])])
             })
 
             const {container} = renderAgentFlowComponent({
@@ -1571,12 +1607,12 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
-            await user.paste("Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
+            await user.paste(UPDATED_INSTRUCTIONS)
+            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 expect.stringContaining("Error saving network"),
@@ -1589,7 +1625,7 @@ describe("AgentFlow", () => {
             act(() => {
                 useTempNetworksStore
                     .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: "agent1", tools: []}])])
+                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: AGENT_1, tools: []}])])
             })
 
             const {container} = renderAgentFlowComponent({
@@ -1598,19 +1634,24 @@ describe("AgentFlow", () => {
                 // onSaveAgent intentionally omitted
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
-            await user.paste("Updated instructions")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+            await user.paste(UPDATED_INSTRUCTIONS)
+            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
+            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
         })
 
         it("Should update the Zustand store network map when a node popup is saved", async () => {
             // Seed the Zustand store with a flat array (server format) under a network key
             const initialDefinition: AgentNetworkDefinitionEntry[] = [
-                {origin: "agent1", tools: ["agent2"], display_as: "llm_agent", instructions: "Original instructions."},
+                {
+                    origin: AGENT_1,
+                    tools: [AGENT_2],
+                    display_as: LLM_AGENT_DISPLAY,
+                    instructions: "Original instructions.",
+                },
             ]
             // Seed the temp networks store with the network and its definition
             const networkKey = "temporary/test-network"
@@ -1624,27 +1665,27 @@ describe("AgentFlow", () => {
             })
 
             // Click an agent node to open the popup, querying by the visible agent name.
-            clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
+            clickFlowNode(screen.getByText(cleanUpAgentName(AGENT_1)))
 
             // The popup should now be open — make the form dirty then save
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
             await user.paste("Updated instructions.")
-            const saveButton = screen.getByRole("button", {name: "Save"})
+            const saveButton = screen.getByRole("button", {name: SAVE_BUTTON})
             expect(saveButton).toBeInTheDocument()
 
             await user.click(saveButton)
 
             // Popup should close
-            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
 
             // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
             const storedDefinitions = useTempNetworksStore
                 .getState()
                 .tempNetworks.find((n) => n.agentInfo.agent_name === networkKey)?.agentNetworkDefinition
             expect(storedDefinitions).toBeDefined()
-            expect(storedDefinitions.some((e) => e.origin === "agent1")).toBe(true)
+            expect(storedDefinitions.some((e) => e.origin === AGENT_1)).toBe(true)
         })
 
         it("Should open and close the node popup without saving", async () => {
@@ -1653,9 +1694,7 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(networkKey, [
-                            {origin: "agent1", tools: [], instructions: "Some instructions."},
-                        ]),
+                        makeTempNetwork(networkKey, [{origin: AGENT_1, tools: [], instructions: "Some instructions."}]),
                     ])
             })
             const {container} = renderAgentFlowComponent({
@@ -1663,7 +1702,7 @@ describe("AgentFlow", () => {
                 networkId: networkKey,
             })
 
-            const agent1Node = container.querySelector('[data-id="agent1"]')
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             expect(agent1Node).toBeInTheDocument()
             clickFlowNode(agent1Node)
 
@@ -1680,11 +1719,11 @@ describe("AgentFlow", () => {
             // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
             const {container} = renderAgentFlowComponent({networkId: networkKey})
 
-            const agent1Node = container.querySelector('[data-id="agent1"]')
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Popup must not appear
-            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+            expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
         it.each([
@@ -1697,18 +1736,18 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: displayAs}]),
+                        makeTempNetwork(networkKey, [{origin: AGENT_1, tools: [], display_as: displayAs}]),
                     ])
             })
 
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: networkKey,
-                agentsInNetwork: [{origin: "agent1", tools: [], display_as: displayAs}],
+                agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: displayAs}],
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
-            expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument()
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
         it("Should open popup when clicking an llm_agent node in a temporary network", async () => {
@@ -1717,18 +1756,18 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(networkKey, [{origin: "agent1", tools: [], display_as: "llm_agent"}]),
+                        makeTempNetwork(networkKey, [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}]),
                     ])
             })
 
             const {container} = renderAgentFlowComponent({
                 isSelectedNetworkTemporary: true,
                 networkId: networkKey,
-                agentsInNetwork: [{origin: "agent1", tools: [], display_as: "llm_agent"}],
+                agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
             })
 
-            clickFlowNode(container.querySelector('[data-id="agent1"]'))
-            expect(await screen.findByRole("button", {name: "Save"})).toBeInTheDocument()
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            expect(await screen.findByRole("button", {name: SAVE_BUTTON})).toBeInTheDocument()
         })
     })
 
@@ -1736,6 +1775,11 @@ describe("AgentFlow", () => {
         const DOCK_NETWORK_ID = "temporary/dock-test-net"
         const DOCK_NETWORK_NAME = "dock_network"
         const DOCK_DEFAULT_RES = "dock-default-res"
+
+        // Prompt text typed into the dock's "describe a change" field. Content is arbitrary; kept in one
+        // place so the paste and any follow-up assertion never drift apart.
+        const EDIT_PROMPT = "Add a node"
+        const ELVES_PROMPT = "add some elves to check work"
 
         // User-visible dock copy, reused across queries below
         const DOCK_HEADER = "Network Editor"
@@ -1812,7 +1856,7 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(DOCK_NETWORK_ID, [{origin: "agent1", tools: []}], DOCK_NETWORK_NAME),
+                        makeTempNetwork(DOCK_NETWORK_ID, [{origin: AGENT_1, tools: []}], DOCK_NETWORK_NAME),
                     ])
             })
         })
@@ -1954,7 +1998,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Wait until the overlay appears (streaming started)
@@ -2040,7 +2084,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(promptField)
-            await user.paste("Add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner explaining no reservation came back
@@ -2054,7 +2098,7 @@ describe("AgentFlow", () => {
             act(() => {
                 useTempNetworksStore
                     .getState()
-                    .setTempNetworks([makeTempNetwork(DOCK_NETWORK_ID, [{origin: "agent1", tools: []}], undefined)])
+                    .setTempNetworks([makeTempNetwork(DOCK_NETWORK_ID, [{origin: AGENT_1, tools: []}], undefined)])
             })
             mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
                 chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, "some-other-network"))
@@ -2073,7 +2117,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(promptField)
-            await user.paste("Add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner explaining the reservation did not match, and no navigation occurs
@@ -2095,7 +2139,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(promptField)
-            await user.paste("Add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees an error banner carrying the underlying failure
@@ -2129,7 +2173,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await localUser.click(promptField)
-            await localUser.paste("Add a node")
+            await localUser.paste(EDIT_PROMPT)
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
             await localUser.click(applyButton)
@@ -2191,7 +2235,7 @@ describe("AgentFlow", () => {
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(promptField)
-            await user.paste("Add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The higher-expiry reservation should win
@@ -2208,7 +2252,7 @@ describe("AgentFlow", () => {
             })
 
             const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, "Add a node{Enter}")
+            await user.type(promptField, `${EDIT_PROMPT}{Enter}`)
             expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
         })
 
@@ -2239,12 +2283,12 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add some elves to check work")
+            await user.paste(ELVES_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The overlay is shown with its title and the in-flight prompt text
             expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-            expect(screen.getByText("add some elves to check work")).toBeInTheDocument()
+            expect(screen.getByText(ELVES_PROMPT)).toBeInTheDocument()
         })
 
         it("removes the applying overlay once the apply call completes", async () => {
@@ -2260,7 +2304,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add some elves to check work")
+            await user.paste(ELVES_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
             expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
 
@@ -2286,7 +2330,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Stop button should appear while backdrop is open, with no confirm card yet
@@ -2319,7 +2363,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             await user.click(screen.getByRole("button", {name: STOP_BUTTON}))
@@ -2351,7 +2395,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // Open confirm card, then discard
@@ -2366,7 +2410,7 @@ describe("AgentFlow", () => {
             // The user sees a cancel banner and the prompt is left intact for retry
             expect(await screen.findByText(CANCELLED_BANNER)).toBeInTheDocument()
             expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
-            expect(screen.getByDisplayValue("add a node")).toBeInTheDocument()
+            expect(screen.getByDisplayValue(EDIT_PROMPT)).toBeInTheDocument()
 
             // Discarding is an intentional abort, not a failure
             expect(screen.queryByText(FAILED_BANNER)).not.toBeInTheDocument()
@@ -2383,7 +2427,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             // The user sees a success banner confirming their changes were applied...
@@ -2411,7 +2455,7 @@ describe("AgentFlow", () => {
 
             const editInput = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await localUser.click(editInput)
-            await localUser.paste("add a node")
+            await localUser.paste(EDIT_PROMPT)
 
             const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
             await localUser.click(applyButton)
@@ -2439,7 +2483,7 @@ describe("AgentFlow", () => {
 
             const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
             await user.click(instructionsField)
-            await user.paste("add a node")
+            await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
             expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
@@ -2476,8 +2520,8 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
-                        makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: originalInstructions}]),
+                        makeTempNetwork(networkA, [{origin: AGENT_1, tools: [], instructions: originalInstructions}]),
+                        makeTempNetwork(networkB, [{origin: AGENT_1, tools: [], instructions: originalInstructions}]),
                     ])
             })
 
@@ -2486,28 +2530,28 @@ describe("AgentFlow", () => {
                 networkId: networkA,
             })
 
-            const agent1Node = container.querySelector('[data-id="agent1"]')
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Edit the instructions and save
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
             await user.paste("Updated instructions for Network A.")
-            await user.click(screen.getByRole("button", {name: "Save"}))
-            await waitFor(() => expect(screen.queryByRole("button", {name: "Save"})).not.toBeInTheDocument())
+            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
+            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
 
             // Network A's instructions should be updated
             const defA = useTempNetworksStore
                 .getState()
                 .tempNetworks.find((n) => n.agentInfo.agent_name === networkA)?.agentNetworkDefinition
-            expect(defA?.find((e) => e.origin === "agent1")?.instructions).toBe("Updated instructions for Network A.")
+            expect(defA?.find((e) => e.origin === AGENT_1)?.instructions).toBe("Updated instructions for Network A.")
 
             // Network B's instructions must be untouched
             const defB = useTempNetworksStore
                 .getState()
                 .tempNetworks.find((n) => n.agentInfo.agent_name === networkB)?.agentNetworkDefinition
-            expect(defB?.find((e) => e.origin === "agent1")?.instructions).toBe(originalInstructions)
+            expect(defB?.find((e) => e.origin === AGENT_1)?.instructions).toBe(originalInstructions)
         })
 
         // eslint-disable-next-line max-len -- conflicts with prettier
@@ -2522,8 +2566,8 @@ describe("AgentFlow", () => {
                 useTempNetworksStore
                     .getState()
                     .setTempNetworks([
-                        makeTempNetwork(networkA, [{origin: "agent1", tools: [], instructions: instructionsA}]),
-                        makeTempNetwork(networkB, [{origin: "agent1", tools: [], instructions: instructionsB}]),
+                        makeTempNetwork(networkA, [{origin: AGENT_1, tools: [], instructions: instructionsA}]),
+                        makeTempNetwork(networkB, [{origin: AGENT_1, tools: [], instructions: instructionsB}]),
                     ])
             })
 
@@ -2533,11 +2577,11 @@ describe("AgentFlow", () => {
                 networkId: networkB,
             })
 
-            const agent1Node = container.querySelector('[data-id="agent1"]')
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Popup should show networkB's instructions, not networkA's
-            const instructionsField = await screen.findByRole("textbox", {name: /^instructions$/iu})
+            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             expect(instructionsField).toHaveValue(instructionsB)
         })
     })
