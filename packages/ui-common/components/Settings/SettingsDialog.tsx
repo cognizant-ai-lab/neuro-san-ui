@@ -604,7 +604,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 logo={logo}
                                 onSave={(key) => persistKey(vendor, key, checkmark, Date.now())}
                                 onTest={onTest}
-                                persistedValue={getApiKey(apiKeys, vendor) ?? ""}
+                                persistedValue={getApiKey(apiKeys, vendor)}
                                 placeholder={placeholder}
                                 vendor={vendor}
                             />
