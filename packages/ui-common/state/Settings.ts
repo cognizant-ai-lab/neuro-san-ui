@@ -130,10 +130,10 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 // Name for key where main app settings are saved
-const APP_SETTINGS_STORAGE_KEY = "app-settings"
+export const APP_SETTINGS_STORAGE_KEY = "app-settings"
 
 // Name for key where API keys are saved in sessionStorage.
-const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
+export const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
 
 // TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
 // This is a backstop for cases where users rarely close their browser or tabs
@@ -141,16 +141,18 @@ export const API_KEYS_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 //#endregion Constants
 
+const hasPersistedSettings = (state: unknown): state is {settings: DeepPartial<Settings>} =>
+    typeof state === "object" &&
+    state !== null &&
+    "settings" in state &&
+    typeof state.settings === "object" &&
+    state.settings !== null
+
 /**
  * Purges any persisted API keys from localStorage. This cleans up from previous versions of the cdoe.
  * Once we are "reasonably sure" that no users are on old versions, we can remove this function.
  */
 const purgePersistedApiKeys = () => {
-    // Protect against non-browser, SSR, test environments, etc.
-    if (typeof sessionStorage === "undefined") {
-        return
-    }
-
     const persisted = JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) ?? "{}")
 
     if (persisted.state?.settings) {
@@ -160,6 +162,13 @@ const purgePersistedApiKeys = () => {
 }
 
 /**
+ * Function to determine if an API key entry is valid (i.e., exists and is not expired).
+ * @param entry The API key entry to validate
+ * @returns True if the entry exists and is not expired, false otherwise
+ */
+const isApiKeyValid = (entry?: ApiKeyEntry): boolean => Boolean(entry) && entry.expiresAt > Date.now()
+
+/**
  * Returns the API key for the given provider if it exists and is not expired, otherwise returns undefined.
  * This helper should be used to retrieve API keys from the settings store, rather than accessing the store directly,
  * to ensure that expired keys are not returned.
@@ -167,10 +176,9 @@ const purgePersistedApiKeys = () => {
  * @param provider The LLM provider for which to retrieve the API key
  */
 export const getApiKey = (apiKeys: ApiKeys, provider: LLMProvider) => {
-    const now = Date.now()
     const entry = apiKeys[provider]
 
-    return entry && entry.expiresAt > now ? entry.value : undefined
+    return isApiKeyValid(entry) ? entry.value : undefined
 }
 
 /**
@@ -187,7 +195,7 @@ export const useSettingsStore = create<SettingsStore>()(
                     // Side effect: persist API keys in sessionStorage, unlike other Settings items which are persisted
                     // to localStorage (zustand default)
                     // Timestamp the API keys so we can purge them after a TTL.
-                    if (updates.apiKeys && typeof sessionStorage !== "undefined") {
+                    if (updates.apiKeys) {
                         sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(nextSettings.apiKeys))
                     }
 
@@ -215,33 +223,27 @@ export const useSettingsStore = create<SettingsStore>()(
                 // We use it to purge any persisted API keys from previous versions of the code.
                 purgePersistedApiKeys()
 
-                const sessionApiKeys = (() => {
-                    if (typeof sessionStorage === "undefined") {
-                        return {}
-                    }
+                // Now we can read the API keys from sessionStorage and filter out any expired keys.
+                const storedApiKeys = JSON.parse(
+                    sessionStorage.getItem(SESSION_API_KEYS_STORAGE_KEY) ?? "{}"
+                ) as ApiKeys
 
-                    const now = Date.now()
-                    const storedApiKeys = JSON.parse(
-                        sessionStorage.getItem(SESSION_API_KEYS_STORAGE_KEY) ?? "{}"
-                    ) as ApiKeys
+                const sessionApiKeys = Object.fromEntries(
+                    Object.entries(storedApiKeys).filter(([, entry]) => isApiKeyValid(entry))
+                )
 
-                    const validApiKeys = Object.fromEntries(
-                        Object.entries(storedApiKeys).filter(([, entry]) => entry.expiresAt > now)
-                    ) as ApiKeys
+                sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(sessionApiKeys))
 
-                    sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(validApiKeys))
+                const persistedSettings = hasPersistedSettings(persistedState) ? persistedState.settings : {}
 
-                    return validApiKeys
-                })()
-
-                const persistedSettings = (persistedState as Partial<SettingsStore>).settings ?? {}
-
-                // Merge persisted settings with defaults to fill in any missing fields
+                // Merge persisted settings with defaults to fill in any missing fields,
+                // then explicitly replace apiKeys with sessionStorage-backed keys.
                 return {
                     ...currentState,
-                    settings: merge({}, DEFAULT_SETTINGS, persistedSettings, {
+                    settings: {
+                        ...merge({}, DEFAULT_SETTINGS, persistedSettings),
                         apiKeys: sessionApiKeys,
-                    }),
+                    },
                 }
             },
         }

@@ -40,6 +40,7 @@ export const withStrictMocks = (options: StrictMockOptions = {}) => {
         }
 
         localStorage.clear()
+        sessionStorage.clear()
 
         // Reset IndexedDB mock store
         globalThis.indexedDB = new IDBFactory()
