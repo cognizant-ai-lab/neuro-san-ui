@@ -203,7 +203,10 @@ export const useSettingsStore = create<SettingsStore>()(
                         settings: nextSettings,
                     }
                 }),
-            resetSettings: () => set({settings: DEFAULT_SETTINGS}),
+            resetSettings: () => {
+                sessionStorage.removeItem(SESSION_API_KEYS_STORAGE_KEY)
+                set({settings: DEFAULT_SETTINGS})
+            },
         }),
         {
             name: APP_SETTINGS_STORAGE_KEY,
