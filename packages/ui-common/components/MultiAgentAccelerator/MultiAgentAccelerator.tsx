@@ -248,9 +248,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // progresses. We read it back here to find the matching temp network and override agent_network_definition in the
     // outgoing request — leaving what's in IndexedDB untouched.
     const designerSlyData = useAgentChatHistoryStore((state) => state.history[AGENT_NETWORK_DESIGNER_ID]?.slyData)
-    const designerNetworkName = isNetworkDesignerMode
-        ? (designerSlyData?.[AGENT_NETWORK_NAME_KEY] as string | undefined)
-        : undefined
+    const designerNetworkName = isNetworkDesignerMode && designerSlyData?.[AGENT_NETWORK_NAME_KEY]
     const designerTempNetwork = designerNetworkName
         ? temporaryNetworks.find((n) => n.agentNetworkName === designerNetworkName)
         : undefined

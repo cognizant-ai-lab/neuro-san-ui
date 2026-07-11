@@ -62,7 +62,7 @@ export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: Imp
  */
 export const extractReservations = (message: ChatMessage): AgentReservation[] => {
     // Check for temp networks ("reservations") in sly_data
-    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_RESERVATIONS_KEY]) {
+    if (message.type === ChatMessageType.AGENT_FRAMEWORK && message.sly_data?.[AGENT_RESERVATIONS_KEY]) {
         return message.sly_data[AGENT_RESERVATIONS_KEY] as AgentReservation[]
     } else {
         // Not the type of message that would contain reservations, or no reservations found, return empty array
@@ -78,7 +78,7 @@ export const extractReservations = (message: ChatMessage): AgentReservation[] =>
  */
 export const extractNetworkHocon = (message: ChatMessage): string | null => {
     // Check for agent network HOCON in sly_data
-    if (message?.type === ChatMessageType.AGENT_FRAMEWORK && message?.sly_data?.[AGENT_NETWORK_HOCON]) {
+    if (message.type === ChatMessageType.AGENT_FRAMEWORK && message.sly_data?.[AGENT_NETWORK_HOCON]) {
         return message.sly_data[AGENT_NETWORK_HOCON] as string
     } else {
         // Not the type of message that would contain a network HOCON, or no network HOCON found, return null
@@ -140,7 +140,7 @@ export const extractTemporaryNetworksFromMessage = (
     const networkHocon = extractNetworkHocon(message)
     const agentNetworkDefinition =
         agentNetworkDefinitionOverride ??
-        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[] | undefined)
+        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[])
 
     return convertReservationsToNetworks(reservations, networkHocon, agentNetworkDefinition)
 }

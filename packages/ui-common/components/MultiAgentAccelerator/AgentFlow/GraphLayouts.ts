@@ -122,6 +122,10 @@ const getEdgeProperties = (
     }
 }
 
+// An agent is editable if it belongs to a temporary network and is of an editable type.
+const isNodeEditable = (displayAs: string | undefined, isTemporaryNetwork: boolean): boolean =>
+    isTemporaryNetwork && isEditableAgent(displayAs)
+
 /** * Shared options for graph layout functions. */
 export type LayoutOptions = {
     readonly agentCounts: Map<string, number>
@@ -201,6 +205,8 @@ export const layoutRadial = ({
 
             const isFrontman = frontman?.origin === nodeId
 
+            const displayAs = agentsInNetwork.find((a) => a.origin === nodeId)?.display_as
+
             const parentNodes = getParents(nodeId, parentAgents)
 
             // Create an edge from each parent node to this node
@@ -248,14 +254,12 @@ export const layoutRadial = ({
                     agentCounts,
                     agentName: useNativeNames ? nodeId : cleanUpAgentName(nodeId),
                     depth,
-                    displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
+                    displayAs,
                     // Use current conversations for node highlighting (cleared at end)
                     getConversations: () => currentConversations,
                     isAwaitingLlm,
                     agentIconSuggestion: agentIconSuggestions?.[nodeId],
-                    isEditable:
-                        isTemporaryNetwork &&
-                        isEditableAgent(agentsInNetwork.find((a) => a.origin === nodeId)?.display_as),
+                    isEditable: isNodeEditable(displayAs, isTemporaryNetwork),
                 },
                 // position: allow for Frontman being larger
                 position: isFrontman
@@ -304,6 +308,7 @@ export const layoutLinear = ({
     agentsInNetwork.forEach(({origin: nodeId}) => {
         const parentIds = getParents(nodeId, parentAgents)
         const isFrontman = frontman?.origin === nodeId
+        const displayAs = agentsInNetwork.find((a) => a.origin === nodeId)?.display_as
 
         nodesInNetwork.push({
             id: nodeId,
@@ -311,14 +316,13 @@ export const layoutLinear = ({
             data: {
                 agentCounts,
                 agentName: useNativeNames ? nodeId : cleanUpAgentName(nodeId),
-                displayAs: agentsInNetwork.find((a) => a.origin === nodeId)?.display_as,
+                displayAs,
                 // Use current conversations for node highlighting (cleared at end)
                 getConversations: () => currentConversations,
                 isAwaitingLlm,
                 depth: undefined, // Depth will be computed later,
                 agentIconSuggestion: agentIconSuggestions?.[nodeId],
-                isEditable:
-                    isTemporaryNetwork && isEditableAgent(agentsInNetwork.find((a) => a.origin === nodeId)?.display_as),
+                isEditable: isNodeEditable(displayAs, isTemporaryNetwork),
             },
             position: isFrontman ? {x: DEFAULT_FRONTMAN_X_POS, y: DEFAULT_FRONTMAN_Y_POS} : {x: 0, y: 0},
             style: {

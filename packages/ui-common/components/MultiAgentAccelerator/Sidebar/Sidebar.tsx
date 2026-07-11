@@ -352,7 +352,7 @@ export const Sidebar: FC<SidebarProps> = ({
         <Box sx={{display: "flex"}}>
             <Button
                 aria-label="Add New Network"
-                disabled={isAwaitingLlm}
+                disabled={isAwaitingLlm || isImporting}
                 id="add-network-btn"
                 onClick={() => {
                     setSelectedItem(AGENT_NETWORK_DESIGNER_ID)
@@ -366,7 +366,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 >
                     <AddBoxRounded
                         id="add-network-icon"
-                        sx={{color: "var(--bs-secondary)"}}
+                        sx={{color: isAwaitingLlm || isImporting ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
                     />
                 </Tooltip>
             </Button>
