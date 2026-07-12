@@ -26,7 +26,7 @@ import {FC, useEffect, useState} from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
 import {buildTreeViewItems, findTreeItemById} from "./TreeBuilder"
-import {testConnection} from "../../../controller/agent/Agent"
+import {testConnection, TestConnectionResult} from "../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
@@ -138,7 +138,6 @@ const ServerStatusTooltip = styled(({className, ...props}: TooltipProps) => (
 
 //#region: Types
 
-type CONNECTION_STATUS = "online" | "offline" | "unknown"
 export interface SidebarProps {
     readonly id: string
     readonly isAwaitingLlm: boolean
@@ -177,37 +176,21 @@ export const Sidebar: FC<SidebarProps> = ({
     // Display option for agent/network names
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
 
-    const [neuroSanServerStatus, setNeuroSanServerStatus] = useState<{
-        error?: string
-        httpStatus?: number
-        onlineStatus: CONNECTION_STATUS
-        version: string | null
-    }>({onlineStatus: "unknown", version: null})
+    const [neuroSanServerStatus, setNeuroSanServerStatus] = useState<TestConnectionResult | null>(null)
 
     useEffect(() => {
+        // Track whether the current request is still valid. If the component unmounts or the URL changes,
+        // we want to ignore any results from previous requests.
         let isCurrentRequest = true
 
         const checkStatus = async () => {
-            try {
-                const result = await testConnection(neuroSanServerURL)
+            const result = await testConnection(neuroSanServerURL)
 
-                if (!isCurrentRequest) {
-                    return
-                }
-
-                setNeuroSanServerStatus(
-                    result.success
-                        ? {onlineStatus: "online", version: result.version}
-                        : {error: result.status, httpStatus: result.httpStatus, onlineStatus: "offline", version: null}
-                )
-            } catch (error) {
-                if (!isCurrentRequest) {
-                    return
-                }
-
-                const errorString = error instanceof Error ? error.message : String(error)
-                setNeuroSanServerStatus({error: errorString, onlineStatus: "offline", version: null})
+            if (!isCurrentRequest) {
+                return
             }
+
+            setNeuroSanServerStatus(result)
         }
 
         void checkStatus()
@@ -291,12 +274,12 @@ export const Sidebar: FC<SidebarProps> = ({
     }, [newlyAddedTemporaryNetworks])
 
     const toStatusColor = () => {
-        switch (neuroSanServerStatus.onlineStatus) {
-            case "online":
+        switch (neuroSanServerStatus?.success) {
+            case true:
                 return "green"
-            case "offline":
+            case false:
                 return "red"
-            case "unknown":
+            case undefined:
             default:
                 return "unknown"
         }
@@ -312,26 +295,39 @@ export const Sidebar: FC<SidebarProps> = ({
             title={
                 <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
                     <Typography variant="body2">
-                        <strong>Status:</strong> {neuroSanServerStatus.onlineStatus}
-                    </Typography>
-                    <Typography variant="body2">
-                        <strong>Version:</strong> {neuroSanServerStatus.version ?? "unknown"}
+                        <strong>Status:</strong> {neuroSanServerStatus?.statusText}
                     </Typography>
                     <Typography variant="body2">
                         <strong>URL:</strong> {neuroSanServerURL || "unknown"}
                     </Typography>
-                    {neuroSanServerStatus.error && (
+                    <Typography variant="body2">
+                        <strong>Service:</strong> {neuroSanServerStatus?.healthCheckResponse?.service || "unknown"}
+                    </Typography>
+                    <Typography
+                        sx={{fontWeight: "bold"}}
+                        variant="body2"
+                    >
+                        Versions:
+                    </Typography>
+                    <Box sx={{ml: 1}}>
+                        <Typography variant="body2">
+                            <strong>Neuro SAN:</strong>{" "}
+                            {neuroSanServerStatus?.healthCheckResponse?.versions?.["neuro-san"] ?? "unknown"}
+                        </Typography>
+                        <Typography variant="body2">
+                            <strong>Neuro SAN Studio:</strong>{" "}
+                            {neuroSanServerStatus?.healthCheckResponse?.versions?.["neuro-san-studio"] ?? "unknown"}
+                        </Typography>
+                    </Box>
+                    {!neuroSanServerStatus?.success && neuroSanServerStatus?.httpStatus && (
                         <>
-                            <Typography variant="body2">
-                                <strong>Error:</strong> {neuroSanServerStatus.error}
-                            </Typography>
-                            {neuroSanServerStatus.httpStatus && (
+                            {
                                 <Typography variant="body2">
                                     <strong>HTTP status:</strong>{" "}
                                     {/* eslint-disable-next-line max-len -- feels unnatural to break it */}
                                     {`${neuroSanServerStatus.httpStatus} (${httpStatus[neuroSanServerStatus.httpStatus] ?? "Unknown status"})`}
                                 </Typography>
-                            )}
+                            }
                         </>
                     )}
                 </Box>

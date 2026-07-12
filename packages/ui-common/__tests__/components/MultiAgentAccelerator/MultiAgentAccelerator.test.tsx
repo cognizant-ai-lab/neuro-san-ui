@@ -59,7 +59,6 @@ import {
     getAgentNetworks,
     getConnectivity,
     sendNetworkDesignerRequest,
-    testConnection,
 } from "../../../controller/agent/Agent"
 import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
@@ -269,7 +268,6 @@ describe("MultiAgentAccelerator", () => {
 
         vi.mocked(getAgentNetworks).mockResolvedValue(LIST_NETWORKS_RESPONSE)
         vi.mocked(getConnectivity).mockResolvedValue(MOCK_CONNECTIVITY_INFO)
-        vi.mocked(testConnection).mockResolvedValue({success: true, status: "ok", version: "1.0.0"})
         vi.mocked(sendNetworkDesignerRequest)
 
         user = userEvent.setup()
