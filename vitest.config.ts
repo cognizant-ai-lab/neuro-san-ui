@@ -22,10 +22,10 @@ export default defineConfig({
             provider: "istanbul",
             reporter: ["text-summary"],
             thresholds: {
-                statements: -104,
-                branches: -155,
+                statements: -103,
+                branches: -154,
                 functions: -25,
-                lines: -75,
+                lines: -74,
             },
         },
         // TODO: potential small optimization: consider using `node` environment for non-UI tests
@@ -34,7 +34,7 @@ export default defineConfig({
         globals: true,
         include: ["apps/**/__tests__/**/*.test.{ts,tsx}", "packages/**/__tests__/**/*.test.{ts,tsx}"],
         // Let maxWorkers default to the number of CPU cores in CI, but set 8 for local development (best by test)
-        maxWorkers: process.env["CI"] === "true" ? undefined : (process.env["VITEST_MAX_WORKERS"] ?? 8),
+        // maxWorkers: process.env["CI"] === "true" ? undefined : (process.env["VITEST_MAX_WORKERS"] ?? 8),
         // Have to manually specify GitHub Actions reporter when configuring reporters manually.
         // See: https://vitest.dev/guide/reporters.html#github-actions-reporter
         reporters: process.env["GITHUB_ACTIONS"] === "true" ? ["minimal", "github-actions"] : ["minimal"],

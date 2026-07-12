@@ -61,11 +61,22 @@ const insertTargetAgent = (agent: string, path: string) => {
     return path.replace("{agent_name}", agentTmp)
 }
 
-export interface TestConnectionResult {
-    readonly httpStatus?: number
+// Response from Neuro SAN "/" root endpoint healthcheck
+export interface HealthCheckResponse {
+    readonly service?: string
     readonly status?: string
+    readonly versions?: {
+        readonly "neuro-san-studio"?: string
+        readonly "neuro-san"?: string
+    }
+}
+
+// Response from testConnection() function.
+export interface TestConnectionResult {
+    readonly healthCheckResponse?: HealthCheckResponse
+    readonly httpStatus?: number
+    readonly statusText?: string
     readonly success: boolean
-    readonly version?: string
 }
 
 /**
@@ -81,25 +92,30 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
         const response = await fetch(url, {signal: controller.signal})
         if (!response.ok) {
             return {
-                success: false,
                 httpStatus: response.status,
-                status: response.statusText,
+                statusText: response.statusText,
+                success: false,
             }
         }
 
         const jsonResponse = await response.json()
-        // eslint-disable-next-line no-shadow
-        const status = jsonResponse?.status
 
-        // Different versions of the server return different status values, so we need to check for both.
-        const success = status === "healthy" || status === "ok"
+        const statusText = jsonResponse?.status
 
-        // For now, just capture the Neuro-san version since that's all the server returns. More can be added later.
-        const version = jsonResponse?.versions?.["neuro-san"]
-        return {httpStatus: response.status, success, status, version}
+        const success = statusText === "ok"
+
+        return {
+            healthCheckResponse: jsonResponse,
+            httpStatus: response.status,
+            statusText,
+            success,
+        }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        return {success: false, status: errorMessage}
+        return {
+            statusText: errorMessage,
+            success: false,
+        }
     } finally {
         clearTimeout(timeout)
     }
