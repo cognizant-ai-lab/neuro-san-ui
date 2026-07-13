@@ -28,7 +28,6 @@ import {
     testConnection,
     TestConnectionResult,
 } from "../../../../controller/agent/Agent"
-import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../../../controller/agent/IconSuggestions"
 import {sendLlmRequest, StreamingUnit} from "../../../../controller/llm/LlmChat"
 import {
     ApiPaths,
@@ -379,7 +378,7 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
     })
 })
 
-describe("Controller/Agent suggestion endpoints (postJsonRequest)", () => {
+describe("Controller/Agent/getBrandingSuggestions", () => {
     withStrictMocks()
 
     beforeEach(() => {
@@ -388,43 +387,6 @@ describe("Controller/Agent suggestion endpoints (postJsonRequest)", () => {
 
     afterEach(() => {
         global.fetch = oldFetch
-    })
-
-    it("getNetworkIconSuggestions POSTs the networks and returns the suggestions", async () => {
-        const suggestions = {"test-agents/math-guy": "Calculate"}
-        global.fetch = mockFetch(suggestions)
-
-        const result = await getNetworkIconSuggestions(LIST_NETWORKS_RESPONSE)
-
-        expect(result).toEqual(suggestions)
-        expect(global.fetch).toHaveBeenCalledWith(
-            "/api/networkIconSuggestions",
-            expect.objectContaining({
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({networks: LIST_NETWORKS_RESPONSE}),
-            })
-        )
-    })
-
-    it("getAgentIconSuggestions POSTs the connectivity info and returns the suggestions", async () => {
-        const suggestions = {agent1: "SmartToy"}
-        global.fetch = mockFetch(suggestions)
-        const connectivity = {connectivity_info: [{origin: "agent1", tools: [] as string[]}], metadata: {foo: "bar"}}
-
-        const result = await getAgentIconSuggestions(connectivity)
-
-        expect(result).toEqual(suggestions)
-        expect(global.fetch).toHaveBeenCalledWith(
-            "/api/agentIconSuggestions",
-            expect.objectContaining({
-                method: "POST",
-                body: JSON.stringify({
-                    connectivity_info: connectivity.connectivity_info,
-                    metadata: connectivity.metadata,
-                }),
-            })
-        )
     })
 
     it("getBrandingSuggestions POSTs the company name and returns the suggestions", async () => {

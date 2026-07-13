@@ -47,6 +47,14 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
 
         expect(result).toEqual(mockSuggestions)
         expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/networkIconSuggestions",
+            expect.objectContaining({
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({networks: agentInfo}),
+            })
+        )
 
         // Second time should be cached
         const cachedResult = await getNetworkIconSuggestions(agentInfo)
@@ -67,11 +75,22 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
                     origin: "other_agent",
                 },
             ],
+            metadata: {foo: "bar"},
         }
         const result = await getAgentIconSuggestions(connectivityInfo)
 
         expect(result).toEqual(mockSuggestions)
         expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+            "/api/agentIconSuggestions",
+            expect.objectContaining({
+                method: "POST",
+                body: JSON.stringify({
+                    connectivity_info: connectivityInfo.connectivity_info,
+                    metadata: connectivityInfo.metadata,
+                }),
+            })
+        )
 
         // Second time should be cached
         const cachedResult = await getAgentIconSuggestions(connectivityInfo)
