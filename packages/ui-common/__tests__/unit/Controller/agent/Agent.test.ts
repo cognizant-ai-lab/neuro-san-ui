@@ -23,6 +23,7 @@ import {
     getAgentNetworks,
     getBrandingSuggestions,
     getConnectivity,
+    HealthCheckResponse,
     sendChatQuery,
     sendNetworkDesignerRequest,
     testConnection,
@@ -58,14 +59,23 @@ describe("Controller/Agent/testConnection", () => {
     })
 
     it("Should handle a successful testConnection result", async () => {
-        global.fetch = mockFetch({status: "healthy", versions: {"neuro-san": "1.2.3"}})
+        const neuroSanVersion = "1.2.3"
+        const neuroSanStudioVersion = "4.5.6"
+
+        global.fetch = mockFetch({
+            versions: {"neuro-san": neuroSanVersion, "neuro-san-studio": neuroSanStudioVersion},
+            service: "Neuro SAN studio service",
+            status: "ok",
+        } satisfies HealthCheckResponse)
+
         const result: TestConnectionResult = await testConnection("www.example.com")
         expect(result.success).toBe(true)
-        expect(result.version).toBe("1.2.3")
+        expect(result.healthCheckResponse.versions["neuro-san"]).toBe(neuroSanVersion)
+        expect(result.healthCheckResponse.versions["neuro-san-studio"]).toBe(neuroSanStudioVersion)
     })
 
     it("Should handle an unsuccessful testConnection result", async () => {
-        global.fetch = mockFetch({status: "unhealthy"})
+        global.fetch = mockFetch({status: "unhealthy"} satisfies HealthCheckResponse, false)
         const result: TestConnectionResult = await testConnection("www.example.com")
         expect(result.success).toBe(false)
 
@@ -106,7 +116,7 @@ describe("Controller/Agent/testConnection", () => {
 
             const result = await resultPromise
             expect(result.success).toBe(false)
-            expect(result.status).toContain("aborted")
+            expect(result.statusText).toContain("aborted")
         } finally {
             vi.useRealTimers()
         }

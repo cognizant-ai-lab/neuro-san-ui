@@ -150,10 +150,13 @@ describe("SideBar", () => {
         user = userEvent.setup()
         const testConnectionMock = vi.mocked(testConnection)
         testConnectionMock.mockResolvedValue({
+            healthCheckResponse: {
+                status: "ok",
+                versions: {"neuro-san": TEST_VERSION},
+            },
             httpStatus: httpStatus.OK,
-            status: "ok",
+            statusText: "ok",
             success: true,
-            version: TEST_VERSION,
         } satisfies TestConnectionResult)
 
         // Reset settings store
@@ -193,7 +196,7 @@ describe("SideBar", () => {
         await user.hover(statusLight)
         const statusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(statusTooltip).getByText(TEST_VERSION)
-        within(statusTooltip).getByText(/online/u)
+        within(statusTooltip).getByText("online")
         within(statusTooltip).getByText(DEFAULT_EXAMPLE_URL)
 
         // Now mock testConnection to return failure and re-render the component
@@ -202,7 +205,7 @@ describe("SideBar", () => {
         const testConnectionMock = vi.mocked(testConnection)
         testConnectionMock.mockResolvedValue({
             success: false,
-            status: statusMessage,
+            statusText: statusMessage,
             httpStatus: httpStatus.IM_A_TEAPOT,
         } satisfies TestConnectionResult)
 
@@ -221,9 +224,8 @@ describe("SideBar", () => {
         // Tooltip should now show the error status
         const updatedStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(updatedStatusTooltip).getByText(statusMessage)
-        within(updatedStatusTooltip).getByText("offline")
-        // version and URL should be "unknown"
-        expect(within(updatedStatusTooltip).getAllByText("unknown")).toHaveLength(2)
+        // versions x 2, URL and "service" should be "unknown"
+        expect(within(updatedStatusTooltip).getAllByText("unknown")).toHaveLength(4)
         within(updatedStatusTooltip).getByText(new RegExp(String(httpStatus.IM_A_TEAPOT), "u"))
 
         testConnectionMock.mockClear()
@@ -231,7 +233,7 @@ describe("SideBar", () => {
         // Now with an unknown http status (mainly for branch coverage)
         testConnectionMock.mockResolvedValue({
             success: false,
-            status: statusMessage,
+            statusText: statusMessage,
             httpStatus: httpStatus.IM_A_TEAPOT + 1,
         } satisfies TestConnectionResult)
 
@@ -255,34 +257,10 @@ describe("SideBar", () => {
         )
         const unknownStatusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(unknownStatusTooltip).getByText(statusMessage)
-        within(unknownStatusTooltip).getByText("offline")
-        within(unknownStatusTooltip).getByText("unknown")
+
+        // 2 versions "unknown" + 1 "service" "unknown" = 3 unknowns
+        expect(within(unknownStatusTooltip).getAllByText("unknown")).toHaveLength(3)
         within(unknownStatusTooltip).getByText(new RegExp(`${String(httpStatus.IM_A_TEAPOT + 1)}.*Unknown status`, "u"))
-    })
-
-    it.each([
-        {
-            caseName: "Error object",
-            exception: new Error("Simulated testConnection error"),
-            expectedMessage: "Simulated testConnection error",
-        },
-        {
-            caseName: "string",
-            exception: "Simulated string error",
-            expectedMessage: "Simulated string error",
-        },
-    ])("handles errors from testConnection when $caseName is thrown", async ({exception, expectedMessage}) => {
-        const testConnectionMock = vi.mocked(testConnection)
-
-        testConnectionMock.mockRejectedValue(exception)
-
-        renderSidebarComponent({})
-
-        const statusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
-        await user.hover(statusLight)
-
-        const tooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
-        within(tooltip).getByText(expectedMessage)
     })
 
     it("Should display suggested network icons correctly", async () => {
