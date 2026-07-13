@@ -160,9 +160,9 @@ async function checkServer() {
     const result = await testConnection("https://api.example.com")
 
     if (result.success) {
-        console.log(`Connected! Version: ${result.version}`)
+        console.log(`Connected!`)
     } else {
-        console.error(`Connection failed: ${result.status}`)
+        console.error(`Connection failed: ${result.statusText}`)
     }
 }
 ```
