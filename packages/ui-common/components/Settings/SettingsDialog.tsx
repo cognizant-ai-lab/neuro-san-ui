@@ -28,13 +28,19 @@ import {
 
 import {ApiKeyInput} from "./ApiKeyInput"
 import {useCheckmarkFade} from "./FadingCheckmark"
-import InfoTip from "./InfoTip"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
-import {DEFAULT_SETTINGS, LLMProvider, PaletteKey, useSettingsStore} from "../../state/Settings"
+import {
+    API_KEYS_TTL_MS,
+    DEFAULT_SETTINGS,
+    getApiKey,
+    LLMProvider,
+    PaletteKey,
+    useSettingsStore,
+} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
@@ -335,10 +341,25 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         logoCheckmark.trigger()
     }
 
-    const persistKey = (vendor: LLMProvider, key: string, checkmark: ReturnType<typeof useCheckmarkFade>) => {
+    /**
+     * Used for both saving and removing keys.
+     * @param vendor Vendor for this key: see the list in LLMProvider type
+     * @param key Value of the key
+     * @param checkmark Checkmark to trigger on save
+     * @param now Timestamp for "now"
+     */
+    const persistKey = (
+        vendor: LLMProvider,
+        key: string,
+        checkmark: ReturnType<typeof useCheckmarkFade>,
+        now: number
+    ) => {
         updateSettings({
             apiKeys: {
-                [vendor]: key,
+                [vendor]: {
+                    value: key,
+                    expiresAt: key ? now + API_KEYS_TTL_MS : 0,
+                },
             },
         })
         checkmark.trigger()
@@ -529,15 +550,44 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getApiKeysSection = () => (
         <Section>
-            <Box sx={{display: "flex", alignItems: "center", gap: theme.spacing(2)}}>
+            <Box sx={{display: "flex", alignItems: "center", gap: theme.spacing(1)}}>
                 <SettingsSectionTitle>API Keys</SettingsSectionTitle>
-                <InfoTip
-                    title={
-                        "API keys are used to access external services. Some networks may require an API key for " +
-                        "you to use them. Your keys will be saved in your browser local storage and sent to " +
-                        "services that require them. Do not use this option if you are on a shared or public computer."
-                    }
-                />
+                <Tooltip
+                    title="API keys are stored locally in your browser's memory for the duration of your session only
+                    and are only sent to the Neuro SAN service for use with the associated LLM provider when you use
+                    this application to interact with networks.
+                    Your keys are never sent to any other servers or services and are not stored on our servers.
+                    When you close this tab or your browser, your keys will be permanently cleared from memory and
+                    you will need to enter them again to use services that require them."
+                >
+                    <Typography
+                        sx={{
+                            alignSelf: "flex-start",
+                            color: "var(--bs-secondary)",
+                            cursor: "help",
+                            fontSize: "0.7rem",
+                            lineHeight: 1,
+                            mt: 0.5,
+                        }}
+                        variant="caption"
+                    >
+                        <Box
+                            component="span"
+                            sx={{mr: 0.5}}
+                        >
+                            ⓘ
+                        </Box>
+                        <Box
+                            component="span"
+                            sx={{
+                                borderBottom: "1px dashed",
+                                pb: 0.25,
+                            }}
+                        >
+                            How are my keys stored and used?
+                        </Box>
+                    </Typography>
+                </Tooltip>
             </Box>
             <SettingsSubsection title="LLM Providers">
                 <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
@@ -549,12 +599,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             tooltip={`API key for ${vendor}.`}
                         >
                             <ApiKeyInput
-                                forgetKey={() => persistKey(vendor, "", checkmark)}
+                                forgetKey={() => persistKey(vendor, "", checkmark, 0)}
                                 id={`${id}-${idSuffix}`}
                                 logo={logo}
-                                onSave={(key) => persistKey(vendor, key, checkmark)}
+                                onSave={(key) => persistKey(vendor, key, checkmark, Date.now())}
                                 onTest={onTest}
-                                persistedValue={apiKeys[vendor]}
+                                persistedValue={getApiKey(apiKeys, vendor)}
                                 placeholder={placeholder}
                                 vendor={vendor}
                             />
@@ -1009,7 +1059,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     )
 
     return (
-        // Always use default theme for settings dialog so user can always see to reset. It's possible that with
+        // Always use the default theme for settings dialog so user can always see to reset. It's possible that with
         // certain custom themes the dialog would be unreadable.
         <ThemeProvider theme={settingsTheme}>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
