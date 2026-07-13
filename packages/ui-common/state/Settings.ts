@@ -137,7 +137,7 @@ export const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
 
 // TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
 // This is a backstop for cases where users rarely close their browser or tabs
-export const API_KEYS_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+export const API_KEYS_TTL_MS = 2 * 24 * 60 * 60 * 1000 // 2 days
 
 //#endregion Constants
 
