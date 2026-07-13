@@ -49,6 +49,14 @@ let oldFetch: typeof global.fetch
 describe("Controller/Agent/testConnection", () => {
     withStrictMocks()
 
+    beforeEach(() => {
+        oldFetch = global.fetch
+    })
+
+    afterEach(() => {
+        global.fetch = oldFetch
+    })
+
     it("Should handle a successful testConnection result", async () => {
         global.fetch = mockFetch({status: "healthy", versions: {"neuro-san": "1.2.3"}})
         const result: TestConnectionResult = await testConnection("www.example.com")
@@ -80,26 +88,28 @@ describe("Controller/Agent/testConnection", () => {
     it("Should abort and report failure when the request exceeds the timeout", async () => {
         vi.useFakeTimers()
 
-        // A fetch that only settles when its AbortSignal fires — simulates a hung request.
-        global.fetch = vi.fn(
-            (_url, options) =>
-                new Promise<Response>((_resolve, reject) => {
-                    options?.signal?.addEventListener("abort", () =>
-                        reject(new DOMException("The operation was aborted", "AbortError"))
-                    )
-                })
-        )
+        try {
+            // A fetch that only settles when its AbortSignal fires — simulates a hung request.
+            global.fetch = vi.fn(
+                (_url, options) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        options?.signal?.addEventListener("abort", () =>
+                            reject(new DOMException("The operation was aborted", "AbortError"))
+                        )
+                    })
+            )
 
-        const resultPromise = testConnection("https://slow.example.com")
+            const resultPromise = testConnection("https://slow.example.com")
 
-        // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
-        vi.advanceTimersByTime(2500)
+            // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
+            vi.advanceTimersByTime(2500)
 
-        const result = await resultPromise
-        expect(result.success).toBe(false)
-        expect(result.status).toContain("aborted")
-
-        vi.useRealTimers()
+            const result = await resultPromise
+            expect(result.success).toBe(false)
+            expect(result.status).toContain("aborted")
+        } finally {
+            vi.useRealTimers()
+        }
     })
 })
 
