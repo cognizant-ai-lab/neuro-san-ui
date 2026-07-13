@@ -26,6 +26,13 @@ import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 const config: KnipConfig = {
     ...baseConfig,
 
+    ignoreBinaries: [
+        ...baseConfig.ignoreBinaries,
+
+        // Used in package.json script
+        "mktemp",
+    ],
+
     ignoreDependencies: [
         ...baseConfig.ignoreDependencies,
 
@@ -50,6 +57,9 @@ const config: KnipConfig = {
         "eslint-plugin-testing-library",
         "eslint-plugin-unicorn",
         "typescript-eslint",
+
+        // Supplied internally by yarn to plugins
+        "@yarnpkg/core",
     ],
     workspaces: {
         "packages/dev-common": {

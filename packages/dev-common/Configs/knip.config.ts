@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type {KnipConfig} from "knip"
+import type {IssueType, KnipConfig} from "knip"
 
 /**
  * @fileoverview Knip configuration file to identify unused files and dependencies in the project.
@@ -28,6 +28,26 @@ import type {KnipConfig} from "knip"
  */
 type RawConfiguration = Extract<KnipConfig, Record<string, unknown>>
 
+// There is currently no easy way in knip to say "report all issue types", so use TypeScript to enforce it for us.
+const allIssueTypes = Object.keys({
+    binaries: true,
+    catalog: true,
+    cycles: true,
+    dependencies: true,
+    devDependencies: true,
+    duplicates: true,
+    enumMembers: true,
+    exports: true,
+    files: true,
+    namespaceMembers: true,
+    nsExports: true,
+    nsTypes: true,
+    optionalPeerDependencies: true,
+    types: true,
+    unlisted: true,
+    unresolved: true,
+} satisfies Record<IssueType, true>) as IssueType[]
+
 export const config: RawConfiguration = {
     // From the doc:
     // "By default, Knip does not report unused exports in entry files. When a repository (or workspace) is
@@ -38,25 +58,9 @@ export const config: RawConfiguration = {
     treatConfigHintsAsErrors: true,
 
     // Opt-in to all issues types
-    include: [
-        "binaries",
-        "catalog",
-        "dependencies",
-        "devDependencies",
-        "duplicates",
-        "enumMembers",
-        "exports",
-        "files",
-        "namespaceMembers",
-        "nsExports",
-        "nsTypes",
-        "optionalPeerDependencies",
-        "types",
-        "unlisted",
-        "unresolved",
-    ],
+    include: allIssueTypes,
 
     ignore: [],
-
+    ignoreBinaries: [],
     ignoreDependencies: [],
 }
