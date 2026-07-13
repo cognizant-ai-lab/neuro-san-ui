@@ -273,7 +273,7 @@ describe("AgentFlow", () => {
                 isAwaitingLlm: false,
                 onEnterEditMode,
             })
-            // Target the dock's Edit button by its visible text; node hover-affordances share the "Edit"
+            // Target the dock's Edit button by its visible text; node hover edit icons share the "Edit"
             // accessible name (via aria-label) but render no text.
             const editBtn = await screen.findByText("Edit")
             await user.click(editBtn)
