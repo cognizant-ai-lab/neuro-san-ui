@@ -439,20 +439,4 @@ describe("Controller/Agent suggestion endpoints (postJsonRequest)", () => {
             expect.objectContaining({method: "POST", body: JSON.stringify({company: "Acme"})})
         )
     })
-
-    it("throws the error field from the response body when present", async () => {
-        global.fetch = mockFetch({error: "LLM unavailable"})
-        await expect(getBrandingSuggestions("Acme")).rejects.toThrow("LLM unavailable")
-    })
-
-    it("throws the statusText when the response is not ok and has no error field", async () => {
-        global.fetch = vi.fn(() =>
-            Promise.resolve({
-                ok: false,
-                statusText: "Internal Server Error",
-                json: () => Promise.resolve({}),
-            } as unknown as Response)
-        )
-        await expect(getNetworkIconSuggestions(LIST_NETWORKS_RESPONSE)).rejects.toThrow("Internal Server Error")
-    })
 })

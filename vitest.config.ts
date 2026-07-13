@@ -25,7 +25,7 @@ export default defineConfig({
                 statements: -102,
                 branches: -153,
                 functions: -24,
-                lines: -75,
+                lines: -74,
             },
         },
         // TODO: potential small optimization: consider using `node` environment for non-UI tests
