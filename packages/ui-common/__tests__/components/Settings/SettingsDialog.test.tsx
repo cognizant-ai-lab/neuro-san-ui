@@ -15,6 +15,9 @@ vi.mock("../../../components/Common/notification")
 
 const TEST_API_KEY = "test-api-key-123"
 
+// Pseudo expiration time
+const NEVER = Number.MAX_SAFE_INTEGER
+
 const BRANDING_SUGGESTIONS_RESPONSE: BrandingSuggestions = {
     background: "#AA0022",
     iconSuggestion: "Add",
@@ -349,7 +352,7 @@ describe("SettingsDialog", () => {
             useSettingsStore.getState().updateSettings({
                 apiKeys: {
                     OpenAI: {
-                        expiresAt: Number.MAX_SAFE_INTEGER, // "never expires""
+                        expiresAt: NEVER,
                         value: TEST_API_KEY,
                     },
                 },
@@ -388,7 +391,7 @@ describe("SettingsDialog", () => {
             useSettingsStore.getState().updateSettings({
                 apiKeys: {
                     OpenAI: {
-                        expiresAt: Number.MAX_SAFE_INTEGER, // "never expires""
+                        expiresAt: NEVER,
                         value: TEST_API_KEY,
                     },
                 },
