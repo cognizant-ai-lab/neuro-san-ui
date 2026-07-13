@@ -196,7 +196,7 @@ describe("SideBar", () => {
         await user.hover(statusLight)
         const statusTooltip = await screen.findByRole("tooltip", {name: "Neuro-san server status"})
         within(statusTooltip).getByText(TEST_VERSION)
-        within(statusTooltip).getByText("ok")
+        within(statusTooltip).getByText("online")
         within(statusTooltip).getByText(DEFAULT_EXAMPLE_URL)
 
         // Now mock testConnection to return failure and re-render the component

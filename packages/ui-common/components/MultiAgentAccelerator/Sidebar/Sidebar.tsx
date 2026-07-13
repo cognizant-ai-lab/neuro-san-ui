@@ -285,6 +285,8 @@ export const Sidebar: FC<SidebarProps> = ({
         }
     }
 
+    const mapStatus = (statusText: string | undefined) => (statusText === "ok" ? "online" : (statusText ?? "unknown"))
+
     const getStatusLight = () => (
         <ServerStatusTooltip
             slotProps={{
@@ -295,7 +297,7 @@ export const Sidebar: FC<SidebarProps> = ({
             title={
                 <Box sx={{display: "flex", flexDirection: "column", gap: 0.5}}>
                     <Typography variant="body2">
-                        <strong>Status:</strong> {neuroSanServerStatus?.statusText}
+                        <strong>Status:</strong> {mapStatus(neuroSanServerStatus?.statusText)}
                     </Typography>
                     <Typography variant="body2">
                         <strong>URL:</strong> {neuroSanServerURL || "unknown"}
