@@ -224,7 +224,7 @@ describe("AgentFlow", () => {
 
         // Make sure each agent node is rendered at least. Each node has a data-id with its name.
         agentNames.forEach((agent) => {
-            expect(container.querySelector(`[data-id="${CSS.escape(agent)}"]`)).not.toBeNull()
+            expect(container.querySelector(`[data-id="${agent}"]`)).not.toBeNull()
         })
     }
 
@@ -566,7 +566,7 @@ describe("AgentFlow", () => {
             )
 
             // agent1 is active so should be highlighted
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
+            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
             expect(agent1Node).toBeInTheDocument()
 
             // agent1 is active so should be highlighted
@@ -1523,7 +1523,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
 
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
@@ -1569,7 +1569,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1607,7 +1607,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1634,7 +1634,7 @@ describe("AgentFlow", () => {
                 // onSaveAgent intentionally omitted
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1702,7 +1702,7 @@ describe("AgentFlow", () => {
                 networkId: networkKey,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
+            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
             expect(agent1Node).toBeInTheDocument()
             clickFlowNode(agent1Node)
 
@@ -1719,7 +1719,7 @@ describe("AgentFlow", () => {
             // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
             const {container} = renderAgentFlowComponent({networkId: networkKey})
 
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
+            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
             clickFlowNode(agent1Node)
 
             // Popup must not appear
@@ -1746,7 +1746,7 @@ describe("AgentFlow", () => {
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: displayAs}],
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
@@ -1766,7 +1766,7 @@ describe("AgentFlow", () => {
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             expect(await screen.findByRole("button", {name: SAVE_BUTTON})).toBeInTheDocument()
         })
     })
@@ -2530,7 +2530,7 @@ describe("AgentFlow", () => {
                 networkId: networkA,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
+            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
             clickFlowNode(agent1Node)
 
             // Edit the instructions and save
@@ -2577,7 +2577,7 @@ describe("AgentFlow", () => {
                 networkId: networkB,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
+            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
             clickFlowNode(agent1Node)
 
             // Popup should show networkB's instructions, not networkA's
