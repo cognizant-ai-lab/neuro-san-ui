@@ -1919,7 +1919,7 @@ describe("AgentFlow", () => {
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
         })
 
-        it("exits edit mode when the Escape key is pressed", () => {
+        it("exits edit mode when the Escape key is pressed", async () => {
             const onExitEditMode = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: true,
@@ -1928,12 +1928,12 @@ describe("AgentFlow", () => {
                 onExitEditMode,
             })
 
-            fireEvent.keyDown(document, {key: "Escape"})
+            await user.keyboard("{Escape}")
 
             expect(onExitEditMode).toHaveBeenCalledTimes(1)
         })
 
-        it("does not exit on Escape when not in edit mode", () => {
+        it("does not exit on Escape when not in edit mode", async () => {
             const onExitEditMode = vi.fn()
             renderAgentFlowComponent({
                 isEditMode: false,
@@ -1942,7 +1942,7 @@ describe("AgentFlow", () => {
                 onExitEditMode,
             })
 
-            fireEvent.keyDown(document, {key: "Escape"})
+            await user.keyboard("{Escape}")
 
             expect(onExitEditMode).not.toHaveBeenCalled()
         })
@@ -1972,7 +1972,7 @@ describe("AgentFlow", () => {
             clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
             await screen.findByRole("textbox", {name: /^instructions$/iu})
 
-            fireEvent.keyDown(document, {key: "Escape"})
+            await user.keyboard("{Escape}")
 
             expect(onExitEditMode).not.toHaveBeenCalled()
         })
