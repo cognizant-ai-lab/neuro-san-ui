@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 <p align="center">
-    <a href="https://deepwiki.com/cognizant-ai-lab/neuro-san-ui">
+    <a href="https://deepwiki.com/cognizant-ai-lab/neuro-san-ui" rel="noopener noreferrer" target="_blank">
         <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki: neuro-san-ui" />
     </a>
 </p>
