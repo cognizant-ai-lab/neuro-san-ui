@@ -46,8 +46,7 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
         const result = await getNetworkIconSuggestions(agentInfo)
 
         expect(result).toEqual(mockSuggestions)
-        expect(global.fetch).toHaveBeenCalledTimes(1)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             "/api/networkIconSuggestions",
             expect.objectContaining({
                 method: "POST",
@@ -56,10 +55,12 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
             })
         )
 
+        vi.mocked(global.fetch).mockClear()
+
         // Second time should be cached
         const cachedResult = await getNetworkIconSuggestions(agentInfo)
         expect(cachedResult).toEqual(mockSuggestions)
-        expect(global.fetch).toHaveBeenCalledTimes(1) // No additional fetch calls
+        expect(global.fetch).toHaveBeenCalledTimes(0) // No additional fetch calls
     })
 
     it("should retrieve agent icon suggestions from the server and cache them", async () => {
@@ -80,8 +81,7 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
         const result = await getAgentIconSuggestions(connectivityInfo)
 
         expect(result).toEqual(mockSuggestions)
-        expect(global.fetch).toHaveBeenCalledTimes(1)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             "/api/agentIconSuggestions",
             expect.objectContaining({
                 method: "POST",
@@ -92,10 +92,12 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
             })
         )
 
+        vi.mocked(global.fetch).mockClear()
+
         // Second time should be cached
         const cachedResult = await getAgentIconSuggestions(connectivityInfo)
         expect(cachedResult).toEqual(mockSuggestions)
-        expect(global.fetch).toHaveBeenCalledTimes(1) // No additional fetch calls
+        expect(global.fetch).toHaveBeenCalledTimes(0) // No additional fetch calls
     })
 
     it("Should throw on errors from fetch", async () => {

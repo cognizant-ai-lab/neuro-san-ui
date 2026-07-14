@@ -98,28 +98,24 @@ describe("Controller/Agent/testConnection", () => {
     it("Should abort and report failure when the request exceeds the timeout", async () => {
         vi.useFakeTimers()
 
-        try {
-            // A fetch that only settles when its AbortSignal fires — simulates a hung request.
-            global.fetch = vi.fn(
-                (_url, options) =>
-                    new Promise<Response>((_resolve, reject) => {
-                        options?.signal?.addEventListener("abort", () =>
-                            reject(new DOMException("The operation was aborted", "AbortError"))
-                        )
-                    })
-            )
+        // A fetch that only settles when its AbortSignal fires — simulates a hung request.
+        global.fetch = vi.fn(
+            (_url, options) =>
+                new Promise<Response>((_resolve, reject) => {
+                    options?.signal?.addEventListener("abort", () =>
+                        reject(new DOMException("The operation was aborted", "AbortError"))
+                    )
+                })
+        )
 
-            const resultPromise = testConnection("https://slow.example.com")
+        const resultPromise = testConnection("https://slow.example.com")
 
-            // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
-            vi.advanceTimersByTime(2500)
+        // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
+        vi.advanceTimersByTime(2500)
 
-            const result = await resultPromise
-            expect(result.success).toBe(false)
-            expect(result.statusText).toContain("aborted")
-        } finally {
-            vi.useRealTimers()
-        }
+        const result = await resultPromise
+        expect(result.success).toBe(false)
+        expect(result.statusText).toContain("aborted")
     })
 })
 
@@ -139,7 +135,9 @@ describe("Controller/Agent/getAgentNetworks", () => {
         global.fetch = mockFetch({agents})
         const result = await getAgentNetworks(NEURO_SAN_EXAMPLE_URL)
         expect(result).toEqual(LIST_NETWORKS_RESPONSE)
-        expect(global.fetch).toHaveBeenCalledWith(`${NEURO_SAN_EXAMPLE_URL}${ApiPaths.ConciergeService_List}`)
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+            `${NEURO_SAN_EXAMPLE_URL}${ApiPaths.ConciergeService_List}`
+        )
     })
 })
 
@@ -236,7 +234,7 @@ describe("Controller/Agent/getConnectivity", () => {
         global.fetch = mockFetch(mockConnectivity)
         const result = await getConnectivity(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)
         expect(result).toEqual(mockConnectivity)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -275,9 +273,14 @@ describe("Controller/Agent/getConnectivity", () => {
         )
 
         // The server doesn't know about the "temporary/" UI convention, so it must be removed from the path.
-        const calledUrl = vi.mocked(global.fetch).mock.calls[0][0] as string
-        expect(calledUrl).toContain(TEST_AGENT_MATH_GUY)
-        expect(calledUrl).not.toContain(`${TEMPORARY_NETWORK_FOLDER}/`)
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining(TEST_AGENT_MATH_GUY),
+            expect.anything()
+        )
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining(`${TEMPORARY_NETWORK_FOLDER}/`),
+            expect.anything()
+        )
     })
 })
 
@@ -297,7 +300,7 @@ describe("Controller/Agent/getAgentFunction", () => {
         global.fetch = mockFetch(mockFunction)
         const result = await getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)
         expect(result).toEqual(mockFunction)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -314,7 +317,7 @@ describe("Controller/Agent/getAgentFunction", () => {
         global.fetch = mockFetch(mockFunction)
         const result = await getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, null)
         expect(result).toEqual(mockFunction)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -416,7 +419,7 @@ describe("Controller/Agent/getBrandingSuggestions", () => {
         const result = await getBrandingSuggestions("Acme")
 
         expect(result).toEqual(suggestions)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             "/api/branding",
             expect.objectContaining({method: "POST", body: JSON.stringify({company: "Acme"})})
         )
