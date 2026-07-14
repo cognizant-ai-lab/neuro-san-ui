@@ -17,10 +17,11 @@ limitations under the License.
 import {LIST_NETWORKS_RESPONSE, TEST_AGENT_MATH_GUY} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
-import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
+import {AgentNetworkDefinitionEntry, TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
     getAgentFunction,
     getAgentNetworks,
+    getBrandingSuggestions,
     getConnectivity,
     HealthCheckResponse,
     sendChatQuery,
@@ -48,6 +49,14 @@ let oldFetch: typeof global.fetch
 
 describe("Controller/Agent/testConnection", () => {
     withStrictMocks()
+
+    beforeEach(() => {
+        oldFetch = global.fetch
+    })
+
+    afterEach(() => {
+        global.fetch = oldFetch
+    })
 
     it("Should handle a successful testConnection result", async () => {
         const neuroSanVersion = "1.2.3"
@@ -85,6 +94,29 @@ describe("Controller/Agent/testConnection", () => {
         const result: TestConnectionResult = await testConnection("www.example.com")
         expect(result.success).toBe(false)
     })
+
+    it("Should abort and report failure when the request exceeds the timeout", async () => {
+        vi.useFakeTimers()
+
+        // A fetch that only settles when its AbortSignal fires — simulates a hung request.
+        global.fetch = vi.fn(
+            (_url, options) =>
+                new Promise<Response>((_resolve, reject) => {
+                    options?.signal?.addEventListener("abort", () =>
+                        reject(new DOMException("The operation was aborted", "AbortError"))
+                    )
+                })
+        )
+
+        const resultPromise = testConnection("https://slow.example.com")
+
+        // Fire the 2.5s timeout, which triggers controller.abort() → fetch rejects.
+        vi.advanceTimersByTime(2500)
+
+        const result = await resultPromise
+        expect(result.success).toBe(false)
+        expect(result.statusText).toContain("aborted")
+    })
 })
 
 describe("Controller/Agent/getAgentNetworks", () => {
@@ -103,7 +135,9 @@ describe("Controller/Agent/getAgentNetworks", () => {
         global.fetch = mockFetch({agents})
         const result = await getAgentNetworks(NEURO_SAN_EXAMPLE_URL)
         expect(result).toEqual(LIST_NETWORKS_RESPONSE)
-        expect(global.fetch).toHaveBeenCalledWith(`${NEURO_SAN_EXAMPLE_URL}${ApiPaths.ConciergeService_List}`)
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+            `${NEURO_SAN_EXAMPLE_URL}${ApiPaths.ConciergeService_List}`
+        )
     })
 })
 
@@ -200,7 +234,7 @@ describe("Controller/Agent/getConnectivity", () => {
         global.fetch = mockFetch(mockConnectivity)
         const result = await getConnectivity(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)
         expect(result).toEqual(mockConnectivity)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -228,6 +262,26 @@ describe("Controller/Agent/getConnectivity", () => {
         // Make sure getConnectivity logged the error to the console
         expect(errorSpy).toHaveBeenCalled()
     })
+
+    it("Should strip the temporary/ prefix from the network name before calling the server", async () => {
+        global.fetch = mockFetch({connections: []})
+
+        await getConnectivity(
+            NEURO_SAN_EXAMPLE_URL,
+            `${TEMPORARY_NETWORK_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+            TEST_USERNAME
+        )
+
+        // The server doesn't know about the "temporary/" UI convention, so it must be removed from the path.
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining(TEST_AGENT_MATH_GUY),
+            expect.anything()
+        )
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining(`${TEMPORARY_NETWORK_FOLDER}/`),
+            expect.anything()
+        )
+    })
 })
 
 describe("Controller/Agent/getAgentFunction", () => {
@@ -246,7 +300,7 @@ describe("Controller/Agent/getAgentFunction", () => {
         global.fetch = mockFetch(mockFunction)
         const result = await getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, TEST_USERNAME)
         expect(result).toEqual(mockFunction)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -263,7 +317,7 @@ describe("Controller/Agent/getAgentFunction", () => {
         global.fetch = mockFetch(mockFunction)
         const result = await getAgentFunction(NEURO_SAN_EXAMPLE_URL, TEST_AGENT_MATH_GUY, null)
         expect(result).toEqual(mockFunction)
-        expect(global.fetch).toHaveBeenCalledWith(
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining(TEST_AGENT_MATH_GUY),
             expect.objectContaining({
                 method: "GET",
@@ -344,5 +398,30 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
         const requestParams = sendLlmRequestMock.mock.calls[0][3]
         expect(requestParams).toHaveProperty("sly_data")
         expect(requestParams["sly_data"]).not.toHaveProperty("agent_network_name")
+    })
+})
+
+describe("Controller/Agent/getBrandingSuggestions", () => {
+    withStrictMocks()
+
+    beforeEach(() => {
+        oldFetch = global.fetch
+    })
+
+    afterEach(() => {
+        global.fetch = oldFetch
+    })
+
+    it("getBrandingSuggestions POSTs the company name and returns the suggestions", async () => {
+        const suggestions = {primary: "#123456"}
+        global.fetch = mockFetch(suggestions)
+
+        const result = await getBrandingSuggestions("Acme")
+
+        expect(result).toEqual(suggestions)
+        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/branding",
+            expect.objectContaining({method: "POST", body: JSON.stringify({company: "Acme"})})
+        )
     })
 })
