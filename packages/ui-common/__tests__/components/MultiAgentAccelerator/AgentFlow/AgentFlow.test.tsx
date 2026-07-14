@@ -1550,6 +1550,7 @@ describe("AgentFlow", () => {
         it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
             const onSaveAgent = vi.fn().mockResolvedValue(undefined)
             const editedInstructions = "Updated instructions for agent1"
+            const originalInstructions = "Original instructions."
 
             act(() => {
                 useTempNetworksStore
@@ -1557,7 +1558,7 @@ describe("AgentFlow", () => {
                     .setTempNetworks([
                         makeTempNetwork(
                             OLD_NETWORK_ID,
-                            [{origin: AGENT_1, tools: [], instructions: "Original instructions."}],
+                            [{origin: AGENT_1, tools: [], instructions: originalInstructions}],
                             OLD_NETWORK_NAME
                         ),
                     ])
@@ -1644,13 +1645,14 @@ describe("AgentFlow", () => {
         })
 
         it("Should update the Zustand store network map when a node popup is saved", async () => {
+            const originalInstructions = "Original instructions."
             // Seed the Zustand store with a flat array (server format) under a network key
             const initialDefinition: AgentNetworkDefinitionEntry[] = [
                 {
                     origin: AGENT_1,
                     tools: [AGENT_2],
                     display_as: LLM_AGENT_DISPLAY,
-                    instructions: "Original instructions.",
+                    instructions: originalInstructions,
                 },
             ]
             // Seed the temp networks store with the network and its definition
