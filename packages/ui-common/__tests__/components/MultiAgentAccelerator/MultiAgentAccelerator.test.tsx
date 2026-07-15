@@ -1507,6 +1507,16 @@ describe("MultiAgentAccelerator", () => {
             })
         }
 
+        const renderAndWaitForSidebar = async () => {
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+        }
+
+        const saveAgent = (agentNetworkName = RESERVATION.reservation_id) =>
+            act(async () => {
+                await onSaveAgent("copy_cat", UPDATED_DEFINITION, agentNetworkName, new AbortController().signal)
+            })
+
         it("upserts the returned network and reselects it when a matching reservation is streamed", async () => {
             mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
             renderMultiAgentAcceleratorPage()
@@ -1516,14 +1526,7 @@ describe("MultiAgentAccelerator", () => {
             await user.click(header)
             await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
 
-            await act(async () => {
-                await onSaveAgent(
-                    "copy_cat",
-                    UPDATED_DEFINITION,
-                    RESERVATION.reservation_id,
-                    new AbortController().signal
-                )
-            })
+            await saveAgent()
 
             const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
             // The returned reservation was upserted into the temp networks store...
@@ -1542,60 +1545,41 @@ describe("MultiAgentAccelerator", () => {
             })
         })
 
-        it("shows an error and does not upsert when the designer returns no reservation", async () => {
-            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
-            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
-            mockDesignerStream() // no chunks → no networks collected
-            renderMultiAgentAcceleratorPage()
-            await screen.findByText("Agent Networks")
-
-            await act(async () => {
-                await onSaveAgent(
-                    "copy_cat",
-                    UPDATED_DEFINITION,
-                    RESERVATION.reservation_id,
-                    new AbortController().signal
-                )
-            })
-
-            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
-        })
-
-        it("shows an error when the returned reservation does not match the edited network", async () => {
-            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
-            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
-            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            renderMultiAgentAcceleratorPage()
-            await screen.findByText("Agent Networks")
-
-            await act(async () => {
+        it.each([
+            {
+                scenario: "the designer returns no reservation",
+                streamChunks: [] as string[],
+                agentNetworkName: RESERVATION.reservation_id,
+                expectedLog: "did not return a reservation",
+            },
+            {
+                scenario: "the returned reservation does not match the edited network",
+                streamChunks: [JSON.stringify(RESERVATION_CHAT_MESSAGE)],
                 // agentNetworkName does not match the streamed reservation's derived name → no replacement found.
-                const signal = new AbortController().signal
-                await onSaveAgent("copy_cat", UPDATED_DEFINITION, "some-other-network", signal)
-            })
+                agentNetworkName: "some-other-network",
+                expectedLog: "did not match the current network",
+            },
+        ])(
+            "shows an error and does not upsert when $scenario",
+            async ({streamChunks, agentNetworkName, expectedLog}) => {
+                const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+                mockDesignerStream(...streamChunks)
+                await renderAndWaitForSidebar()
 
-            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not match the current network"))
-        })
+                await saveAgent(agentNetworkName)
+
+                expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedLog))
+            }
+        )
 
         it("notifies a save error when the network designer stream throws", async () => {
-            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
-            const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {})
-            // eslint-disable-next-line no-empty-function, @typescript-eslint/no-empty-function
-            const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
             vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(new Error("stream exploded"))
-            renderMultiAgentAcceleratorPage()
-            await screen.findByText("Agent Networks")
+            await renderAndWaitForSidebar()
 
-            await act(async () => {
-                await onSaveAgent(
-                    "copy_cat",
-                    UPDATED_DEFINITION,
-                    RESERVATION.reservation_id,
-                    new AbortController().signal
-                )
-            })
+            await saveAgent()
 
             expect(errorSpy).toHaveBeenCalled()
             expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("stream exploded"))
@@ -1605,19 +1589,11 @@ describe("MultiAgentAccelerator", () => {
             vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(
                 new DOMException("The operation was aborted", "AbortError")
             )
-            renderMultiAgentAcceleratorPage()
-            await screen.findByText("Agent Networks")
+            await renderAndWaitForSidebar()
 
             // No console spies: an AbortError must be swallowed silently (no console.error / notification),
             // so any logging here would fail the test via jest-fail-on-console.
-            await act(async () => {
-                await onSaveAgent(
-                    "copy_cat",
-                    UPDATED_DEFINITION,
-                    RESERVATION.reservation_id,
-                    new AbortController().signal
-                )
-            })
+            await saveAgent()
 
             expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
         })
