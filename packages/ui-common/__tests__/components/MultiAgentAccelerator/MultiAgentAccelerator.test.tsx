@@ -256,7 +256,8 @@ const renderMultiAgentAcceleratorPage = () =>
         </SnackbarProvider>
     )
 
-// Fire an import through the mocked ImportNetworkModal once the sidebar has loaded.
+// Waits for the sidebar to mount (which is what captures onImport via the ImportNetworkModal mock), then fires an
+// import through that callback.
 const importThroughModal = async (networkName: string, content: string) => {
     await screen.findByText("Agent Networks")
     await act(async () => {

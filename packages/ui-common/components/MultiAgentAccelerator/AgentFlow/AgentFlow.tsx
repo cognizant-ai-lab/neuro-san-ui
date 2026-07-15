@@ -614,7 +614,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     )
 
     const handleDockApply = useCallback(async () => {
-        // Applying a dock edit needs a non-empty prompt plus an active connection and a signed-in user.
         const readyToApplyEdit = Boolean(dockPrompt.trim() && neuroSanURL && currentUser)
         if (!readyToApplyEdit) return
 
