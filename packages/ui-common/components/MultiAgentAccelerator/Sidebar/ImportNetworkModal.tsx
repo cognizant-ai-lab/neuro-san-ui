@@ -831,8 +831,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         </Typography>
                         <Typography
                             sx={{
-                                // Monospace suits the raw snake_case identifier, but not a beautified name.
-                                fontFamily: "isFrontman" in stat && useNativeNames ? "monospace" : undefined,
+                                fontFamily: "isFrontman" in stat ? "monospace" : undefined,
                                 fontSize: "isFrontman" in stat ? 15 : 18,
                                 lineHeight: 1.4,
                                 marginTop: 0.5,
