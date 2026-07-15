@@ -50,7 +50,7 @@ To open the importer, click the upload icon in the **Agent Networks** sidebar he
 ### 2. Review
 
 - The file is parsed and validated automatically.
-- On success, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Front man** (the network's entry-point agent).
+- On success, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
 - If the file is empty, not valid JSON, the wrong type, or too large, an error message explains the problem so you can pick a different file.
 
 ### 3. Confirm

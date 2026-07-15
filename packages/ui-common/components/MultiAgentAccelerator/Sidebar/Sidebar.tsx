@@ -364,7 +364,9 @@ export const Sidebar: FC<SidebarProps> = ({
                 >
                     <AddBoxRounded
                         id="add-network-icon"
-                        sx={{color: isAwaitingLlm || isImporting ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                        sx={(theme) => ({
+                            color: isAwaitingLlm || isImporting ? theme.palette.action.disabled : "var(--bs-secondary)",
+                        })}
                     />
                 </Tooltip>
             </Button>
@@ -381,7 +383,9 @@ export const Sidebar: FC<SidebarProps> = ({
                 >
                     <FileUploadOutlinedIcon
                         id="import-network-icon"
-                        sx={{color: isAwaitingLlm || isImporting ? "rgba(0, 0, 0, 0.12)" : "var(--bs-secondary)"}}
+                        sx={(theme) => ({
+                            color: isAwaitingLlm || isImporting ? theme.palette.action.disabled : "var(--bs-secondary)",
+                        })}
                     />
                 </Tooltip>
             </Button>

@@ -48,7 +48,17 @@ import {
     useReactFlow,
     useStore,
 } from "@xyflow/react"
-import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {
+    Dispatch,
+    FC,
+    KeyboardEventHandler,
+    SetStateAction,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react"
 
 import {AgentConversation} from "../AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
@@ -510,15 +520,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         })
     }, [showDockBanner])
 
-    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
-        (_event, node) => {
+    const openNodeEditor = useCallback(
+        (node: RFNode<AgentNodeProps>) => {
             // Popup is only available for temporary networks.
             if (!isTemporaryNetwork) return
 
             // Only llm_agent nodes support instructions/description editing.
             if (!isEditableAgent(node.data.displayAs)) return
 
-            // Find the clicked agent's existing instructions and description from the temp network definition.
+            // Find the agent's existing instructions and description from the temp network definition.
             const currentTempNetwork = networkId
                 ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
                 : undefined
@@ -533,6 +543,27 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             setIsPopupOpen(true)
         },
         [tempNetworks, isTemporaryNetwork, networkId]
+    )
+
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
+        (_event, node) => openNodeEditor(node),
+        [openNodeEditor]
+    )
+
+    // ReactFlow makes nodes focusable and selects them on Enter, but it never fires onNodeClick from the keyboard.
+    // Route Enter on a focused node to the editor so keyboard users can open a node the same way a click does.
+    const handleNodeKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>(
+        (event) => {
+            if (event.key !== "Enter") return
+
+            const target = event.target
+            if (!(target instanceof HTMLElement)) return
+
+            const nodeId = target.closest<HTMLElement>(".react-flow__node")?.dataset["id"]
+            const node = nodeId ? nodes.find((n) => n.id === nodeId) : undefined
+            if (node) openNodeEditor(node)
+        },
+        [nodes, openNodeEditor]
     )
 
     const handlePopupClose = useCallback(() => {
@@ -1110,6 +1141,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     nodeTypes={nodeTypes}
                     nodes={nodes}
                     nodesDraggable={!isAgentNetworkDesignerMode}
+                    onKeyDown={handleNodeKeyDown}
                     onNodeClick={handleNodeClick}
                     onNodesChange={onNodesChange}
                 >
@@ -1213,6 +1245,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         }}
                     >
                         <TextField
+                            autoFocus
                             fullWidth
                             placeholder={DOCK_PROMPT_PLACEHOLDER}
                             variant="outlined"

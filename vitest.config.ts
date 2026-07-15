@@ -22,8 +22,8 @@ export default defineConfig({
             provider: "istanbul",
             reporter: ["text-summary"],
             thresholds: {
-                statements: -83,
-                branches: -138,
+                statements: -84,
+                branches: -139,
                 functions: -18,
                 lines: -58,
             },

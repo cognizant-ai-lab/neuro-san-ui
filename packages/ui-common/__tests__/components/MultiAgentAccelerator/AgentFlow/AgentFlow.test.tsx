@@ -216,6 +216,9 @@ describe("AgentFlow", () => {
      */
     const clickFlowNode = (node: Element | null) => fireEvent.click(node)
 
+    // Presses a key on a React Flow node. Uses fireEvent for the same jsdom/xyflow reason as clickFlowNode above.
+    const pressKeyOnFlowNode = (element: Element | null, key: string) => fireEvent.keyDown(element, {key})
+
     const verifyAgentNodes = (container: HTMLElement) => {
         const nodes = container.getElementsByClassName("react-flow__node")
         expect(nodes).toHaveLength(3)
@@ -1770,6 +1773,54 @@ describe("AgentFlow", () => {
 
             clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
             expect(await screen.findByRole("button", {name: SAVE_BUTTON})).toBeInTheDocument()
+        })
+
+        // ReactFlow selects a focused node on Enter but never fires onNodeClick from the keyboard, so AgentFlow
+        // routes Enter on a focused node to the editor. Only Enter, and only when the key target is a node, opens it.
+        const AGENT_1_NODE = `[data-id="${AGENT_1}"]`
+        const FLOW_WRAPPER = '[data-testid="rf__wrapper"]'
+        it.each([
+            {
+                desc: "open the popup when Enter is pressed on an llm_agent node",
+                target: AGENT_1_NODE,
+                key: "Enter",
+                opens: true,
+            },
+            {
+                desc: "not open the popup when a non-Enter key is pressed on a node",
+                target: AGENT_1_NODE,
+                key: "a",
+                opens: false,
+            },
+            {
+                desc: "not open the popup when Enter is pressed off any node",
+                target: FLOW_WRAPPER,
+                key: "Enter",
+                opens: false,
+            },
+        ])("Should $desc", async ({target, key, opens}) => {
+            const networkKey = "temporary/test-keyboard-open"
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([
+                        makeTempNetwork(networkKey, [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}]),
+                    ])
+            })
+
+            const {container} = renderAgentFlowComponent({
+                isSelectedNetworkTemporary: true,
+                networkId: networkKey,
+                agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
+            })
+
+            pressKeyOnFlowNode(container.querySelector(target), key)
+
+            if (opens) {
+                expect(await screen.findByRole("button", {name: SAVE_BUTTON})).toBeInTheDocument()
+            } else {
+                expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
+            }
         })
     })
 

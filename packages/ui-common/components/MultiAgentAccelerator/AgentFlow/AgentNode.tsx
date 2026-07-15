@@ -238,6 +238,9 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         >
             <IconButton
                 className="agent-node-edit-icon"
+                // Decorative icons only. The agent node is the click/Enter target.
+                aria-hidden={true}
+                tabIndex={-1}
                 sx={{
                     position: "absolute",
                     top: 0,
@@ -307,9 +310,10 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 height,
                 width,
                 zIndex: getZIndex(1, theme),
-                // Show the edit icon when the node is hovered.
+                // Reveal the edit icon on hover, or when a keyboard user tabs to the node.
                 "& .agent-node-edit-icon": {opacity: 0, transition: "opacity 0.15s ease-in-out"},
                 "&:hover .agent-node-edit-icon": {opacity: 1},
+                ".react-flow__node:focus-visible & .agent-node-edit-icon": {opacity: 1},
             }}
         >
             {getDisplayAsIcon()}
