@@ -670,9 +670,9 @@ describe("summarizeNetworkDefinition", () => {
             expected: {agents: 2, codedTools: 2, externalAgents: 1, frontman: "lead"},
         },
         {
-            name: "report zero counts and a dash frontman for an empty definition",
+            name: "report zero counts and an empty frontman for an empty definition",
             networkDef: [],
-            expected: {agents: 0, codedTools: 0, externalAgents: 0, frontman: "—"},
+            expected: {agents: 0, codedTools: 0, externalAgents: 0, frontman: ""},
         },
         {
             name: "fall back to the first entry as frontman when the network is fully cyclic",

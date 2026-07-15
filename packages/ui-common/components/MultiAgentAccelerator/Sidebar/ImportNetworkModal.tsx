@@ -48,9 +48,6 @@ const IMPORT_MODAL_ACCEPTED_EXTENSIONS = [".json"]
 const ACCEPTED_MIME_TYPES = IMPORT_MODAL_ACCEPTED_EXTENSIONS.join(", ")
 const STEPS = ["Select file", "Review", "Confirm"]
 
-// Placeholder shown for the frontman when a network has none. Kept out of name beautification.
-const NO_FRONTMAN_LABEL = "—"
-
 /** Trailing UUID on a filename stem. Separator is `[_-]` because filename sanitization
  * (`toSafeFilename`, neuro-san exports) flattens the UUID's hyphens to underscores.
  */
@@ -154,7 +151,7 @@ export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEnt
         agents,
         codedTools,
         externalAgents,
-        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? NO_FRONTMAN_LABEL,
+        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "",
     }
 }
 
@@ -788,12 +785,6 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
 
     const renderReviewSummary = () => {
         if (!networkSummary) return null
-        // Beautify the frontman like every other agent name in the app (respecting the appearance
-        // preference), but leave the "no frontman" placeholder untouched — it isn't a name.
-        const frontmanDisplay =
-            networkSummary.frontman === NO_FRONTMAN_LABEL
-                ? NO_FRONTMAN_LABEL
-                : toDisplayName(networkSummary.frontman, useNativeNames)
         return (
             <Box
                 id="import-network-modal-summary"
@@ -812,7 +803,11 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         {label: "Agents", value: networkSummary.agents},
                         {label: "Coded tools", value: networkSummary.codedTools},
                         {label: "External agents", value: networkSummary.externalAgents},
-                        {label: "Frontman", value: frontmanDisplay, isFrontman: true},
+                        {
+                            label: "Frontman",
+                            value: toDisplayName(networkSummary.frontman, useNativeNames),
+                            isFrontman: true,
+                        },
                     ] as const
                 ).map((stat, index) => (
                     <Box
