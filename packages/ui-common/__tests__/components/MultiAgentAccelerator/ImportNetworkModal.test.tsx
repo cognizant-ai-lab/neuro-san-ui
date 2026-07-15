@@ -146,27 +146,29 @@ describe("ImportNetworkModal", () => {
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    it.each([{key: "Enter"}, {key: " "}])(
-        "should trigger file input click when the drop zone receives a $key keydown",
-        ({key}) => {
-            renderModal()
-            const fileInput = getFileInput()
-            const clickSpy = vi.spyOn(fileInput, "click")
-
-            fireEvent.keyDown(getDropZone(), {key})
-
-            // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make
-            // sense.
-            expect(clickSpy).toHaveBeenCalledTimes(1)
-        }
-    )
-
-    it("should not trigger file input click on an unrelated key", () => {
+    it.each([
+        {key: "Enter", input: "{Enter}"},
+        {key: "Space", input: "[Space]"},
+    ])("should trigger file input click when the drop zone receives a $key keydown", async ({input}) => {
         renderModal()
         const fileInput = getFileInput()
         const clickSpy = vi.spyOn(fileInput, "click")
 
-        fireEvent.keyDown(getDropZone(), {key: "a"})
+        getDropZone().focus()
+        await user.keyboard(input)
+
+        // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make
+        // sense.
+        expect(clickSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it("should not trigger file input click on an unrelated key", async () => {
+        renderModal()
+        const fileInput = getFileInput()
+        const clickSpy = vi.spyOn(fileInput, "click")
+
+        getDropZone().focus()
+        await user.keyboard("a")
 
         expect(clickSpy).not.toHaveBeenCalled()
     })
@@ -388,7 +390,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Ecommerce Support")
+        await user.paste("Ecommerce Support")
         expect(screen.getByText(/That name is taken\. Choose a new name to keep both networks\./u)).toBeInTheDocument()
         expect(screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})).toBeDisabled()
     })
@@ -411,7 +413,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Something Else")
+        await user.paste("Something Else")
         await user.click(screen.getByRole("button", {name: REPLACE_EXISTING_TOGGLE}))
         await user.click(screen.getByRole("button", {name: REPLACE_NETWORK_BUTTON}))
         expect(onImportMock).toHaveBeenCalledWith("Ecommerce_Support", expect.stringContaining('"agents"'))
@@ -439,7 +441,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Ecommerce Support Revamp")
+        await user.paste("Ecommerce Support Revamp")
         // Re-clicking the active toggle deselects it (exclusive group), which is a no-op here.
         await user.click(screen.getByRole("button", {name: KEEP_BOTH_TOGGLE}))
         expect(screen.getByRole<HTMLInputElement>("textbox")).toHaveValue("Ecommerce Support Revamp")
@@ -453,7 +455,7 @@ describe("ImportNetworkModal", () => {
         expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeEnabled()
 
         await user.clear(nameInput)
-        await user.type(nameInput, "Taken Network")
+        await user.paste("Taken Network")
         expect(screen.getByText(/That name is taken\. Pick another to continue\./u)).toBeInTheDocument()
         expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeDisabled()
     })
@@ -478,7 +480,7 @@ describe("ImportNetworkModal", () => {
         expect(nameInput).toHaveValue("Ecommerce Support")
 
         await user.clear(nameInput)
-        await user.type(nameInput, "Renamed Network")
+        await user.paste("Renamed Network")
         expect(nameInput).toHaveValue("Renamed Network")
     })
 
@@ -487,7 +489,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("my_network.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Custom Name")
+        await user.paste("Custom Name")
         await user.click(await screen.findByRole("button", {name: IMPORT_BUTTON}))
         expect(onImportMock).toHaveBeenCalledWith("Custom_Name", expect.stringContaining('"agents"'))
     })

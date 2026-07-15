@@ -51,7 +51,7 @@ describe("SettingsDialog", () => {
     const enterCustomerName = async (customerName: string, shouldClickApply: boolean = true) => {
         const customerInput = screen.getByPlaceholderText(/Company or organization name/u)
         await user.clear(customerInput)
-        await user.type(customerInput, customerName)
+        await user.paste(customerName)
 
         if (shouldClickApply) {
             // Click "Apply" if requested
@@ -135,7 +135,8 @@ describe("SettingsDialog", () => {
             global.fetch = mockFetch({}, false)
 
             // Click "Test" button to (pretend) "test" the URL
-            await user.type(inputBox, testUrl)
+            await user.click(inputBox)
+            await user.paste(testUrl)
             const testButton = within(urlInput).getByRole("button", {name: /Test/u})
             expect(testButton).toBeEnabled()
             await user.click(testButton)
@@ -290,7 +291,8 @@ describe("SettingsDialog", () => {
             const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
             const testApiKey = TEST_API_KEY
 
-            await user.type(inputBox, testApiKey)
+            await user.click(inputBox)
+            await user.paste(testApiKey)
 
             // Click "Test" button to (pretend) "test" the key
             const testButton = within(apiKeyInput).getByRole("button", {name: "Test"})
@@ -320,7 +322,8 @@ describe("SettingsDialog", () => {
 
             const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
 
-            await user.type(inputBox, TEST_API_KEY)
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
 
             // Make sure we can clear the input
             const clearButton = within(apiKeyInput).getByLabelText("Clear input")
@@ -328,7 +331,8 @@ describe("SettingsDialog", () => {
             expect(inputBox).toHaveValue("")
 
             // Type the key again for testing
-            await user.type(inputBox, TEST_API_KEY)
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
 
             // Click "Test" button to (pretend) "test" the key
             const testButton = within(apiKeyInput).getByRole("button", {name: "Test"})

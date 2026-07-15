@@ -86,7 +86,7 @@ describe("AgentNodePopup", () => {
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
-        await user.type(instructionsField, "New instructions")
+        await user.paste("New instructions")
 
         expect(instructionsField).toHaveValue("New instructions")
     })
@@ -97,7 +97,7 @@ describe("AgentNodePopup", () => {
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
-        await user.type(instructionsField, "Updated instructions text")
+        await user.paste("Updated instructions text")
 
         await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
@@ -110,7 +110,7 @@ describe("AgentNodePopup", () => {
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
-        await user.type(instructionsField, "Temporary edit")
+        await user.paste("Temporary edit")
 
         // Clicking Cancel when dirty shows the ConfirmationModal; "Discard changes" confirms close
         await user.click(screen.getByRole("button", {name: CANCEL_BUTTON}))
@@ -158,7 +158,7 @@ describe("AgentNodePopup", () => {
         // Edit the instructions
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
-        await user.type(instructionsField, "Temporary")
+        await user.paste("Temporary")
         // Blur field explicitly so MUI FormControl settles before rerender
         await user.tab()
 
@@ -210,7 +210,7 @@ describe("AgentNodePopup", () => {
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
-        await user.type(instructionsField, "My edited instructions")
+        await user.paste("My edited instructions")
 
         // Close the dialog (isOpen → false). With the fix, instructionsText must NOT be reset to
         // initialInstructions during the close animation. The underlying DOM node may still exist
@@ -270,16 +270,30 @@ describe("AgentNodePopup", () => {
         })
     })
 
-    it("updates description text when the description field is changed", () => {
+    it("updates description text when the description field is changed", async () => {
+        const user = userEvent.setup()
         const {onSave} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
 
         const descField = screen.getByRole("textbox", {name: DESCRIPTION_FIELD})
-        fireEvent.change(descField, {target: {value: "New description"}})
-        fireEvent.keyDown(descField, {key: "a"})
+        // type (not paste): real keystrokes here are the only coverage of the description field's
+        // onKeyDown guard (it stopPropagation()s non-Escape keys so they don't reach the editor's
+        // Escape-to-exit handler). paste fires no keydown, so it would leave that branch uncovered.
+        await user.type(descField, "New description")
 
-        fireEvent.click(screen.getByRole("button", {name: SAVE_BUTTON}))
+        await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
         expect(onSave).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
+    })
+
+    it("closes the dialog when Escape is pressed from the description field", async () => {
+        const user = userEvent.setup()
+        const {onClose} = renderPopup()
+
+        // The field's onKeyDown swallows other keys but lets Escape through, so it reaches the dialog.
+        await user.click(screen.getByRole("textbox", {name: DESCRIPTION_FIELD}))
+        await user.keyboard("{Escape}")
+
+        expect(onClose).toHaveBeenCalled()
     })
 
     describe("isSaving prop", () => {
@@ -297,13 +311,14 @@ describe("AgentNodePopup", () => {
             expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
-        it("shows 'Save' label and enables buttons when isSaving is false", () => {
+        it("shows 'Save' label and enables buttons when isSaving is false", async () => {
+            const user = userEvent.setup()
             renderPopup({isSaving: false})
 
             // Save is also gated on isDirty; make the form dirty so it is not disabled by !isDirty
-            fireEvent.change(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD}), {
-                target: {value: "Changed"},
-            })
+            const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
+            await user.clear(instructionsField)
+            await user.paste("Changed")
 
             expect(screen.getByRole("button", {name: SAVE_BUTTON})).toBeEnabled()
             expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeEnabled()
@@ -312,7 +327,8 @@ describe("AgentNodePopup", () => {
         it("does not call onSave when the Save button is disabled (isSaving true)", () => {
             const {onSave} = renderPopup({isSaving: true})
 
-            // The button is disabled so clicking it should not trigger onSave
+            // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
+            // refuses to click it. We force the click to prove the handler stays inert even so.
             const saveBtn = screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})
             fireEvent.click(saveBtn)
 
@@ -322,6 +338,8 @@ describe("AgentNodePopup", () => {
         it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {
             const {onClose} = renderPopup({isSaving: true})
 
+            // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
+            // refuses to click it. We force the click to prove the handler stays inert even so.
             const cancelBtn = screen.getByRole("button", {name: CANCEL_BUTTON})
             fireEvent.click(cancelBtn)
 
@@ -342,21 +360,23 @@ describe("AgentNodePopup", () => {
             textareas.forEach((ta) => expect(ta).toBeDisabled())
         })
 
-        it("does not call onClose when backdrop is clicked while isSaving is true", () => {
+        it("does not call onClose when backdrop is clicked while isSaving is true", async () => {
+            const user = userEvent.setup()
             const {onClose} = renderPopup({isSaving: true})
 
             // Clicking outside is blocked while saving to prevent accidental dismissal.
             const backdrop = document.querySelector(".MuiBackdrop-root")
-            if (backdrop) fireEvent.click(backdrop)
+            if (backdrop) await user.click(backdrop)
 
             expect(onClose).not.toHaveBeenCalled()
         })
 
-        it("calls onClose when backdrop is clicked while isSaving is false", () => {
+        it("calls onClose when backdrop is clicked while isSaving is false", async () => {
+            const user = userEvent.setup()
             const {onClose} = renderPopup({isSaving: false})
 
             const backdrop = document.querySelector(".MuiBackdrop-root")
-            if (backdrop) fireEvent.click(backdrop)
+            if (backdrop) await user.click(backdrop)
 
             expect(onClose).toHaveBeenCalledTimes(1)
         })

@@ -16,7 +16,7 @@ limitations under the License.
 
 import {AIMessage} from "@langchain/core/messages"
 import {createTheme} from "@mui/material/styles"
-import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
 
@@ -370,7 +370,7 @@ describe("ChatCommon", () => {
             await user.paste(strToCheck)
 
             // Press enter
-            fireEvent.keyDown(userInput, {key: "Enter"})
+            await user.keyboard("{Enter}")
 
             // Check that enter has triggered the Send
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledTimes(1))
@@ -401,7 +401,7 @@ describe("ChatCommon", () => {
             await user.paste(strToCheckLine2)
 
             // Press enter
-            fireEvent.keyDown(userInput, {key: "Enter"})
+            await user.keyboard("{Enter}")
 
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledTimes(1))
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledWith(fullStrToCheck))
@@ -673,7 +673,7 @@ describe("ChatCommon", () => {
             const clearBtn = document.getElementById("clear-input-button")
             expect(clearBtn).toBeTruthy()
             if (clearBtn) {
-                fireEvent.click(clearBtn)
+                await user.click(clearBtn)
             }
             expect(input).toHaveValue("")
         })
