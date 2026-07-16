@@ -173,7 +173,7 @@ export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNet
  * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
  * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
  */
-const collectNetworksFromChunk = (
+const collectNetworkFromChunk = (
     chunk: string,
     updated: AgentNetworkDefinitionEntry[],
     accumulated: TemporaryNetwork[]
@@ -204,9 +204,9 @@ export const notifySaveError = (agentName: string, e: unknown): void => {
 }
 
 /**
- * Streams a network definition through the network designer, collecting the
- * reservations returned across every chunk. Returns the accumulated networks
- * (empty if the designer returned no reservation).
+ * Streams a network definition through the network designer to obtain its reservation.
+ * Returns the single updated network as a one-element list (empty if the designer returned
+ * no reservation).
  */
 export const streamNetworkDesignerUpsert = async (
     neuroSanURL: string,
@@ -216,12 +216,11 @@ export const streamNetworkDesignerUpsert = async (
     agentNetworkName: string | undefined,
     username: string
 ): Promise<TemporaryNetwork[]> => {
-    // Accumulator reassigned by the per-chunk callback below as the stream arrives.
     let newNetworks: TemporaryNetwork[] = []
     await sendNetworkDesignerRequest(neuroSanURL, signal, frontman, networkDef, agentNetworkName, username, (chunk) => {
-        // Fold each streamed chunk into the running set of networks. In practice the designer returns a
-        // single network, but we accumulate into an array to stay robust if it ever returns more.
-        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
+        // There is only one network. The designer echoes it across streamed chunks. Merge by name so the
+        // repeated echoes collapse into that single entry rather than appending duplicates.
+        newNetworks = collectNetworkFromChunk(chunk, networkDef, newNetworks)
     })
     return newNetworks
 }

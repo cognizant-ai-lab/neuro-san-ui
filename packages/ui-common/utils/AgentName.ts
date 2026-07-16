@@ -16,7 +16,7 @@ limitations under the License.
 
 /**
  * One-stop shop for turning a raw agent-network name (or reservation_id) into the beautified name
- * shown in the UI: {@link removeTrailingUuid}, {@link cleanUpAgentName} and {@link toDisplayName}.
+ * shown in the UI.
  */
 
 import startCase from "lodash-es/startCase"

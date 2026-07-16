@@ -2021,7 +2021,7 @@ describe("AgentFlow", () => {
 
             // Open the node popup so Escape should close it first, not exit edit mode.
             clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
-            await screen.findByRole("textbox", {name: /^instructions$/iu})
+            await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
 
             await user.keyboard("{Escape}")
 

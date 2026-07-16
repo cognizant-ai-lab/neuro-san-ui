@@ -65,6 +65,6 @@ To open the importer, click the upload icon in the **Agent Networks** sidebar he
 
 1. Currently, there is no chat history, and agents do not retain memory. This is a planned feature for a future release.
 1. Beyond importing a network definition, the system is largely read-only—you cannot edit agents, prompts, or the structure of an existing network.
-1. In addition to the built-in demo agents, you can import your own network definitions (see [Importing a Network Definition](#importing-a-network-definition)). Imported networks are stored locally in your browser rather than on the server.
+1. Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
 1. The agent communication animation may not always be perfectly accurate. As the back-end features are enhanced, communication will be more precise. For now, some approximation is necessary.
 1. Regarding layout, resizing, and UI refinements—we’re aware of the current limitations. We're actively exploring ways to allow resizing, collapsing, and expanding elements.

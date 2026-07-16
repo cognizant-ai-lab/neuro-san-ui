@@ -76,8 +76,8 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
                 return incomingNetworks
             },
             updateTempNetworkDefinition: (networkName: string, agentNetworkDefinition: AgentNetworkDefinitionEntry[]) =>
-                set((state) => ({
-                    tempNetworks: state.tempNetworks.map((network) =>
+                set(({tempNetworks}) => ({
+                    tempNetworks: tempNetworks.map((network) =>
                         network.agentInfo.agent_name === networkName ? {...network, agentNetworkDefinition} : network
                     ),
                 })),
