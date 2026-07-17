@@ -1156,7 +1156,7 @@ describe("MultiAgentAccelerator", () => {
 
             // Not expired yet so we should see the network
             const temporaryNetworkNode = document.querySelector(
-                `[data-itemid="${expectedNetworkName}"]`
+                `[data-itemid="${CSS.escape(expectedNetworkName)}"]`
             ) satisfies HTMLElement
 
             expect(temporaryNetworkNode).not.toBeNull()
@@ -1216,7 +1216,7 @@ describe("MultiAgentAccelerator", () => {
 
             // Requery for stability
             const expiredTemporaryNetworkNode = document.querySelector(
-                `[data-itemid="${expectedNetworkName}"]`
+                `[data-itemid="${CSS.escape(expectedNetworkName)}"]`
             ) satisfies HTMLElement
 
             expect(expiredTemporaryNetworkNode).not.toBeNull()

@@ -40,12 +40,17 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
+    DOWNLOAD_NETWORK_DEFINITION_LABEL,
+    EDIT_NETWORK_LABEL,
+} from "../../../../components/MultiAgentAccelerator/Sidebar/AgentNetworkTreeItem"
+import {
     Sidebar,
     SidebarProps,
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
+import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
@@ -355,7 +360,7 @@ describe("SideBar", () => {
                     description: "",
                     // Intentionally omit `tags` to exercise the `agentNode?.tags || []` fallback
                 },
-            ],
+            ] satisfies AgentInfo[],
         })
 
         // Expand the folder
@@ -433,7 +438,7 @@ describe("SideBar", () => {
         await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
 
         // Should be an icon to download the network
-        const downloadButton = screen.getByTestId("DownloadIcon")
+        const downloadButton = screen.getByRole("button", {name: DOWNLOAD_NETWORK_DEFINITION_LABEL})
         await user.click(downloadButton)
 
         expect(downloadFile).toHaveBeenCalledWith(
@@ -469,15 +474,9 @@ describe("SideBar", () => {
         // The download and edit action buttons should be disabled while the network is expired
         const treeItem = tempNetworkName.closest('[role="treeitem"]')
         expect(
-            within(treeItem as HTMLElement)
-                .getByTestId("DownloadIcon")
-                .closest("button")
+            within(treeItem as HTMLElement).getByRole("button", {name: DOWNLOAD_NETWORK_DEFINITION_LABEL})
         ).toBeDisabled()
-        expect(
-            within(treeItem as HTMLElement)
-                .getByTestId("EditIcon")
-                .closest("button")
-        ).toBeDisabled()
+        expect(within(treeItem as HTMLElement).getByRole("button", {name: EDIT_NETWORK_LABEL})).toBeDisabled()
 
         setSelectedNetworkMock.mockClear()
 
@@ -521,7 +520,7 @@ describe("SideBar", () => {
         // Click the edit icon – the network is NOT currently selected
         const networkTreeItem = screen.getByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
         const treeItem = networkTreeItem.closest('[role="treeitem"]')
-        const editButton = within(treeItem as HTMLElement).getByTestId("EditIcon")
+        const editButton = within(treeItem as HTMLElement).getByRole("button", {name: EDIT_NETWORK_LABEL})
         await user.click(editButton)
 
         // Should have selected the network because it was not already selected
@@ -548,7 +547,7 @@ describe("SideBar", () => {
         // Now click the edit icon – the network IS already selected
         const networkTreeItem = screen.getByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
         const treeItem = networkTreeItem.closest('[role="treeitem"]')
-        const editButton = within(treeItem as HTMLElement).getByTestId("EditIcon")
+        const editButton = within(treeItem as HTMLElement).getByRole("button", {name: EDIT_NETWORK_LABEL})
         await user.click(editButton)
 
         // Should NOT have called setSelectedNetwork again (network was already selected)

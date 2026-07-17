@@ -24,6 +24,13 @@ import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
 import {downloadFile} from "../../../utils/File"
+
+//#region Constants
+
+// Accessible names shared between each action's tooltip title and its aria-label.
+export const EDIT_NETWORK_LABEL = "Edit this network"
+export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
+
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -37,12 +44,6 @@ const TAG_COLORS = [
     "--bs-yellow",
 ] as const
 
-// Define a type for the TAG_COLORS array
-type TagColor = (typeof TAG_COLORS)[number]
-
-// Keep track of which tags have which colors so that the same tag always has the same color
-const tagsToColors = new Map<string, TagColor>()
-
 // Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
 // color and only dims via opacity.
 const ActionIconButton = styled(IconButton)({
@@ -54,10 +55,20 @@ const ActionIconButton = styled(IconButton)({
     },
 })
 
+//#endregion Constants
+
+//#region Types and Interfaces
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
 }
+// Define a type for the TAG_COLORS array
+type TagColor = (typeof TAG_COLORS)[number]
+
+//#endregion Types and Interfaces
+
+// Keep track of which tags have which colors so that the same tag always has the same color
+const tagsToColors = new Map<string, TagColor>()
 
 /**
  * Helper function to determine if a temporary network is expired based on its expiration date
@@ -195,7 +206,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
                                 {networkDefinition && (
-                                    <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
+                                    <Tooltip title={isExpired ? "Expired" : DOWNLOAD_NETWORK_DEFINITION_LABEL}>
                                         <span>
                                             <ActionIconButton
                                                 onClick={(e) => {
@@ -208,7 +219,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                     )
                                                 }}
                                                 disabled={isExpired}
-                                                aria-label="Download network definition"
+                                                aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}
                                                 size="small"
                                             >
                                                 <DownloadIcon sx={{fontSize: "0.75rem"}} />
@@ -216,7 +227,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         </span>
                                     </Tooltip>
                                 )}
-                                <Tooltip title="Edit this network">
+                                <Tooltip title={EDIT_NETWORK_LABEL}>
                                     <span>
                                         <ActionIconButton
                                             onClick={(e) => {
@@ -224,6 +235,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 onEditNetwork?.(itemId)
                                             }}
                                             disabled={isExpired}
+                                            aria-label={EDIT_NETWORK_LABEL}
                                             size="small"
                                         >
                                             <Edit sx={{fontSize: "0.75rem"}} />

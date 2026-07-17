@@ -1,10 +1,10 @@
-# Cognizant Multi-Agent Accelerator user guide
+# Cognizant Multi-Agent Accelerator (MAUI) User Guide
 
 ## Table of Contents
 
-# Multi-Agent Accelerator
+# Multi-Agent Accelerator (MAUI)
 
-The Multi-Agent Accelerator is designed to help you visualize and interact with multi-agent networks while engaging in intelligent decision-making conversations.
+Multi-Agent Accelerator (MAUI) is designed to help you visualize and interact with multi-agent networks while engaging in intelligent decision-making conversations.
 
 ## How to Use the Interface
 
@@ -21,6 +21,7 @@ The interface consists of three main sections:
 - Displays a list of available agent networks.
 - Each agent network represents a group of AI agents working together to analyze and solve problems.
 - Enables you to select a network to view its structure and interactions.
+- Use the plus icon in the sidebar header to **create** your own agent network with the **Agent Network Designer**.
 - Use the upload icon in the sidebar header to **import** your own network definition (see [Importing a Network Definition](#importing-a-network-definition)).
 
 ### 2. Multi-Agent Network Graph
@@ -37,34 +38,27 @@ The interface consists of three main sections:
 
 ## Importing a Network Definition
 
-You can bring your own agent network into the accelerator by importing a network definition file.
+You can import your own agent network into MAUI by importing a network definition file.
 
 To open the importer, click the upload icon in the **Agent Networks** sidebar header. This launches a guided three-step wizard:
 
 ### 1. Select file
 
 - Drag & drop a network definition onto the drop zone, or click **browse your files** to pick one.
-- Imports accept a single `.json` file up to 5 MB.
-- The file must be a JSON file previously exported from an **Agent Network Designer**-created network. General Neuro SAN HOCON files are not currently supported.
+- The file must be a JSON file previously exported from an **Agent Network Designer**-created network.
 
 ### 2. Review
 
 - The file is parsed and validated automatically.
-- On success, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
-- If the file is empty, not valid JSON, the wrong type, or too large, an error message explains the problem so you can pick a different file.
+- Once imported, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
 
 ### 3. Confirm
 
-- The network name is pre-filled from the filename (a trailing identifier is stripped automatically) and can be edited.
-- If the name matches a network you already have, you'll be asked how to resolve the conflict:
-    - **Keep both** — the importer suggests a unique name (for example, `My Network (2)`), keeping your existing network untouched. You can type any available name; the field tells you whether a name is available or already taken.
-    - **Replace existing** — overwrites the existing network with the imported one. This is permanent and cannot be undone.
-- Click **Import network** (or **Import as new** / **Replace network**, depending on your choice) to finish. The imported network is added to the sidebar and selected automatically.
+- Confirm or edit the network name and finish the import. If the name conflicts with an existing network, the dialog offers options to resolve it.
+- The imported network is added to the sidebar and selected automatically.
 
-## Other Considerations
+## Temporary Networks
 
-1. Currently, there is no chat history, and agents do not retain memory. This is a planned feature for a future release.
-1. Beyond importing a network definition, the system is largely read-only—you cannot edit agents, prompts, or the structure of an existing network.
-1. Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
-1. The agent communication animation may not always be perfectly accurate. As the back-end features are enhanced, communication will be more precise. For now, some approximation is necessary.
-1. Regarding layout, resizing, and UI refinements—we’re aware of the current limitations. We're actively exploring ways to allow resizing, collapsing, and expanding elements.
+Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
+
+Unlike built-in networks, which are read-only, temporary networks can be edited — both at the node level (an individual agent's description and instructions) and at the network level (its overall structure).

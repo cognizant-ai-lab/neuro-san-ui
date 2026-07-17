@@ -25,16 +25,16 @@ const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
 
 // Accessible names of the dialog's fields and buttons. These are the full accessible names, so
 // getByRole's `name` string option matches them exactly — no regex needed.
-const INSTRUCTIONS_FIELD = "Instructions"
-const DESCRIPTION_FIELD = "Description"
-const SAVE_BUTTON = "Save"
 const APPLYING_CHANGES_BUTTON = "Applying changes..."
 const CANCEL_BUTTON = "Cancel"
-const DISCARD_CHANGES_BUTTON = "Discard changes"
 // MUIDialog's dismiss icon uses aria-label="close" (lowercase).
 const CLOSE_BUTTON = "close"
+const DESCRIPTION_FIELD = "Description"
+const DISCARD_CHANGES_BUTTON = "Discard changes"
+const INSTRUCTIONS_FIELD = "Instructions"
 // Instructions field placeholder — used to detect the field is absent when the dialog is closed.
 const INSTRUCTIONS_PLACEHOLDER = "Enter instructions for this agent…"
+const SAVE_BUTTON = "Save"
 
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
     const onClose = vi.fn()

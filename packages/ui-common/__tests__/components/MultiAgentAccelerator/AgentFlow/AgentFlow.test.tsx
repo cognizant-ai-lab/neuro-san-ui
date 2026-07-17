@@ -38,32 +38,39 @@ import {PALETTES} from "../../../../Theme/Palettes"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
 
 //#region Constants
-const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
 
-// Accessible names of node-popup controls, reused across the editor test blocks below.
-const SAVE_BUTTON = "Save"
-const INSTRUCTIONS_FIELD = "Instructions"
-
-const mockPlasmaEdgeTestId = "mock-plasma-edge"
-const mockThoughtBubbleEdgeTestId = "mock-thought-bubble-edge"
-const mockThoughtBubbleOverlayTestId = "mock-thought-bubble-overlay"
-
-// Agent origin ids used throughout the fixtures, selectors and mock-call assertions below.
+const ABORT_TITLE = "Abort changes?"
 const AGENT_1 = "agent1"
+const AGENT_1_NODE = `[data-id="${AGENT_1}"]`
 const AGENT_2 = "agent2"
 const AGENT_3 = "agent3"
-
-// display_as value marking an editable LLM agent node.
-const LLM_AGENT_DISPLAY = "llm_agent"
-
-// React Flow edge type for thought-bubble edges (matches the source's edge `type`).
-const THOUGHT_BUBBLE_EDGE_TYPE = "thoughtBubbleEdge"
-
-// Conversation ids reused across the thought-bubble fixtures below (one-off ids stay inline).
+const APPLIED_BANNER = "Changes applied."
+const APPLY_BUTTON = "Apply"
+// Accessible name of the Save button while a save is in-flight.
+const APPLYING_CHANGES_BUTTON = "Applying changes..."
+const APPLYING_TITLE = "Applying changes to network"
+const CANCELLED_BANNER = "Applying cancelled."
+const CLOSE_EDIT_BUTTON = "close edit mode"
 const CONV_1 = "conv-1"
 const CONV_2 = "conv-2"
 const CONV_WITH_TEXT = "conv-with-text"
-
+// MUIAlert's dismiss button has aria-label "close".
+const DISMISS_BANNER_BUTTON = "close"
+const DOCK_DEFAULT_RES = "dock-default-res"
+const DOCK_HEADER = "Network Editor"
+const DOCK_NETWORK_ID = "temporary/dock-test-net"
+const DOCK_NETWORK_NAME = "dock_network"
+const EDIT_PROMPT = "Add a node"
+const ELVES_PROMPT = "add some elves to check work"
+const FAILED_BANNER = "Failed to apply network change."
+const FLOW_WRAPPER = '[data-testid="rf__wrapper"]'
+const INSTRUCTIONS_FIELD = "Instructions"
+const KEEP_APPLYING_BUTTON = "Keep applying"
+// display_as value marking an editable LLM agent node.
+const LLM_AGENT_DISPLAY = "llm_agent"
+const MOCK_PLASMA_EDGE_TEST_ID = "mock-plasma-edge"
+const MOCK_THOUGHT_BUBBLE_EDGE_TEST_ID = "mock-thought-bubble-edge"
+const MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID = "mock-thought-bubble-overlay"
 const NETWORK = [
     {
         origin: AGENT_1,
@@ -79,6 +86,17 @@ const NETWORK = [
         tools: [],
     },
 ] satisfies ConnectivityInfo[]
+const OLD_NETWORK_ID = "temporary/old-res"
+const OLD_NETWORK_NAME = "my_network"
+const PROMPT_PLACEHOLDER = "Describe a change to the network"
+const SAVE_BUTTON = "Save"
+// These buttons render a ■ startIcon, so their accessible name isn't a clean string; match the label.
+const STOP_BUTTON = /stop/iu
+const STOP_DISCARD_BUTTON = /stop & discard/iu
+const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
+// React Flow edge type for thought-bubble edges (matches the source's edge `type`).
+const THOUGHT_BUBBLE_EDGE_TYPE = "thoughtBubbleEdge"
+const UPDATED_INSTRUCTIONS = "Updated instructions"
 
 //#endregion Constants
 
@@ -118,15 +136,15 @@ vi.mock("@mui/material/styles", async (importOriginal) => {
 const mockSendChatQuery = vi.mocked(sendChatQuery)
 
 vi.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
-    PlasmaEdge: () => <g data-testid={mockPlasmaEdgeTestId} />,
+    PlasmaEdge: () => <g data-testid={MOCK_PLASMA_EDGE_TEST_ID} />,
 }))
 
 vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge", () => ({
-    ThoughtBubbleEdge: () => <g data-testid={mockThoughtBubbleEdgeTestId} />,
+    ThoughtBubbleEdge: () => <g data-testid={MOCK_THOUGHT_BUBBLE_EDGE_TEST_ID} />,
 }))
 
 const defaultMockThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = () => (
-    <div data-testid={mockThoughtBubbleOverlayTestId} />
+    <div data-testid={MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID} />
 )
 let __MockThoughtBubbleOverlayImpl: FC<ThoughtBubbleOverlayProps> = defaultMockThoughtBubbleOverlay
 vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay", () => ({
@@ -227,7 +245,7 @@ describe("AgentFlow", () => {
 
         // Make sure each agent node is rendered at least. Each node has a data-id with its name.
         agentNames.forEach((agent) => {
-            expect(container.querySelector(`[data-id="${agent}"]`)).not.toBeNull()
+            expect(container.querySelector(`[data-id="${CSS.escape(agent)}"]`)).not.toBeNull()
         })
     }
 
@@ -569,7 +587,7 @@ describe("AgentFlow", () => {
             )
 
             // agent1 is active so should be highlighted
-            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             expect(agent1Node).toBeInTheDocument()
 
             // agent1 is active so should be highlighted
@@ -626,7 +644,7 @@ describe("AgentFlow", () => {
             const plasmaEdgeWrapper = container.querySelector('[data-id="agent2-edge-agent1"]')
             expect(plasmaEdgeWrapper).toBeVisible()
 
-            expect(screen.getByTestId(mockPlasmaEdgeTestId)).toBeVisible()
+            expect(screen.getByTestId(MOCK_PLASMA_EDGE_TEST_ID)).toBeVisible()
         })
     })
 
@@ -634,7 +652,7 @@ describe("AgentFlow", () => {
         it("Should render ThoughtBubbleOverlay component", () => {
             renderAgentFlowComponent()
 
-            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+            expect(screen.getByTestId(MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID)).toBeInTheDocument()
         })
 
         it("Should have a thought bubble toggle button", async () => {
@@ -654,14 +672,14 @@ describe("AgentFlow", () => {
             renderAgentFlowComponent()
 
             // ThoughtBubbleOverlay should be rendered (it's mocked)
-            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+            expect(screen.getByTestId(MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID)).toBeInTheDocument()
         })
 
         it("Should render ThoughtBubbleEdge in edge types", () => {
             renderAgentFlowComponent()
 
             // Component should render without errors
-            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+            expect(screen.getByTestId(MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID)).toBeInTheDocument()
         })
 
         it("Should handle conversations with text for thought bubbles", () => {
@@ -897,7 +915,7 @@ describe("AgentFlow", () => {
             })
 
             // Component should render with thought bubble overlay
-            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+            expect(screen.getByTestId(MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID)).toBeInTheDocument()
         })
 
         it("Should prevent expired bubbles from being removed when hovered", async () => {
@@ -923,7 +941,7 @@ describe("AgentFlow", () => {
                         onBubbleHoverChange("thought-bubble-hover-prevent-expire-conv")
                     }
                 }, [onBubbleHoverChange])
-                return <div data-testid={mockThoughtBubbleOverlayTestId} />
+                return <div data-testid={MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID} />
             }
 
             const previousImpl = __MockThoughtBubbleOverlayImpl
@@ -948,7 +966,7 @@ describe("AgentFlow", () => {
 
             // The bubble should not be removed because it's being hovered
             // We can verify by checking that the component still renders
-            expect(screen.getByTestId(mockThoughtBubbleOverlayTestId)).toBeInTheDocument()
+            expect(screen.getByTestId(MOCK_THOUGHT_BUBBLE_OVERLAY_TEST_ID)).toBeInTheDocument()
 
             __MockThoughtBubbleOverlayImpl = previousImpl
         })
@@ -1497,12 +1515,6 @@ describe("AgentFlow", () => {
     })
 
     describe("Node Editor", () => {
-        const OLD_NETWORK_ID = "temporary/old-res"
-        const OLD_NETWORK_NAME = "my_network"
-        const UPDATED_INSTRUCTIONS = "Updated instructions"
-        // Accessible name of the Save button while a save is in-flight.
-        const APPLYING_CHANGES_BUTTON = "Applying changes..."
-
         it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
             let resolveQuery: () => void
             const onSaveAgent = vi.fn(
@@ -1526,7 +1538,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
 
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
@@ -1573,7 +1585,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1611,7 +1623,7 @@ describe("AgentFlow", () => {
                 onSaveAgent,
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1638,7 +1650,7 @@ describe("AgentFlow", () => {
                 // onSaveAgent intentionally omitted
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
             const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
             await user.clear(instructionsField)
             await user.click(instructionsField)
@@ -1707,7 +1719,7 @@ describe("AgentFlow", () => {
                 networkId: networkKey,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             expect(agent1Node).toBeInTheDocument()
             clickFlowNode(agent1Node)
 
@@ -1724,7 +1736,7 @@ describe("AgentFlow", () => {
             // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
             const {container} = renderAgentFlowComponent({networkId: networkKey})
 
-            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Popup must not appear
@@ -1751,7 +1763,7 @@ describe("AgentFlow", () => {
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: displayAs}],
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
             expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
         })
 
@@ -1771,14 +1783,12 @@ describe("AgentFlow", () => {
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
             })
 
-            clickFlowNode(container.querySelector(`[data-id="${AGENT_1}"]`))
+            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
             expect(await screen.findByRole("button", {name: SAVE_BUTTON})).toBeInTheDocument()
         })
 
         // ReactFlow selects a focused node on Enter but never fires onNodeClick from the keyboard, so AgentFlow
         // routes Enter on a focused node to the editor. Only Enter, and only when the key target is a node, opens it.
-        const AGENT_1_NODE = `[data-id="${AGENT_1}"]`
-        const FLOW_WRAPPER = '[data-testid="rf__wrapper"]'
         it.each([
             {
                 desc: "open the popup when Enter is pressed on an llm_agent node",
@@ -1825,35 +1835,6 @@ describe("AgentFlow", () => {
     })
 
     describe("Network Editor", () => {
-        const DOCK_NETWORK_ID = "temporary/dock-test-net"
-        const DOCK_NETWORK_NAME = "dock_network"
-        const DOCK_DEFAULT_RES = "dock-default-res"
-
-        // Prompt text typed into the dock's "describe a change" field. Content is arbitrary; kept in one
-        // place so the paste and any follow-up assertion never drift apart.
-        const EDIT_PROMPT = "Add a node"
-        const ELVES_PROMPT = "add some elves to check work"
-
-        // User-visible dock copy, reused across queries below
-        const DOCK_HEADER = "Network Editor"
-        const APPLYING_TITLE = "Applying changes to network"
-        const ABORT_TITLE = "Abort changes?"
-
-        // Status-banner copy (rendered inline in the dock as a MUI Alert)
-        const APPLIED_BANNER = /changes applied/iu
-        const CANCELLED_BANNER = /applying cancelled/iu
-        const FAILED_BANNER = /failed to apply network change/iu
-
-        // Accessible-name / placeholder matchers for the dock controls
-        const PROMPT_PLACEHOLDER = /describe a change/iu
-        const APPLY_BUTTON = /apply/iu
-        const STOP_BUTTON = /stop/iu
-        const STOP_DISCARD_BUTTON = /stop & discard/iu
-        const KEEP_APPLYING_BUTTON = /keep applying/iu
-        const CLOSE_EDIT_BUTTON = /close edit mode/iu
-        // MUI Alert's dismiss button has aria-label "Close"; anchor it so it doesn't match "close edit mode".
-        const DISMISS_BANNER_BUTTON = /^close$/iu
-
         const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
             JSON.stringify({
                 response: {
@@ -2583,7 +2564,7 @@ describe("AgentFlow", () => {
                 networkId: networkA,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Edit the instructions and save
@@ -2630,7 +2611,7 @@ describe("AgentFlow", () => {
                 networkId: networkB,
             })
 
-            const agent1Node = container.querySelector(`[data-id="${AGENT_1}"]`)
+            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
             clickFlowNode(agent1Node)
 
             // Popup should show networkB's instructions, not networkA's

@@ -203,7 +203,7 @@ export type ChatCommonHandle = {
     handleClearChat: () => void
 }
 
-//#endregion
+//#endregion Types and Interfaces
 
 //#region Constants
 
@@ -233,7 +233,7 @@ const EXPORT_ROLE_LABELS: Record<MessageRole, string> = {
     [MessageRole.Error]: "Error",
 }
 
-//#endregion
+//#endregion Constants
 
 /**
  * Helper function to convert a message role to a label for exporting chat history.

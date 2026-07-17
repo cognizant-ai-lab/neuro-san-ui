@@ -540,9 +540,6 @@ export default defineConfig([
             "react/no-array-index-key": "off",
             "react/no-multi-comp": "off",
 
-            // Tests control their own selector inputs (known-safe literals), so escaping is unnecessary noise here
-            "unicorn/require-css-escape": "off",
-
             // Too noisy for now, but we should gradually enable and fix these
             "vitest/max-expects": "off",
             "vitest/no-conditional-expect": "off",
