@@ -102,12 +102,20 @@ const UPDATED_INSTRUCTIONS = "Updated instructions"
 
 //#region Types
 
+type KeyboardOpenTestCase = {
+    readonly desc: string
+    readonly target: string
+    readonly key: KeyboardEvent["key"]
+    readonly opens: boolean
+}
+
 // Provide a mutable implementation for the ThoughtBubbleOverlay mock so individual
 // tests can swap the implementation without attempting to redefine the module
 // export (which can throw "Cannot redefine property" errors).
 type ThoughtBubbleOverlayProps = {
     onBubbleHoverChange?: (id: string) => void
 }
+
 //#endregion Types
 
 //#region Mocks
@@ -301,7 +309,7 @@ describe("AgentFlow", () => {
             expect(onEnterEditMode).toHaveBeenCalledTimes(1)
         })
 
-        it("Should not show the Edit button for a non-temporary network", async () => {
+        it("Should hide the Edit button for permanent networks", async () => {
             const networkName = "Regular Net"
             renderAgentFlowComponent({
                 networkDisplayName: networkName,
@@ -1731,7 +1739,7 @@ describe("AgentFlow", () => {
             await waitFor(() => expect(screen.queryByRole("button", {name: "Cancel"})).not.toBeInTheDocument())
         })
 
-        it("Should NOT open popup when clicking an agent node on a non-temporary network", async () => {
+        it("Should NOT open popup when clicking an agent node on a permanent network", async () => {
             const networkKey = "industry/banking_ops"
             // isTemporaryNetwork defaults to undefined/false — no seeding needed since popup won't open
             const {container} = renderAgentFlowComponent({networkId: networkKey})
@@ -1789,7 +1797,7 @@ describe("AgentFlow", () => {
 
         // ReactFlow selects a focused node on Enter but never fires onNodeClick from the keyboard, so AgentFlow
         // routes Enter on a focused node to the editor. Only Enter, and only when the key target is a node, opens it.
-        it.each([
+        it.each<KeyboardOpenTestCase>([
             {
                 desc: "open the popup when Enter is pressed on an llm_agent node",
                 target: AGENT_1_NODE,

@@ -500,9 +500,6 @@ describe("ChatCommon", () => {
             // Wait for the message to appear. It appears twice -- once in chat history, once "live"
             expect(await screen.findAllByText(testMessage)).toHaveLength(2)
 
-            // Verify handleClearChat is exposed via the imperative ref
-            expect(typeof ref.current?.handleClearChat).toBe("function")
-
             // Call it and wait for all async state updates to settle
             await act(async () => {
                 ref.current?.handleClearChat()

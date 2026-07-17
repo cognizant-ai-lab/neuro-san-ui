@@ -16,14 +16,14 @@ limitations under the License.
 
 import {ConnectivityInfo} from "../../generated/neuro-san/NeuroSanClient"
 
-// We expect the agent network HOCON to be stored in sly_data under this key, if it is provided by the backend
-export const AGENT_NETWORK_HOCON = "agent_network_hocon_text"
+// The key in sly_data where the agent network definition is stored
+export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
 
 // Agent name for the special "Agent Network Designer" network
 export const AGENT_NETWORK_DESIGNER_ID = "agent_network_designer"
 
-// The key in sly_data where the agent network definition is stored
-export const AGENT_NETWORK_DEFINITION_KEY = "agent_network_definition"
+// We expect the agent network HOCON to be stored in sly_data under this key, if it is provided by the backend
+export const AGENT_NETWORK_HOCON = "agent_network_hocon_text"
 
 // The key in sly_data where the agent network name is stored
 export const AGENT_NETWORK_NAME_KEY = "agent_network_name"
@@ -57,8 +57,17 @@ export enum DisplayAs {
     EXTERNAL_AGENT = "external_agent",
 }
 
+// Check for expired networks every this many milliseconds
+export const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000
+
+// Display expired temporary networks for this amount of time after they expire so users can see what happened
+export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
+
 // Distance between depth levels
 export const LEVEL_SPACING = 150
+
+// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
+export const SHOW_TOUR_DELAY_MS = 5000
 
 // Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
 // they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
@@ -67,12 +76,3 @@ export const TEMPORARY_NETWORK_FOLDER = "temporary"
 
 // The event name that needs to be fired for the app tour to start
 export const TRIGGER_APP_TOUR_EVENT_NAME = "trigger-app-tour"
-
-// Display expired temporary networks for this amount of time after they expire so users can see what happened
-export const GRACE_PERIOD_MS = 5 * 60 * 1000 // 5 minutes
-
-// We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
-export const SHOW_TOUR_DELAY_MS = 5000
-
-// Check for expired networks every this many milliseconds
-export const EXPIRED_NETWORKS_CHECK_INTERVAL_MS = 10 * 1000

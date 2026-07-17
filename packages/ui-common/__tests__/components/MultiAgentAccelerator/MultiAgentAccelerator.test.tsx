@@ -1336,7 +1336,7 @@ describe("MultiAgentAccelerator", () => {
             agentNetworkDefinition,
         }
 
-        it("is undefined for a normal (non-temporary) network", async () => {
+        it("is undefined for a permanent network", async () => {
             renderMultiAgentAcceleratorPage()
 
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)

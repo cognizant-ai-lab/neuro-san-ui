@@ -305,10 +305,9 @@ export const layoutLinear = ({
     const parentAgents = getParentAgents(agentsInNetwork)
     const frontman = getFrontman(agentsInNetwork)
 
-    agentsInNetwork.forEach(({origin: nodeId}) => {
+    agentsInNetwork.forEach(({display_as: displayAs, origin: nodeId}) => {
         const parentIds = getParents(nodeId, parentAgents)
         const isFrontman = frontman?.origin === nodeId
-        const displayAs = agentsInNetwork.find((a) => a.origin === nodeId)?.display_as
 
         nodesInNetwork.push({
             id: nodeId,

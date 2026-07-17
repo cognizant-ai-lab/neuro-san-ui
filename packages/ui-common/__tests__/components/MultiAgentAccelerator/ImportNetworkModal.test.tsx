@@ -33,6 +33,7 @@ import {
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {useSettingsStore} from "../../../state/Settings"
+import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const onCloseMock = vi.fn()
 const onImportMock = vi.fn()
@@ -43,17 +44,18 @@ const DEFAULT_PROPS: ImportNetworkModalProps = {
 }
 
 // Names for the buttons exercised across the modal's three steps.
-const DROP_ZONE = "Drop zone for network definition file"
+const BACK_BUTTON = "Back"
 const BROWSE_LINK = "browse your files"
 const CANCEL_BUTTON = "Cancel"
 const CLOSE_BUTTON = "close"
 const CONTINUE_BUTTON = "Continue →"
-const BACK_BUTTON = "Back"
-const IMPORT_BUTTON = "Import network"
+const DROP_ZONE = "Drop zone for network definition file"
 const IMPORT_AS_NEW_BUTTON = "Import as new"
-const REPLACE_NETWORK_BUTTON = "Replace network"
+const IMPORT_BUTTON = "Import network"
 const KEEP_BOTH_TOGGLE = "Keep both"
+const ONBOARDING_LEAD = "onboarding_lead"
 const REPLACE_EXISTING_TOGGLE = "Replace existing"
+const REPLACE_NETWORK_BUTTON = "Replace network"
 
 // Helper: create a mock File and simulate FileReader loading it
 const dropFile = (dropZone: HTMLElement, filename: string, content: string, type = "application/octet-stream") => {
@@ -246,7 +248,7 @@ describe("ImportNetworkModal", () => {
     it("should show the network summary (counts + frontman) on the review step", async () => {
         renderModal()
         const definition = JSON.stringify([
-            {origin: "onboarding_lead", display_as: "llm_agent", tools: ["worker", "search"]},
+            {origin: ONBOARDING_LEAD, display_as: "llm_agent", tools: ["worker", "search"]},
             {origin: "worker", display_as: "llm_agent", tools: []},
             {origin: "search", display_as: "coded_tool", tools: []},
         ])
@@ -260,14 +262,14 @@ describe("ImportNetworkModal", () => {
         expectStat(summaryEl, "Coded tools", "1")
         expectStat(summaryEl, "External agents", "0")
         // Beautified by default, matching the "use native names" appearance preference.
-        expectStat(summaryEl, "Frontman", "Onboarding Lead")
+        expectStat(summaryEl, "Frontman", cleanUpAgentName(ONBOARDING_LEAD))
     })
 
     it("should show the raw frontman name when the native-names preference is on", async () => {
         useSettingsStore.getState().updateSettings({appearance: {useNativeNames: true}})
         renderModal()
         const definition = JSON.stringify([
-            {origin: "onboarding_lead", display_as: "llm_agent", tools: ["worker"]},
+            {origin: ONBOARDING_LEAD, display_as: "llm_agent", tools: ["worker"]},
             {origin: "worker", display_as: "llm_agent", tools: []},
         ])
         dropFileOnModal("my_network.json", definition)
@@ -275,7 +277,7 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("CheckCircleOutlinedIcon")
         const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
         if (!summaryEl) throw new Error("Network summary was not rendered")
-        expectStat(summaryEl, "Frontman", "onboarding_lead")
+        expectStat(summaryEl, "Frontman", ONBOARDING_LEAD)
     })
 
     it("should show a parse error banner when the file content is unparseable", async () => {
