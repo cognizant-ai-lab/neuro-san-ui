@@ -32,6 +32,8 @@ import {
     summarizeNetworkDefinition,
     validateImportFile,
 } from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
+import {useSettingsStore} from "../../../state/Settings"
+import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const onCloseMock = vi.fn()
 const onImportMock = vi.fn()
@@ -42,17 +44,18 @@ const DEFAULT_PROPS: ImportNetworkModalProps = {
 }
 
 // Names for the buttons exercised across the modal's three steps.
-const DROP_ZONE = "Drop zone for network definition file"
+const BACK_BUTTON = "Back"
 const BROWSE_LINK = "browse your files"
 const CANCEL_BUTTON = "Cancel"
 const CLOSE_BUTTON = "close"
 const CONTINUE_BUTTON = "Continue →"
-const BACK_BUTTON = "Back"
-const IMPORT_BUTTON = "Import network"
+const DROP_ZONE = "Drop zone for network definition file"
 const IMPORT_AS_NEW_BUTTON = "Import as new"
-const REPLACE_NETWORK_BUTTON = "Replace network"
+const IMPORT_BUTTON = "Import network"
 const KEEP_BOTH_TOGGLE = "Keep both"
+const ONBOARDING_LEAD = "onboarding_lead"
 const REPLACE_EXISTING_TOGGLE = "Replace existing"
+const REPLACE_NETWORK_BUTTON = "Replace network"
 
 // Helper: create a mock File and simulate FileReader loading it
 const dropFile = (dropZone: HTMLElement, filename: string, content: string, type = "application/octet-stream") => {
@@ -77,6 +80,10 @@ describe("ImportNetworkModal", () => {
 
     const getDropZone = () => screen.getByRole("button", {name: DROP_ZONE})
 
+    // File inputs have no ARIA role and this one is aria-hidden (the drop-zone button is the
+    // accessible control), so a test id is the only handle.
+    const getFileInput = () => screen.getByTestId<HTMLInputElement>("import-network-file-input")
+
     // Drop a file onto the modal, synchronously advancing from step 1 to the review step (step 2).
     const dropFileOnModal = (filename = "my_network.json", content = '{"agents": {}}') =>
         dropFile(getDropZone(), filename, content)
@@ -98,6 +105,7 @@ describe("ImportNetworkModal", () => {
 
     beforeEach(() => {
         user = userEvent.setup()
+        useSettingsStore.getState().resetSettings()
     })
 
     it("should not render content when isOpen is false", () => {
@@ -131,33 +139,38 @@ describe("ImportNetworkModal", () => {
         {name: "the browse link is clicked", button: BROWSE_LINK},
     ])("should trigger file input click when $name", async ({button}) => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         const clickSpy = vi.spyOn(fileInput, "click")
 
         await user.click(screen.getByRole("button", {name: button}))
 
+        // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make sense.
         expect(clickSpy).toHaveBeenCalledTimes(1)
     })
 
-    it.each([{key: "Enter"}, {key: " "}])(
-        "should trigger file input click when the drop zone receives a $key keydown",
-        ({key}) => {
-            renderModal()
-            const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
-            const clickSpy = vi.spyOn(fileInput, "click")
-
-            fireEvent.keyDown(getDropZone(), {key})
-
-            expect(clickSpy).toHaveBeenCalledTimes(1)
-        }
-    )
-
-    it("should not trigger file input click on an unrelated key", () => {
+    it.each([
+        {key: "Enter", input: "{Enter}"},
+        {key: "Space", input: "[Space]"},
+    ])("should trigger file input click when the drop zone receives a $key keydown", async ({input}) => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         const clickSpy = vi.spyOn(fileInput, "click")
 
-        fireEvent.keyDown(getDropZone(), {key: "a"})
+        getDropZone().focus()
+        await user.keyboard(input)
+
+        // The picker is opened programmatically: click() takes no arguments so toHaveBeenCalledWith doesn't make
+        // sense.
+        expect(clickSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it("should not trigger file input click on an unrelated key", async () => {
+        renderModal()
+        const fileInput = getFileInput()
+        const clickSpy = vi.spyOn(fileInput, "click")
+
+        getDropZone().focus()
+        await user.keyboard("a")
 
         expect(clickSpy).not.toHaveBeenCalled()
     })
@@ -184,13 +197,13 @@ describe("ImportNetworkModal", () => {
 
     it("should have the file input configured with correct accepted types", () => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         expect(fileInput.accept).toBe(".json")
     })
 
     it("should process a file chosen via the hidden file input", async () => {
         renderModal()
-        const fileInput = screen.getByTestId<HTMLInputElement>("import-network-file-input")
+        const fileInput = getFileInput()
         await user.upload(fileInput, new File(['{"agents": {}}'], "picked_network.json", {type: "application/json"}))
 
         // Should advance to the review step and parse successfully
@@ -200,18 +213,28 @@ describe("ImportNetworkModal", () => {
     })
 
     // Step 2: Review
-    it("should show a loading spinner after a file is dropped", async () => {
+    it("should show a loading spinner after a file is dropped, then remove it once parsing finishes", async () => {
         renderModal()
         dropFileOnModal()
+
+        // The spinner shows while the dropped file is being read...
         await screen.findByRole("progressbar")
+
+        // ...and once the async read resolves it must give way to the parsed-successfully state and
+        // not hang around forever. (loading and success are mutually exclusive render branches.)
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
     })
 
     it("should advance to step 2 after a file is dropped", () => {
         renderModal()
         const dropZone = getDropZone()
         dropFile(dropZone, "my_network.json", '{"agents": {}}')
-        // The drop synchronously advances to step 2, unmounting the drop zone.
+        // The drop synchronously advances to the Review step: the drop zone unmounts and the
+        // step's Back control appears (the Select-file step offered only Cancel).
         expect(dropZone).not.toBeInTheDocument()
+        expect(screen.getByRole("button", {name: BACK_BUTTON})).toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: CANCEL_BUTTON})).not.toBeInTheDocument()
     })
 
     it("should show success banner and a Continue button after a valid JSON file is dropped", async () => {
@@ -225,7 +248,7 @@ describe("ImportNetworkModal", () => {
     it("should show the network summary (counts + frontman) on the review step", async () => {
         renderModal()
         const definition = JSON.stringify([
-            {origin: "lead", display_as: "llm_agent", tools: ["worker", "search"]},
+            {origin: ONBOARDING_LEAD, display_as: "llm_agent", tools: ["worker", "search"]},
             {origin: "worker", display_as: "llm_agent", tools: []},
             {origin: "search", display_as: "coded_tool", tools: []},
         ])
@@ -234,11 +257,27 @@ describe("ImportNetworkModal", () => {
         await screen.findByTestId("CheckCircleOutlinedIcon")
         const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
         if (!summaryEl) throw new Error("Network summary was not rendered")
-        // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = lead
+        // 2 llm_agents, 1 coded_tool, 0 external_agents, frontman = onboarding_lead
         expectStat(summaryEl, "Agents", "2")
         expectStat(summaryEl, "Coded tools", "1")
         expectStat(summaryEl, "External agents", "0")
-        expectStat(summaryEl, "Front man", "lead")
+        // Beautified by default, matching the "use native names" appearance preference.
+        expectStat(summaryEl, "Frontman", cleanUpAgentName(ONBOARDING_LEAD))
+    })
+
+    it("should show the raw frontman name when the native-names preference is on", async () => {
+        useSettingsStore.getState().updateSettings({appearance: {useNativeNames: true}})
+        renderModal()
+        const definition = JSON.stringify([
+            {origin: ONBOARDING_LEAD, display_as: "llm_agent", tools: ["worker"]},
+            {origin: "worker", display_as: "llm_agent", tools: []},
+        ])
+        dropFileOnModal("my_network.json", definition)
+
+        await screen.findByTestId("CheckCircleOutlinedIcon")
+        const summaryEl = document.querySelector<HTMLElement>("#import-network-modal-summary")
+        if (!summaryEl) throw new Error("Network summary was not rendered")
+        expectStat(summaryEl, "Frontman", ONBOARDING_LEAD)
     })
 
     it("should show a parse error banner when the file content is unparseable", async () => {
@@ -278,7 +317,7 @@ describe("ImportNetworkModal", () => {
             name: "a size that exceeds the max",
             makeFile: () => {
                 const oversized = new File(['{"agents": {}}'], "huge.json", {type: "application/json"})
-                Object.defineProperty(oversized, "size", {value: 6 * 1024 * 1024})
+                Object.defineProperty(oversized, "size", {value: IMPORT_MODAL_MAX_FILE_SIZE_BYTES + 1})
                 return oversized
             },
             error: /File is too large/u,
@@ -353,7 +392,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Ecommerce Support")
+        await user.paste("Ecommerce Support")
         expect(screen.getByText(/That name is taken\. Choose a new name to keep both networks\./u)).toBeInTheDocument()
         expect(screen.getByRole("button", {name: IMPORT_AS_NEW_BUTTON})).toBeDisabled()
     })
@@ -376,7 +415,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Something Else")
+        await user.paste("Something Else")
         await user.click(screen.getByRole("button", {name: REPLACE_EXISTING_TOGGLE}))
         await user.click(screen.getByRole("button", {name: REPLACE_NETWORK_BUTTON}))
         expect(onImportMock).toHaveBeenCalledWith("Ecommerce_Support", expect.stringContaining('"agents"'))
@@ -404,7 +443,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("ecommerce_support.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Ecommerce Support Revamp")
+        await user.paste("Ecommerce Support Revamp")
         // Re-clicking the active toggle deselects it (exclusive group), which is a no-op here.
         await user.click(screen.getByRole("button", {name: KEEP_BOTH_TOGGLE}))
         expect(screen.getByRole<HTMLInputElement>("textbox")).toHaveValue("Ecommerce Support Revamp")
@@ -418,7 +457,7 @@ describe("ImportNetworkModal", () => {
         expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeEnabled()
 
         await user.clear(nameInput)
-        await user.type(nameInput, "Taken Network")
+        await user.paste("Taken Network")
         expect(screen.getByText(/That name is taken\. Pick another to continue\./u)).toBeInTheDocument()
         expect(screen.getByRole("button", {name: IMPORT_BUTTON})).toBeDisabled()
     })
@@ -443,7 +482,7 @@ describe("ImportNetworkModal", () => {
         expect(nameInput).toHaveValue("Ecommerce Support")
 
         await user.clear(nameInput)
-        await user.type(nameInput, "Renamed Network")
+        await user.paste("Renamed Network")
         expect(nameInput).toHaveValue("Renamed Network")
     })
 
@@ -452,7 +491,7 @@ describe("ImportNetworkModal", () => {
         await advanceToConfirmStep("my_network.json")
         const nameInput = await screen.findByRole<HTMLInputElement>("textbox")
         await user.clear(nameInput)
-        await user.type(nameInput, "Custom Name")
+        await user.paste("Custom Name")
         await user.click(await screen.findByRole("button", {name: IMPORT_BUTTON}))
         expect(onImportMock).toHaveBeenCalledWith("Custom_Name", expect.stringContaining('"agents"'))
     })
@@ -633,9 +672,9 @@ describe("summarizeNetworkDefinition", () => {
             expected: {agents: 2, codedTools: 2, externalAgents: 1, frontman: "lead"},
         },
         {
-            name: "report zero counts and a dash frontman for an empty definition",
+            name: "report zero counts and an empty frontman for an empty definition",
             networkDef: [],
-            expected: {agents: 0, codedTools: 0, externalAgents: 0, frontman: "—"},
+            expected: {agents: 0, codedTools: 0, externalAgents: 0, frontman: ""},
         },
         {
             name: "fall back to the first entry as frontman when the network is fully cyclic",

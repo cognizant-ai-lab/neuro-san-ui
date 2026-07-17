@@ -1,10 +1,10 @@
-# Cognizant Multi-Agent Accelerator user guide
+# Cognizant Multi-Agent Accelerator (MAUI) User Guide
 
 ## Table of Contents
 
-# Multi-Agent Accelerator
+# Multi-Agent Accelerator (MAUI)
 
-The Multi-Agent Accelerator is designed to help you visualize and interact with multi-agent networks while engaging in intelligent decision-making conversations.
+Multi-Agent Accelerator (MAUI) is designed to help you visualize and interact with multi-agent networks while engaging in intelligent decision-making conversations.
 
 ## How to Use the Interface
 
@@ -21,6 +21,8 @@ The interface consists of three main sections:
 - Displays a list of available agent networks.
 - Each agent network represents a group of AI agents working together to analyze and solve problems.
 - Enables you to select a network to view its structure and interactions.
+- Use the plus icon in the sidebar header to **create** your own agent network with the **Agent Network Designer**.
+- Use the upload icon in the sidebar header to **import** your own network definition (see [Importing a Network Definition](#importing-a-network-definition)).
 
 ### 2. Multi-Agent Network Graph
 
@@ -34,10 +36,29 @@ The interface consists of three main sections:
 - Queries are processed using LangChain-powered logic to fetch relevant insights.
 - Responses may be influenced by the selected agent network and its internal decision-making processes.
 
-## Other Considerations
+## Importing a Network Definition
 
-1. Currently, there is no chat history, and agents do not retain memory. This is a planned feature for a future release.
-1. The system is entirely read-only, meaning you cannot modify, edit, create, or save anything—including agents, prompts, or networks.
-1. You can only use the built-in demo agents. The ability to create and customize your own agents is planned for a future update.
-1. The agent communication animation may not always be perfectly accurate. As the back-end features are enhanced, communication will be more precise. For now, some approximation is necessary.
-1. Regarding layout, resizing, and UI refinements—we’re aware of the current limitations. We're actively exploring ways to allow resizing, collapsing, and expanding elements.
+You can import your own agent network into MAUI by importing a network definition file.
+
+To open the importer, click the upload icon in the **Agent Networks** sidebar header. This launches a guided three-step wizard:
+
+### 1. Select file
+
+- Drag & drop a network definition onto the drop zone, or click **browse your files** to pick one.
+- The file must be a JSON file previously exported from an **Agent Network Designer**-created network.
+
+### 2. Review
+
+- The file is parsed and validated automatically.
+- Once imported, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
+
+### 3. Confirm
+
+- Confirm or edit the network name and finish the import. If the name conflicts with an existing network, the dialog offers options to resolve it.
+- The imported network is added to the sidebar and selected automatically.
+
+## Temporary Networks
+
+Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
+
+Unlike permanent networks, which are read-only, temporary networks can be edited — both at the node level (an individual agent's description and instructions) and at the network level (its overall structure).

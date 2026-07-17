@@ -28,7 +28,7 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {Handle, NodeProps, Position} from "@xyflow/react"
 import type {Node as RFNode} from "@xyflow/react"
-import {FC, useState} from "react"
+import {FC} from "react"
 
 import {usePalette, useSettingsStore} from "../../../state/Settings"
 import {isLightColor} from "../../../Theme/Theme"
@@ -218,8 +218,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         ? theme.palette.common.black
         : theme.palette.common.white
 
-    const [isHovered, setIsHovered] = useState(false)
-
     // Insert zero-width spaces into the agent name to give the browser hints where to wrap.
     const wrappedAgentName = agentName
         // Allow wrap after underscore
@@ -239,6 +237,10 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
             disableInteractive
         >
             <IconButton
+                className="agent-node-edit-icon"
+                // Decorative icons only. The agent node is the click/Enter target.
+                aria-hidden={true}
+                tabIndex={-1}
                 sx={{
                     position: "absolute",
                     top: 0,
@@ -301,8 +303,6 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
             data-testid={agentId}
             glowColor={glowColor}
             isActive={isActiveAgent}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
             sx={{
                 backgroundColor,
                 color,
@@ -310,11 +310,15 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 height,
                 width,
                 zIndex: getZIndex(1, theme),
+                // Reveal the edit icon on hover, or when a keyboard user tabs to the node.
+                "& .agent-node-edit-icon": {opacity: 0, transition: "opacity 0.15s ease-in-out"},
+                "&:hover .agent-node-edit-icon": {opacity: 1},
+                ".react-flow__node:focus-visible & .agent-node-edit-icon": {opacity: 1},
             }}
         >
             {getDisplayAsIcon()}
 
-            {isHovered && isEditable && getEditButton()}
+            {isEditable && getEditButton()}
 
             <Handle
                 id={`${agentId}-left-handle`}

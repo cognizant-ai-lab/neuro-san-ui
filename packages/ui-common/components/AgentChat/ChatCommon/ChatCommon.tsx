@@ -63,13 +63,14 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
+import {toDisplayName} from "../../../utils/AgentName"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../MultiAgentAccelerator/const"
 import {CombinedAgentType, givesFinalAnswer, isLegacyAgentType} from "../Common/Types"
-import {chatMessageFromChunk, checkError, cleanUpAgentName, removeTrailingUuid} from "../Common/Utils"
+import {chatMessageFromChunk, checkError} from "../Common/Utils"
 import {MicrophoneButton} from "../VoiceChat/MicrophoneButton"
 import {cleanupAndStopSpeechRecognition, setupSpeechRecognition, SpeechRecognitionState} from "../VoiceChat/VoiceChat"
 
@@ -202,7 +203,7 @@ export type ChatCommonHandle = {
     handleClearChat: () => void
 }
 
-//#endregion
+//#endregion Types and Interfaces
 
 //#region Constants
 
@@ -232,7 +233,7 @@ const EXPORT_ROLE_LABELS: Record<MessageRole, string> = {
     [MessageRole.Error]: "Error",
 }
 
-//#endregion
+//#endregion Constants
 
 /**
  * Helper function to convert a message role to a label for exporting chat history.
@@ -368,7 +369,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const succeeded = useRef<boolean>(false)
 
     const networkDisplayName = useMemo(
-        () => (useNativeNames ? selectedNetwork : cleanUpAgentName(removeTrailingUuid(selectedNetwork))),
+        () => toDisplayName(selectedNetwork, useNativeNames),
         [selectedNetwork, useNativeNames]
     )
 

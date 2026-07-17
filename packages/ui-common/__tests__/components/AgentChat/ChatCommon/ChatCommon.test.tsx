@@ -16,7 +16,7 @@ limitations under the License.
 
 import {AIMessage} from "@langchain/core/messages"
 import {createTheme} from "@mui/material/styles"
-import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {createRef, Ref} from "react"
 
@@ -370,7 +370,7 @@ describe("ChatCommon", () => {
             await user.paste(strToCheck)
 
             // Press enter
-            fireEvent.keyDown(userInput, {key: "Enter"})
+            await user.keyboard("{Enter}")
 
             // Check that enter has triggered the Send
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledTimes(1))
@@ -401,7 +401,7 @@ describe("ChatCommon", () => {
             await user.paste(strToCheckLine2)
 
             // Press enter
-            fireEvent.keyDown(userInput, {key: "Enter"})
+            await user.keyboard("{Enter}")
 
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledTimes(1))
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledWith(fullStrToCheck))
@@ -493,21 +493,21 @@ describe("ChatCommon", () => {
             const ref = createRef<ChatCommonHandle>()
             renderChatCommonComponent({ref})
 
-            // Wait for the component to initialize so the ref is set up
-            await screen.findByRole("button", {name: "Send"})
+            // First send a message so there is chat output to clear
+            const testMessage = "test message for ref clearing"
+            await sendQuery(TEST_AGENT_MATH_GUY, testMessage)
 
-            // Verify handleClearChat is exposed via the imperative ref
-            expect(typeof ref.current?.handleClearChat).toBe("function")
+            // Wait for the message to appear. It appears twice -- once in chat history, once "live"
+            expect(await screen.findAllByText(testMessage)).toHaveLength(2)
 
             // Call it and wait for all async state updates to settle
             await act(async () => {
                 ref.current?.handleClearChat()
             })
 
-            // After clearing, connectivity info (rendered into chatOutput via updateOutput) is gone
-            // We wait for sample queries to re-appear (they're in agentSampleQueries state, not chatOutput,
-            // so they stay after clear and confirm the component is still functional)
-            await screen.findByText("Sample query 1")
+            // The previously sent message should be gone, while sample queries re-appear
+            expect(screen.queryByText(testMessage)).not.toBeInTheDocument()
+            await screen.findByText(MOCK_CONNECTIVITY_INFO.metadata.sample_queries[0])
         })
 
         it("Should handle Clear Chat functionality", async () => {
@@ -670,7 +670,7 @@ describe("ChatCommon", () => {
             const clearBtn = document.getElementById("clear-input-button")
             expect(clearBtn).toBeTruthy()
             if (clearBtn) {
-                fireEvent.click(clearBtn)
+                await user.click(clearBtn)
             }
             expect(input).toHaveValue("")
         })

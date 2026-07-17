@@ -101,7 +101,21 @@ describe("TreeBuilder", () => {
                 temporaryNetworkExpirationTime: new Date(1_700_000_000 * 1000),
                 temporaryNetworkDefinition: definition,
                 displayName: "Travel Agency Ops",
+                downloadFileName: "travel_agency_ops.json",
             })
+        })
+
+        it("derives a UUID-stripped download filename only for downloadable temporary networks", () => {
+            const definition = [{origin: "front_man", display_as: "llm_agent"}]
+            const tempTree = buildTreeViewItems(
+                false,
+                [],
+                [makeTempNetwork("macys-14ecb260-4389-44f3-afad-ea315dfa1966", {agentNetworkDefinition: definition})]
+            )
+            expect(tempTree[0].children?.[0].downloadFileName).toBe("macys.json")
+
+            const regularTree = buildTreeViewItems(false, [makeAgent("macys")])
+            expect(regularTree[0].children?.[0].downloadFileName).toBeUndefined()
         })
     })
 

@@ -48,7 +48,17 @@ import {
     useReactFlow,
     useStore,
 } from "@xyflow/react"
-import {Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {
+    Dispatch,
+    FC,
+    KeyboardEventHandler,
+    SetStateAction,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react"
 
 import {AgentConversation} from "../AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
@@ -129,7 +139,10 @@ type Layout = "radial" | "linear"
 
 //#region: Constants
 
-// Timeout for thought bubbles is set to 10 seconds
+const AGENT_SAVE_TIMEOUT_MS = 60_000
+
+const DOCK_STREAM_TIMEOUT_MS = 120_000
+
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
 // How long the dock's status banner stays visible before auto-dismissing. Error banners persist until dismissed.
@@ -146,7 +159,7 @@ const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
  * Streams the Agent Network Designer endpoint with a natural-language prompt and the current
  * network definition, collecting any returned reservations.
  */
-const streamNetworkDesignerPrompt = async (
+const applyNetworkDesignerChanges = async (
     neuroSanURL: string,
     signal: AbortSignal,
     userPrompt: string,
@@ -163,10 +176,14 @@ const streamNetworkDesignerPrompt = async (
         AGENT_NETWORK_DESIGNER_ID,
         (chunk: string) => {
             const chatMessage = chatMessageFromChunk(chunk)
-            if (!chatMessage) return
+            if (!chatMessage) {
+                return
+            }
 
             const reservations = extractReservations(chatMessage)
-            if (reservations.length === 0) return
+            if (reservations.length === 0) {
+                return
+            }
 
             const networkHocon = extractNetworkHocon(chatMessage)
             const agentNetworkNameFromMessage = chatMessage.sly_data?.[AGENT_NETWORK_NAME_KEY] as string | undefined
@@ -503,29 +520,50 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         })
     }, [showDockBanner])
 
-    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
-        (_event, node) => {
+    const openNodeEditor = useCallback(
+        (node: RFNode<AgentNodeProps>) => {
             // Popup is only available for temporary networks.
             if (!isTemporaryNetwork) return
 
             // Only llm_agent nodes support instructions/description editing.
             if (!isEditableAgent(node.data.displayAs)) return
 
-            // Find the clicked agent's existing instructions and description from the temp network definition.
+            // Find the agent's existing instructions and description from the temp network definition.
             const currentTempNetwork = networkId
                 ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
                 : undefined
-            const found = (currentTempNetwork?.agentNetworkDefinition ?? []).find((e) => e.origin === node.id)
+            const currentAgentDefinition = currentTempNetwork?.agentNetworkDefinition?.find((e) => e.origin === node.id)
 
             setSelectedAgent({
                 agentId: node.id,
                 agentName: node.data.agentName,
-                initialInstructions: found?.instructions ?? "",
-                initialDescription: found?.description ?? "",
+                initialInstructions: currentAgentDefinition?.instructions ?? "",
+                initialDescription: currentAgentDefinition?.description ?? "",
             })
             setIsPopupOpen(true)
         },
         [tempNetworks, isTemporaryNetwork, networkId]
+    )
+
+    const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
+        (_event, node) => openNodeEditor(node),
+        [openNodeEditor]
+    )
+
+    // ReactFlow makes nodes focusable and selects them on Enter, but it never fires onNodeClick from the keyboard.
+    // Route Enter on a focused node to the editor so keyboard users can open a node the same way a click does.
+    const handleNodeKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>(
+        (event) => {
+            if (event.key !== "Enter") return
+
+            const target = event.target
+            if (!(target instanceof HTMLElement)) return
+
+            const nodeId = target.closest<HTMLElement>(".react-flow__node")?.dataset["id"]
+            const node = nodeId ? nodes.find((n) => n.id === nodeId) : undefined
+            if (node) openNodeEditor(node)
+        },
+        [nodes, openNodeEditor]
     )
 
     const handlePopupClose = useCallback(() => {
@@ -540,7 +578,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
      * Applies the networks returned by the designer: upserts them and triggers navigation if needed.
      * Returns true when a matching reservation was applied, false (and surfaces an error banner) otherwise.
      */
-    const applyNetworkSaveResult = useCallback(
+    const saveUpdates = useCallback(
         (newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined): boolean => {
             if (newNetworksFromSave.length === 0) {
                 showDockBanner({
@@ -551,6 +589,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 return false
             }
 
+            // Find the returned reservation that stands in for the current network (matched by name). When
+            // present, persist every returned network, then carry the open network's chat history over to the
+            // replacement and notify the parent so it can navigate to the new reservation.
             const replacement = newNetworksFromSave.find((n) => n.agentNetworkName === currentAgentNetworkName)
             if (replacement) {
                 useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
@@ -573,7 +614,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     )
 
     const handleDockApply = useCallback(async () => {
-        if (!dockPrompt.trim() || !neuroSanURL || !currentUser) return
+        const readyToApplyEdit = Boolean(dockPrompt.trim() && neuroSanURL && currentUser)
+        if (!readyToApplyEdit) return
 
         const currentTempNetwork = networkId
             ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
@@ -587,9 +629,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         const timeoutId = setTimeout(() => {
             hasTimedOut = true
             controller.abort()
-        }, 120_000) // 2 min timeout
+        }, DOCK_STREAM_TIMEOUT_MS)
         try {
-            const newNetworks = await streamNetworkDesignerPrompt(
+            const newNetworks = await applyNetworkDesignerChanges(
                 neuroSanURL,
                 controller.signal,
                 dockPrompt,
@@ -597,8 +639,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 currentTempNetwork?.agentNetworkName,
                 currentUser
             )
-            const applied = applyNetworkSaveResult(newNetworks, currentTempNetwork?.agentNetworkName)
-            if (applied) {
+            const appliedSuccess = saveUpdates(newNetworks, currentTempNetwork?.agentNetworkName)
+            if (appliedSuccess) {
                 setDockPrompt("")
                 showDockBanner({
                     severity: "success",
@@ -624,7 +666,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             dockAbortControllerRef.current = null
             setIsDockStreaming(false)
         }
-    }, [applyNetworkSaveResult, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
+    }, [saveUpdates, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
     const handleExitEditMode = useCallback(() => {
         if (isDockStreaming) {
@@ -634,6 +676,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
         onExitEditMode?.()
     }, [isDockStreaming, onExitEditMode])
+
+    // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
+    // node popup is open so Escape closes the popup first rather than the whole edit mode.
+    useEffect(() => {
+        if (!isEditMode || isPopupOpen) return undefined
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape") handleExitEditMode()
+        }
+        document.addEventListener("keydown", handleEscape)
+        return () => document.removeEventListener("keydown", handleEscape)
+    }, [isEditMode, isPopupOpen, handleExitEditMode])
 
     const handlePopupSave = useCallback(
         async (agentName: string, instructionsText: string, descriptionText: string) => {
@@ -646,13 +699,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
             // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
             const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-            const updated = currentDefinitions.map((entry) =>
+            const updatedDefinitions = currentDefinitions.map((entry) =>
                 entry.origin === selectedAgent.agentId
                     ? {...entry, instructions: instructionsText, description: descriptionText}
                     : entry
             )
             if (networkId) {
-                updateTempNetworkDefinition(networkId, updated)
+                updateTempNetworkDefinition(networkId, updatedDefinitions)
             }
 
             if (!onSaveAgent) {
@@ -665,10 +718,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             saveAbortControllerRef.current = saveController
             const saveTimeoutId = setTimeout(
                 () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
-                60_000 // 1 min timeout
+                AGENT_SAVE_TIMEOUT_MS
             )
             try {
-                await onSaveAgent(agentName, updated, currentTempNetwork?.agentNetworkName, saveController.signal)
+                await onSaveAgent(
+                    agentName,
+                    updatedDefinitions,
+                    currentTempNetwork?.agentNetworkName,
+                    saveController.signal
+                )
             } catch (e) {
                 console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
                 sendNotification(
@@ -1082,6 +1140,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     nodeTypes={nodeTypes}
                     nodes={nodes}
                     nodesDraggable={!isAgentNetworkDesignerMode}
+                    onKeyDown={handleNodeKeyDown}
                     onNodeClick={handleNodeClick}
                     onNodesChange={onNodesChange}
                 >
@@ -1185,6 +1244,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         }}
                     >
                         <TextField
+                            autoFocus
                             fullWidth
                             placeholder={DOCK_PROMPT_PLACEHOLDER}
                             variant="outlined"

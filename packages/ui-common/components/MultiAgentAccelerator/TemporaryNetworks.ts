@@ -1,3 +1,5 @@
+import {keyBy, mergeWith} from "lodash-es"
+
 import {getFrontman} from "./AgentFlow/GraphStructure"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -11,8 +13,20 @@ import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
 import {sendNetworkDesignerRequest} from "../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
-import {chatMessageFromChunk, removeTrailingUuid} from "../AgentChat/Common/Utils"
+import {removeTrailingUuid} from "../../utils/AgentName"
+import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
+
+//#region: Constants
+
+export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
+    "invalid-definition": "The file does not contain a valid network definition.",
+    "no-reservation": "The network designer did not return a reservation. Please try again.",
+}
+
+//#endregion: Constants
+
+//#region: Types
 
 /**
  * Definition of a temporary network. No schema for this provided by backend so we second-guess it here.
@@ -31,6 +45,13 @@ export type AgentReservation = {
     readonly lifetime_in_seconds: number
     readonly expiration_time_in_seconds: number
 }
+
+/** Reasons an import can fail before its networks reach the store. */
+export type ImportFailureReason = "invalid-definition" | "no-reservation"
+
+export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
+
+//#endregion: Types
 
 /**
  * Extracts agent reservations from a chat message, if they exist.
@@ -119,7 +140,7 @@ export const extractTemporaryNetworksFromMessage = (
     const networkHocon = extractNetworkHocon(message)
     const agentNetworkDefinition =
         agentNetworkDefinitionOverride ??
-        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[] | undefined)
+        (message.sly_data?.[AGENT_NETWORK_DEFINITION_KEY] as AgentNetworkDefinitionEntry[])
 
     return convertReservationsToNetworks(reservations, networkHocon, agentNetworkDefinition)
 }
@@ -135,25 +156,24 @@ export const isTemporaryNetwork = (agentName: string | null, networks: Temporary
  * Returns a new array; does not mutate either argument.
  */
 export const mergeNetworks = (target: TemporaryNetwork[], incoming: TemporaryNetwork[]): TemporaryNetwork[] =>
-    incoming.reduce<TemporaryNetwork[]>(
-        (result, n) => {
-            const existingIdx = result.findIndex((e) => e.agentNetworkName === n.agentNetworkName)
-            // No existing entry with this name - append.
-            if (existingIdx < 0) return [...result, n]
-            // Existing entry found - keep whichever reservation expires later.
-            if (n.reservation.expiration_time_in_seconds > result[existingIdx].reservation.expiration_time_in_seconds) {
-                return result.map((e, i) => (i === existingIdx ? n : e))
-            }
-            return result
-        },
-        [...target]
+    Object.values(
+        mergeWith(
+            keyBy(target, "agentNetworkName"),
+            keyBy(incoming, "agentNetworkName"),
+            // Both collections share a name: keep whichever reservation expires later, existing wins ties.
+            (existing: TemporaryNetwork | undefined, candidate: TemporaryNetwork) =>
+                existing &&
+                existing.reservation.expiration_time_in_seconds >= candidate.reservation.expiration_time_in_seconds
+                    ? existing
+                    : candidate
+        )
     )
 
 /**
  * Extracts TemporaryNetworks from a single streamed chunk, merging into `accumulated`.
  * Returns `accumulated` unchanged if the chunk yields no reservations or on parse error.
  */
-const collectNetworksFromChunk = (
+const collectNetworkFromChunk = (
     chunk: string,
     updated: AgentNetworkDefinitionEntry[],
     accumulated: TemporaryNetwork[]
@@ -184,9 +204,9 @@ export const notifySaveError = (agentName: string, e: unknown): void => {
 }
 
 /**
- * Streams a network definition through the network designer, collecting the
- * reservations returned across every chunk. Returns the accumulated networks
- * (empty if the designer returned no reservation).
+ * Streams a network definition through the network designer to obtain its reservation.
+ * Returns the single updated network as a one-element list (empty if the designer returned
+ * no reservation).
  */
 export const streamNetworkDesignerUpsert = async (
     neuroSanURL: string,
@@ -198,19 +218,11 @@ export const streamNetworkDesignerUpsert = async (
 ): Promise<TemporaryNetwork[]> => {
     let newNetworks: TemporaryNetwork[] = []
     await sendNetworkDesignerRequest(neuroSanURL, signal, frontman, networkDef, agentNetworkName, username, (chunk) => {
-        newNetworks = collectNetworksFromChunk(chunk, networkDef, newNetworks)
+        // There is only one network. The designer echoes it across streamed chunks. Merge by name so the
+        // repeated echoes collapse into that single entry rather than appending duplicates.
+        newNetworks = collectNetworkFromChunk(chunk, networkDef, newNetworks)
     })
     return newNetworks
-}
-
-/** Reasons an import can fail before its networks reach the store. */
-export type ImportFailureReason = "invalid-definition" | "no-reservation"
-
-export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
-
-export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
-    "invalid-definition": "The file does not contain a valid network definition.",
-    "no-reservation": "The network designer did not return a reservation. Please try again.",
 }
 
 /**

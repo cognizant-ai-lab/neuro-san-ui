@@ -82,7 +82,8 @@ describe("convertReservationsToNetworks", () => {
     })
 
     it("drops un-vetted reservations that lack a usable reservation_id", () => {
-        const valid = makeReservation("good-1")
+        const validId = "good-1"
+        const valid = makeReservation(validId)
         // reservation_id is typed as a string, but it is echoed from un-vetted backend data and may be
         // missing or empty at runtime; such entries must not produce a "temporary/undefined" network.
         const missingId: AgentReservation = {...makeReservation("ignored"), reservation_id: undefined}
@@ -91,7 +92,7 @@ describe("convertReservationsToNetworks", () => {
         const networks = convertReservationsToNetworks([missingId, valid, emptyId], null)
 
         expect(networks).toHaveLength(1)
-        expect(networks[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/good-1`)
+        expect(networks[0].agentInfo.agent_name).toBe(`${TEMPORARY_NETWORK_FOLDER}/${validId}`)
     })
 
     it("forwards the agentNetworkDefinition to each network", () => {
@@ -134,6 +135,11 @@ describe("isTemporaryNetwork", () => {
 
     it("returns true when a network matches the agentName", () => {
         expect(isTemporaryNetwork("temporary/abc", [makeNetwork("temporary/abc")])).toBe(true)
+    })
+
+    it("matches case-sensitively — names differing only in case do not match", () => {
+        // agent_name is an exact identifier derived from reservation_id, so casing is significant.
+        expect(isTemporaryNetwork("temporary/Abc", [makeNetwork("temporary/abc")])).toBe(false)
     })
 })
 

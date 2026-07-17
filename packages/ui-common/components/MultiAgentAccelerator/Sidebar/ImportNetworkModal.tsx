@@ -34,6 +34,8 @@ import Typography from "@mui/material/Typography"
 import startCase from "lodash-es/startCase"
 import {FC, ChangeEvent as ReactChangeEvent, DragEvent as ReactDragEvent, useEffect, useRef, useState} from "react"
 
+import {useSettingsStore} from "../../../state/Settings"
+import {toDisplayName} from "../../../utils/AgentName"
 import {splitFilename} from "../../../utils/File"
 import {MUIDialog} from "../../Common/MUIDialog"
 import {getFrontman} from "../AgentFlow/GraphStructure"
@@ -149,7 +151,7 @@ export const summarizeNetworkDefinition = (networkDef: AgentNetworkDefinitionEnt
         agents,
         codedTools,
         externalAgents,
-        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "—",
+        frontman: getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "",
     }
 }
 
@@ -281,6 +283,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
     onClose,
     onImport,
 }) => {
+    const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
     const [activeStep, setActiveStep] = useState<number>(0)
     // When the imported name conflicts, how the user wants to resolve it.
     const [conflictResolution, setConflictResolution] = useState<ConflictResolution>("keep-both")
@@ -780,8 +783,9 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
         </Box>
     )
 
-    const renderReviewSummary = () =>
-        networkSummary && (
+    const renderReviewSummary = () => {
+        if (!networkSummary) return null
+        return (
             <Box
                 id="import-network-modal-summary"
                 sx={{
@@ -799,7 +803,11 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                         {label: "Agents", value: networkSummary.agents},
                         {label: "Coded tools", value: networkSummary.codedTools},
                         {label: "External agents", value: networkSummary.externalAgents},
-                        {label: "Front man", value: networkSummary.frontman, isFrontman: true},
+                        {
+                            label: "Frontman",
+                            value: toDisplayName(networkSummary.frontman, useNativeNames),
+                            isFrontman: true,
+                        },
                     ] as const
                 ).map((stat, index) => (
                     <Box
@@ -836,6 +844,7 @@ export const ImportNetworkModal: FC<ImportNetworkModalProps> = ({
                 ))}
             </Box>
         )
+    }
 
     const renderReviewSuccess = () => (
         <Box sx={{width: "100%"}}>

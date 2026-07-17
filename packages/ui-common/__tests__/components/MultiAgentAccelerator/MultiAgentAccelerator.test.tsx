@@ -34,7 +34,6 @@ import {
 } from "../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatCommonHandle, ChatCommonProps} from "../../../components/AgentChat/ChatCommon/ChatCommon"
-import {cleanUpAgentName} from "../../../components/AgentChat/Common/Utils"
 import {AgentFlowProps} from "../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -43,6 +42,7 @@ import {
     AGENT_NETWORK_NAME_KEY,
     AGENT_PROGRESS_CONNECTIVITY_KEY,
     AGENT_RESERVATIONS_KEY,
+    AgentNetworkDefinitionEntry,
     EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
     SHOW_TOUR_DELAY_MS,
@@ -72,6 +72,7 @@ import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
+import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const MOCK_USER = "mock-user"
 
@@ -83,6 +84,7 @@ const temporaryNetworksMock = vi.fn()
 const networkIconSuggestionsMock = vi.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
 let onImport: (name: string, content: string) => void
+let onSaveAgent: AgentFlowProps["onSaveAgent"]
 let setSelectedNetwork: (network: string) => void
 
 // Mock dependencies
@@ -94,6 +96,7 @@ vi.mock("../../../controller/agent/IconSuggestions")
 vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     AgentFlow: (props: AgentFlowProps) => {
         conversationMock(props.currentConversations)
+        onSaveAgent = props.onSaveAgent
         return (
             <div id="app-container">
                 <div id="settings-icon" />
@@ -253,6 +256,15 @@ const renderMultiAgentAcceleratorPage = () =>
         </SnackbarProvider>
     )
 
+// Waits for the sidebar to mount (which is what captures onImport via the ImportNetworkModal mock), then fires an
+// import through that callback.
+const importThroughModal = async (networkName: string, content: string) => {
+    await screen.findByText("Agent Networks")
+    await act(async () => {
+        onImport(networkName, content)
+    })
+}
+
 describe("MultiAgentAccelerator", () => {
     withStrictMocks()
 
@@ -408,77 +420,59 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
-    it("should show an error toast when the imported file contains no agents", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+    it.each([
+        {
+            scenario: "the imported file contains no agents",
+            networkName: "Empty Network",
+            content: JSON.stringify([]),
+            expectedLog: "does not contain a valid network definition",
+            designerCalls: 0,
+        },
+        {
+            scenario: "the network designer returns no reservation",
+            networkName: "Reservationless Network",
+            // Default mock resolves to [] without ever invoking onChunk, so no reservation comes back.
+            content: JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]),
+            expectedLog: "did not return a reservation",
+            designerCalls: 1,
+        },
+        {
+            scenario: "conversion of the imported file throws",
+            // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
+            networkName: "Broken Network",
+            content: "this is not json",
+            expectedLog: 'Failed to update network "Broken Network"',
+            designerCalls: 0,
+        },
+    ])(
+        "logs an error and makes $designerCalls designer call(s) when $scenario",
+        async ({networkName, content, expectedLog, designerCalls}) => {
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+            // The invalid-JSON path also logs via console.error before surfacing the toast.
+            vi.spyOn(console, "error").mockImplementation(vi.fn())
 
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
+            renderMultiAgentAcceleratorPage()
+            await importThroughModal(networkName, content)
 
-        await act(async () => {
-            onImport("Empty Network", JSON.stringify([]))
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(
-                expect.stringContaining("does not contain a valid network definition")
-            )
-        })
-        // The designer should never be contacted when the definition is empty
-        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
-    })
-
-    it("should show an error toast when the network designer returns no reservation", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-        // Default mock resolves to [] without ever invoking onChunk, so no networks are collected.
-
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        await act(async () => {
-            onImport("Reservationless Network", JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]))
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("did not return a reservation"))
-        })
-        expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(1)
-    })
-
-    it("should show an error toast when conversion of the imported file throws", async () => {
-        const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-        // notifySaveError also logs via console.error before surfacing the notification.
-        vi.spyOn(console, "error").mockImplementation(vi.fn())
-
-        renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
-        await act(async () => {
-            onImport("Broken Network", "this is not json")
-        })
-
-        await waitFor(() => {
-            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to update network "Broken Network"'))
-        })
-        expect(sendNetworkDesignerRequest).not.toHaveBeenCalled()
-    })
+            await waitFor(() => {
+                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedLog))
+            })
+            expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(designerCalls)
+        }
+    )
 
     it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
         vi.spyOn(console, "debug").mockImplementation(vi.fn())
         const upsertMock = vi.mocked(sendNetworkDesignerRequest)
 
         renderMultiAgentAcceleratorPage()
-        await screen.findByText("Agent Networks")
-
-        await act(async () => {
-            onImport(
-                "Two Agent Network",
-                JSON.stringify([
-                    {origin: "boss", tools: ["worker"], instructions: "lead"},
-                    {origin: "worker", instructions: "work"},
-                ])
-            )
-        })
+        await importThroughModal(
+            "Two Agent Network",
+            JSON.stringify([
+                {origin: "boss", tools: ["worker"], instructions: "lead"},
+                {origin: "worker", instructions: "work"},
+            ])
+        )
 
         await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1))
         // Third positional arg to sendNetworkDesignerRequest is the frontman name.
@@ -1342,7 +1336,7 @@ describe("MultiAgentAccelerator", () => {
             agentNetworkDefinition,
         }
 
-        it("is undefined for a normal (non-temporary) network", async () => {
+        it("is undefined for a permanent network", async () => {
             renderMultiAgentAcceleratorPage()
 
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -1499,6 +1493,109 @@ describe("MultiAgentAccelerator", () => {
                 expect.stringContaining(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`),
                 expect.any(Error)
             )
+        })
+    })
+
+    describe("onSaveAgent", () => {
+        const UPDATED_DEFINITION: AgentNetworkDefinitionEntry[] = [{origin: "copy_cat", tools: []}]
+
+        // Mock the network designer stream so onSaveAgent's chunk collector receives the given chunks.
+        const mockDesignerStream = (...chunks: string[]) => {
+            vi.mocked(sendNetworkDesignerRequest).mockImplementation(async (...args: unknown[]) => {
+                const onChunk = args[6] as (chunk: string) => void
+                chunks.forEach((chunk) => onChunk(chunk))
+            })
+        }
+
+        const renderAndWaitForSidebar = async () => {
+            renderMultiAgentAcceleratorPage()
+            await screen.findByText("Agent Networks")
+        }
+
+        const saveAgent = (agentNetworkName = RESERVATION.reservation_id) =>
+            act(async () => {
+                await onSaveAgent("copy_cat", UPDATED_DEFINITION, agentNetworkName, new AbortController().signal)
+            })
+
+        it("upserts the returned network and reselects it when a matching reservation is streamed", async () => {
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            renderMultiAgentAcceleratorPage()
+
+            // Select a network so onSaveAgent has a selectedNetwork to copy chat history from.
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+            await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+            await saveAgent()
+
+            const expectedAgentName = `${TEMPORARY_NETWORK_FOLDER}/${RESERVATION.reservation_id}`
+            // The returned reservation was upserted into the temp networks store...
+            expect(useTempNetworksStore.getState().tempNetworks).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        agentInfo: expect.objectContaining({agent_name: expectedAgentName}),
+                    }),
+                ])
+            )
+            // ...and the newly-saved network became the selected target.
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({selectedNetwork: expectedAgentName})
+                )
+            })
+        })
+
+        it.each([
+            {
+                scenario: "the designer returns no reservation",
+                streamChunks: [] as string[],
+                agentNetworkName: RESERVATION.reservation_id,
+                expectedLog: "did not return a reservation",
+            },
+            {
+                scenario: "the returned reservation does not match the edited network",
+                streamChunks: [JSON.stringify(RESERVATION_CHAT_MESSAGE)],
+                // agentNetworkName does not match the streamed reservation's derived name → no replacement found.
+                agentNetworkName: "some-other-network",
+                expectedLog: "did not match the current network",
+            },
+        ])(
+            "shows an error and does not upsert when $scenario",
+            async ({streamChunks, agentNetworkName, expectedLog}) => {
+                const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+                mockDesignerStream(...streamChunks)
+                await renderAndWaitForSidebar()
+
+                await saveAgent(agentNetworkName)
+
+                expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
+                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedLog))
+            }
+        )
+
+        it("notifies a save error when the network designer stream throws", async () => {
+            const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+            vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(new Error("stream exploded"))
+            await renderAndWaitForSidebar()
+
+            await saveAgent()
+
+            expect(errorSpy).toHaveBeenCalled()
+            expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("stream exploded"))
+        })
+
+        it("suppresses the error notification when the save is aborted by the user", async () => {
+            vi.mocked(sendNetworkDesignerRequest).mockRejectedValue(
+                new DOMException("The operation was aborted", "AbortError")
+            )
+            await renderAndWaitForSidebar()
+
+            // No console spies: an AbortError must be swallowed silently (no console.error / notification),
+            // so any logging here would fail the test via jest-fail-on-console.
+            await saveAgent()
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(0)
         })
     })
 

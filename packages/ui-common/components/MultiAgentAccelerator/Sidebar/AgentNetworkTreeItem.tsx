@@ -8,6 +8,7 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
+import {styled} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
@@ -22,8 +23,14 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
-import {downloadFile, toSafeFilename} from "../../../utils/File"
-import {removeTrailingUuid} from "../../AgentChat/Common/Utils"
+import {downloadFile} from "../../../utils/File"
+
+//#region Constants
+
+// Accessible names shared between each action's tooltip title and its aria-label.
+export const EDIT_NETWORK_LABEL = "Edit this network"
+export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
+
 // Palette of colors we can use for tags
 const TAG_COLORS = [
     "--bs-accent2-light",
@@ -37,16 +44,31 @@ const TAG_COLORS = [
     "--bs-yellow",
 ] as const
 
-// Define a type for the TAG_COLORS array
-type TagColor = (typeof TAG_COLORS)[number]
+// Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
+// color and only dims via opacity.
+const ActionIconButton = styled(IconButton)({
+    padding: 0,
+    color: "var(--bs-secondary)",
+    "&:hover": {color: "var(--bs-secondary-dark)"},
+    "&.Mui-disabled": {
+        opacity: 0.3,
+    },
+})
 
-// Keep track of which tags have which colors so that the same tag always has the same color
-const tagsToColors = new Map<string, TagColor>()
+//#endregion Constants
 
+//#region Types and Interfaces
 export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
 }
+// Define a type for the TAG_COLORS array
+type TagColor = (typeof TAG_COLORS)[number]
+
+//#endregion Types and Interfaces
+
+// Keep track of which tags have which colors so that the same tag always has the same color
+const tagsToColors = new Map<string, TagColor>()
 
 /**
  * Helper function to determine if a temporary network is expired based on its expiration date
@@ -71,9 +93,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     onEditNetwork,
 }) => {
     const item = useTreeItemModel<AgentNetworkTreeItemModel>(itemId)
-
-    // We know all labels are strings because we set them that way in the tree view items
-    const labelString = label as string
 
     const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
         useTreeItem({itemId, children, label, disabled})
@@ -187,62 +206,40 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
                                 {networkDefinition && (
-                                    <Tooltip title={isExpired ? "Expired" : "Download network definition"}>
+                                    <Tooltip title={isExpired ? "Expired" : DOWNLOAD_NETWORK_DEFINITION_LABEL}>
                                         <span>
-                                            <IconButton
+                                            <ActionIconButton
                                                 onClick={(e) => {
+                                                    // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-
-                                                    // Strip the reservation UUID before building the filename so
-                                                    // exported files carry a clean name (toSafeFilename would
-                                                    // otherwise flatten the UUID's hyphens to underscores).
-                                                    const cleanName = removeTrailingUuid(labelString)
-                                                    const fileName = `${toSafeFilename(cleanName)}.json`
                                                     downloadFile(
                                                         JSON.stringify(networkDefinition, null, 2),
-                                                        fileName,
+                                                        item.downloadFileName,
                                                         "application/json"
                                                     )
                                                 }}
                                                 disabled={isExpired}
-                                                aria-label="Download network definition"
+                                                aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}
                                                 size="small"
-                                                sx={{
-                                                    padding: 0,
-                                                    color: "var(--bs-secondary)",
-                                                    "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                    "&.Mui-disabled": {
-                                                        color: "var(--bs-secondary)",
-                                                        opacity: 0.3,
-                                                    },
-                                                }}
                                             >
                                                 <DownloadIcon sx={{fontSize: "0.75rem"}} />
-                                            </IconButton>
+                                            </ActionIconButton>
                                         </span>
                                     </Tooltip>
                                 )}
-                                <Tooltip title="Edit this network">
+                                <Tooltip title={EDIT_NETWORK_LABEL}>
                                     <span>
-                                        <IconButton
+                                        <ActionIconButton
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 onEditNetwork?.(itemId)
                                             }}
                                             disabled={isExpired}
+                                            aria-label={EDIT_NETWORK_LABEL}
                                             size="small"
-                                            sx={{
-                                                padding: 0,
-                                                color: "var(--bs-secondary)",
-                                                "&:hover": {color: "var(--bs-secondary-dark)"},
-                                                "&.Mui-disabled": {
-                                                    color: "var(--bs-secondary)",
-                                                    opacity: 0.3,
-                                                },
-                                            }}
                                         >
                                             <Edit sx={{fontSize: "0.75rem"}} />
-                                        </IconButton>
+                                        </ActionIconButton>
                                     </span>
                                 </Tooltip>
                                 <Tooltip title="Delete network">
@@ -255,7 +252,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             color: "var(--bs-secondary)",
                                             "&:hover": {color: (theme) => theme.palette.warning.main},
                                             "&.Mui-disabled": {
-                                                color: "var(--bs-secondary)",
                                                 opacity: 0.3,
                                             },
                                             cursor: "pointer",
