@@ -8,6 +8,8 @@ import {navigateToUrl} from "../../utils/BrowserNavigation"
 const HeaderLine = styled("h6")({
     fontWeight: "bold",
     fontSize: "smaller",
+    margin: 0,
+    marginBottom: "0.9rem",
 })
 
 const LinkDivider = styled("div")({
@@ -19,6 +21,7 @@ const LinkDivider = styled("div")({
 const FooterSectionHeader = styled("div")({
     display: "inline-flex",
     flexDirection: "column",
+    alignItems: "flex-start",
     marginTop: "0.1rem",
 })
 
@@ -36,6 +39,7 @@ const FooterItemLink = styled("a")(({theme}) => ({
 const FooterContainer = styled("footer")({
     backgroundColor: "var(--bs-primary)",
     borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
+    alignItems: "flex-start",
     columnGap: "60px",
     display: "flex",
     justifyContent: "center",
