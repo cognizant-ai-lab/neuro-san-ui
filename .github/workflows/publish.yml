@@ -76,9 +76,7 @@ jobs:
                   fetch-depth: 0
 
             - name: Setup Node.js environment
-              # Node 22.18+ has a known bug that breaks builds
-              # (https://github.com/nodejs/node/issues/59364).
-              # Set vars.NODEJS_VERSION to a safe version (e.g. 22.17.1).
+              # Use the Node.js version defined in the repository variable.
               uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd # 1.0.7
               with:
                   node-version: ${{ vars.NODEJS_VERSION }}
