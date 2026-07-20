@@ -63,7 +63,7 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js environment
-              # v1.0.7
+              # build-common 1.0.7
               uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
                   node-version: ${{ vars.NODEJS_VERSION }}
@@ -107,7 +107,7 @@ jobs:
             - name: Lint Dockerfiles (hadolint)
               id: hadolint
               if: success() || failure()
-              # v1.0.7
+              # build-common 1.0.7
               uses: cognizant-ai-lab/build-common/actions/run-hadolint@3ead7f681f92044709ffc3a533f41c3f48230cfd
               with:
                   recursive: "true"
