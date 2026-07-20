@@ -70,7 +70,7 @@ env:
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
     ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
     ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-san/neuro-san-ui' }}
-    # and the Node.js version which is a repo-level variable
+    # Node.js major version (e.g. 26) used for both setup-node and Docker base image names
     NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
