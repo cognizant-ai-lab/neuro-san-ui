@@ -77,7 +77,7 @@ jobs:
 
             - name: Setup Node.js environment
               # Use the Node.js version defined in the repository variable.
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd # build-common 1.0.7
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2 # build-common 1.0.8
               with:
                   node-version: ${{ vars.NODEJS_VERSION }}
                   clean-install: "true"
