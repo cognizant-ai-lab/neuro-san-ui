@@ -22,7 +22,8 @@
 
 # This is the major version of NodeJS we will use
 # The currently supported version(s) of Node.js are those in the `engines` field of the package.json file.
-# Note that the "distroless" image in the "runner" section will likely need to be adjusted for different node versions.
+# Build and runtime images should use the same Debian version. The distroless Node runtime is only
+# published for Debian 13 (trixie), so we use trixie-slim for the build stages too.
 ARG NODEJS_VERSION=0
 FROM node:$NODEJS_VERSION-trixie-slim AS deps
 
