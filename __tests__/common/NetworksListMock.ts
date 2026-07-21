@@ -65,7 +65,7 @@ const TEMP_NETWORK_AGENT_INFO = {
     tags: ["tag1", "tag2", "tag3"],
 }
 
-export const TEMPORARY_NETWORK_DEFINITION: AgentNetworkDefinitionEntry[] = [
+const TEMPORARY_NETWORK_DEFINITION: AgentNetworkDefinitionEntry[] = [
     {origin: "frontman", tools: ["helper"], display_as: "llm_agent", instructions: "Lead the team"},
     {origin: "helper", tools: [], display_as: "coded_tool"},
 ]

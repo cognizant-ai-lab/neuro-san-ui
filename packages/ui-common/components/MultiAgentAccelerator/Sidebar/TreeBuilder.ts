@@ -4,7 +4,6 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {cleanUpAgentName, removeTrailingUuid, toDisplayName} from "../../../utils/AgentName"
 import {toSafeFilename} from "../../../utils/File"
-import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region Types and Interfaces
 
@@ -20,13 +19,13 @@ export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModel
     readonly isNetwork: boolean
     readonly tags?: readonly string[]
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
+    readonly temporaryNetworkHocon?: string | null
 }
 
 interface NetworkTreeItemMetadata {
     readonly iconSuggestion?: string
     readonly temporaryNetworkExpirationTime?: Date
-    readonly temporaryNetworkDefinition?: readonly AgentNetworkDefinitionEntry[]
+    readonly temporaryNetworkHocon?: string | null
     readonly displayNameOverride?: string
 }
 
@@ -83,13 +82,13 @@ const toLeafDisplayName = (label: string, useNativeNames: boolean, displayNameOv
 }
 
 /**
- * Computes the filename used when exporting a network's definition to disk. The trailing reservation
+ * Computes the filename used when exporting a network's HOCON to disk. The trailing reservation
  * UUID is stripped first so the export carries a clean name (toSafeFilename would otherwise flatten
  * the UUID's hyphens to underscores).
  * @param label - The label to use for the tree item (usually derived from the agent name)
- * @returns The sanitized `.json` filename for the exported network definition
+ * @returns The sanitized `.hocon` filename for the exported network HOCON
  */
-const toDownloadFileName = (label: string): string => `${toSafeFilename(removeTrailingUuid(label))}.json`
+const toDownloadFileName = (label: string): string => `${toSafeFilename(removeTrailingUuid(label))}.hocon`
 
 /**
  * Converts an AgentInfo object into a tree item model representing a network (leaf node).
@@ -108,12 +107,12 @@ const toNetworkLeaf = (
     id: network.agent_name,
     label,
     displayName: toLeafDisplayName(label, useNativeNames, metadata.displayNameOverride),
-    downloadFileName: metadata.temporaryNetworkDefinition ? toDownloadFileName(label) : undefined,
+    downloadFileName: metadata.temporaryNetworkHocon ? toDownloadFileName(label) : undefined,
     iconSuggestion: metadata.iconSuggestion,
     isNetwork: true,
     tags: network.tags,
     temporaryNetworkExpirationTime: metadata.temporaryNetworkExpirationTime,
-    temporaryNetworkDefinition: metadata.temporaryNetworkDefinition,
+    temporaryNetworkHocon: metadata.temporaryNetworkHocon,
 })
 
 /**
@@ -266,9 +265,7 @@ export const buildTreeViewItems = (
         tree = withNetworkAdded(tree, temporaryNetwork.agentInfo, useNativeNames, {
             iconSuggestion: "HourglassTop",
             temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
-            // The structured definition is carried through and serialized at download time (it's the same shape
-            // the import modal reads back in).
-            temporaryNetworkDefinition: temporaryNetwork.agentNetworkDefinition,
+            temporaryNetworkHocon: temporaryNetwork.networkHocon,
             displayNameOverride: temporaryNetwork.agentNetworkName,
         })
     }

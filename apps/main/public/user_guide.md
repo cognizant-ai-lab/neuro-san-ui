@@ -22,7 +22,7 @@ The interface consists of three main sections:
 - Each agent network represents a group of AI agents working together to analyze and solve problems.
 - Enables you to select a network to view its structure and interactions.
 - Use the plus icon in the sidebar header to **create** your own agent network with the **Agent Network Designer**.
-- Use the upload icon in the sidebar header to **import** your own network definition (see [Importing a Network Definition](#importing-a-network-definition)).
+- Use the download icon next to a network you've created to **download** it as a HOCON file that you can run in neuro-san or neuro-san-studio (see [Using a downloaded network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio)).
 
 ### 2. Multi-Agent Network Graph
 
@@ -36,29 +36,58 @@ The interface consists of three main sections:
 - Queries are processed using LangChain-powered logic to fetch relevant insights.
 - Responses may be influenced by the selected agent network and its internal decision-making processes.
 
-## Importing a Network Definition
-
-You can import your own agent network into MAUI by importing a network definition file.
-
-To open the importer, click the upload icon in the **Agent Networks** sidebar header. This launches a guided three-step wizard:
-
-### 1. Select file
-
-- Drag & drop a network definition onto the drop zone, or click **browse your files** to pick one.
-- The file must be a JSON file previously exported from an **Agent Network Designer**-created network.
-
-### 2. Review
-
-- The file is parsed and validated automatically.
-- Once imported, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
-
-### 3. Confirm
-
-- Confirm or edit the network name and finish the import. If the name conflicts with an existing network, the dialog offers options to resolve it.
-- The imported network is added to the sidebar and selected automatically.
-
 ## Temporary Networks
 
-Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
+Networks created using the **Agent Network Designer** are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save it as a HOCON file (`<network-name>.hocon`) before it expires. That file can be run outside MAUI — see [Using a downloaded network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio).
 
 Unlike permanent networks, which are read-only, temporary networks can be edited — both at the node level (an individual agent's description and instructions) and at the network level (its overall structure).
+
+## Using a downloaded network in neuro-san and neuro-san-studio
+
+The download icon saves a network as a HOCON file. HOCON is the data-only format the Neuro SAN frameworks use to define agent networks (think JSON, with comments and a few conveniences), so a network you build in MAUI can run directly in either framework.
+
+### neuro-san-studio
+
+[neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio) provides the `ns` command-line tool:
+
+1. Import the downloaded file into your studio project. This copies it into the project's `registries/` folder and registers it:
+
+    ```bash
+    ns import ~/Downloads/<network-name>.hocon
+    ```
+
+1. Start the server and UI, then find your network in the network list:
+
+    ```bash
+    ns run
+    ```
+
+    Or chat with it directly from the terminal:
+
+    ```bash
+    ns chat <network-name>
+    ```
+
+### neuro-san (core)
+
+For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework:
+
+1. Copy the downloaded file into your registries directory:
+
+    ```bash
+    cp ~/Downloads/<network-name>.hocon registries/
+    ```
+
+1. Register the network by adding an entry for the file to your manifest (`registries/manifest.hocon`), then point neuro-san at that manifest:
+
+    ```bash
+    export AGENT_MANIFEST_FILE=$(pwd)/registries/manifest.hocon
+    ```
+
+1. Run the network:
+
+    ```bash
+    python -m neuro_san.client.agent_cli --agent <network-name>
+    ```
+
+Refer to each project's README for prerequisites such as the Python environment and LLM API keys.

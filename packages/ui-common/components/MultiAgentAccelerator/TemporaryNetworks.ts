@@ -1,6 +1,5 @@
 import {keyBy, mergeWith} from "lodash-es"
 
-import {getFrontman} from "./AgentFlow/GraphStructure"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_HOCON,
@@ -9,22 +8,12 @@ import {
     DisplayAs,
     TEMPORARY_NETWORK_FOLDER,
 } from "./const"
-import {jsonToNetworkDefinition} from "./Sidebar/ImportNetworkModal"
 import {sendNetworkDesignerRequest} from "../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../state/TemporaryNetworks"
 import {removeTrailingUuid} from "../../utils/AgentName"
 import {chatMessageFromChunk} from "../AgentChat/Common/Utils"
 import {NotificationType, sendNotification} from "../Common/notification"
-
-//#region: Constants
-
-export const IMPORT_FAILURE_DETAIL: Record<ImportFailureReason, string> = {
-    "invalid-definition": "The file does not contain a valid network definition.",
-    "no-reservation": "The network designer did not return a reservation. Please try again.",
-}
-
-//#endregion: Constants
 
 //#region: Types
 
@@ -45,11 +34,6 @@ export type AgentReservation = {
     readonly lifetime_in_seconds: number
     readonly expiration_time_in_seconds: number
 }
-
-/** Reasons an import can fail before its networks reach the store. */
-export type ImportFailureReason = "invalid-definition" | "no-reservation"
-
-export type ImportNetworkResult = {networks: TemporaryNetwork[]} | {failure: ImportFailureReason}
 
 //#endregion: Types
 
@@ -223,34 +207,4 @@ export const streamNetworkDesignerUpsert = async (
         newNetworks = collectNetworkFromChunk(chunk, networkDef, newNetworks)
     })
     return newNetworks
-}
-
-/**
- * Converts imported JSON into a network definition and streams it through the
- * network designer to obtain reservations. Returns the resulting networks, or a
- * failure reason if the content is not a valid definition or no reservation is returned.
- */
-export const importNetworkFromJson = async (
-    content: string,
-    agentNetworkName: string,
-    neuroSanURL: string,
-    username: string
-): Promise<ImportNetworkResult> => {
-    const networkDef = jsonToNetworkDefinition(JSON.parse(content))
-    if (networkDef.length === 0) {
-        return {failure: "invalid-definition"}
-    }
-    const frontman = getFrontman(networkDef)?.origin ?? networkDef[0]?.origin ?? "agent"
-    const networks = await streamNetworkDesignerUpsert(
-        neuroSanURL,
-        new AbortController().signal,
-        frontman,
-        networkDef,
-        agentNetworkName,
-        username
-    )
-    if (networks.length === 0) {
-        return {failure: "no-reservation"}
-    }
-    return {networks}
 }
