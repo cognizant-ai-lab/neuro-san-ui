@@ -25,14 +25,41 @@ describe("Providers controller", () => {
         // Happy response
         global.fetch = mockFetch({})
 
-        expect(await isOpenAIKeyValid("fake-key")).toBe(true)
-        expect(await isAnthropicKeyValid("fake-key")).toBe(true)
+        expect(await isOpenAIKeyValid("fake-key")).toEqual({ok: true})
+        expect(await isAnthropicKeyValid("fake-key")).toEqual({ok: true})
 
         // Sad response
         global.fetch = mockFetch({}, false)
 
-        expect(await isOpenAIKeyValid("fake-key")).toBe(false)
-        expect(await isAnthropicKeyValid("fake-key")).toBe(false)
+        expect(await isOpenAIKeyValid("fake-key")).toMatchObject({ok: false})
+        expect(await isAnthropicKeyValid("fake-key")).toMatchObject({ok: false})
+    })
+
+    it("should surface the error details from a failed response", async () => {
+        // Shape used by Anthropic: top-level type and a nested error
+        global.fetch = mockFetch(
+            {
+                type: "error",
+                error: {type: "authentication_error", message: "invalid x-api-key"},
+            },
+            false
+        )
+
+        expect(await isAnthropicKeyValid("fake-key")).toMatchObject({
+            ok: false,
+            errorType: "authentication_error",
+            message: "invalid x-api-key",
+        })
+    })
+
+    it("should fall back gracefully when the error body is not valid JSON", async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 500,
+            json: () => Promise.reject(new Error("not json")),
+        })
+
+        expect(await isOpenAIKeyValid("fake-key")).toEqual({ok: false, status: 500})
     })
 
     it("should handle when fetch throws exceptions", async () => {
@@ -40,9 +67,16 @@ describe("Providers controller", () => {
         global.fetch = vi.fn().mockRejectedValue(new Error(errorText))
         vi.spyOn(console, "error").mockImplementation(vi.fn())
 
-        expect(await isOpenAIKeyValid("fake-key")).toBe(false)
-        expect(await isAnthropicKeyValid("fake-key")).toBe(false)
+        expect(await isOpenAIKeyValid("fake-key")).toMatchObject({ok: false, message: errorText})
+        expect(await isAnthropicKeyValid("fake-key")).toMatchObject({ok: false, message: errorText})
 
         expect(console.error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({message: errorText}))
+    })
+
+    it("should stringify a non-Error rejection", async () => {
+        global.fetch = vi.fn().mockRejectedValue("boom")
+        vi.spyOn(console, "error").mockImplementation(vi.fn())
+
+        expect(await isOpenAIKeyValid("fake-key")).toEqual({ok: false, message: "boom"})
     })
 })

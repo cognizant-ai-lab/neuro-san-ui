@@ -1,7 +1,53 @@
-export const isOpenAIKeyValid = async (key: string) => {
+//#region: Types and Interfaces
+
+export interface KeyValidationResult {
+    ok: boolean
+    status?: number
+    errorType?: string
+    message?: string
+    raw?: string
+}
+
+/**
+ * Build a failure result from a non-OK response, parsing the error shapes used by both OpenAI
+ * ({@code {error: {message, type}}}) and Anthropic ({@code {type, error: {type, message}, request_id}}).
+ * @param res The failed response.
+ * @return A {@link KeyValidationResult} describing the failure.
+ */
+interface ProviderErrorBody {
+    type?: string
+    error?: {type?: string; message?: string}
+}
+
+//#endregion: Types and Interfaces
+
+const toExceptionResult = (e: unknown): KeyValidationResult => ({
+    ok: false,
+    message: e instanceof Error ? e.message : String(e),
+})
+
+const toFailureResult = async (res: Response): Promise<KeyValidationResult> => {
+    let body
     try {
-        // Just call the "list models" API with the supplied key.
-        // We don't care about the result, just whether it succeeds or not
+        body = await res.json()
+    } catch {
+        body = undefined
+    }
+    const {type, error} = (body ?? {}) as ProviderErrorBody
+
+    return {
+        ok: false,
+        status: res.status,
+        errorType: error?.type ?? type,
+        message: error?.message,
+        raw: body === undefined ? undefined : JSON.stringify(body, null, 2),
+    }
+}
+
+export const isOpenAIKeyValid = async (key: string): Promise<KeyValidationResult> => {
+    try {
+        // Just call the "list models" API with the supplied key. Except for error reporting,  we don't care about the
+        // result, just whether it succeeds or not.
         const res = await fetch("https://api.openai.com/v1/models", {
             method: "GET",
             headers: {
@@ -10,17 +56,16 @@ export const isOpenAIKeyValid = async (key: string) => {
             },
         })
 
-        return res.ok
+        return res.ok ? {ok: true} : await toFailureResult(res)
     } catch (e) {
         console.error("Error validating API key:", e)
-        return false
+        return toExceptionResult(e)
     }
 }
 
-export const isAnthropicKeyValid = async (key: string) => {
+export const isAnthropicKeyValid = async (key: string): Promise<KeyValidationResult> => {
     try {
         // Just call the "list models" API with the supplied key.
-        // We don't care about the result, just whether it succeeds or not
         const res = await fetch("https://api.anthropic.com/v1/models", {
             method: "GET",
             headers: {
@@ -34,9 +79,9 @@ export const isAnthropicKeyValid = async (key: string) => {
             },
         })
 
-        return res.ok
+        return res.ok ? {ok: true} : await toFailureResult(res)
     } catch (e) {
         console.error("Error validating API key:", e)
-        return false
+        return toExceptionResult(e)
     }
 }
