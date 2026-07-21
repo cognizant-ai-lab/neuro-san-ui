@@ -665,6 +665,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             clearTimeout(timeoutId)
             dockAbortControllerRef.current = null
             setIsDockStreaming(false)
+            setStopState(null)
         }
     }, [saveUpdates, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
