@@ -21,37 +21,37 @@ import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../../../controller/llm/
 describe("Providers controller", () => {
     withStrictMocks()
 
-    it("should validate keys", async () => {
-        // Happy response
+    it("should return ok for a successful response", async () => {
         global.fetch = mockFetch({})
 
         expect(await isOpenAIKeyValid("fake-key")).toEqual({ok: true})
         expect(await isAnthropicKeyValid("fake-key")).toEqual({ok: true})
-
-        // Sad response
-        global.fetch = mockFetch({}, false)
-
-        expect(await isOpenAIKeyValid("fake-key")).toMatchObject({ok: false})
-        expect(await isAnthropicKeyValid("fake-key")).toMatchObject({ok: false})
     })
 
-    it("should surface the error details from a failed response", async () => {
-        // Shape used by Anthropic: top-level type and a nested error
-        global.fetch = mockFetch(
-            {
-                type: "error",
-                error: {type: "authentication_error", message: "invalid x-api-key"},
-            },
-            false
-        )
+    it.each([
+        // OpenAI shape: {error: {message}}
+        ["OpenAI", isOpenAIKeyValid, {error: {message: "Incorrect API key provided"}}, "Incorrect API key provided"],
+        // Anthropic shape: top-level type plus a nested error
+        [
+            "Anthropic",
+            isAnthropicKeyValid,
+            {type: "error", error: {type: "authentication_error", message: "invalid x-api-key"}},
+            "invalid x-api-key",
+        ],
+    ] as const)(
+        "should surface the status and error message from a failed %s response",
+        async (_name, validate, body, expectedMessage) => {
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: false,
+                status: 401,
+                json: () => Promise.resolve(body),
+            })
 
-        expect(await isAnthropicKeyValid("fake-key")).toMatchObject({
-            ok: false,
-            message: "invalid x-api-key",
-        })
-    })
+            expect(await validate("fake-key")).toEqual({ok: false, status: 401, message: expectedMessage})
+        }
+    )
 
-    it("should fall back gracefully when the error body is not valid JSON", async () => {
+    it("should fall back to just the status when the error body is not valid JSON", async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: false,
             status: 500,
