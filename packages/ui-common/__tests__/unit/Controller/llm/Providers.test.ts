@@ -47,7 +47,6 @@ describe("Providers controller", () => {
 
         expect(await isAnthropicKeyValid("fake-key")).toMatchObject({
             ok: false,
-            errorType: "authentication_error",
             message: "invalid x-api-key",
         })
     })

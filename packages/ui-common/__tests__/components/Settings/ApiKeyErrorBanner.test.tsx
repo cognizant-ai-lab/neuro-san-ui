@@ -1,5 +1,4 @@
 import {render, screen, within} from "@testing-library/react"
-import {UserEvent, userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ApiKeyErrorBanner, ApiKeyFailure} from "../../../components/Settings/ApiKeyErrorBanner"
@@ -9,20 +8,12 @@ const ANTHROPIC_FAILURE: ApiKeyFailure = {
     result: {
         ok: false,
         status: 401,
-        errorType: "authentication_error",
         message: "invalid x-api-key",
-        raw: '{\n  "type": "error"\n}',
     },
 }
 
 describe("ApiKeyErrorBanner", () => {
     withStrictMocks()
-
-    let user: UserEvent
-
-    beforeEach(() => {
-        user = userEvent.setup()
-    })
 
     it("renders nothing when there are no failures", () => {
         const {container} = render(
@@ -44,7 +35,6 @@ describe("ApiKeyErrorBanner", () => {
 
         expect(screen.getByText("Anthropic — Authentication failed (401)")).toBeInTheDocument()
         expect(screen.getByText("invalid x-api-key")).toBeInTheDocument()
-        expect(screen.getByText("authentication_error")).toBeInTheDocument()
     })
 
     it("aggregates multiple failing providers", () => {
@@ -62,25 +52,7 @@ describe("ApiKeyErrorBanner", () => {
         expect(screen.getByText("OpenAI — Rate limited (429)")).toBeInTheDocument()
     })
 
-    it("toggles the raw response body", async () => {
-        render(
-            <ApiKeyErrorBanner
-                failures={[ANTHROPIC_FAILURE]}
-                id="banner"
-            />
-        )
-
-        const toggle = screen.getByRole("button", {name: /View raw response/u})
-        expect(toggle).toHaveAttribute("aria-expanded", "false")
-        expect(screen.queryByText(/"type": "error"/u)).not.toBeInTheDocument()
-
-        await user.click(toggle)
-
-        expect(toggle).toHaveAttribute("aria-expanded", "true")
-        expect(screen.getByText(/"type": "error"/u)).toBeInTheDocument()
-    })
-
-    it("omits the status code and raw toggle when they are unknown", () => {
+    it("omits the status code when it is unknown", () => {
         render(
             <ApiKeyErrorBanner
                 failures={[{vendor: "OpenAI", result: {ok: false, message: "network down"}}]}

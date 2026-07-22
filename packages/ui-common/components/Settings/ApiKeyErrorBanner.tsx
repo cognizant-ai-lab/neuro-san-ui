@@ -1,11 +1,8 @@
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import Box from "@mui/material/Box"
-import ButtonBase from "@mui/material/ButtonBase"
-import Collapse from "@mui/material/Collapse"
 import {alpha} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
-import {FC, useState} from "react"
+import {FC} from "react"
 
 import {KeyValidationResult} from "../../controller/llm/Providers"
 
@@ -42,9 +39,8 @@ const describeStatus = (httpStatus?: number): string => {
 }
 
 const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => {
-    const [expanded, setExpanded] = useState<boolean>(false)
     const {vendor, result} = failure
-    const {status: statusCode, message, errorType, raw} = result
+    const {status: statusCode, message} = result
 
     const title = `${vendor} — ${describeStatus(statusCode)}${statusCode !== undefined ? ` (${statusCode})` : ""}`
 
@@ -63,67 +59,6 @@ const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => 
                 >
                     {message}
                 </Typography>
-            ) : null}
-            {raw ? (
-                <Box sx={{mt: 0.75}}>
-                    <ButtonBase
-                        aria-expanded={expanded}
-                        disableRipple
-                        onClick={() => setExpanded((prev) => !prev)}
-                        sx={{
-                            "&:hover": {color: "text.primary"},
-                            alignItems: "center",
-                            color: "text.secondary",
-                            display: "flex",
-                            flexWrap: "wrap",
-                            fontSize: "0.75rem",
-                            fontWeight: 400,
-                            gap: 1,
-                            justifyContent: "flex-start",
-                            width: "100%",
-                        }}
-                    >
-                        <Box sx={{alignItems: "center", display: "flex", gap: 0.25}}>
-                            <ExpandMoreIcon
-                                sx={{
-                                    fontSize: "1rem",
-                                    transform: expanded ? "rotate(0deg)" : "rotate(-90deg)",
-                                    transition: "transform 0.15s ease",
-                                }}
-                            />
-                            View raw response
-                        </Box>
-                        {errorType ? (
-                            <Typography
-                                component="span"
-                                sx={{color: "inherit", fontFamily: "monospace", fontSize: "0.75rem"}}
-                                variant="caption"
-                            >
-                                {errorType}
-                            </Typography>
-                        ) : null}
-                    </ButtonBase>
-                    <Collapse
-                        in={expanded}
-                        unmountOnExit
-                    >
-                        <Box
-                            component="pre"
-                            sx={{
-                                backgroundColor: (theme) => alpha(theme.palette.common.black, 0.25),
-                                borderRadius: 1,
-                                fontSize: "0.75rem",
-                                m: 0,
-                                mt: 0.75,
-                                maxHeight: 200,
-                                overflow: "auto",
-                                p: 1,
-                            }}
-                        >
-                            {raw}
-                        </Box>
-                    </Collapse>
-                </Box>
             ) : null}
         </Box>
     )

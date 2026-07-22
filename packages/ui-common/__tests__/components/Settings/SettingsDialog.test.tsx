@@ -378,7 +378,6 @@ describe("SettingsDialog", () => {
             const banner = await screen.findByTestId("settings-dialog-api-key-error-banner")
             expect(within(banner).getByText("Anthropic — Authentication failed (401)")).toBeInTheDocument()
             expect(within(banner).getByText("invalid x-api-key")).toBeInTheDocument()
-            expect(within(banner).getByText("authentication_error")).toBeInTheDocument()
 
             // Editing the key clears the failure from the banner
             await user.click(inputBox)

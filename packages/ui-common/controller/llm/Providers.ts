@@ -3,9 +3,7 @@
 export interface KeyValidationResult {
     ok: boolean
     status?: number
-    errorType?: string
     message?: string
-    raw?: string
 }
 
 /**
@@ -33,14 +31,12 @@ const toFailureResult = async (res: Response): Promise<KeyValidationResult> => {
     } catch {
         body = undefined
     }
-    const {type, error} = (body ?? {}) as ProviderErrorBody
+    const {error} = (body ?? {}) as ProviderErrorBody
 
     return {
         ok: false,
         status: res.status,
-        errorType: error?.type ?? type,
         message: error?.message,
-        raw: body === undefined ? undefined : JSON.stringify(body, null, 2),
     }
 }
 
