@@ -36,58 +36,20 @@ The interface consists of three main sections:
 - Queries are processed using LangChain-powered logic to fetch relevant insights.
 - Responses may be influenced by the selected agent network and its internal decision-making processes.
 
-## Temporary Networks
+## Agent Network Designer
 
-Networks created using the **Agent Network Designer** are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save it as a HOCON file (`<network-name>.hocon`) before it expires. That file can be run outside MAUI — see [Using a downloaded network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio).
+Networks created using the **Agent Network Designer** are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save it as a HOCON file (`<network-name>.hocon`) before it expires. That file can be run outside MAUI - see [using a downloaded network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio).
 
 Unlike permanent networks, which are read-only, temporary networks can be edited. Edits can happen both at the node level (an individual agent's description and instructions), by clicking on a node and making updates in that popup, and at the network level (its overall structure), by clicking "Edit" next to the network title, and making updates in the Network Editor.
 
-## Using a downloaded network in neuro-san and neuro-san-studio
+### Using a downloaded network in neuro-san and neuro-san-studio
 
 The download icon saves a network as a HOCON file. HOCON is the data-only format the Neuro SAN frameworks use to define agent networks (think JSON, with comments and a few conveniences), so a network you build in MAUI can run directly in either framework.
 
 ### neuro-san-studio
 
-[neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio) provides the `ns` command-line tool:
-
-1. Import the downloaded file into your studio project. This copies it into the project's `registries/` folder and registers it:
-
-    ```bash
-    ns import ~/Downloads/<network-name>.hocon
-    ```
-
-1. Start the server and UI, then find your network in the network list:
-
-    ```bash
-    ns run
-    ```
-
-    Or chat with it directly from the terminal:
-
-    ```bash
-    ns chat <network-name>
-    ```
+For [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio), see [import agent networks](https://github.com/cognizant-ai-lab/neuro-san-studio#import-agent-networks) for how to import the downloaded file and run it.
 
 ### neuro-san (core)
 
-For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework:
-
-1. Copy the downloaded file into your registries directory:
-
-    ```bash
-    cp ~/Downloads/<network-name>.hocon registries/
-    ```
-
-1. Register the network by adding an entry for the file to your manifest (`registries/manifest.hocon`), then point neuro-san at that manifest:
-
-    ```bash
-    export AGENT_MANIFEST_FILE=$(pwd)/registries/manifest.hocon
-    ```
-
-1. Run the network:
-
-    ```bash
-    python -m neuro_san.client.agent_cli --agent <network-name>
-    ```
-
-Refer to each project's README for prerequisites such as the Python environment and LLM API keys.
+For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework, see [creating a new agent network](https://github.com/cognizant-ai-lab/neuro-san#creating-a-new-agent-network) for how to register the downloaded file and run it.
