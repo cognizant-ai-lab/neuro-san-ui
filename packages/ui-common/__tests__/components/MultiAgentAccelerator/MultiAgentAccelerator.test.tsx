@@ -18,7 +18,7 @@ import {HumanMessage} from "@langchain/core/messages"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
-import {Ref} from "react"
+import {Children, isValidElement, ReactNode, Ref} from "react"
 import * as z from "zod"
 
 import {
@@ -74,6 +74,18 @@ import {TourPromptState, useTourStore} from "../../../state/Tour"
 import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const MOCK_USER = "mock-user"
+
+/** Flatten a tour step's content (a string, or a ReactNode with e.g. <br/> line breaks) into its plain text. */
+const tourStepText = (content: ReactNode): string =>
+    Children.toArray(content)
+        .map((child) =>
+            typeof child === "string"
+                ? child
+                : isValidElement<{children?: ReactNode}>(child)
+                  ? tourStepText(child.props.children)
+                  : ""
+        )
+        .join("")
 
 // Backend neuro-san API server to use
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
@@ -1475,7 +1487,7 @@ describe("MultiAgentAccelerator", () => {
             await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
             // Make sure we see the tour first step
-            await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
 
             // Click through remaining steps and verify their content shows up
             for (const step of MAIN_TOUR_STEPS.slice(1)) {
@@ -1485,7 +1497,7 @@ describe("MultiAgentAccelerator", () => {
                 expect(stepElement).toBeVisible()
                 const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})
                 await user.click(nextButton)
-                await screen.findByText(step.content.toString())
+                await screen.findByText(tourStepText(step.content))
             }
         }, 10_000)
 
@@ -1536,7 +1548,7 @@ describe("MultiAgentAccelerator", () => {
                     })
 
                     // Positive Case: Wait until the introductory tour step text mounts in the DOM
-                    await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+                    await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
                 } else {
                     // Negative Case: Safely wait until the prompt dialog counts hit 0
                     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
@@ -1547,7 +1559,7 @@ describe("MultiAgentAccelerator", () => {
                     })
 
                     // Assert that the first step text remains completely absent from the DOM layout
-                    expect(screen.queryByText(MAIN_TOUR_STEPS[0].content.toString())).not.toBeInTheDocument()
+                    expect(screen.queryByText(tourStepText(MAIN_TOUR_STEPS[0].content))).not.toBeInTheDocument()
                 }
 
                 // Verify that the global state store matches the expected final state
