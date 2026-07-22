@@ -40,7 +40,7 @@ The interface consists of three main sections:
 
 Networks created using the **Agent Network Designer** are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save it as a HOCON file (`<network-name>.hocon`) before it expires. That file can be run outside MAUI — see [Using a downloaded network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio).
 
-Unlike permanent networks, which are read-only, temporary networks can be edited — both at the node level (an individual agent's description and instructions) and at the network level (its overall structure).
+Unlike permanent networks, which are read-only, temporary networks can be edited. Edits can happen both at the node level (an individual agent's description and instructions), by clicking on a node and making updates in that popup, and at the network level (its overall structure), by clicking "Edit" next to the network title, and making updates in the Network Editor.
 
 ## Using a downloaded network in neuro-san and neuro-san-studio
 
