@@ -22,15 +22,17 @@ export const MAIN_TOUR_STEPS: Step[] = [
         placement: "bottom",
     },
     {
-        content:
-            "Agent Network Designer: Click here to create and edit your own network, with the help of a " +
-            "powerful AI assistant.",
+        content: (
+            <>
+                Agent Network Designer: Click here to create and edit your own network, with the help of a powerful AI
+                assistant.
+                <br />
+                <br />
+                Networks you create can be downloaded from the sidebar as a HOCON file and run in neuro-san or
+                neuro-san-studio. See the User Guide (under Help) for more information.
+            </>
+        ),
         target: () => document.querySelector("#add-network-icon"),
-        placement: "bottom",
-    },
-    {
-        content: "Import Network Definition: Click here to import a network definition file from your computer.",
-        target: () => document.querySelector("#import-network-icon"),
         placement: "bottom",
     },
     {

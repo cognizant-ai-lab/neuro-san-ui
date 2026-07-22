@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 import {HumanMessage} from "@langchain/core/messages"
-import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
-import {Ref} from "react"
+import {Children, isValidElement, ReactNode, Ref} from "react"
 import * as z from "zod"
 
 import {
@@ -51,7 +51,6 @@ import {
 } from "../../../components/MultiAgentAccelerator/const"
 import {MultiAgentAccelerator} from "../../../components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {BYOK} from "../../../components/MultiAgentAccelerator/Schema/SlyData"
-import {ImportNetworkModalProps} from "../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal"
 import {SidebarProps} from "../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {MAIN_TOUR_STEPS} from "../../../components/MultiAgentAccelerator/Tour/MainTourSteps"
 import {
@@ -76,6 +75,18 @@ import {cleanUpAgentName} from "../../../utils/AgentName"
 
 const MOCK_USER = "mock-user"
 
+/** Flatten a tour step's content (a string, or a ReactNode with e.g. <br/> line breaks) into its plain text. */
+const tourStepText = (content: ReactNode): string =>
+    Children.toArray(content)
+        .map((child) =>
+            typeof child === "string"
+                ? child
+                : isValidElement<{children?: ReactNode}>(child)
+                  ? tourStepText(child.props.children)
+                  : ""
+        )
+        .join("")
+
 // Backend neuro-san API server to use
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
 
@@ -83,7 +94,6 @@ const conversationMock = vi.fn()
 const temporaryNetworksMock = vi.fn()
 const networkIconSuggestionsMock = vi.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
-let onImport: (name: string, content: string) => void
 let onSaveAgent: AgentFlowProps["onSaveAgent"]
 let setSelectedNetwork: (network: string) => void
 
@@ -144,21 +154,6 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async (impo
 
             const OriginalSidebar = originalModule.Sidebar
             return <OriginalSidebar {...props} />
-        },
-    }
-})
-
-vi.mock("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal", async (importOriginal) => {
-    const originalModule =
-        await importOriginal<typeof import("../../../components/MultiAgentAccelerator/Sidebar/ImportNetworkModal")>()
-
-    return {
-        ...originalModule,
-        ImportNetworkModal: (props: ImportNetworkModalProps) => {
-            onImport = props.onImport
-
-            const OriginalModal = originalModule.ImportNetworkModal
-            return <OriginalModal {...props} />
         },
     }
 })
@@ -255,15 +250,6 @@ const renderMultiAgentAcceleratorPage = () =>
             />
         </SnackbarProvider>
     )
-
-// Waits for the sidebar to mount (which is what captures onImport via the ImportNetworkModal mock), then fires an
-// import through that callback.
-const importThroughModal = async (networkName: string, content: string) => {
-    await screen.findByText("Agent Networks")
-    await act(async () => {
-        onImport(networkName, content)
-    })
-}
 
 describe("MultiAgentAccelerator", () => {
     withStrictMocks()
@@ -381,123 +367,6 @@ describe("MultiAgentAccelerator", () => {
                 expect.stringMatching(new RegExp(`Unable to get list of Agent Networks.*${NEURO_SAN_SERVER_URL}`, "u"))
             )
         })
-    })
-
-    it("should display the importing backdrop while a network import is in flight", async () => {
-        let resolveSend: () => void
-        const sendPromise = new Promise<void>((resolve) => {
-            resolveSend = resolve
-        })
-
-        vi.mocked(sendNetworkDesignerRequest).mockImplementation(
-            async (_url, _signal, _agentName, _updated, _agentNetworkName, _currentUser, onChunk) => {
-                onChunk(JSON.stringify(NETWORK_HOCON_CHAT_MESSAGE))
-                await sendPromise
-            }
-        )
-
-        renderMultiAgentAcceleratorPage()
-
-        await screen.findByText("Agent Networks")
-
-        await act(async () => {
-            onImport(
-                "Santas Workshop Ops",
-                JSON.stringify([{origin: "frontman", instructions: "Do the thing", tools: []}])
-            )
-        })
-
-        await waitFor(() => {
-            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).toBeVisible()
-        })
-
-        await act(async () => {
-            resolveSend()
-        })
-
-        await waitFor(() => {
-            expect(screen.getByTestId("multi-agent-accelerator-import-backdrop")).not.toBeVisible()
-        })
-    })
-
-    it.each([
-        {
-            scenario: "the imported file contains no agents",
-            networkName: "Empty Network",
-            content: JSON.stringify([]),
-            expectedLog: "does not contain a valid network definition",
-            designerCalls: 0,
-        },
-        {
-            scenario: "the network designer returns no reservation",
-            networkName: "Reservationless Network",
-            // Default mock resolves to [] without ever invoking onChunk, so no reservation comes back.
-            content: JSON.stringify([{origin: "frontman", instructions: "i", tools: []}]),
-            expectedLog: "did not return a reservation",
-            designerCalls: 1,
-        },
-        {
-            scenario: "conversion of the imported file throws",
-            // Not valid JSON — importNetworkFromJson's JSON.parse throws, exercising the catch branch.
-            networkName: "Broken Network",
-            content: "this is not json",
-            expectedLog: 'Failed to update network "Broken Network"',
-            designerCalls: 0,
-        },
-    ])(
-        "logs an error and makes $designerCalls designer call(s) when $scenario",
-        async ({networkName, content, expectedLog, designerCalls}) => {
-            const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-            // The invalid-JSON path also logs via console.error before surfacing the toast.
-            vi.spyOn(console, "error").mockImplementation(vi.fn())
-
-            renderMultiAgentAcceleratorPage()
-            await importThroughModal(networkName, content)
-
-            await waitFor(() => {
-                expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining(expectedLog))
-            })
-            expect(sendNetworkDesignerRequest).toHaveBeenCalledTimes(designerCalls)
-        }
-    )
-
-    it("should forward the resolved frontman to sendNetworkDesignerRequest", async () => {
-        vi.spyOn(console, "debug").mockImplementation(vi.fn())
-        const upsertMock = vi.mocked(sendNetworkDesignerRequest)
-
-        renderMultiAgentAcceleratorPage()
-        await importThroughModal(
-            "Two Agent Network",
-            JSON.stringify([
-                {origin: "boss", tools: ["worker"], instructions: "lead"},
-                {origin: "worker", instructions: "work"},
-            ])
-        )
-
-        await waitFor(() => expect(upsertMock).toHaveBeenCalledTimes(1))
-        // Third positional arg to sendNetworkDesignerRequest is the frontman name.
-        expect(upsertMock.mock.calls[0][2]).toBe("boss")
-    })
-
-    it("should open the ImportNetworkModal from the sidebar import button and close it again", async () => {
-        renderMultiAgentAcceleratorPage()
-
-        await screen.findByText("Agent Networks")
-
-        // The modal is not mounted until the import button is clicked.
-        expect(screen.queryByText("Import network definition")).not.toBeInTheDocument()
-        expect(screen.queryByText("Drag & drop a network definition")).not.toBeInTheDocument()
-
-        const importButton = await screen.findByRole("button", {name: /Import Network Definition/u})
-        await user.click(importButton)
-
-        // Modal is mounted after clicking import button
-        const modalHeading = screen.getByText("Import network definition")
-        expect(modalHeading).toBeInTheDocument()
-
-        // The modal is unmounted after clicking the cancel button.
-        await user.click(screen.getByRole("button", {name: /cancel/iu}))
-        await waitForElementToBeRemoved(modalHeading)
     })
 
     it("should display error toast when an error occurs for getConnectivity", async () => {
@@ -1618,7 +1487,7 @@ describe("MultiAgentAccelerator", () => {
             await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
 
             // Make sure we see the tour first step
-            await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
 
             // Click through remaining steps and verify their content shows up
             for (const step of MAIN_TOUR_STEPS.slice(1)) {
@@ -1628,7 +1497,7 @@ describe("MultiAgentAccelerator", () => {
                 expect(stepElement).toBeVisible()
                 const nextButton = await screen.findByRole("button", {name: /Next \(\d+ of \d+\)|End Tour/u})
                 await user.click(nextButton)
-                await screen.findByText(step.content.toString())
+                await screen.findByText(tourStepText(step.content))
             }
         }, 10_000)
 
@@ -1679,7 +1548,7 @@ describe("MultiAgentAccelerator", () => {
                     })
 
                     // Positive Case: Wait until the introductory tour step text mounts in the DOM
-                    await screen.findByText(MAIN_TOUR_STEPS[0].content.toString())
+                    await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
                 } else {
                     // Negative Case: Safely wait until the prompt dialog counts hit 0
                     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
@@ -1690,7 +1559,7 @@ describe("MultiAgentAccelerator", () => {
                     })
 
                     // Assert that the first step text remains completely absent from the DOM layout
-                    expect(screen.queryByText(MAIN_TOUR_STEPS[0].content.toString())).not.toBeInTheDocument()
+                    expect(screen.queryByText(tourStepText(MAIN_TOUR_STEPS[0].content))).not.toBeInTheDocument()
                 }
 
                 // Verify that the global state store matches the expected final state
