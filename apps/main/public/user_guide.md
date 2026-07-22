@@ -21,8 +21,8 @@ The interface consists of three main sections:
 - Displays a list of available agent networks.
 - Each agent network represents a group of AI agents working together to analyze and solve problems.
 - Enables you to select a network to view its structure and interactions.
-- Use the plus icon in the sidebar header to **create** your own agent network with the **Agent Network Designer**.
-- Use the upload icon in the sidebar header to **import** your own network definition (see [Importing a Network Definition](#importing-a-network-definition)).
+- Use the plus icon in the sidebar header to **create** your own agent network with the [Agent Network Designer](#agent-network-designer).
+- Use the download icon next to a network you've created to **download** it as a HOCON file that you can run in neuro-san or neuro-san-studio (see [Using a Downloaded Network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio)).
 
 ### 2. Multi-Agent Network Graph
 
@@ -33,32 +33,23 @@ The interface consists of three main sections:
 ### 3. Chat Window – Query Interface
 
 - Allows you to input queries and receive responses from the AI system.
-- Queries are processed using LangChain-powered logic to fetch relevant insights.
+- Queries are processed using [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) to fetch relevant insights.
 - Responses may be influenced by the selected agent network and its internal decision-making processes.
 
-## Importing a Network Definition
+## Agent Network Designer
 
-You can import your own agent network into MAUI by importing a network definition file.
+Networks created using the **Agent Network Designer** are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save it as a HOCON file (`<network-name>.hocon`) before it expires. That file can be run outside MAUI - see [Using a Downloaded Network in neuro-san and neuro-san-studio](#using-a-downloaded-network-in-neuro-san-and-neuro-san-studio).
 
-To open the importer, click the upload icon in the **Agent Networks** sidebar header. This launches a guided three-step wizard:
+Unlike permanent networks, which are read-only, temporary networks can be edited. Edits can happen both at the node level (an individual agent's description and instructions), by clicking on a node and making updates in that popup, and at the network level (its overall structure), by clicking "Edit" next to the network title (or in the sidebar), and making updates in the Network Editor.
 
-### 1. Select file
+### Using a Downloaded Network in neuro-san and neuro-san-studio
 
-- Drag & drop a network definition onto the drop zone, or click **browse your files** to pick one.
-- The file must be a JSON file previously exported from an **Agent Network Designer**-created network.
+The download icon saves a network as a HOCON file. HOCON is the format that the neuro-san frameworks use to define agent networks (think JSON, with comments and a few conveniences), so a network you build in MAUI can run directly in either framework.
 
-### 2. Review
+### neuro-san-studio
 
-- The file is parsed and validated automatically.
-- Once imported, you'll see a summary of the network so you can sanity-check it before continuing: the number of **Agents**, **Coded tools**, and **External agents**, along with the **Frontman** (the network's entry-point agent).
+For [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio), see [Import a project from a file](https://github.com/cognizant-ai-lab/neuro-san-studio#import-a-project-from-a-file--export-to-a-file) for how to import the downloaded file and run it.
 
-### 3. Confirm
+### neuro-san (core)
 
-- Confirm or edit the network name and finish the import. If the name conflicts with an existing network, the dialog offers options to resolve it.
-- The imported network is added to the sidebar and selected automatically.
-
-## Temporary Networks
-
-Networks created using the **Agent Network Designer**, or imported from a JSON file (see [Importing a Network Definition](#importing-a-network-definition)), are temporary and expire after a period of time. If you want to keep one, use the download icon next to it in the sidebar to save its definition before it expires.
-
-Unlike permanent networks, which are read-only, temporary networks can be edited — both at the node level (an individual agent's description and instructions) and at the network level (its overall structure).
+For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework, see [Creating a new agent network](https://github.com/cognizant-ai-lab/neuro-san#creating-a-new-agent-network) for how to register the downloaded file and run it.
