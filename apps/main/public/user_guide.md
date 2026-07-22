@@ -48,8 +48,8 @@ The download icon saves a network as a HOCON file. HOCON is the format that the 
 
 ### neuro-san-studio
 
-For [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio), see [import agent networks](https://github.com/cognizant-ai-lab/neuro-san-studio#import-agent-networks) for how to import the downloaded file and run it.
+For [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio), see [Import a project from a file](https://github.com/cognizant-ai-lab/neuro-san-studio#import-a-project-from-a-file--export-to-a-file) for how to import the downloaded file and run it.
 
 ### neuro-san (core)
 
-For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework, see [creating a new agent network](https://github.com/cognizant-ai-lab/neuro-san#creating-a-new-agent-network) for how to register the downloaded file and run it.
+For the core [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) framework, see [Creating a new agent network](https://github.com/cognizant-ai-lab/neuro-san#creating-a-new-agent-network) for how to register the downloaded file and run it.
