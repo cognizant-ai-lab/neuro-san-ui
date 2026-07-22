@@ -29,7 +29,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
                 <br />
                 <br />
                 Networks you create can be downloaded from the sidebar as a HOCON file and run in neuro-san or
-                neuro-san-studio — see the User Guide (under Help) for the steps.
+                neuro-san-studio. See the User Guide (under Help) for more information.
             </>
         ),
         target: () => document.querySelector("#add-network-icon"),
