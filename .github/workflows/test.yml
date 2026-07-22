@@ -45,8 +45,8 @@ on:
 env:
     # AWS info needed to push the image to ECR
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-    # and the nodejs version which is a repo-level variable
-    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
+    # Hardcoded to Node 26 for the test workflow while the repo variable is being transitioned.
+    NODEJS_VERSION: "26"
 
 permissions:
     contents: read
@@ -66,8 +66,8 @@ jobs:
               # build-common 1.0.8
               uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
               with:
-                  # Must be a major version (e.g. 26) because it is also used in Docker base image names.
-                  node-version: ${{ vars.NODEJS_VERSION }}
+                  # Hardcoded to Node 26 while the repo variable is being transitioned.
+                  node-version: "26"
                   clean-install: "true"
 
             - name: Install prerequisites for code generation
