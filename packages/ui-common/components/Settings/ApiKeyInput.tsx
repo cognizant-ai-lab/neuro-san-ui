@@ -72,7 +72,8 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
         onResultChange?.(null)
-        // onResultChange is a stable callback from the parent; re-running only on persistedValue is intended
+        // Only clear results when persistedValue changes; intentionally omit onResultChange so a new
+        // callback identity on parent re-render doesn't re-run this effect
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [persistedValue])
 
