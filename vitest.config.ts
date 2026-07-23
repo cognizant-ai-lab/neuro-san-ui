@@ -22,10 +22,10 @@ export default defineConfig({
             provider: "istanbul",
             reporter: ["text-summary"],
             thresholds: {
-                statements: -84,
-                branches: -139,
+                statements: -80,
+                branches: -128,
                 functions: -18,
-                lines: -58,
+                lines: -56,
             },
         },
         // TODO: potential small optimization: consider using `node` environment for non-UI tests
