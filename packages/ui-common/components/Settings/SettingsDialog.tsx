@@ -26,11 +26,12 @@ import {
     useState,
 } from "react"
 
+import {ApiKeyErrorBanner, ApiKeyFailure} from "./ApiKeyErrorBanner"
 import {ApiKeyInput} from "./ApiKeyInput"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
-import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../controller/llm/Providers"
+import {isAnthropicKeyValid, isOpenAIKeyValid, KeyValidationResult} from "../../controller/llm/Providers"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
 import {
@@ -49,6 +50,7 @@ import {StatusLight} from "../Common/StatusLight"
 import {CustomerLogo} from "../Logo/CustomerLogo"
 
 //#region: Styled Components
+
 const SettingsSectionTitleBase: FC<ComponentPropsWithoutRef<typeof Typography>> = (props) => (
     <Typography
         variant="h6"
@@ -91,6 +93,7 @@ const SubSectionBody = styled(Box)(({theme}) => ({
     gap: theme.spacing(2.5),
     width: "100%",
 }))
+
 //#endregion: Styled Components
 
 //#region: Types and Interfaces
@@ -107,7 +110,7 @@ interface LLMProviderInputConfig {
     vendor: LLMProvider
     idSuffix: string
     logo: string
-    onTest: (key: string) => Promise<boolean>
+    onTest: (key: string) => Promise<KeyValidationResult>
     placeholder: string
 }
 
@@ -194,6 +197,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
     const openAIKeyCheckmark = useCheckmarkFade()
     const anthropicKeyCheckmark = useCheckmarkFade()
+
+    // Failing key-test results, aggregated into the banner at the top of the API Keys section
+    const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, KeyValidationResult | null>>>({})
 
     // Native names setting
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
@@ -548,6 +554,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </Section>
     )
 
+    const keyFailures: ApiKeyFailure[] = apiKeyConfigs.flatMap(({vendor}) => {
+        const result = keyTestResults[vendor]
+        return result && !result.ok ? [{vendor, result}] : []
+    })
+
     const getApiKeysSection = () => (
         <Section>
             <Box sx={{display: "flex", alignItems: "center", gap: theme.spacing(1)}}>
@@ -590,6 +601,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 </Tooltip>
             </Box>
             <SettingsSubsection title="LLM Providers">
+                <ApiKeyErrorBanner
+                    failures={keyFailures}
+                    id={`${id}-api-key-error-banner`}
+                />
                 <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5}}>
                     {apiKeyConfigs.map(({checkmark, vendor, idSuffix, logo, onTest, placeholder}) => (
                         <SettingsRow
@@ -602,6 +617,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 forgetKey={() => persistKey(vendor, "", checkmark, 0)}
                                 id={`${id}-${idSuffix}`}
                                 logo={logo}
+                                onResultChange={(result) => setKeyTestResults((prev) => ({...prev, [vendor]: result}))}
                                 onSave={(key) => persistKey(vendor, key, checkmark, Date.now())}
                                 onTest={onTest}
                                 persistedValue={getApiKey(apiKeys, vendor)}

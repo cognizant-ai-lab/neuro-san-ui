@@ -26,13 +26,6 @@ import {config as baseConfig} from "./packages/dev-common/Configs/knip.config"
 const config: KnipConfig = {
     ...baseConfig,
 
-    ignoreBinaries: [
-        ...baseConfig.ignoreBinaries,
-
-        // Used in package.json script
-        "mktemp",
-    ],
-
     ignoreDependencies: [
         ...baseConfig.ignoreDependencies,
 

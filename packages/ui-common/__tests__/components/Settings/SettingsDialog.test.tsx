@@ -351,6 +351,40 @@ describe("SettingsDialog", () => {
             expect(statusLight).toHaveAttribute("data-status", "red")
         })
 
+        it("surfaces a failed key test in the aggregated error banner", async () => {
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: false,
+                status: 401,
+                json: () => ({
+                    type: "error",
+                    error: {type: "authentication_error", message: "invalid x-api-key"},
+                }),
+            })
+
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-anthropic-input")
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-ant-...")
+
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
+            await user.click(within(apiKeyInput).getByRole("button", {name: "Test"}))
+
+            const banner = await screen.findByTestId("settings-dialog-api-key-error-banner")
+            expect(within(banner).getByText("Anthropic — Authentication failed (401)")).toBeInTheDocument()
+            expect(within(banner).getByText("invalid x-api-key")).toBeInTheDocument()
+
+            // Editing the key clears the failure from the banner
+            await user.click(inputBox)
+            await user.paste("more")
+            expect(screen.queryByTestId("settings-dialog-api-key-error-banner")).not.toBeInTheDocument()
+        })
+
         it("allows user to request that API keys be forgotten", async () => {
             // set an existing key value
             useSettingsStore.getState().updateSettings({
