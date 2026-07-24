@@ -6,19 +6,19 @@ import {FC} from "react"
 
 import {KeyValidationResult} from "../../controller/llm/Providers"
 
-export interface ApiKeyFailure {
-    readonly vendor: string
-    readonly result: KeyValidationResult
-}
-
 interface ApiKeyErrorBannerProps {
     readonly id: string
     readonly failures: readonly ApiKeyFailure[]
 }
 
+export interface ApiKeyFailure {
+    readonly vendor: string
+    readonly result: KeyValidationResult
+}
+
 /**
  * Map an HTTP status code to a short, human-readable summary for the banner header.
- * @param status The HTTP status code, if known.
+ * @param httpStatus The HTTP status code, if known.
  * @return A short description of the failure.
  */
 const describeStatus = (httpStatus?: number): string => {
