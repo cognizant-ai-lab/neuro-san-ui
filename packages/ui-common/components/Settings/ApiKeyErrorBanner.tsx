@@ -52,6 +52,7 @@ const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => 
             >
                 {title}
             </Typography>
+            {/* The error messages from the provider, if present in the response body. */}
             {message ? (
                 <Typography
                     sx={{color: "error.main", mt: 0.25, overflowWrap: "anywhere"}}
