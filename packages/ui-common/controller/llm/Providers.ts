@@ -1,3 +1,9 @@
+//#region Constants
+
+const ACCEPT_APPLICATION_JSON = "application/json"
+
+//#endregion Constants
+
 //#region: Types and Interfaces
 
 /**
@@ -56,13 +62,13 @@ const validateKey = async (url: string, headers: HeadersInit): Promise<KeyValida
 
 export const isOpenAIKeyValid = (key: string): Promise<KeyValidationResult> =>
     validateKey("https://api.openai.com/v1/models", {
-        Accept: "application/json",
+        Accept: ACCEPT_APPLICATION_JSON,
         Authorization: `Bearer ${key}`,
     })
 
 export const isAnthropicKeyValid = (key: string): Promise<KeyValidationResult> =>
     validateKey("https://api.anthropic.com/v1/models", {
-        Accept: "application/json",
+        Accept: ACCEPT_APPLICATION_JSON,
         "anthropic-version": "2023-06-01",
         "X-Api-Key": key,
         // Anthropic rejects direct browser-origin requests unless this header is present.
