@@ -70,7 +70,7 @@ env:
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
     ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
     ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-san/neuro-san-ui' }}
-    # and the Node.js version which is a repo-level variable
+    # Node.js major version (e.g. 26) used for both setup-node and Docker base image names
     NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
@@ -92,8 +92,8 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js and install dependencies
-              # build-common 1.0.7
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
               with:
                   node-version: ${{ env.NODEJS_VERSION }}
                   clean-install: "true"
@@ -102,16 +102,16 @@ jobs:
               run: yarn generate
 
             - name: Authenticate to AWS and login to ECR
-              # build-common 1.0.7
-              uses: cognizant-ai-lab/build-common/actions/aws-ecr-auth@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/aws-ecr-auth@30321843331e00848309b34e08b839e1f6490ba2
               with:
                   aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
                   aws-role-name: ${{ vars.AWS_ROLE_NAME }}
                   aws-region: ${{ env.AWS_REGION }}
 
             - name: Build and push Docker image to ECR
-              # build-common 1.0.7
-              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@30321843331e00848309b34e08b839e1f6490ba2
               with:
                   context: .
                   dockerfile: apps/main/Dockerfile
@@ -123,8 +123,8 @@ jobs:
 
             - name: Build and push no-auth Docker image to ECR
               if: inputs.is_release
-              # build-common 1.0.7
-              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@30321843331e00848309b34e08b839e1f6490ba2
               with:
                   context: .
                   dockerfile: apps/main/Dockerfile
