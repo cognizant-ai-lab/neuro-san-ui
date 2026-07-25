@@ -43,7 +43,9 @@ COPY packages/ui-common ./packages/ui-common
 COPY apps/main/package.json ./apps/main/package.json
 
 # Install all dependencies (including devDependencies) and build ui-common
+# Node 26 no longer bundles corepack, so install it before enabling.
 RUN --mount=type=cache,target=/root/.cache/yarn \
+    npm install -g corepack@latest && \
     corepack enable && \
     corepack install && \
     yarn install --immutable && \
@@ -72,6 +74,7 @@ COPY yarn.lock ./
 COPY --from=deps /app/packages/ui-common ./packages/ui-common
 
 RUN --mount=type=cache,target=/root/.cache/yarn \
+    npm install -g corepack@latest && \
     corepack enable && \
     corepack install && \
     yarn install --immutable
