@@ -45,7 +45,7 @@ on:
 env:
     # AWS info needed to push the image to ECR
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-    # and the nodejs version which is a repo-level variable
+    # Node.js major version (e.g. 26) used for both setup-node and Docker base image names
     NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
@@ -63,10 +63,11 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js environment
-              # v1.0.7
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
               with:
-                  node-version: "22.17.1"
+                  # Must be a major version (e.g. 26) because it is also used in Docker base image names.
+                  node-version: ${{ vars.NODEJS_VERSION }}
                   clean-install: "true"
 
             - name: Install prerequisites for code generation
@@ -107,8 +108,8 @@ jobs:
             - name: Lint Dockerfiles (hadolint)
               id: hadolint
               if: success() || failure()
-              # v1.0.7
-              uses: cognizant-ai-lab/build-common/actions/run-hadolint@3ead7f681f92044709ffc3a533f41c3f48230cfd
+              # build-common 1.0.8
+              uses: cognizant-ai-lab/build-common/actions/run-hadolint@30321843331e00848309b34e08b839e1f6490ba2
               with:
                   recursive: "true"
                   failure-threshold: info

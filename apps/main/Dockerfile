@@ -22,9 +22,10 @@
 
 # This is the major version of NodeJS we will use
 # The currently supported version(s) of Node.js are those in the `engines` field of the package.json file.
-# Note that the "distroless" image in the "builder" section will likely need to be adjusted for different node versions.
+# Build and runtime images should use the same Debian version. The distroless Node runtime is only
+# published for Debian 13 (trixie), so we use trixie-slim for the build stages too.
 ARG NODEJS_VERSION=0
-FROM node:$NODEJS_VERSION-bookworm-slim AS deps
+FROM node:$NODEJS_VERSION-trixie-slim AS deps
 
 ENV NODE_ENV=development
 
@@ -49,7 +50,7 @@ RUN --mount=type=cache,target=/root/.cache/yarn \
     yarn build:lib
 
 # Rebuild the source code only when needed
-FROM node:$NODEJS_VERSION-bookworm-slim AS builder
+FROM node:$NODEJS_VERSION-trixie-slim AS builder
 
 ENV NODE_ENV=production
 
@@ -92,7 +93,7 @@ RUN yarn build:app
 
 
 # Production image, copy all the files and run next
-FROM gcr.io/distroless/nodejs${NODEJS_VERSION}-debian12@sha256:1c481261b3b1c6ec601cc11d3cea0c7d02e551e5041f8dcd47e077029e57a6bc AS runner
+FROM gcr.io/distroless/nodejs${NODEJS_VERSION}-debian13@sha256:9a6a9948617c228fbce197b132a7793d23846a3666907eb35185eb1db23b2966 AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
