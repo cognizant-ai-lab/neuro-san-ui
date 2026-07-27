@@ -18,6 +18,7 @@
         "notistack": "catalog:default",
         "react-joyride": "catalog:default",
         "react-markdown": "catalog:default",
+        "react-resizable-panels": "4.11.2",
         "react-syntax-highlighter": "16.1.0",
         "rehype-raw": "catalog:default",
         "rehype-slug": "catalog:default",

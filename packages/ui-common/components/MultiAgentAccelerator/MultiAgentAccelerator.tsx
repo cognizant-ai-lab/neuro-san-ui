@@ -16,14 +16,13 @@ limitations under the License.
 
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
-import Grid from "@mui/material/Grid"
-import Slide from "@mui/material/Slide"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {useJoyride} from "react-joyride"
+import {Group, Panel, Separator} from "react-resizable-panels"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -70,7 +69,7 @@ import {closeNotification, NotificationType, sendNotification} from "../Common/n
 import {BYOK} from "./Schema/SlyData"
 import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 
-export interface MultiAgentAcceleratorProps {
+interface MultiAgentAcceleratorProps {
     readonly username: string
     readonly defaultNeuroSanUrl: string
 }
@@ -723,134 +722,89 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const getLeftPanel = () => {
         return (
-            <Slide
-                id="multi-agent-accelerator-grid-sidebar-slide"
-                in={!enableZenMode || !isAwaitingLlm}
-                direction="right"
-                timeout={GROW_ANIMATION_TIME_MS}
-                onExited={() => {
-                    setIsStreaming(true)
-                }}
-            >
-                <Grid
-                    id="multi-agent-accelerator-grid-sidebar"
-                    size={enableZenMode && isStreaming ? 0 : 3.25}
-                    sx={{
-                        height: "100%",
-                    }}
-                >
-                    <Sidebar
-                        id="multi-agent-accelerator-sidebar"
-                        isAwaitingLlm={isAwaitingLlm}
-                        networkIconSuggestions={networkIconSuggestions}
+            <Sidebar
+                id="multi-agent-accelerator-sidebar"
+                isAwaitingLlm={isAwaitingLlm}
+                networkIconSuggestions={networkIconSuggestions}
                         networks={networks}
                         neuroSanServerURL={neuroSanURL}
-                        newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
-                        onEditNetwork={handleEditNetwork}
-                        setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
-                        temporaryNetworks={temporaryNetworks}
-                    />
-                </Grid>
-            </Slide>
+                onEditNetwork={handleEditNetwork}
+                setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
+                temporaryNetworks={temporaryNetworks}
+            />
         )
     }
 
     const getCenterPanel = () => {
         return (
-            <Grid
-                id="multi-agent-accelerator-grid-agent-flow"
-                size={enableZenMode && isStreaming ? 18 : 8.25}
-                sx={{
-                    height: "100%",
-                }}
-            >
-                <ReactFlowProvider>
-                    <Box
-                        id="multi-agent-accelerator-agent-flow-container"
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            height: "100%",
-                            maxWidth: 1000,
-                            margin: "0 auto",
-                        }}
-                    >
-                        <AgentFlow
-                            agentCounts={agentCounts}
-                            agentsInNetwork={agentsInNetwork}
-                            agentIconSuggestions={agentIconSuggestions}
-                            id="multi-agent-accelerator-agent-flow"
-                            key="multi-agent-accelerator-agent-flow"
-                            currentConversations={currentConversations}
-                            currentUser={username}
-                            isAwaitingLlm={isAwaitingLlm}
-                            isEditMode={isEditingNetwork}
-                            isStreaming={isStreaming}
-                            isSelectedNetworkTemporary={isSelectedNetworkTemporary}
-                            networkDisplayName={networkDisplayName || ""}
-                            networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
-                            neuroSanURL={neuroSanURL}
-                            onEnterEditMode={() => setIsEditingNetwork(true)}
-                            onExitEditMode={() => setIsEditingNetwork(false)}
-                            onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
-                            onSaveAgent={onSaveAgent}
-                            thoughtBubbleEdges={thoughtBubbleEdges}
-                            setThoughtBubbleEdges={setThoughtBubbleEdges}
-                        />
-                    </Box>
-                </ReactFlowProvider>
-            </Grid>
+            <ReactFlowProvider>
+                <Box
+                    id="multi-agent-accelerator-agent-flow-container"
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100%",
+                        maxWidth: 1000,
+                        margin: "0 auto",
+                        overflow: "hidden", // <--- add this line
+                    }}
+                >
+                    <AgentFlow
+                        agentCounts={agentCounts}
+                        agentsInNetwork={agentsInNetwork}
+                        agentIconSuggestions={agentIconSuggestions}
+                        id="multi-agent-accelerator-agent-flow"
+                        key="multi-agent-accelerator-agent-flow"
+                        currentConversations={currentConversations}
+                        currentUser={username}
+                        isAwaitingLlm={isAwaitingLlm}
+                        isEditMode={isEditingNetwork}
+                        isStreaming={isStreaming}
+                        isSelectedNetworkTemporary={isSelectedNetworkTemporary}
+                        networkDisplayName={networkDisplayName || ""}
+                        networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
+                        neuroSanURL={neuroSanURL}
+                        onEnterEditMode={() => setIsEditingNetwork(true)}
+                        onExitEditMode={() => setIsEditingNetwork(false)}
+                        onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
+                        onSaveAgent={onSaveAgent}
+                        thoughtBubbleEdges={thoughtBubbleEdges}
+                        setThoughtBubbleEdges={setThoughtBubbleEdges}
+                    />
+                </Box>
+            </ReactFlowProvider>
         )
     }
 
     const getRightPanel = () => {
         return (
-            <Slide
-                id="multi-agent-accelerator-grid-agent-chat-common-slide"
-                in={!enableZenMode || !isAwaitingLlm}
-                direction="left"
-                timeout={GROW_ANIMATION_TIME_MS}
-                onExited={() => {
-                    setIsStreaming(true)
+            <ChatCommon
+                agentPlaceholders={{
+                    [AGENT_NETWORK_DESIGNER_ID]: "Describe in plain language the network you would like to build.",
                 }}
-            >
-                <Grid
-                    id="multi-agent-accelerator-grid-agent-chat-common"
-                    size={enableZenMode && isStreaming ? 0 : 6.5}
-                    sx={{
-                        height: "100%",
-                    }}
-                >
-                    <ChatCommon
-                        agentPlaceholders={{
-                            [AGENT_NETWORK_DESIGNER_ID]:
-                                "Describe in plain language the network you would like to build.",
-                        }}
-                        currentUser={username}
-                        customAgentGreetings={{
-                            [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
-                        }}
-                        extraSlyData={extraSlyData}
-                        id="agent-network-ui"
-                        isAwaitingLlm={isAwaitingLlm}
-                        key={selectedNetwork ?? "no-network"}
+                currentUser={username}
+                customAgentGreetings={{
+                    [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
+                }}
+                extraSlyData={extraSlyData}
+                id="agent-network-ui"
+                isAwaitingLlm={isAwaitingLlm}
+                key={selectedNetwork ?? "no-network"}
                         hasMissingApiKeys={hasMissingApiKeys}
-                        networkDescription={networkDescription}
-                        neuroSanURL={neuroSanURL}
-                        onChunkReceived={onChunkReceived}
-                        onStreamingComplete={onStreamingComplete}
-                        onStreamingStarted={onStreamingStarted}
-                        ref={chatRef}
-                        sampleQueries={sampleQueries}
-                        setIsAwaitingLlm={setIsAwaitingLlm}
-                        selectedNetwork={selectedNetwork}
-                        setSelectedNetwork={changeSelectedNetwork}
-                    />
-                </Grid>
-            </Slide>
+                networkDescription={networkDescription}
+                neuroSanURL={neuroSanURL}
+                onChunkReceived={onChunkReceived}
+                onStreamingComplete={onStreamingComplete}
+                onStreamingStarted={onStreamingStarted}
+                ref={chatRef}
+                sampleQueries={sampleQueries}
+                setIsAwaitingLlm={setIsAwaitingLlm}
+                selectedNetwork={selectedNetwork}
+                setSelectedNetwork={changeSelectedNetwork}
+            />
         )
     }
 
@@ -1063,25 +1017,83 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getTourModal()}
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
-            <Grid
-                id="multi-agent-accelerator-grid"
-                container
-                columns={18}
-                sx={{
-                    display: "flex",
-                    flex: 1,
-                    height: "85%",
-                    justifyContent: isAwaitingLlm ? "center" : "unset",
-                    marginTop: "1rem",
-                    overflow: "hidden",
-                    position: "relative",
-                }}
-            >
-                {getLeftPanel()}
-                {getCenterPanel()}
-                {getRightPanel()}
-                {getStopButton()}
-            </Grid>
+            {/*<Grid*/}
+            {/*    id="multi-agent-accelerator-grid"*/}
+            {/*    container*/}
+            {/*    columns={18}*/}
+            {/*    sx={{*/}
+            {/*        display: "flex",*/}
+            {/*        flex: 1,*/}
+            {/*        height: "85%",*/}
+            {/*        justifyContent: isAwaitingLlm ? "center" : "unset",*/}
+            {/*        marginTop: "1rem",*/}
+            {/*        overflow: "hidden",*/}
+            {/*        position: "relative",*/}
+            {/*    }}*/}
+            {/*>*/}
+            <Group style={{width: "100%", height: "100%"}}>
+                <Panel>{getLeftPanel()}</Panel>
+
+                <Separator
+                    style={{
+                        width: "10px", // hit target
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "ew-resize",
+                        touchAction: "none",
+                        background: "transparent",
+                        flex: "0 0 auto",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: "4px",
+                            height: 24,
+                            borderRadius: "2px",
+                            backgroundColor: "var(--bs-secondary)",
+                            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px)",
+                            backgroundSize: "4px 4px",
+                            opacity: 0.75,
+                            '[data-resize-handle-state="hover"] &': {opacity: 1},
+                            '[data-resize-handle-state="drag"] &': {opacity: 1},
+                        }}
+                    />
+                </Separator>
+
+                <Panel>{getCenterPanel()}</Panel>
+
+                <Separator
+                    style={{
+                        width: "10px", // hit target
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "ew-resize",
+                        touchAction: "none",
+                        background: "transparent",
+                        flex: "0 0 auto",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: "4px",
+                            height: 24,
+                            borderRadius: "2px",
+                            backgroundColor: "var(--bs-secondary)",
+                            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px)",
+                            backgroundSize: "4px 4px",
+                            opacity: 0.75,
+                            '[data-resize-handle-state="hover"] &': {opacity: 1},
+                            '[data-resize-handle-state="drag"] &': {opacity: 1},
+                        }}
+                    />
+                </Separator>
+
+                <Panel>{getRightPanel()}</Panel>
+            </Group>
+            {getStopButton()}
+            {/*</Grid>*/}
         </>
     )
 }
