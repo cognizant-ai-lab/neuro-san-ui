@@ -10,7 +10,8 @@ import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
 
-import {KeyValidationResult} from "../../controller/llm/Providers"
+import {isKeyValidationFailure, KeyValidationFailure, KeyValidationResult} from "../../controller/llm/Providers"
+import {LLMProvider} from "../../state/Settings"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {StatusLight} from "../Common/StatusLight"
 
@@ -18,12 +19,12 @@ interface ApiKeyInputProps {
     readonly forgetKey: () => void
     readonly id: string
     readonly logo: string
-    readonly onResultChange?: (result: KeyValidationResult | null) => void
+    readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     readonly onSave: (key: string) => void
     readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly persistedValue: string
     readonly placeholder: string
-    readonly vendor: string
+    readonly vendor: LLMProvider
 }
 
 /**
@@ -48,18 +49,18 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         setKeyValidated(null)
-        onResultChange?.(null)
+        onResultChange?.(vendor, null)
         setInputValue(e.target.value)
     }
 
     const handleOnTest = async () => {
         setIsValidating(true)
         setKeyValidated(null)
-        onResultChange?.(null)
+        onResultChange?.(vendor, null)
         try {
             const result = await onTest(inputValue)
             setKeyValidated(result.ok)
-            onResultChange?.(result.ok ? null : result)
+            onResultChange?.(vendor, isKeyValidationFailure(result) ? result : null)
         } finally {
             setIsValidating(false)
         }
@@ -71,16 +72,13 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     useEffect(() => {
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
-        onResultChange?.(null)
-        // Only clear results when persistedValue changes; intentionally omit onResultChange so a new
-        // callback identity on parent re-render doesn't re-run this effect
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [persistedValue])
+        onResultChange?.(vendor, null)
+    }, [persistedValue, vendor, onResultChange])
 
     const handleClearInput = () => {
         setInputValue("")
         setKeyValidated(null)
-        onResultChange?.(null)
+        onResultChange?.(vendor, null)
     }
 
     return (

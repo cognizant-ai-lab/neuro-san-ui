@@ -21,6 +21,7 @@ import {
     ChangeEvent as ReactChangeEvent,
     MouseEvent as ReactMouseEvent,
     ReactNode,
+    useCallback,
     useEffect,
     useMemo,
     useState,
@@ -31,7 +32,12 @@ import {ApiKeyInput} from "./ApiKeyInput"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
-import {isAnthropicKeyValid, isOpenAIKeyValid, KeyValidationResult} from "../../controller/llm/Providers"
+import {
+    isAnthropicKeyValid,
+    isOpenAIKeyValid,
+    KeyValidationFailure,
+    KeyValidationResult,
+} from "../../controller/llm/Providers"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
 import {
@@ -199,7 +205,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const anthropicKeyCheckmark = useCheckmarkFade()
 
     // Failing key-test results, aggregated into the banner at the top of the API Keys section
-    const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, KeyValidationResult | null>>>({})
+    const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
 
     // Native names setting
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
@@ -354,6 +360,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
      * @param checkmark Checkmark to trigger on save
      * @param now Timestamp for "now"
      */
+    const handleKeyResultChange = useCallback(
+        (vendor: LLMProvider, result: KeyValidationFailure | null) =>
+            setKeyTestResults((prev) => ({...prev, [vendor]: result ? {vendor, result} : null})),
+        []
+    )
+
     const persistKey = (
         vendor: LLMProvider,
         key: string,
@@ -555,8 +567,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     )
 
     const keyFailures: ApiKeyFailure[] = apiKeyConfigs.flatMap(({vendor}) => {
-        const result = keyTestResults[vendor]
-        return result && !result.ok ? [{vendor, result}] : []
+        const failure = keyTestResults[vendor]
+        return failure ? [failure] : []
     })
 
     const getApiKeysSection = () => (
@@ -617,7 +629,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 forgetKey={() => persistKey(vendor, "", checkmark, 0)}
                                 id={`${id}-${idSuffix}`}
                                 logo={logo}
-                                onResultChange={(result) => setKeyTestResults((prev) => ({...prev, [vendor]: result}))}
+                                onResultChange={handleKeyResultChange}
                                 onSave={(key) => persistKey(vendor, key, checkmark, Date.now())}
                                 onTest={onTest}
                                 persistedValue={getApiKey(apiKeys, vendor)}

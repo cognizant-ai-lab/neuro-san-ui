@@ -14,15 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import httpStatus from "http-status"
+
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
-import {isAnthropicKeyValid, isOpenAIKeyValid} from "../../../../controller/llm/Providers"
+import {
+    isAnthropicKeyValid,
+    isKeyValidationFailure,
+    isOpenAIKeyValid,
+    KeyValidationResult,
+} from "../../../../controller/llm/Providers"
+
+interface FailedResponseCase {
+    vendor: string
+    validate: typeof isOpenAIKeyValid
+    body: Record<string, unknown>
+    expectedMessage: string
+}
 
 const FAKE_KEY = "fake-key"
 const OK_FALSE = {ok: false}
-
-const mockFailedFetch = (httpStatus: number, json: () => Promise<unknown>) =>
-    vi.fn().mockResolvedValue({ok: false, status: httpStatus, json})
 
 const spyOnConsoleError = () => vi.spyOn(console, "error").mockImplementation(vi.fn())
 
@@ -37,29 +48,42 @@ describe("Providers controller", () => {
         expect(await isAnthropicKeyValid(FAKE_KEY)).toEqual(success)
     })
 
-    it.each([
+    it.each<FailedResponseCase>([
         // OpenAI shape: {error: {message}}
-        ["OpenAI", isOpenAIKeyValid, {error: {message: "Incorrect API key provided"}}, "Incorrect API key provided"],
+        {
+            vendor: "OpenAI",
+            validate: isOpenAIKeyValid,
+            body: {error: {message: "Incorrect API key provided"}},
+            expectedMessage: "Incorrect API key provided",
+        },
         // Anthropic shape: top-level type plus a nested error
-        [
-            "Anthropic",
-            isAnthropicKeyValid,
-            {type: "error", error: {type: "authentication_error", message: "invalid x-api-key"}},
-            "invalid x-api-key",
-        ],
-    ] as const)(
-        "should surface the status and error message from a failed %s response",
-        async (_name, validate, body, expectedMessage) => {
-            global.fetch = mockFailedFetch(401, () => Promise.resolve(body))
+        {
+            vendor: "Anthropic",
+            validate: isAnthropicKeyValid,
+            body: {type: "error", error: {type: "authentication_error", message: "invalid x-api-key"}},
+            expectedMessage: "invalid x-api-key",
+        },
+    ])(
+        "should surface the status and error message from a failed $vendor response",
+        async ({validate, body, expectedMessage}) => {
+            global.fetch = mockFetch(body, false, httpStatus.UNAUTHORIZED)
 
-            expect(await validate(FAKE_KEY)).toEqual({...OK_FALSE, status: 401, message: expectedMessage})
+            expect(await validate(FAKE_KEY)).toEqual({
+                ...OK_FALSE,
+                status: httpStatus.UNAUTHORIZED,
+                message: expectedMessage,
+            })
         }
     )
 
     it("should fall back to just the status when the error body is not valid JSON", async () => {
-        global.fetch = mockFailedFetch(500, () => Promise.reject(new Error("not json")))
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: false,
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            json: () => Promise.reject(new Error("not json")),
+        })
 
-        expect(await isOpenAIKeyValid(FAKE_KEY)).toEqual({...OK_FALSE, status: 500})
+        expect(await isOpenAIKeyValid(FAKE_KEY)).toEqual({...OK_FALSE, status: httpStatus.INTERNAL_SERVER_ERROR})
     })
 
     it("should handle when fetch throws exceptions", async () => {
@@ -79,5 +103,12 @@ describe("Providers controller", () => {
         spyOnConsoleError()
 
         expect(await isOpenAIKeyValid(FAKE_KEY)).toEqual({...OK_FALSE, message: "boom"})
+    })
+
+    it.each<{name: string; result: KeyValidationResult; expected: boolean}>([
+        {name: "a failure", result: {ok: false, status: httpStatus.UNAUTHORIZED}, expected: true},
+        {name: "a success", result: {ok: true}, expected: false},
+    ])("isKeyValidationFailure returns $expected for $name", ({result, expected}) => {
+        expect(isKeyValidationFailure(result)).toBe(expected)
     })
 })

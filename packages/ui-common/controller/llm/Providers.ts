@@ -1,21 +1,24 @@
-//#region Constants
-
-const ACCEPT_APPLICATION_JSON = "application/json"
-
-//#endregion Constants
-
 //#region: Types and Interfaces
 
-/**
- * Result of testing an API key. On failure, {@link status} and {@link message} carry whatever
- * detail could be recovered. (A discriminated union would model this better, but this project
- * runs with `strictNullChecks: false`, under which the `ok` discriminant does not narrow.)
- */
-export interface KeyValidationResult {
-    ok: boolean
+/** Result of testing an API key: success, or a failure carrying whatever detail could be recovered. */
+export type KeyValidationResult = KeyValidationSuccess | KeyValidationFailure
+
+interface KeyValidationSuccess {
+    ok: true
+}
+
+/** A failed key test; {@link status} and {@link message} carry whatever detail could be recovered. */
+export interface KeyValidationFailure {
+    ok: false
     status?: number
     message?: string
 }
+
+/**
+ * Narrow a {@link KeyValidationResult} to its failure variant. Checking `!result.ok` inline should
+ * be enough, but doesn't narrow while `strictNullChecks` is off; this guard bridges that gap.
+ */
+export const isKeyValidationFailure = (result: KeyValidationResult): result is KeyValidationFailure => !result.ok
 
 /** The parts of the provider error body we read; both OpenAI and Anthropic nest it as `{error: {message}}`. */
 interface ProviderErrorBody {
@@ -62,13 +65,13 @@ const validateKey = async (url: string, headers: HeadersInit): Promise<KeyValida
 
 export const isOpenAIKeyValid = (key: string): Promise<KeyValidationResult> =>
     validateKey("https://api.openai.com/v1/models", {
-        Accept: ACCEPT_APPLICATION_JSON,
+        Accept: "application/json",
         Authorization: `Bearer ${key}`,
     })
 
 export const isAnthropicKeyValid = (key: string): Promise<KeyValidationResult> =>
     validateKey("https://api.anthropic.com/v1/models", {
-        Accept: ACCEPT_APPLICATION_JSON,
+        Accept: "application/json",
         "anthropic-version": "2023-06-01",
         "X-Api-Key": key,
         // Anthropic rejects direct browser-origin requests unless this header is present.

@@ -1,6 +1,7 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {fireEvent, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+import httpStatus from "http-status"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
@@ -147,7 +148,7 @@ describe("SettingsDialog", () => {
             global.fetch = mockFetch(
                 {
                     success: false,
-                    httpStatus: 200,
+                    httpStatus: httpStatus.OK,
                     status: "ok",
                 },
                 true
@@ -352,14 +353,14 @@ describe("SettingsDialog", () => {
         })
 
         it("surfaces a failed key test in the aggregated error banner", async () => {
-            global.fetch = vi.fn().mockResolvedValue({
-                ok: false,
-                status: 401,
-                json: () => ({
+            global.fetch = mockFetch(
+                {
                     type: "error",
                     error: {type: "authentication_error", message: "invalid x-api-key"},
-                }),
-            })
+                },
+                false,
+                httpStatus.UNAUTHORIZED
+            )
 
             render(
                 <SettingsDialog
@@ -375,14 +376,18 @@ describe("SettingsDialog", () => {
             await user.paste(TEST_API_KEY)
             await user.click(within(apiKeyInput).getByRole("button", {name: "Test"}))
 
-            const banner = await screen.findByTestId("settings-dialog-api-key-error-banner")
-            expect(within(banner).getByText("Anthropic — Authentication failed (401)")).toBeInTheDocument()
+            const banner = await screen.findByRole("alert")
+            expect(
+                within(banner).getByText(
+                    `Anthropic — ${httpStatus[httpStatus.UNAUTHORIZED]} (${httpStatus.UNAUTHORIZED})`
+                )
+            ).toBeInTheDocument()
             expect(within(banner).getByText("invalid x-api-key")).toBeInTheDocument()
 
             // Editing the key clears the failure from the banner
             await user.click(inputBox)
             await user.paste("more")
-            expect(screen.queryByTestId("settings-dialog-api-key-error-banner")).not.toBeInTheDocument()
+            expect(screen.queryByRole("alert")).not.toBeInTheDocument()
         })
 
         it("allows user to request that API keys be forgotten", async () => {
