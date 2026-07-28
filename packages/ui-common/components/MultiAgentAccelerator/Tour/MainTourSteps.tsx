@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box"
+import Typography from "@mui/material/Typography"
 import {Step} from "react-joyride"
 
 /**
@@ -18,7 +20,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
         content:
             "This is the list of agent networks available on the server. Select a network to see its agents and " +
             "start interacting with it!",
-        target: () => document.querySelector("#multi-agent-accelerator-sidebar-heading"),
+        target: () => document.querySelector(".MuiRichTreeView-root"),
         placement: "bottom",
     },
     {
@@ -108,9 +110,66 @@ export const MAIN_TOUR_STEPS: Step[] = [
         placement: "top",
     },
     {
-        content:
-            "If you want to take the tour again, or if you have any questions or need help, click here to access " +
-            "the help information or to contact the Cognizant AI Labs team. We'd love to hear from you!",
+        content: (
+            <>
+                <Typography
+                    sx={{mb: 1}}
+                    variant="body2"
+                >
+                    Need help, want to retake the tour, or have feedback? Use this menu to find help resources and
+                    contact the Cognizant AI Labs team.
+                </Typography>
+
+                <Box
+                    component="a"
+                    href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                    rel="noopener noreferrer"
+                    sx={{
+                        display: "block",
+                        mt: 2,
+                        p: 2,
+                        border: "1px solid rgba(255, 255, 255, 0.35)",
+                        borderRadius: 2,
+                        textAlign: "center",
+                        textDecoration: "none",
+                        background: "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.08))",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
+                        transition: "transform 120ms ease, background 120ms ease, border-color 120ms ease",
+                        "&:hover": {
+                            background: "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.12))",
+                            borderColor: "rgba(255, 255, 255, 0.65)",
+                            transform: "translateY(-1px)",
+                        },
+                    }}
+                    target="_blank"
+                >
+                    <Typography
+                        sx={{fontWeight: 700}}
+                        variant="body1"
+                    >
+                        ⭐ Star us on GitHub!
+                    </Typography>
+
+                    <Typography
+                        sx={{mt: 0.5, mb: 1.25, opacity: 0.92}}
+                        variant="body2"
+                    >
+                        See the latest releases, explore examples, and help grow the Neuro SAN community.
+                    </Typography>
+
+                    <Box
+                        alt="GitHub Repo stars"
+                        component="img"
+                        src="https://img.shields.io/github/stars/cognizant-ai-lab/neuro-san-studio?style=social"
+                        sx={{
+                            display: "inline-block",
+                            height: 20,
+                            verticalAlign: "middle",
+                        }}
+                    />
+                </Box>
+            </>
+        ),
         target: () => document.querySelector("#help-dropdown"),
         placement: "top",
     },
