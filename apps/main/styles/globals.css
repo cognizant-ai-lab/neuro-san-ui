@@ -77,8 +77,6 @@ limitations under the License.
     --bs-border-radius-xl: 1rem;
     --bs-border-radius-2xl: 2rem;
     --bs-border-radius-pill: 50rem;
-    --bs-link-color: var(--bs-secondary);
-    --bs-link-hover-color: var(--bs-primary);
     --bs-code-color: var(--bs-red);
     --bs-highlight-bg: var(--bs-white);
     --bs-button-bg: var(--bs-accent3-medium);
@@ -184,17 +182,6 @@ h5 {
 .small,
 small {
     font-size: 0.75rem;
-}
-
-a {
-    color: var(--bs-link-color);
-    font-weight: bold;
-    transition: all 0.3s ease;
-    text-decoration: none;
-
-    &:hover {
-        color: var(--bs-link-hover-color);
-    }
 }
 
 input {
