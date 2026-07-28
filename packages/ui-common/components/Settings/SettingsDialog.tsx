@@ -129,7 +129,6 @@ type Protocol = "http" | "https"
 
 //#endregion: Types and Interfaces
 
-// eslint-disable-next-line react/no-multi-comp -- only relevant to this module.
 const SettingsSubsection: FC<SettingsSubsectionProps> = ({title, children}) => (
     <SubSection>
         <SubsectionTitle variant="subtitle1">{title}</SubsectionTitle>
@@ -159,7 +158,6 @@ const normalizeNeuroSanUrlInput = (value: string, fallbackProtocol: Protocol) =>
         protocol: Protocol
     }
 }
-// eslint-disable-next-line react/no-multi-comp -- styled component shim is only used in this module
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
@@ -360,11 +358,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
      * @param checkmark Checkmark to trigger on save
      * @param now Timestamp for "now"
      */
-    const handleKeyResultChange = useCallback(
-        (vendor: LLMProvider, result: KeyValidationFailure | null) =>
-            setKeyTestResults((prev) => ({...prev, [vendor]: result ? {vendor, result} : null})),
-        []
-    )
+    const handleKeyResultChange = useCallback((vendor: LLMProvider, result: KeyValidationFailure | null) => {
+        setKeyTestResults((prev) => ({
+            ...prev,
+            [vendor]: result ? {vendor, result} : null,
+        }))
+    }, [])
 
     const persistKey = (
         vendor: LLMProvider,

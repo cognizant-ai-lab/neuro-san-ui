@@ -50,7 +50,6 @@ const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => 
 /**
  * A banner shown at the top of the API Keys section that aggregates all failing key-test results.
  */
-// eslint-disable-next-line react/no-multi-comp -- co-located with its single-row helper
 export const ApiKeyErrorBanner: FC<ApiKeyErrorBannerProps> = ({id, failures}) => {
     if (failures.length === 0) {
         return null

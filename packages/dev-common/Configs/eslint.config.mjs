@@ -236,7 +236,7 @@ export default defineConfig([
             "prefer-spread": "error",
             "preserve-caught-error": "warn",
             "react/jsx-curly-brace-presence": "error",
-            "react/no-multi-comp": ["error", {ignoreStateless: false}],
+            "react/no-multi-comp": "off",
             "react/no-array-index-key": "error",
             "react/no-object-type-as-default-prop": "error",
             "react/self-closing-comp": "error",

@@ -84,12 +84,10 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
  * Shim to conditionally wrap the app in a SessionProvider if authentication is enabled.
  * Allows us to avoid next-auth errors when authentication is disabled
  */
-// eslint-disable-next-line react/no-multi-comp -- used only within this module
 const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
     authenticationEnabled() ? <SessionProvider>{children}</SessionProvider> : <>{children}</>
 
 // Main function.
-// eslint-disable-next-line react/no-multi-comp
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
     const {
         auth0ClientId,
