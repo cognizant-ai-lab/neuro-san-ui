@@ -50,4 +50,4 @@ run_check "tsc" yarn tsc
 run_check "knip" yarn knip
 run_check "prettier" yarn check-format
 run_check "eslint" yarn lint --max-warnings 0
-run_check "test" yarn test
+run_check "test" yarn test --coverage
