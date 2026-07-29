@@ -1119,6 +1119,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         setNeuroSanCalloutOpen(false)
                         markAnnouncementShown(AnnouncementId.NeuroSanStudioGithubStar)
                     }}
+                    role="button"
                     size="small"
                     sx={{
                         bgcolor: "background.paper",
