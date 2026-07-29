@@ -81,6 +81,20 @@ const DEFAULT_PALETTE = {
 export const createAppTheme = (primary: string, secondary: string, background: string) =>
     createTheme({
         components: {
+            MuiCssBaseline: {
+                styleOverrides: {
+                    // Custom link formatting: migrated from globals.css
+                    a: {
+                        color: cssVar("--bs-secondary"),
+                        fontWeight: "bold",
+                        transition: "all 0.3s ease",
+                        textDecoration: "none",
+                        "&:hover": {
+                            color: cssVar("--bs-primary"),
+                        },
+                    },
+                },
+            },
             MuiButton: {
                 styleOverrides: {
                     root: ({ownerState}) => ({
