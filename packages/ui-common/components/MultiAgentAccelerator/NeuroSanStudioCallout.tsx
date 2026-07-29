@@ -6,6 +6,7 @@ import {FC} from "react"
 
 export const NeuroSanStudioCallout: FC = () => (
     <Paper
+        aria-label="neuro-san-studio GitHub repository"
         component="a"
         elevation={4}
         href="https://github.com/cognizant-ai-lab/neuro-san-studio"

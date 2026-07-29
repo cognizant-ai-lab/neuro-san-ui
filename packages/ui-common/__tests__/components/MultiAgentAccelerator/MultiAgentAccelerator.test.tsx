@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {HumanMessage} from "@langchain/core/messages"
-import {act, render, screen, waitFor, within} from "@testing-library/react"
+import {act, render, screen, waitFor, waitForElementToBeRemoved, within} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {SnackbarProvider} from "notistack"
 import {Children, isValidElement, ReactNode, Ref} from "react"
@@ -45,6 +45,7 @@ import {
     AgentNetworkDefinitionEntry,
     EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
+    NEURO_SAN_CALLOUT_DELAY_MS,
     SHOW_TOUR_DELAY_MS,
     TEMPORARY_NETWORK_FOLDER,
     TRIGGER_APP_TOUR_EVENT_NAME,
@@ -67,6 +68,7 @@ import {
     ConnectivityInfo,
     FunctionResponse,
 } from "../../../generated/neuro-san/NeuroSanClient"
+import {AnnouncementId, useAnnouncementsStore} from "../../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
@@ -275,6 +277,7 @@ describe("MultiAgentAccelerator", () => {
         useAgentChatHistoryStore.setState({history: {}})
         useSettingsStore.getState().resetSettings()
         useTourStore.getState().reset()
+        useAnnouncementsStore.getState().reset()
     })
 
     describe("Basic Rendering", () => {
@@ -1314,6 +1317,45 @@ describe("MultiAgentAccelerator", () => {
                 const lastCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1]
                 expect(lastCall[0]).toBeNull()
             })
+        })
+    })
+
+    describe("Announcement Handling", () => {
+        it("Should display the Neuro SAN Studio callout on a user's first visit", async () => {
+            const localUser = userEvent.setup({
+                advanceTimers: vi.advanceTimersByTime,
+            })
+
+            vi.useFakeTimers({now: Date.now()})
+            renderMultiAgentAcceleratorPage()
+
+            // Haven't shown announcement yet
+            expect(useAnnouncementsStore.getState().hasShown(AnnouncementId.NeuroSanStudioGithubStar)).toBe(false)
+
+            // Advance time to trigger the callout. Add 1000 to give Slide animation time to complete
+            act(() => {
+                vi.advanceTimersByTime(NEURO_SAN_CALLOUT_DELAY_MS + 1000)
+            })
+
+            // Verify the callout is displayed
+            const title = await screen.findByText(/Star us on GitHub/u)
+            expect(title).toBeVisible()
+
+            const link = title.closest("a")
+
+            expect(link).toBeVisible()
+            expect(link).toHaveAttribute("href", "https://github.com/cognizant-ai-lab/neuro-san-studio")
+
+            // Now dismiss it
+            const closeButton = screen.getByLabelText(/Close Neuro SAN Studio callout/iu)
+
+            expect(closeButton).toBeVisible()
+            await localUser.click(closeButton)
+
+            await waitForElementToBeRemoved(() => screen.queryByText(/Star us on GitHub/u))
+
+            // Should have updated the announcements store to indicate announcement dismissed
+            expect(useAnnouncementsStore.getState().hasShown(AnnouncementId.NeuroSanStudioGithubStar)).toBe(true)
         })
     })
 
