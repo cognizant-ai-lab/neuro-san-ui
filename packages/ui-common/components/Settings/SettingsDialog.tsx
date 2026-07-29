@@ -352,11 +352,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     }
 
     /**
-     * Used for both saving and removing keys.
+     * Records the latest key-test result for a vendor, or clears it when result is null.
      * @param vendor Vendor for this key: see the list in LLMProvider type
-     * @param key Value of the key
-     * @param checkmark Checkmark to trigger on save
-     * @param now Timestamp for "now"
+     * @param result Validation failure to display, or null to clear
      */
     const handleKeyResultChange = useCallback((vendor: LLMProvider, result: KeyValidationFailure | null) => {
         setKeyTestResults((prev) => ({
@@ -365,6 +363,13 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         }))
     }, [])
 
+    /**
+     * Used for both saving and removing keys.
+     * @param vendor Vendor for this key: see the list in LLMProvider type
+     * @param key Value of the key
+     * @param checkmark Checkmark to trigger on save
+     * @param now Timestamp for "now"
+     */
     const persistKey = (
         vendor: LLMProvider,
         key: string,
@@ -565,6 +570,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </Section>
     )
 
+    // Collect the current test failure for each vendor that has one.
     const keyFailures: ApiKeyFailure[] = apiKeyConfigs.flatMap(({vendor}) => {
         const failure = keyTestResults[vendor]
         return failure ? [failure] : []

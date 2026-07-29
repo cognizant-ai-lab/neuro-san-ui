@@ -1,8 +1,5 @@
 //#region: Types and Interfaces
 
-/** Result of testing an API key: success, or a failure carrying whatever detail could be recovered. */
-export type KeyValidationResult = KeyValidationSuccess | KeyValidationFailure
-
 interface KeyValidationSuccess {
     ok: true
 }
@@ -14,11 +11,8 @@ export interface KeyValidationFailure {
     message?: string
 }
 
-/**
- * Narrow a {@link KeyValidationResult} to its failure variant. Checking `!result.ok` inline should
- * be enough, but doesn't narrow while `strictNullChecks` is off; this guard bridges that gap.
- */
-export const isKeyValidationFailure = (result: KeyValidationResult): result is KeyValidationFailure => !result.ok
+/** Result of testing an API key: success, or a failure carrying whatever detail could be recovered. */
+export type KeyValidationResult = KeyValidationSuccess | KeyValidationFailure
 
 /** The parts of the provider error body we read; both OpenAI and Anthropic nest it as `{error: {message}}`. */
 interface ProviderErrorBody {
@@ -26,6 +20,12 @@ interface ProviderErrorBody {
 }
 
 //#endregion: Types and Interfaces
+
+/**
+ * Narrow a {@link KeyValidationResult} to its failure variant. Checking `!result.ok` inline should
+ * be enough, but doesn't narrow while `strictNullChecks` is off; this guard bridges that gap.
+ */
+export const isKeyValidationFailure = (result: KeyValidationResult): result is KeyValidationFailure => !result.ok
 
 /**
  * Read the provider's error message from a failed response, tolerating empty or non-JSON
