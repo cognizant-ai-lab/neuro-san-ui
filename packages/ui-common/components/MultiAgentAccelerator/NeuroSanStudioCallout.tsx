@@ -57,6 +57,8 @@ export const NeuroSanStudioCallout: FC = () => (
         <Box
             alt="GitHub Repo stars"
             component="img"
+            loading="lazy"
+            referrerPolicy="no-referrer"
             src="https://img.shields.io/github/stars/cognizant-ai-lab/neuro-san-studio?label=Neuro%20SAN%20Studio"
             sx={{
                 borderRadius: 1,
