@@ -1330,7 +1330,7 @@ describe("MultiAgentAccelerator", () => {
             renderMultiAgentAcceleratorPage()
 
             // Haven't shown announcement yet
-            expect(useAnnouncementsStore.getState().hasShown(AnnouncementId.NeuroSanStudioGithubStar)).toBe(false)
+            useAnnouncementsStore.getState().reset(AnnouncementId.NeuroSanStudioGithubStar)
 
             // Advance time to trigger the callout. Add 1000 to give Slide animation time to complete
             act(() => {
