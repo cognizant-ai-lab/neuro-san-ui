@@ -20,7 +20,7 @@ export const NeuroSanStudioCallout: FC = () => (
                     backgroundImage: `linear-gradient(135deg, ${paper}, ${alpha(primary, 0.14)})`,
                     borderColor: "primary.main",
                     boxShadow: `0 0 0 3px ${alpha(primary, 0.22)}, ${theme.shadows[6]}`,
-                    color: "primary.main",
+                    color: "secondary.main",
                 },
                 bgcolor: "background.paper",
                 backgroundImage: `linear-gradient(135deg, ${paper}, ${alpha(primary, 0.06)})`,
@@ -51,7 +51,7 @@ export const NeuroSanStudioCallout: FC = () => (
             sx={{mt: 0.5, mb: 1.25, opacity: 0.92}}
             variant="body2"
         >
-            See the latest releases, explore examples, and help grow the community on GitHub.
+            See the latest releases, explore examples, read the User Guide and help grow the community on GitHub.
         </Typography>
 
         <Box
