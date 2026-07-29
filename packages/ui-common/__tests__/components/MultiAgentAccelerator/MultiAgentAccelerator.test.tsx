@@ -785,8 +785,8 @@ describe("MultiAgentAccelerator", () => {
             // When a reservation arrives alongside sly_data that contains agent_network_definition,
             // that data should be stored on the temporary network's own entry in the temp-networks
             // store — NOT in the chat history sly_data.
-            const agentNetworkDefinition = [
-                {origin: "copy_cat", tools: [] as string[], display_as: "llm_agent", instructions: "Copy everything."},
+            const agentNetworkDefinition: AgentNetworkDefinitionEntry[] = [
+                {origin: "copy_cat", tools: [], display_as: "llm_agent", instructions: "Copy everything."},
             ]
             const reservationWithDefinition: ChatResponse = {
                 response: {
@@ -816,18 +816,18 @@ describe("MultiAgentAccelerator", () => {
 
         it("Should store agent_network_definition independently for two different temporary networks", async () => {
             // Each temporary network must have its own independent agentNetworkDefinition entry.
-            const definitionA = [
+            const definitionA: AgentNetworkDefinitionEntry[] = [
                 {
                     origin: "agent_alpha",
-                    tools: [] as string[],
+                    tools: [],
                     display_as: "llm_agent",
                     instructions: "Network A instructions.",
                 },
             ]
-            const definitionB = [
+            const definitionB: AgentNetworkDefinitionEntry[] = [
                 {
                     origin: "agent_beta",
-                    tools: [] as string[],
+                    tools: [],
                     display_as: "llm_agent",
                     instructions: "Network B instructions.",
                 },
@@ -1250,7 +1250,7 @@ describe("MultiAgentAccelerator", () => {
         it.each<NetworkDesignerErrorScenario>([
             {
                 scenario: "the designer returns no reservation",
-                streamChunks: [] as string[],
+                streamChunks: [],
                 agentNetworkName: RESERVATION.reservation_id,
                 expectedLog: "did not return a reservation",
             },
@@ -1318,8 +1318,8 @@ describe("MultiAgentAccelerator", () => {
     })
 
     describe("extraSlyData Handling", () => {
-        const agentNetworkDefinition = [
-            {origin: "agent1", tools: [] as string[], display_as: "llm_agent", instructions: "Do stuff."},
+        const agentNetworkDefinition: AgentNetworkDefinitionEntry[] = [
+            {origin: "agent1", tools: [], display_as: "llm_agent", instructions: "Do stuff."},
         ]
 
         const tempNetworkWithDefinition: TemporaryNetwork = {
