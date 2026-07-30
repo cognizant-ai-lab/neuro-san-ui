@@ -236,7 +236,6 @@ export default defineConfig([
             "prefer-spread": "error",
             "preserve-caught-error": "warn",
             "react/jsx-curly-brace-presence": "error",
-            "react/no-multi-comp": ["error", {ignoreStateless: false}],
             "react/no-array-index-key": "error",
             "react/no-object-type-as-default-prop": "error",
             "react/self-closing-comp": "error",
@@ -305,7 +304,11 @@ export default defineConfig([
                 },
             ],
 
-            // Rules we're not ready to enable yet
+            // Rules we never want to enable because we disagree with them for this codebase
+
+            // We're fine colocating multiple small components in one file on certain occassions and we'll enforce this
+            // in code reviews.
+            "react/no-multi-comp": "off",
 
             // Requires strict type checks enabled in tsc which we're not ready for yet
             "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
@@ -538,7 +541,6 @@ export default defineConfig([
             "@next/next/no-img-element": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",
-            "react/no-multi-comp": "off",
 
             // Too noisy for now, but we should gradually enable and fix these
             "vitest/max-expects": "off",
