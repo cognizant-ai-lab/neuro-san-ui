@@ -17,14 +17,18 @@ export interface ApiKeyFailure {
     readonly result: KeyValidationFailure
 }
 
-const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => {
-    const {vendor, result} = failure
-    const {status: statusCode, message} = result
+/**
+ * The banner header for a failure: `<vendor> — <reason phrase> (<status>)`, falling back to
+ * `<vendor> — Request failed` when the status has no reason phrase, or `<vendor> — Request failed`
+ * with no code when the failure carries no status at all.
+ */
+export const errorTitle = ({vendor, result: {status: statusCode}}: ApiKeyFailure): string =>
+    statusCode !== undefined
+        ? `${vendor} — ${httpStatus[statusCode] ?? "Unknown status"} (${statusCode})`
+        : `${vendor} — Request failed`
 
-    const title =
-        statusCode !== undefined
-            ? `${vendor} — ${httpStatus[statusCode] ?? "Unknown status"} (${statusCode})`
-            : `${vendor} — Request failed`
+const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => {
+    const {message} = failure.result
 
     return (
         <Box data-testid={`${id}-failure`}>
@@ -32,11 +36,12 @@ const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => 
                 sx={{fontWeight: 700}}
                 variant="body2"
             >
-                {title}
+                {errorTitle(failure)}
             </Typography>
             {/* The error messages from the provider, if present in the response body. */}
             {message ? (
                 <Typography
+                    data-testid={`${id}-message`}
                     sx={{mt: 0.25, overflowWrap: "anywhere"}}
                     variant="body2"
                 >

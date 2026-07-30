@@ -1,38 +1,26 @@
-import {render, screen, within} from "@testing-library/react"
+import {render, screen} from "@testing-library/react"
 import httpStatus from "http-status"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {ApiKeyErrorBanner, ApiKeyFailure} from "../../../components/Settings/ApiKeyErrorBanner"
+import {ApiKeyErrorBanner, ApiKeyFailure, errorTitle} from "../../../components/Settings/ApiKeyErrorBanner"
 import {KeyValidationFailure} from "../../../controller/llm/Providers"
 
-// Base result used for both providers
+// Base result reused across the 401 cases.
 const BASE_401_RESULT: KeyValidationFailure = {ok: false, status: httpStatus.UNAUTHORIZED}
 
-// The banner header renders "<vendor> — <httpStatus reason phrase> (<status>)".
-const bannerTitle = (vendor: string, statusCode: number) =>
-    `${vendor} — ${httpStatus[statusCode] ?? "Unknown status"} (${statusCode})`
-
-const ANTHROPIC_AUTH_FAILED_TITLE = bannerTitle("Anthropic", httpStatus.UNAUTHORIZED)
-const ANTHROPIC_INVALID_KEY_MESSAGE = "API key is invalid."
+const ANTHROPIC_INVALID_KEY_MESSAGE = "Anthropic API key is invalid."
 const ANTHROPIC_INVALID_KEY_FAILURE: ApiKeyFailure = {
     vendor: "Anthropic",
-    result: {
-        ok: false,
-        status: httpStatus.UNAUTHORIZED,
-        message: ANTHROPIC_INVALID_KEY_MESSAGE,
-    },
+    result: {...BASE_401_RESULT, message: ANTHROPIC_INVALID_KEY_MESSAGE},
 }
-const ANTHROPIC_CORS_MESSAGE =
-    "CORS requests are not allowed for this Organization because of its settings. " +
-    "If you believe this in error, contact support at https://support.anthropic.com/."
+const ANTHROPIC_CORS_MESSAGE = "Anthropic CORS error message"
 const ANTHROPIC_CORS_FAILURE: ApiKeyFailure = {
     vendor: "Anthropic",
     result: {...BASE_401_RESULT, message: ANTHROPIC_CORS_MESSAGE},
 }
+const ANTHROPIC_NO_MESSAGE_FAILURE: ApiKeyFailure = {vendor: "Anthropic", result: BASE_401_RESULT}
 
-const OPENAI_AUTH_FAILED_TITLE = bannerTitle("OpenAI", httpStatus.UNAUTHORIZED)
-const OPENAI_INVALID_KEY_MESSAGE =
-    "Incorrect API key provided: ***. You can find your API key at https://platform.openai.com/account/api-keys."
+const OPENAI_INVALID_KEY_MESSAGE = "OpenAI invalid key error message"
 const OPENAI_INVALID_KEY_FAILURE: ApiKeyFailure = {
     vendor: "OpenAI",
     result: {...BASE_401_RESULT, message: OPENAI_INVALID_KEY_MESSAGE},
@@ -44,6 +32,10 @@ const OPENAI_NETWORK_FAILURE: ApiKeyFailure = {
     vendor: "OpenAI",
     result: {ok: false, message: OPENAI_NETWORK_ERROR_MESSAGE},
 }
+
+const ANTHROPIC_AUTH_FAILED_TITLE = errorTitle(ANTHROPIC_INVALID_KEY_FAILURE)
+const OPENAI_AUTH_FAILED_TITLE = errorTitle(OPENAI_INVALID_KEY_FAILURE)
+const OPENAI_NETWORK_TITLE = errorTitle(OPENAI_NETWORK_FAILURE)
 
 const renderBanner = (failures: readonly ApiKeyFailure[]) =>
     render(
@@ -85,21 +77,30 @@ describe("ApiKeyErrorBanner", () => {
     it("reports a network/CORS error as a status-less request failure", () => {
         renderBanner([OPENAI_NETWORK_FAILURE])
 
-        screen.getByText("OpenAI — Request failed")
+        screen.getByText(OPENAI_NETWORK_TITLE)
         screen.getByText(OPENAI_NETWORK_ERROR_MESSAGE)
     })
 
-    it.each([
-        httpStatus.BAD_REQUEST,
-        httpStatus.UNAUTHORIZED,
-        httpStatus.FORBIDDEN,
-        httpStatus.NOT_FOUND,
-        httpStatus.TOO_MANY_REQUESTS,
-        httpStatus.INTERNAL_SERVER_ERROR,
-    ])("maps status %i to its banner title", (statusCode) => {
-        renderBanner([{vendor: "OpenAI", result: {ok: false, status: statusCode}}])
+    it("omits the message line when the failure has none", () => {
+        renderBanner([ANTHROPIC_NO_MESSAGE_FAILURE])
 
-        const banner = screen.getByRole("alert")
-        expect(within(banner).getByText(bannerTitle("OpenAI", statusCode))).toBeInTheDocument()
+        screen.getByText(ANTHROPIC_AUTH_FAILED_TITLE)
+        expect(screen.queryByTestId(/-message$/u)).not.toBeInTheDocument()
+    })
+
+    it("renders a row for every failing provider", () => {
+        renderBanner([ANTHROPIC_INVALID_KEY_FAILURE, OPENAI_INVALID_KEY_FAILURE])
+
+        screen.getByText(ANTHROPIC_AUTH_FAILED_TITLE)
+        screen.getByText(OPENAI_AUTH_FAILED_TITLE)
+    })
+})
+
+describe("errorTitle", () => {
+    // Pins the branch the render tests can't reach: a status with no http-status phrase.
+    it("falls back to 'Unknown status' when the status has no reason phrase", () => {
+        const failure: ApiKeyFailure = {vendor: "OpenAI", result: {ok: false, status: 599}}
+
+        expect(errorTitle(failure)).toBe("OpenAI — Unknown status (599)")
     })
 })

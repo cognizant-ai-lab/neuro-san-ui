@@ -24,9 +24,10 @@ import {
     isOpenAIKeyValid,
     KeyValidationResult,
 } from "../../../../controller/llm/Providers"
+import {LLMProvider} from "../../../../state/Settings"
 
 interface FailedResponseCase {
-    vendor: string
+    vendor: LLMProvider
     validate: typeof isOpenAIKeyValid
     body: Record<string, unknown>
     expectedMessage: string

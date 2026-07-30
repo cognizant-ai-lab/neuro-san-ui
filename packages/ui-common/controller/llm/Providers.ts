@@ -33,7 +33,7 @@ export const isKeyValidationFailure = (result: KeyValidationResult): result is K
  * @param res The failed response.
  * @return The provider's error message, or `undefined` if none could be parsed.
  */
-const readErrorMessage = async (res: Response): Promise<string | undefined> => {
+const extractErrorMessage = async (res: Response): Promise<string | undefined> => {
     try {
         const body: ProviderErrorBody | null = await res.json()
         return body?.error?.message
@@ -56,7 +56,7 @@ const validateKey = async (url: string, headers: HeadersInit): Promise<KeyValida
         if (res.ok) {
             return {ok: true}
         }
-        return {ok: false, status: res.status, message: await readErrorMessage(res)}
+        return {ok: false, status: res.status, message: await extractErrorMessage(res)}
     } catch (e) {
         console.error("Error validating API key:", e)
         return {ok: false, message: e instanceof Error ? e.message : String(e)}
