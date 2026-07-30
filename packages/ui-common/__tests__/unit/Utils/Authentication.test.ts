@@ -21,6 +21,7 @@ import {MockInstance} from "vitest"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
+import {useEnvironmentStore} from "../../../state/Environment"
 import {AD_TENANT_ID, smartSignOut, useAuthentication} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 
@@ -44,7 +45,7 @@ describe("useAuthentication", () => {
         oldFetch = window.fetch
         window.fetch = mockFetch({})
 
-        process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] = "true"
+        useEnvironmentStore.getState().setEnableAuthentication(true)
     })
 
     afterEach(() => {
@@ -54,7 +55,8 @@ describe("useAuthentication", () => {
     describe("useAuthentication", () => {
         it("Returns default user when authentication is disabled", () => {
             // Disable auth for this test
-            process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] = "false"
+            useEnvironmentStore.getState().setEnableAuthentication(false)
+
             const {result} = renderHook(() => useAuthentication())
             expect(result.current.data.user.name).toBe(DEFAULT_USERNAME)
             expect(result.current.data.user.image).toBe(DEFAULT_USER_IMAGE)

@@ -28,6 +28,10 @@ interface EnvironmentStore {
     backendNeuroSanApiUrl: string
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => void
 
+    // Authentication on/off switch
+    enableAuthentication: boolean
+    setEnableAuthentication: (enableAuthentication: boolean) => void
+
     // Auth0 client ID
     auth0ClientId: string
     setAuth0ClientId: (auth0ClientId: string) => void
@@ -51,6 +55,9 @@ interface EnvironmentStore {
 export const useEnvironmentStore = create<EnvironmentStore>((set) => ({
     backendNeuroSanApiUrl: null,
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => set(() => ({backendNeuroSanApiUrl})),
+
+    enableAuthentication: undefined,
+    setEnableAuthentication: (enableAuthentication: boolean) => set(() => ({enableAuthentication})),
 
     auth0ClientId: null,
     setAuth0ClientId: (auth0ClientId: string) => set(() => ({auth0ClientId})),

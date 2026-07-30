@@ -20,7 +20,8 @@ import {signOut, useSession} from "next-auth/react"
 
 import {navigateToUrl} from "./BrowserNavigation"
 import {OidcProvider} from "./types"
-import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../const"
+import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../const"
+import {useEnvironmentStore} from "../state/Environment"
 import {useUserInfoStore} from "../state/UserInfo"
 
 /**
@@ -34,7 +35,9 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
  * of NextAuth's useSession hook.
  */
 export const useAuthentication = () => {
-    if (!authenticationEnabled()) {
+    const {enableAuthentication} = useEnvironmentStore()
+
+    if (!enableAuthentication) {
         // Auth disabled: return a stub
         return {data: {user: {name: DEFAULT_USERNAME, image: DEFAULT_USER_IMAGE}}}
     }
@@ -95,7 +98,9 @@ export const smartSignOut = async (
     auth0ClientId: string,
     oidcProvider: OidcProvider
 ) => {
-    if (currentUser === undefined || !authenticationEnabled()) {
+    const {enableAuthentication} = useEnvironmentStore.getState()
+
+    if (currentUser === undefined || !enableAuthentication) {
         // Don't know what authentication provider we're using, so just return
         return
     }

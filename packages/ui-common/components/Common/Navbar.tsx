@@ -33,12 +33,7 @@ import Typography from "@mui/material/Typography"
 import {JSX as ReactJSX, MouseEvent as ReactMouseEvent, useState} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
-import {
-    authenticationEnabled,
-    DEFAULT_USER_IMAGE,
-    getContactUsConfirmationText,
-    NEURO_SAN_UI_VERSION,
-} from "../../const"
+import {DEFAULT_USER_IMAGE, getContactUsConfirmationText, NEURO_SAN_UI_VERSION} from "../../const"
 import {useSettingsStore} from "../../state/Settings"
 import {isDarkMode} from "../../Theme/Theme"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
@@ -62,6 +57,9 @@ export interface NavbarProps {
 
     // Info about the currently authenticated user
     readonly userInfo: {name: string; image: string}
+
+    // Flag indicating whether authentication is enabled
+    readonly enableAuthentication: boolean
 
     // The type of authentication used (e.g., Auth0, OIDC, etc.)
     readonly authenticationType: string
@@ -100,6 +98,7 @@ const DISABLE_OUTLINE_PROPS = {
 }
 
 export const Navbar = ({
+    enableAuthentication,
     authenticationType,
     id,
     logo,
@@ -267,6 +266,7 @@ export const Navbar = ({
             >
                 <Typography
                     id="explore-toggle"
+                    role="button"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
                         display: "flex",
@@ -320,6 +320,7 @@ export const Navbar = ({
             >
                 <Typography
                     id="help-toggle"
+                    role="button"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
                         display: "flex",
@@ -454,7 +455,7 @@ export const Navbar = ({
                         >
                             {authenticationType}
                         </MenuItem>
-                        {authenticationEnabled() && (
+                        {enableAuthentication && (
                             <MenuItem
                                 id="user-sign-out"
                                 sx={{...DISABLE_OUTLINE_PROPS, fontWeight: "bold"}}
