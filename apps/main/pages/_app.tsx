@@ -296,43 +296,40 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         )
     } else {
         body = (
-            <>
-                <CssBaseline />
-                <NullableSessionProvider>
-                    <ErrorBoundary id="error_boundary">
-                        <NavbarWrapper
-                            id="nav-bar"
-                            logo={LOGO}
-                            logoServiceToken={logoServiceToken}
-                            query={query}
-                            pathname={pathname}
-                            authenticationType={authenticationType}
-                            signOut={handleSignOut}
-                            supportEmailAddress={supportEmailAddress}
-                        />
-                        <Container
-                            id="body-container"
-                            maxWidth={false}
-                            sx={{
-                                border: `solid 1px ${theme.palette.grey[300]}`,
-                                display: "flex",
-                                flex: 1,
-                                flexDirection: "column",
-                                minHeight: "90%",
-                            }}
-                        >
-                            {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
-                            {getAppComponent()}
-                        </Container>
-                        <Footer
-                            supportEmailAddress={supportEmailAddress}
-                            logoLinkUrl="https://www.cognizant.com/"
-                            logoUrl="/cognizant-logo-white.svg"
-                            sx={{borderTop: "none", marginTop: 0}}
-                        />
-                    </ErrorBoundary>
-                </NullableSessionProvider>
-            </>
+            <NullableSessionProvider>
+                <ErrorBoundary id="error_boundary">
+                    <NavbarWrapper
+                        id="nav-bar"
+                        logo={LOGO}
+                        logoServiceToken={logoServiceToken}
+                        query={query}
+                        pathname={pathname}
+                        authenticationType={authenticationType}
+                        signOut={handleSignOut}
+                        supportEmailAddress={supportEmailAddress}
+                    />
+                    <Container
+                        id="body-container"
+                        maxWidth={false}
+                        sx={{
+                            border: `solid 1px ${theme.palette.grey[300]}`,
+                            display: "flex",
+                            flex: 1,
+                            flexDirection: "column",
+                            minHeight: "90%",
+                        }}
+                    >
+                        {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
+                        {getAppComponent()}
+                    </Container>
+                    <Footer
+                        supportEmailAddress={supportEmailAddress}
+                        logoLinkUrl="https://www.cognizant.com/"
+                        logoUrl="/cognizant-logo-white.svg"
+                        sx={{borderTop: "none", marginTop: 0}}
+                    />
+                </ErrorBoundary>
+            </NullableSessionProvider>
         )
     }
 
@@ -356,6 +353,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     theme={theme}
                     noSsr={true}
                 >
+                    <CssBaseline />
                     {body}
                     <SnackbarProvider
                         Components={{

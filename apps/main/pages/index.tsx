@@ -22,6 +22,7 @@ import {useRouter} from "next/router"
 import {FC, JSX as ReactJSX} from "react"
 
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
+import {NeuroSanStudioCallout} from "../../../packages/ui-common/components/MultiAgentAccelerator/NeuroSanStudioCallout"
 import {LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {CustomPageProps} from "../Types/Types"
@@ -179,7 +180,7 @@ export const Index: FC & CustomPageProps = Object.assign(
                                 <NavbarMiddleSection id="nav-bar-middle" />
                             </>
                         </Navbar>
-                        <div id="main-div">
+                        <Box id="main-div">
                             <HeaderLineOne id="header-line">
                                 <div
                                     id="headline-eyebrow"
@@ -220,7 +221,10 @@ export const Index: FC & CustomPageProps = Object.assign(
                                     </a>
                                 </Link>
                             </NeuroAIToolsContainer>
-                        </div>
+                            <Box sx={{my: 8, width: 360}}>
+                                <NeuroSanStudioCallout />
+                            </Box>
+                        </Box>
                     </BodyContent>
                     <Footer
                         supportEmailAddress={supportEmailAddress}

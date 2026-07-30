@@ -69,6 +69,9 @@ export const LEVEL_SPACING = 150
 // We show the tour modal after this amount of time so as not to "pounce" on the user when they first open the app
 export const SHOW_TOUR_DELAY_MS = 5000
 
+// Show the Neuro SAN Studio callout after this many MS
+export const NEURO_SAN_CALLOUT_DELAY_MS = 5000
+
 // Temporary folder name for networks created from agent reservations. These networks are not "in a folder" when
 // they come from the backend, but we need to put them somewhere in the UI, and this makes it clear that they're
 // temporary.

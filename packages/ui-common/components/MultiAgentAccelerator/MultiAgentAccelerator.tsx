@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import Close from "@mui/icons-material/Close"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
 import Slide from "@mui/material/Slide"
+import Snackbar from "@mui/material/Snackbar"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -37,9 +40,12 @@ import {
     AgentNetworkDefinitionEntry,
     EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
+    NEURO_SAN_CALLOUT_DELAY_MS,
     SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
+import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
+import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
     extractTemporaryNetworksFromMessage,
@@ -54,7 +60,9 @@ import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controll
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
 import {toDisplayName} from "../../utils/AgentName"
@@ -67,8 +75,6 @@ import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
-import {BYOK} from "./Schema/SlyData"
-import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -206,6 +212,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             skip: "Exit Tour",
         },
     })
+
+    // Neuro SAN Studio callout
+    const [neuroSanCalloutOpen, setNeuroSanCalloutOpen] = useState<boolean>(false)
+    const haveShownNeuroSanCallout = useAnnouncementsStore((state) =>
+        state.hasShown(AnnouncementId.NeuroSanStudioGithubStar)
+    )
+    const markAnnouncementShown = useAnnouncementsStore((state) => state.markShown)
 
     const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
@@ -700,6 +713,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [haveShownTourModal, tourRequested, tourStatus])
 
+    // Show Neuro SAN Studio callout after a delay if the user hasn't seen it yet
+    useEffect(() => {
+        // If it's already open, or we've already shown it, just return
+        if (neuroSanCalloutOpen || haveShownNeuroSanCallout) return undefined
+
+        // Show callout after a delay
+        const timer = setTimeout(() => {
+            setNeuroSanCalloutOpen(true)
+        }, NEURO_SAN_CALLOUT_DELAY_MS)
+
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [haveShownNeuroSanCallout, neuroSanCalloutOpen])
+
     useEffect(() => {
         if (!tourRequested) return
 
@@ -1056,8 +1084,64 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             </MUIAlert>
         )
 
+    const getNeuroSanStudioCallout = () => (
+        <Snackbar
+            anchorOrigin={{vertical: "bottom", horizontal: "left"}}
+            open={neuroSanCalloutOpen}
+            slotProps={{
+                clickAwayListener: {
+                    onClickAway: (event) => {
+                        ;(event as (MouseEvent | TouchEvent) & {defaultMuiPrevented: boolean}).defaultMuiPrevented =
+                            true
+                    },
+                },
+                transition: {
+                    timeout: {
+                        enter: 500,
+                        exit: 250,
+                    },
+                },
+            }}
+            slots={{transition: Slide}}
+            sx={{mb: 2}}
+        >
+            <Box
+                sx={{
+                    position: "relative",
+                    maxWidth: 340,
+                }}
+            >
+                <IconButton
+                    aria-label="Close Neuro SAN Studio callout"
+                    onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setNeuroSanCalloutOpen(false)
+                        markAnnouncementShown(AnnouncementId.NeuroSanStudioGithubStar)
+                    }}
+                    role="button"
+                    size="small"
+                    sx={{
+                        bgcolor: "background.paper",
+                        position: "absolute",
+                        right: 4,
+                        top: 20,
+                        "&:hover": {
+                            bgcolor: "action.hover",
+                        },
+                    }}
+                >
+                    <Close fontSize="small" />
+                </IconButton>
+
+                <NeuroSanStudioCallout />
+            </Box>
+        </Snackbar>
+    )
+
     return (
         <>
+            {getNeuroSanStudioCallout()}
             {getMissingApiKeysAlert()}
             {Tour}
             {getTourModal()}
