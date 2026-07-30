@@ -14,19 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import Button from "@mui/material/Button"
+import Button, {ButtonProps} from "@mui/material/Button"
 import {styled} from "@mui/material/styles"
+import {ComponentType} from "react"
 
-//#region: Types
-
-type LLMChatGroupConfigBtnProps = {
-    disabled?: boolean
-}
-
-//#endregion: Types
-
-// In LlmChatButton.tsx
-export const LlmChatButton = styled(Button)<LLMChatGroupConfigBtnProps>(({disabled, theme}) => ({
+export const LlmChatButton: ComponentType<ButtonProps> = styled(Button)<ButtonProps>(({disabled, theme}) => ({
     backgroundColor: theme.palette.background.paper,
     borderRadius: "var(--bs-border-radius)",
     cursor: disabled ? "not-allowed" : "pointer",
@@ -34,7 +26,7 @@ export const LlmChatButton = styled(Button)<LLMChatGroupConfigBtnProps>(({disabl
     padding: "0.5rem",
 }))
 
-export const SmallLlmChatButton = styled(LlmChatButton)({
+export const SmallLlmChatButton: ComponentType<ButtonProps> = styled(LlmChatButton)<ButtonProps>({
     minWidth: 0,
     padding: "0.25rem",
 })
