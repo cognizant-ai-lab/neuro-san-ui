@@ -99,8 +99,8 @@ describe("ApiKeyErrorBanner", () => {
 describe("errorTitle", () => {
     // Pins the branch the render tests can't reach: a status with no http-status phrase.
     it("falls back to 'Unknown status' when the status has no reason phrase", () => {
-        const failure: ApiKeyFailure = {vendor: "OpenAI", result: {ok: false, status: 599}}
+        const failure: ApiKeyFailure = {vendor: "OpenAI", result: {ok: false, status: 0}}
 
-        expect(errorTitle(failure)).toBe("OpenAI — Unknown status (599)")
+        expect(errorTitle(failure)).toBe("OpenAI — Unknown status (0)")
     })
 })
