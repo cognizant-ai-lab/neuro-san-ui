@@ -8,7 +8,7 @@ import {KeyValidationFailure} from "../../../controller/llm/Providers"
 // Base result reused across the 401 cases.
 const BASE_401_RESULT: KeyValidationFailure = {ok: false, status: httpStatus.UNAUTHORIZED}
 
-const ANTHROPIC_INVALID_KEY_MESSAGE = "Anthropic API key is invalid."
+const ANTHROPIC_INVALID_KEY_MESSAGE = "Anthropic invalid key error message"
 const ANTHROPIC_INVALID_KEY_FAILURE: ApiKeyFailure = {
     vendor: "Anthropic",
     result: {...BASE_401_RESULT, message: ANTHROPIC_INVALID_KEY_MESSAGE},

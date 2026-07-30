@@ -541,7 +541,6 @@ export default defineConfig([
             "@next/next/no-img-element": "off",
             "react/display-name": "off",
             "react/no-array-index-key": "off",
-            "react/no-multi-comp": "off",
 
             // Too noisy for now, but we should gradually enable and fix these
             "vitest/max-expects": "off",
