@@ -37,7 +37,7 @@ import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
 import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
-import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
+import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
@@ -84,18 +84,22 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
  * Shim to conditionally wrap the app in a SessionProvider if authentication is enabled.
  * Allows us to avoid next-auth errors when authentication is disabled
  */
-const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
-    authenticationEnabled() ? <SessionProvider>{children}</SessionProvider> : <>{children}</>
+const NullableSessionProvider: FC<{enableAuthentication: boolean; children: ReactNode}> = ({
+    enableAuthentication,
+    children,
+}) => (enableAuthentication ? <SessionProvider>{children}</SessionProvider> : <>{children}</>)
 
 // Main function.
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
     const {
         auth0ClientId,
         auth0Domain,
+        enableAuthentication,
         backendNeuroSanApiUrl,
         logoServiceToken,
         setAuth0ClientId,
         setAuth0Domain,
+        setEnableAuthentication,
         setBackendNeuroSanApiUrl,
         setLogoServiceToken,
         setSupportEmailAddress,
@@ -109,11 +113,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = authenticationEnabled()
-        ? currentUser
-            ? `ALB using ${oidcProvider}`
-            : "NextAuth"
-        : "None"
+    const authenticationType = enableAuthentication ? (currentUser ? `ALB using ${oidcProvider}` : "NextAuth") : "None"
 
     const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
@@ -167,8 +167,9 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setSupportEmailAddress(data.supportEmailAddress)
             setLogoServiceToken(data.logoServiceToken)
+            setEnableAuthentication(data.enableAuthentication)
 
-            if (authenticationEnabled()) {
+            if (data.enableAuthentication) {
                 // save Auth0 settings if authentication is enabled.
                 setAuth0ClientId(data.auth0ClientId)
                 setAuth0Domain(data.auth0Domain)
@@ -179,11 +180,18 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         }
 
         void getEnvironment()
-    }, [setAuth0ClientId, setAuth0Domain, setBackendNeuroSanApiUrl, setLogoServiceToken, setSupportEmailAddress])
+    }, [
+        setAuth0ClientId,
+        setAuth0Domain,
+        setEnableAuthentication,
+        setBackendNeuroSanApiUrl,
+        setLogoServiceToken,
+        setSupportEmailAddress,
+    ])
 
     useEffect(() => {
         const getUserInfo = async () => {
-            if (!authenticationEnabled()) {
+            if (!enableAuthentication) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser(DEFAULT_USERNAME)
                 setPicture(DEFAULT_USER_IMAGE)
@@ -223,7 +231,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         }
 
         void getUserInfo()
-    }, [setCurrentUser, setOidcProvider, setPicture])
+    }, [enableAuthentication, setCurrentUser, setOidcProvider, setPicture])
 
     const handleSignOut = async () => {
         // Clear our state storage variables
@@ -260,7 +268,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                 <LoadingSpinner id="loading-header" />
             )
         } else {
-            return authenticationEnabled() && Component.authRequired ? (
+            return enableAuthentication && Component.authRequired ? (
                 <Auth>
                     <Component
                         id="body-auth-component"
@@ -296,15 +304,16 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         )
     } else {
         body = (
-            <NullableSessionProvider>
+            <NullableSessionProvider enableAuthentication={enableAuthentication}>
                 <ErrorBoundary id="error_boundary">
                     <NavbarWrapper
+                        enableAuthentication={enableAuthentication}
+                        authenticationType={authenticationType}
                         id="nav-bar"
                         logo={LOGO}
                         logoServiceToken={logoServiceToken}
-                        query={query}
                         pathname={pathname}
-                        authenticationType={authenticationType}
+                        query={query}
                         signOut={handleSignOut}
                         supportEmailAddress={supportEmailAddress}
                     />

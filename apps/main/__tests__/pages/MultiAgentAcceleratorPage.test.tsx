@@ -44,8 +44,6 @@ vi.mock("../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAg
     },
 }))
 
-const renderMultiAgentAcceleratorPage = () => render(<MultiAgentAcceleratorPage />)
-
 describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
 
@@ -62,8 +60,9 @@ describe("Multi Agent Accelerator Page", () => {
 
     it("Should render correctly", async () => {
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(NEURO_SAN_SERVER_URL)
+        useEnvironmentStore.getState().setEnableAuthentication(true)
 
-        renderMultiAgentAcceleratorPage()
+        render(<MultiAgentAcceleratorPage />)
         await screen.findByText(MAA_TEXT)
 
         expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(

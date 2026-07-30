@@ -19,28 +19,25 @@ Tests for instrumentation.ts Next.js startup file.
  */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {authenticationEnabled} from "../../../../../packages/ui-common/const"
+import {enableAuthenticationEnvVar} from "../../../Const"
 import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
 vi.mock("../../../../../packages/ui-common/const")
 
-// It's okay to do this in tests
-/* eslint-disable @typescript-eslint/no-dynamic-delete */
-
 const setAllEnvVars = () => {
     // Set all required environment variables
     REQUIRED_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 
     // Set all required-for-authentication environment variables
     REQUIRED_FOR_AUTH_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 
     // Set all optional environment variables
     OPTIONAL_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 }
 
@@ -48,7 +45,8 @@ describe("instrumentation", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        vi.mocked(authenticationEnabled).mockReturnValue(true)
+        // Default to "authentication enabled"
+        process.env[enableAuthenticationEnvVar] = "true"
         setAllEnvVars()
     })
 
@@ -71,7 +69,7 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if authentication is disabled and required variable is not set", () => {
-        vi.mocked(authenticationEnabled).mockReturnValue(false)
+        process.env[enableAuthenticationEnvVar] = "false"
 
         // Unset an environment variable that is only required for authentication
         delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
@@ -80,7 +78,7 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if optional variables are not set", () => {
-        vi.mocked(authenticationEnabled).mockReturnValue(false)
+        process.env[enableAuthenticationEnvVar] = "false"
 
         // Clear all optional environment variables
         OPTIONAL_ENV_VARS.forEach((envVar) => {
