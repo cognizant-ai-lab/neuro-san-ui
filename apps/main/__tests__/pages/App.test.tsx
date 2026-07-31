@@ -91,18 +91,15 @@ describe("Main App Component", () => {
     const testSupportEmailAddress = "test@example.com"
     const testLogoServiceToken = "testLogoServiceToken"
 
-    const mockEnvironment = (enableAuthentication: boolean) => {
-        const mockEnvironmentResponse: EnvironmentResponse = {
+    const mockEnvironment = (enableAuthentication: boolean) =>
+        ({
             auth0ClientId: testClientId,
             auth0Domain: testDomain,
             backendNeuroSanApiUrl: testNeuroSanURL,
             enableAuthentication,
             logoServiceToken: testLogoServiceToken,
             supportEmailAddress: testSupportEmailAddress,
-        }
-
-        window.fetch = mockFetch(mockEnvironmentResponse as Record<string, unknown>)
-    }
+        }) satisfies EnvironmentResponse
 
     beforeEach(() => {
         vi.mocked(useAuthentication).mockReturnValue({
@@ -120,7 +117,7 @@ describe("Main App Component", () => {
         })
 
         user = userEvent.setup()
-        mockEnvironment(true)
+        window.fetch = mockFetch(mockEnvironment(true))
         vi.mocked(useRouter).mockReturnValue(createMockRouter())
     })
 
@@ -153,7 +150,7 @@ describe("Main App Component", () => {
     })
 
     it("Should render correctly when authentication is disabled", async () => {
-        mockEnvironment(false)
+        window.fetch = mockFetch(mockEnvironment(false))
 
         render(APP_COMPONENT)
 
@@ -194,6 +191,33 @@ describe("Main App Component", () => {
         expect(consoleSpy).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining("Failed to fetch environment variables")
         )
+    })
+
+    it("Should handle failure to fetch user info", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+
+        window.fetch = vi
+            .fn()
+            // First fetch: /api/environment succeeds
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue(mockEnvironment(true)),
+            })
+            // Second fetch: /api/userInfo fails via !res.ok
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                statusText: "Network Error",
+                json: vi.fn().mockResolvedValue({error: "Network Error"}),
+            })
+
+        render(APP_COMPONENT)
+
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("Failed to fetch user info"))
+        })
+
+        expect(consoleSpy).toHaveBeenCalledTimes(1)
     })
 
     it("Should render the splash page correctly", async () => {
