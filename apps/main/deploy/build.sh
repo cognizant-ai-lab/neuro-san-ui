@@ -20,7 +20,6 @@ export SERVICE_VERSION=${SERVICE_VERSION:-0.0.1}
 
 export NODEJS_VERSION=${NODEJS_VERSION:-26}
 export NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${NEXT_PUBLIC_NEURO_SAN_UI_VERSION:-"dev-${USER}-$(date +'%Y-%m-%d-%H-%M')"}
-export NEXT_PUBLIC_ENABLE_AUTHENTICATION=${NEXT_PUBLIC_ENABLE_AUTHENTICATION:-false}
 
 function build_main() {
     # Outline function which delegates most work to other functions
@@ -54,7 +53,6 @@ function build_main() {
         --platform ${TARGET_PLATFORM} \
         --build-arg NODEJS_VERSION="${NODEJS_VERSION}" \
         --build-arg NEXT_PUBLIC_NEURO_SAN_UI_VERSION="${NEXT_PUBLIC_NEURO_SAN_UI_VERSION}" \
-        --build-arg NEXT_PUBLIC_ENABLE_AUTHENTICATION="${NEXT_PUBLIC_ENABLE_AUTHENTICATION}" \
         -f "${DOCKERFILE}" \
         ${CACHE_OR_NO_CACHE} \
         "${REPO_ROOT}"

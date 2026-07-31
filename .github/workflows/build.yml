@@ -120,17 +120,3 @@ jobs:
                       NODEJS_VERSION=${{ env.NODEJS_VERSION }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
                   quiet: "true"
-
-            - name: Build and push no-auth Docker image to ECR
-              if: inputs.is_release
-              # build-common 1.0.8
-              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@30321843331e00848309b34e08b839e1f6490ba2
-              with:
-                  context: .
-                  dockerfile: apps/main/Dockerfile
-                  tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}-noauth
-                  build-args: |
-                      NODEJS_VERSION=${{ env.NODEJS_VERSION }}
-                      NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
-                      NEXT_PUBLIC_ENABLE_AUTHENTICATION=false
-                  quiet: "true"
