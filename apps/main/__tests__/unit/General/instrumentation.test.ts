@@ -51,7 +51,11 @@ describe("instrumentation", () => {
     })
 
     it("should not throw if env vars are all set", () => {
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
         expect(() => register()).not.toThrow()
+
+        // Various start-up messages
+        expect(console.info).toHaveBeenCalledTimes(5)
     })
 
     it("should throw if any required env vars not set", () => {
@@ -69,15 +73,20 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if authentication is disabled and required variable is not set", () => {
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
         process.env[enableAuthenticationEnvVar] = "false"
 
         // Unset an environment variable that is only required for authentication
         delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
 
         expect(() => register()).not.toThrow()
+
+        // Various start-up messages
+        expect(console.info).toHaveBeenCalledTimes(5)
     })
 
     it("Should not throw if optional variables are not set", () => {
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
         process.env[enableAuthenticationEnvVar] = "false"
 
         // Clear all optional environment variables
@@ -93,5 +102,8 @@ describe("instrumentation", () => {
         OPTIONAL_ENV_VARS.forEach((envVar) => {
             expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining(envVar))
         })
+
+        // Various start-up messages
+        expect(console.info).toHaveBeenCalledTimes(5)
     })
 })
