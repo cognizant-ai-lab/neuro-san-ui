@@ -2438,14 +2438,14 @@ describe("AgentFlow", () => {
 
             // Open the confirm card, then let the in-flight request complete without confirming.
             await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
-            expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
+            screen.getByText(ABORT_TITLE)
 
             await act(async () => {
                 release()
             })
 
             // The completed apply must clear the stale confirm state.
-            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
+            await screen.findByText(APPLIED_BANNER)
             expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
 
             // A fresh apply should stream, not resurface the confirm card immediately.
@@ -2454,7 +2454,7 @@ describe("AgentFlow", () => {
             await user.paste(EDIT_PROMPT)
             await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
 
-            expect(await screen.findByRole("button", {name: STOP_BUTTON})).toBeInTheDocument()
+            await screen.findByRole("button", {name: STOP_BUTTON})
             expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
 
             await act(async () => {
