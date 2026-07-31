@@ -191,6 +191,11 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
 
     useEffect(() => {
         const getUserInfo = async () => {
+            if (enableAuthentication === undefined) {
+                // We don't know yet whether authentication is enabled; wait for the environment settings
+                return
+            }
+
             if (!enableAuthentication) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser(DEFAULT_USERNAME)
