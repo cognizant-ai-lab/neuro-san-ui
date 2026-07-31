@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import Close from "@mui/icons-material/Close"
 import StopCircle from "@mui/icons-material/StopCircle"
-import Backdrop from "@mui/material/Backdrop"
 import Box from "@mui/material/Box"
-import CircularProgress from "@mui/material/CircularProgress"
 import Grid from "@mui/material/Grid"
-import Paper from "@mui/material/Paper"
+import IconButton from "@mui/material/IconButton"
 import Slide from "@mui/material/Slide"
+import Snackbar from "@mui/material/Snackbar"
 import {useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -40,15 +40,15 @@ import {
     AgentNetworkDefinitionEntry,
     EXPIRED_NETWORKS_CHECK_INTERVAL_MS,
     GRACE_PERIOD_MS,
+    NEURO_SAN_CALLOUT_DELAY_MS,
     SHOW_TOUR_DELAY_MS,
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
-import {ImportNetworkModal} from "./Sidebar/ImportNetworkModal"
+import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
+import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
     extractTemporaryNetworksFromMessage,
-    IMPORT_FAILURE_DETAIL,
-    importNetworkFromJson,
     isTemporaryNetwork,
     notifySaveError,
     streamNetworkDesignerUpsert,
@@ -60,7 +60,9 @@ import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controll
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
 import {toDisplayName} from "../../utils/AgentName"
@@ -73,8 +75,6 @@ import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
-import {BYOK} from "./Schema/SlyData"
-import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -123,9 +123,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Track newly added temp networks so we can highlight them
     const [newlyAddedTemporaryNetworks, setNewlyAddedTemporaryNetworks] = useState<Set<string>>(new Set())
 
-    // True while a file import is in-flight (after modal confirm, before the new network appears)
-    const [isImporting, setIsImporting] = useState<boolean>(false)
-
     const [networkIconSuggestions, setNetworkIconSuggestions] = useState<NetworkIconSuggestions>({})
 
     const [agentsInNetwork, setAgentsInNetwork] = useState<ConnectivityInfo[]>([])
@@ -172,7 +169,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     >(new Map())
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
-    const [importModalOpen, setImportModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
     const [haveShownTourModal, setHaveShownTourModal] = useState<boolean>(false)
 
@@ -216,6 +212,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             skip: "Exit Tour",
         },
     })
+
+    // Neuro SAN Studio callout
+    const [neuroSanCalloutOpen, setNeuroSanCalloutOpen] = useState<boolean>(false)
+    const haveShownNeuroSanCallout = useAnnouncementsStore((state) =>
+        state.hasShown(AnnouncementId.NeuroSanStudioGithubStar)
+    )
+    const markAnnouncementShown = useAnnouncementsStore((state) => state.markShown)
 
     const resetState = useCallback(() => {
         setThoughtBubbleEdges(new Map())
@@ -646,41 +649,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         [neuroSanURL, username, selectedNetwork]
     )
 
-    /**
-     * Handles an import from the ImportNetworkModal: converts the JSON content to a
-     * network definition, streams it through the network designer to obtain a reservation,
-     * then upserts the result into the temporary-networks store and navigates to the new network.
-     */
-    const handleImportNetwork = useCallback(
-        async (agentNetworkName: string, content: string): Promise<void> => {
-            setIsImporting(true)
-            try {
-                const result = await importNetworkFromJson(content, agentNetworkName, neuroSanURL, username)
-                if ("failure" in result) {
-                    sendNotification(
-                        NotificationType.error,
-                        `Failed to import "${agentNetworkName}".`,
-                        IMPORT_FAILURE_DETAIL[result.failure]
-                    )
-                    return
-                }
-                useTempNetworksStore.getState().upsertTempNetworks(result.networks)
-                // An import defines a single network, so the designer returns one reservation. Highlight and
-                // navigate to it; any further entries (none expected) are still upserted above.
-                const newNetworkName = result.networks[0]?.agentInfo.agent_name
-                if (newNetworkName) {
-                    setNewlyAddedTemporaryNetworks(new Set([newNetworkName]))
-                    changeSelectedNetwork(newNetworkName)
-                }
-            } catch (e: unknown) {
-                notifySaveError(agentNetworkName, e)
-            } finally {
-                setIsImporting(false)
-            }
-        },
-        [changeSelectedNetwork, neuroSanURL, username]
-    )
-
     const onStreamingStarted = useCallback((): void => {
         // Reset agent counts
         setAgentCounts(new Map())
@@ -745,6 +713,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }, [haveShownTourModal, tourRequested, tourStatus])
 
+    // Show Neuro SAN Studio callout after a delay if the user hasn't seen it yet
+    useEffect(() => {
+        // If it's already open, or we've already shown it, just return
+        if (neuroSanCalloutOpen || haveShownNeuroSanCallout) return undefined
+
+        // Show callout after a delay
+        const timer = setTimeout(() => {
+            setNeuroSanCalloutOpen(true)
+        }, NEURO_SAN_CALLOUT_DELAY_MS)
+
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [haveShownNeuroSanCallout, neuroSanCalloutOpen])
+
     useEffect(() => {
         if (!tourRequested) return
 
@@ -787,14 +770,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     <Sidebar
                         id="multi-agent-accelerator-sidebar"
                         isAwaitingLlm={isAwaitingLlm}
-                        isImporting={isImporting}
                         networkIconSuggestions={networkIconSuggestions}
                         networks={networks}
                         neuroSanServerURL={neuroSanURL}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
                         onEditNetwork={handleEditNetwork}
-                        onImportClick={() => setImportModalOpen(true)}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
@@ -966,53 +947,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             />
         ) : null
 
-    const getImportNetworkModal = () => (
-        <ImportNetworkModal
-            existingNetworkNames={temporaryNetworks.map((n) => n.agentNetworkName)}
-            isOpen={importModalOpen}
-            onClose={() => setImportModalOpen(false)}
-            onImport={handleImportNetwork}
-        />
-    )
-
-    // Blocking overlay shown while an imported network is being created on the backend.
-    const getImportBackdrop = () => (
-        <Backdrop
-            id="multi-agent-accelerator-import-backdrop"
-            data-testid="multi-agent-accelerator-import-backdrop"
-            open={isImporting}
-            // Layer 3 sits above the modal so the backdrop blocks interaction with any open dialog while importing.
-            sx={{zIndex: getZIndex(3, theme)}}
-        >
-            <Paper
-                elevation={6}
-                role="status"
-                aria-live="polite"
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    px: 4,
-                    py: 2.5,
-                    borderRadius: 2,
-                    maxWidth: 480,
-                }}
-            >
-                <CircularProgress
-                    id="multi-agent-accelerator-import-spinner"
-                    size={24}
-                />
-                <Typography
-                    id="multi-agent-accelerator-import-title"
-                    variant="body1"
-                    sx={{fontWeight: "bold"}}
-                >
-                    Importing network...
-                </Typography>
-            </Paper>
-        </Backdrop>
-    )
-
     const getTourModal = () =>
         tourModalOpen && (
             <MUIDialog
@@ -1150,15 +1084,69 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             </MUIAlert>
         )
 
+    const getNeuroSanStudioCallout = () => (
+        <Snackbar
+            anchorOrigin={{vertical: "bottom", horizontal: "left"}}
+            open={neuroSanCalloutOpen}
+            slotProps={{
+                clickAwayListener: {
+                    onClickAway: (event) => {
+                        ;(event as (MouseEvent | TouchEvent) & {defaultMuiPrevented: boolean}).defaultMuiPrevented =
+                            true
+                    },
+                },
+                transition: {
+                    timeout: {
+                        enter: 500,
+                        exit: 250,
+                    },
+                },
+            }}
+            slots={{transition: Slide}}
+            sx={{mb: 2}}
+        >
+            <Box
+                sx={{
+                    position: "relative",
+                    maxWidth: 340,
+                }}
+            >
+                <IconButton
+                    aria-label="Close Neuro SAN Studio callout"
+                    onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setNeuroSanCalloutOpen(false)
+                        markAnnouncementShown(AnnouncementId.NeuroSanStudioGithubStar)
+                    }}
+                    role="button"
+                    size="small"
+                    sx={{
+                        bgcolor: "background.paper",
+                        position: "absolute",
+                        right: 4,
+                        top: 20,
+                        "&:hover": {
+                            bgcolor: "action.hover",
+                        },
+                    }}
+                >
+                    <Close fontSize="small" />
+                </IconButton>
+
+                <NeuroSanStudioCallout />
+            </Box>
+        </Snackbar>
+    )
+
     return (
         <>
+            {getNeuroSanStudioCallout()}
             {getMissingApiKeysAlert()}
             {Tour}
             {getTourModal()}
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
-            {getImportNetworkModal()}
-            {getImportBackdrop()}
             <Grid
                 id="multi-agent-accelerator-grid"
                 container

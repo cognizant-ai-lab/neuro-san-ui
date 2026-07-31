@@ -116,7 +116,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const expirationTime = item?.temporaryNetworkExpirationTime
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
-    const networkDefinition = item?.temporaryNetworkDefinition ?? null
+    const networkHocon = item?.temporaryNetworkHocon ?? null
 
     const iconNameSuggestion = item.iconSuggestion
 
@@ -205,18 +205,14 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
-                                {networkDefinition && (
+                                {networkHocon && (
                                     <Tooltip title={isExpired ? "Expired" : DOWNLOAD_NETWORK_DEFINITION_LABEL}>
                                         <span>
                                             <ActionIconButton
                                                 onClick={(e) => {
                                                     // The button is disabled while expired, so no need to guard here.
                                                     e.stopPropagation()
-                                                    downloadFile(
-                                                        JSON.stringify(networkDefinition, null, 2),
-                                                        item.downloadFileName,
-                                                        "application/json"
-                                                    )
+                                                    downloadFile(networkHocon, item.downloadFileName, "text/plain")
                                                 }}
                                                 disabled={isExpired}
                                                 aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}

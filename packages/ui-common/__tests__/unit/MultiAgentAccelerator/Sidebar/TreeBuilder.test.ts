@@ -7,6 +7,9 @@ import {
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {TemporaryNetwork} from "../../../../state/TemporaryNetworks"
 
+// eslint-disable-next-line no-useless-escape
+const TEMPORARY_NETWORK_HOCON = '{\"registries/aaosa.hocon\"\n\n# .. \"metadata\": {\n ... \"sample_queries\"'
+
 const makeAgent = (agentName: string, tags?: readonly string[]): AgentInfo => ({
     agent_name: agentName,
     tags,
@@ -89,30 +92,32 @@ describe("TreeBuilder", () => {
         })
 
         it("maps temporary-network metadata onto the leaf", () => {
-            const definition = [{origin: "front_man", display_as: "llm_agent"}]
             const tree = buildTreeViewItems(
                 false,
                 [],
-                [makeTempNetwork("travel_agency_ops", {agentNetworkDefinition: definition})]
+                [makeTempNetwork("travel_agency_ops", {networkHocon: TEMPORARY_NETWORK_HOCON})]
             )
 
             expect(tree[0].children?.[0]).toMatchObject({
                 iconSuggestion: "HourglassTop",
                 temporaryNetworkExpirationTime: new Date(1_700_000_000 * 1000),
-                temporaryNetworkDefinition: definition,
+                temporaryNetworkHocon: TEMPORARY_NETWORK_HOCON,
                 displayName: "Travel Agency Ops",
-                downloadFileName: "travel_agency_ops.json",
+                downloadFileName: "travel_agency_ops.hocon",
             })
         })
 
         it("derives a UUID-stripped download filename only for downloadable temporary networks", () => {
-            const definition = [{origin: "front_man", display_as: "llm_agent"}]
             const tempTree = buildTreeViewItems(
                 false,
                 [],
-                [makeTempNetwork("macys-14ecb260-4389-44f3-afad-ea315dfa1966", {agentNetworkDefinition: definition})]
+                [
+                    makeTempNetwork("macys-14ecb260-4389-44f3-afad-ea315dfa1966", {
+                        networkHocon: TEMPORARY_NETWORK_HOCON,
+                    }),
+                ]
             )
-            expect(tempTree[0].children?.[0].downloadFileName).toBe("macys.json")
+            expect(tempTree[0].children?.[0].downloadFileName).toBe("macys.hocon")
 
             const regularTree = buildTreeViewItems(false, [makeAgent("macys")])
             expect(regularTree[0].children?.[0].downloadFileName).toBeUndefined()

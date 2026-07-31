@@ -10,6 +10,8 @@ import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
 
+import {isKeyValidationFailure, KeyValidationFailure, KeyValidationResult} from "../../controller/llm/Providers"
+import {LLMProvider} from "../../state/Settings"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {StatusLight} from "../Common/StatusLight"
 
@@ -17,11 +19,12 @@ interface ApiKeyInputProps {
     readonly forgetKey: () => void
     readonly id: string
     readonly logo: string
+    readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     readonly onSave: (key: string) => void
-    readonly onTest: (key: string) => Promise<boolean>
+    readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly persistedValue: string
     readonly placeholder: string
-    readonly vendor: string
+    readonly vendor: LLMProvider
 }
 
 /**
@@ -31,6 +34,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     forgetKey,
     id,
     logo,
+    onResultChange,
     onSave,
     onTest,
     persistedValue,
@@ -45,15 +49,18 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         setKeyValidated(null)
+        onResultChange?.(vendor, null)
         setInputValue(e.target.value)
     }
 
     const handleOnTest = async () => {
         setIsValidating(true)
         setKeyValidated(null)
+        onResultChange?.(vendor, null)
         try {
-            const isValid = await onTest(inputValue)
-            setKeyValidated(isValid)
+            const result = await onTest(inputValue)
+            setKeyValidated(result.ok)
+            onResultChange?.(vendor, isKeyValidationFailure(result) ? result : null)
         } finally {
             setIsValidating(false)
         }
@@ -65,11 +72,13 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     useEffect(() => {
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
-    }, [persistedValue])
+        onResultChange?.(vendor, null)
+    }, [persistedValue, vendor, onResultChange])
 
     const handleClearInput = () => {
         setInputValue("")
         setKeyValidated(null)
+        onResultChange?.(vendor, null)
     }
 
     return (

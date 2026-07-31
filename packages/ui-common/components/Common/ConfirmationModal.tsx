@@ -15,14 +15,14 @@ limitations under the License.
 */
 
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
+import Button, {ButtonProps} from "@mui/material/Button"
 import {styled} from "@mui/material/styles"
-import {FC, JSX as ReactJSX, ReactNode, useState} from "react"
+import {ComponentType, FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
 
 // #region: Styled Components
-export const StyledButton = styled(Button)({
+export const StyledButton: ComponentType<ButtonProps> = styled(Button)({
     fontSize: "0.8em",
     padding: "0px 7px",
 })

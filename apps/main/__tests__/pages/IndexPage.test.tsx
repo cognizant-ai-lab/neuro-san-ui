@@ -77,6 +77,13 @@ describe("Index Page", () => {
         await screen.findByText("Flowsource")
         await screen.findByText("Skygrade")
         await screen.findByText("Cognizant Ignition")
+        const title = await screen.findByText(/Star us on GitHub/u)
+        expect(title).toBeVisible()
+
+        const link = title.closest("a")
+
+        expect(link).toBeVisible()
+        expect(link).toHaveAttribute("href", "https://github.com/cognizant-ai-lab/neuro-san-studio")
     })
 
     it("opens the email dialog when 'Contact Us' is clicked", async () => {

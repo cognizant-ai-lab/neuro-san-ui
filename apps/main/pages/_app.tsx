@@ -84,12 +84,10 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
  * Shim to conditionally wrap the app in a SessionProvider if authentication is enabled.
  * Allows us to avoid next-auth errors when authentication is disabled
  */
-// eslint-disable-next-line react/no-multi-comp -- used only within this module
 const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
     authenticationEnabled() ? <SessionProvider>{children}</SessionProvider> : <>{children}</>
 
 // Main function.
-// eslint-disable-next-line react/no-multi-comp
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
     const {
         auth0ClientId,
@@ -298,43 +296,40 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         )
     } else {
         body = (
-            <>
-                <CssBaseline />
-                <NullableSessionProvider>
-                    <ErrorBoundary id="error_boundary">
-                        <NavbarWrapper
-                            id="nav-bar"
-                            logo={LOGO}
-                            logoServiceToken={logoServiceToken}
-                            query={query}
-                            pathname={pathname}
-                            authenticationType={authenticationType}
-                            signOut={handleSignOut}
-                            supportEmailAddress={supportEmailAddress}
-                        />
-                        <Container
-                            id="body-container"
-                            maxWidth={false}
-                            sx={{
-                                border: `solid 1px ${theme.palette.grey[300]}`,
-                                display: "flex",
-                                flex: 1,
-                                flexDirection: "column",
-                                minHeight: "90%",
-                            }}
-                        >
-                            {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
-                            {getAppComponent()}
-                        </Container>
-                        <Footer
-                            supportEmailAddress={supportEmailAddress}
-                            logoLinkUrl="https://www.cognizant.com/"
-                            logoUrl="/cognizant-logo-white.svg"
-                            sx={{borderTop: "none", marginTop: 0}}
-                        />
-                    </ErrorBoundary>
-                </NullableSessionProvider>
-            </>
+            <NullableSessionProvider>
+                <ErrorBoundary id="error_boundary">
+                    <NavbarWrapper
+                        id="nav-bar"
+                        logo={LOGO}
+                        logoServiceToken={logoServiceToken}
+                        query={query}
+                        pathname={pathname}
+                        authenticationType={authenticationType}
+                        signOut={handleSignOut}
+                        supportEmailAddress={supportEmailAddress}
+                    />
+                    <Container
+                        id="body-container"
+                        maxWidth={false}
+                        sx={{
+                            border: `solid 1px ${theme.palette.grey[300]}`,
+                            display: "flex",
+                            flex: 1,
+                            flexDirection: "column",
+                            minHeight: "90%",
+                        }}
+                    >
+                        {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
+                        {getAppComponent()}
+                    </Container>
+                    <Footer
+                        supportEmailAddress={supportEmailAddress}
+                        logoLinkUrl="https://www.cognizant.com/"
+                        logoUrl="/cognizant-logo-white.svg"
+                        sx={{borderTop: "none", marginTop: 0}}
+                    />
+                </ErrorBoundary>
+            </NullableSessionProvider>
         )
     }
 
@@ -358,6 +353,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     theme={theme}
                     noSsr={true}
                 >
+                    <CssBaseline />
                     {body}
                     <SnackbarProvider
                         Components={{

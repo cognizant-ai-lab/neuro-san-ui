@@ -1,4 +1,7 @@
+import Typography from "@mui/material/Typography"
 import {Step} from "react-joyride"
+
+import {NeuroSanStudioCallout} from "../NeuroSanStudioCallout"
 
 /**
  * This file defines the steps for the main tour of the Multi-Agent Accelerator application.
@@ -18,19 +21,21 @@ export const MAIN_TOUR_STEPS: Step[] = [
         content:
             "This is the list of agent networks available on the server. Select a network to see its agents and " +
             "start interacting with it!",
-        target: () => document.querySelector("#multi-agent-accelerator-sidebar-heading"),
+        target: () => document.querySelector(".MuiRichTreeView-root"),
         placement: "bottom",
     },
     {
-        content:
-            "Agent Network Designer: Click here to create and edit your own network, with the help of a " +
-            "powerful AI assistant.",
+        content: (
+            <>
+                Agent Network Designer: Click here to create and edit your own network, with the help of a powerful AI
+                assistant.
+                <br />
+                <br />
+                Networks you create can be downloaded from the sidebar as a HOCON file and run in neuro-san or
+                neuro-san-studio. See the User Guide (under Help) for more information.
+            </>
+        ),
         target: () => document.querySelector("#add-network-icon"),
-        placement: "bottom",
-    },
-    {
-        content: "Import Network Definition: Click here to import a network definition file from your computer.",
-        target: () => document.querySelector("#import-network-icon"),
         placement: "bottom",
     },
     {
@@ -106,9 +111,18 @@ export const MAIN_TOUR_STEPS: Step[] = [
         placement: "top",
     },
     {
-        content:
-            "If you want to take the tour again, or if you have any questions or need help, click here to access " +
-            "the help information or to contact the Cognizant AI Labs team. We'd love to hear from you!",
+        content: (
+            <>
+                <Typography
+                    sx={{mb: 1}}
+                    variant="body2"
+                >
+                    Need help, want to retake the tour, or have feedback? Use this menu to find help resources and
+                    contact the Cognizant AI Labs team.
+                </Typography>
+                <NeuroSanStudioCallout />
+            </>
+        ),
         target: () => document.querySelector("#help-dropdown"),
         placement: "top",
     },

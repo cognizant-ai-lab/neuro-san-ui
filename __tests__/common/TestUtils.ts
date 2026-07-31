@@ -15,10 +15,11 @@ limitations under the License.
 */
 
 // Mock Fetch for NodeJs environment
-export const mockFetch = (data: Record<string, unknown>, ok: boolean = true) => {
+export const mockFetch = (data: Record<string, unknown>, ok: boolean = true, statusCode?: number) => {
     return vi.fn().mockImplementation(() =>
         Promise.resolve({
             ok,
+            status: statusCode,
             json: () => data,
         })
     )
