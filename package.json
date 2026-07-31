@@ -29,6 +29,10 @@
     "engines": {
         "node": "^26.0.0"
     },
+    "resolutions": {
+        "postcss": "8.5.25",
+        "sharp": "0.35.3"
+    },
     "devDependencies": {
         "@eslint/js": "10.0.1",
         "@next/eslint-plugin-next": "16.2.10",
