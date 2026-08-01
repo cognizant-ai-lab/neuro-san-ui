@@ -28,8 +28,9 @@ interface EnvironmentStore {
     backendNeuroSanApiUrl: string
     setBackendNeuroSanApiUrl: (backendNeuroSanApiUrl: string) => void
 
-    // Authentication on/off switch
-    enableAuthentication: boolean
+    // Authentication on/off switch. "undefined" means "we don't know yet"
+    // (e.g. before call to Environment API resolved)
+    enableAuthentication: boolean | undefined
     setEnableAuthentication: (enableAuthentication: boolean) => void
 
     // Auth0 client ID

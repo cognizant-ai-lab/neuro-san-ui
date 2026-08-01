@@ -54,6 +54,7 @@ function run() {
         --publish $SERVICE_HTTP_PORT:$SERVICE_HTTP_PORT \
         --env LOGO_SERVICE_TOKEN \
         --env NEURO_SAN_SERVER_URL \
+        --env ENABLE_AUTHENTICATION \
         --env OPENAI_API_KEY \
         --env SUPPORT_EMAIL_ADDRESS \
         neuro-san-ui/neuro-san-ui:$CONTAINER_VERSION"
