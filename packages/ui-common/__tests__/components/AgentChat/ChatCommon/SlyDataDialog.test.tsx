@@ -180,7 +180,7 @@ describe("SlyDataDialog", () => {
         renderDialog()
 
         const file = new File(['{"imported": true}'], "sly.json", {type: "application/json"})
-        await user.upload(screen.getByTestId(`${DIALOG_ID}-file-input`), file, {applyAccept: false})
+        await user.upload(screen.getByTestId(`${DIALOG_ID}-file-input`), file)
 
         expect(getEditor()).toHaveValue('{"imported": true}')
         expect(screen.getByRole("button", {name: "Save"})).toBeEnabled()
@@ -190,7 +190,7 @@ describe("SlyDataDialog", () => {
         renderDialog()
 
         const file = new File(["not json at all"], "sly.json", {type: "application/json"})
-        await user.upload(screen.getByTestId(`${DIALOG_ID}-file-input`), file, {applyAccept: false})
+        await user.upload(screen.getByTestId(`${DIALOG_ID}-file-input`), file)
 
         expect(getEditor()).toHaveValue("not json at all")
         expect(screen.getByRole("button", {name: "Save"})).toBeDisabled()
