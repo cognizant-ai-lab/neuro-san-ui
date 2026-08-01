@@ -235,7 +235,10 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             }
         }
 
-        void getUserInfo()
+        if (enableAuthentication !== undefined) {
+            // We know whether authentication is enabled or not, so we can get the user info
+            void getUserInfo()
+        }
     }, [enableAuthentication, setCurrentUser, setOidcProvider, setPicture])
 
     const handleSignOut = async () => {
@@ -289,8 +292,10 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         }
     }
 
+    const isAuthenticationKnown = enableAuthentication !== undefined
+
     if (pathname === "/") {
-        // Main page is special
+        // Main page is special: doesn't have usual header and footer, does have a background image.
         body = (
             <div
                 id="body-div"
@@ -307,6 +312,8 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                 />
             </div>
         )
+    } else if (!isAuthenticationKnown) {
+        body = <LoadingSpinner id="loading-header" />
     } else {
         body = (
             <NullableSessionProvider enableAuthentication={enableAuthentication}>

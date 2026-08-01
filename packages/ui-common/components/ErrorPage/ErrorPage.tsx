@@ -47,7 +47,7 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+    const authenticationType = enableAuthentication ? (currentUser ? `ALB using ${oidcProvider}` : "NextAuth") : "None"
 
     const {data: {user: userInfo} = {}} = useAuthentication()
 
