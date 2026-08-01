@@ -1594,6 +1594,56 @@ describe("ChatCommon", () => {
             // sendChatQuery was called — the component processed the chunk without error
             expect(sendChatQuery).toHaveBeenCalledTimes(1)
         })
+
+        const openSlyDataEditor = async () => {
+            await user.click(screen.getByTestId("TuneIcon"))
+            await user.click(screen.getByRole("menuitem", {name: "Sly data..."}))
+            return screen.getByLabelText<HTMLTextAreaElement>("Sly data")
+        }
+
+        it("Should send sly_data edited in the editor with the next request", async () => {
+            act(() => {
+                useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+            })
+
+            renderChatCommonComponent()
+            mockSendChatQuery(({callback}) => {
+                callback(JSON.stringify({response: getResponseMessage(ChatMessageType.AGENT_FRAMEWORK, "done")}))
+            })
+
+            const editor = await openSlyDataEditor()
+            await user.clear(editor)
+            await user.click(editor)
+            await user.paste('{"seeded_by_user": "yes"}')
+            await user.click(screen.getByRole("button", {name: "Save"}))
+
+            await sendQuery(TEST_AGENT_MATH_GUY, "query after seeding sly_data")
+
+            // sly_data is the 7th argument to sendChatQuery. The user's value rides along with the entries the
+            // component always supplies.
+            expect(vi.mocked(sendChatQuery).mock.calls[0][6]).toEqual({
+                seeded_by_user: "yes",
+                login: TEST_USER,
+            })
+        })
+
+        it("Should show the sly_data currently in the store", async () => {
+            act(() => {
+                useAgentChatHistoryStore.getState().setSlyData(TEST_AGENT_MATH_GUY, {charges: 7})
+            })
+
+            renderChatCommonComponent()
+
+            expect(await openSlyDataEditor()).toHaveValue('{\n  "charges": 7\n}')
+        })
+
+        it("Should not offer the sly_data editor for legacy agents, which have no sly_data", async () => {
+            renderChatCommonComponent({selectedNetwork: LegacyAgentType.DataGenerator})
+
+            await user.click(screen.getByTestId("TuneIcon"))
+
+            expect(screen.queryByRole("menuitem", {name: "Sly data..."})).not.toBeInTheDocument()
+        })
     })
 
     describe("Chat Context Handling", () => {
