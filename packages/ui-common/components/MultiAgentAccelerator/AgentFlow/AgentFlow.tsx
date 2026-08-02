@@ -474,7 +474,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const dockAbortControllerRef = useRef<AbortController | null>(null)
 
     // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
-    const [stopState, setStopState] = useState<"confirming" | null>(null)
+    const [stopState, setStopState] = useState(false)
 
     // Inline status banner shown above the dock header after an "apply" succeeds, is canceled, or fails.
     const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
@@ -502,17 +502,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handleStopClick = useCallback(() => {
-        setStopState("confirming")
+        setStopState(true)
     }, [])
 
     const handleKeepApplying = useCallback(() => {
-        setStopState(null)
+        setStopState(false)
     }, [])
 
     const handleStopAndDiscard = useCallback(() => {
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
-        setStopState(null)
+        setStopState(false)
         showDockBanner({
             severity: "info",
             title: "Applying cancelled.",
@@ -665,7 +665,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             clearTimeout(timeoutId)
             dockAbortControllerRef.current = null
             setIsDockStreaming(false)
-            setStopState(null)
+            setStopState(false)
         }
     }, [saveUpdates, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
@@ -1303,7 +1303,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 open={isDockStreaming}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
-                {stopState === "confirming" ? (
+                {stopState ? (
                     <Paper
                         elevation={6}
                         sx={{
