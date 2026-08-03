@@ -20,6 +20,7 @@
 # Trigger Scenarios:
 # - Push to any branch: Runs tests only (for development feedback)
 # - Push to main branch: Runs test → build → deploy to dev
+# - Pull request to main: Runs tests only; supports fork PRs via workflow approval
 # - GitHub release: Runs test → build → deploy to staging → bump package.json
 # ================================================================================
 
@@ -32,12 +33,21 @@ on:
     # Trigger on pushes to any branch
     push:
         branches: ["**"]
+    # Trigger on pull requests targeting main, including updates from forks
+    pull_request:
+        types: [opened, synchronize, reopened]
+        branches:
+            - main
     # Trigger on GitHub release events
     release:
         types: [published]
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event.pull_request.head.sha || github.sha }}
+    cancel-in-progress: true
+
+# Minimal default permissions; jobs that need extra permissions override below.
 permissions:
-    id-token: write
     contents: read
 
 jobs:
@@ -64,8 +74,12 @@ jobs:
                     "${{ github.event.release.tag_name }}" \
                     "${{ github.sha }}"
 
-    # Step 1: Always run tests
+    # Step 1: Always run tests on pushes, releases, and pull requests targeting main
     test:
+        if: >
+            github.event_name == 'push' ||
+            github.event_name == 'release' ||
+            (github.event_name == 'pull_request' && github.base_ref == 'main')
         uses: ./.github/workflows/test.yml
         needs: setup
         with:
@@ -73,6 +87,9 @@ jobs:
 
     # Step 2: Build Docker image (only for main/release)
     build:
+        permissions:
+            id-token: write
+            contents: read
         uses: ./.github/workflows/build.yml
         needs: [setup, test]
         if: needs.test.result == 'success' && needs.setup.outputs.should_build == 'true'
