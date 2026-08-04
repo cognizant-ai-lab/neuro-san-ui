@@ -24,7 +24,7 @@ import IconButton from "@mui/material/IconButton"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {ChangeEvent, FC, useEffect, useMemo, useRef, useState} from "react"
+import {ChangeEvent, FC, Fragment, useEffect, useMemo, useRef, useState} from "react"
 
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
@@ -317,8 +317,24 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                 severity="info"
                 sx={{mt: 0.5, py: 0, "& .MuiAlert-message": {fontSize: "0.75rem"}}}
             >
-                Added automatically when you send: {[...extraSlyDataKeys].sort().join(", ")}. These come from your
-                settings and the selected network, not from this editor.
+                These keys are added automatically to every request:{" "}
+                {[...extraSlyDataKeys].sort().map((key, index) => (
+                    <Fragment key={key}>
+                        {index > 0 && ", "}
+                        <Box
+                            component="code"
+                            sx={{
+                                backgroundColor: "action.hover",
+                                borderRadius: 0.5,
+                                fontFamily: "monospace",
+                                px: 0.5,
+                            }}
+                        >
+                            {key}
+                        </Box>
+                    </Fragment>
+                ))}
+                . They come from your settings and the selected network, not from this editor.
             </Alert>
         )
 
