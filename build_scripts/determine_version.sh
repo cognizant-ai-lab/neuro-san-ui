@@ -23,8 +23,8 @@
 # Usage: determine_version.sh <event_name> <ref> [tag_name] [sha]
 #
 # Arguments:
-#   event_name: The GitHub event name (e.g., "release", "push")
-#   ref: The GitHub ref (e.g., "refs/heads/main", "refs/heads/feature-branch")
+#   event_name: The GitHub event name (e.g., "release", "push", "pull_request")
+#   ref: The GitHub ref (e.g., "refs/heads/main", "refs/heads/feature-branch", "refs/pull/123/merge")
 #   tag_name: (Optional) The release tag name (required if event_name is "release")
 #   sha: (Optional) The Git SHA (required for non-release events)
 #
@@ -71,7 +71,7 @@ if [[ "$EVENT_NAME" == "release" ]]; then
 elif [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/main" ]]; then
     # Push to main: Deploy to dev with short SHA
     if [[ -z "$SHA" ]]; then
-        echo "Error: sha is required for push events" >&2
+        echo "Error: sha is required for non-release events" >&2
         exit 1
     fi
     
@@ -80,10 +80,22 @@ elif [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/main" ]]; then
     SHOULD_BUILD="true"
     SHOULD_DEPLOY="true"
     
-else
-    # Any other branch push: Only test, no build or deploy
+elif [[ "$EVENT_NAME" == "pull_request" ]]; then
+    # Pull request to main: Only test, no build or deploy
     if [[ -z "$SHA" ]]; then
-        echo "Error: sha is required for push events" >&2
+        echo "Error: sha is required for non-release events" >&2
+        exit 1
+    fi
+    
+    VERSION="${SHA:0:7}"
+    DEPLOY_ENV="dev"
+    SHOULD_BUILD="false"
+    SHOULD_DEPLOY="false"
+    
+else
+    # Any other branch/ref event: Only test, no build or deploy
+    if [[ -z "$SHA" ]]; then
+        echo "Error: sha is required for non-release events" >&2
         exit 1
     fi
     
