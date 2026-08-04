@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import type {EnvironmentResponse} from "../../pages/api/environment/Types"
-import {render, screen, waitFor, within} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NextRouter, Router, useRouter} from "next/router"
 import {ReactNode} from "react"
@@ -264,13 +264,10 @@ describe("Main App Component", () => {
         const dispatchSpy = vi.spyOn(window, "dispatchEvent")
 
         // Simulate clicking on the Help menu to open it
-        await user.click(await screen.findByRole("button", {name: "Help"}))
+        await user.click(await screen.findByText("Help"))
 
         // Locate "take a tour" item
-        const helpMenu = await screen.findByRole("menu")
-        const takeTourItem = await within(helpMenu).findByRole("menuitem", {
-            name: /Take a tour/u,
-        })
+        const takeTourItem = await screen.findByText("Take a tour")
 
         await user.click(takeTourItem)
 

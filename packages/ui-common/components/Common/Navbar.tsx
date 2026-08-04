@@ -266,7 +266,6 @@ export const Navbar = ({
             >
                 <Typography
                     id="explore-toggle"
-                    role="button"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
                         display: "flex",
@@ -320,7 +319,6 @@ export const Navbar = ({
             >
                 <Typography
                     id="help-toggle"
-                    role="button"
                     sx={{
                         ...MENU_ITEM_TEXT_PROPS,
                         display: "flex",
