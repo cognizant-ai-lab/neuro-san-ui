@@ -50,12 +50,26 @@ describe("instrumentation", () => {
         setAllEnvVars()
     })
 
+    const expectConsoleOutput = (
+        authEnabled: boolean,
+        openAIKeySet: string,
+        logoServiceTokenSet: string,
+        neuroSanServerURL: string
+    ) => {
+        expect(console.info).toHaveBeenCalledTimes(5)
+        expect(console.info).toHaveBeenCalledWith("Start-up: Environment variables checked successfully.")
+        expect(console.info).toHaveBeenCalledWith("Authentication enabled:", authEnabled)
+        expect(console.info).toHaveBeenCalledWith("OpenAI API key:", openAIKeySet)
+        expect(console.info).toHaveBeenCalledWith("Logo service token:", logoServiceTokenSet)
+        expect(console.info).toHaveBeenCalledWith("Neuro SAN server URL:", neuroSanServerURL)
+    }
+
     it("should not throw if env vars are all set", () => {
         vi.spyOn(console, "info").mockImplementation(vi.fn())
         expect(() => register()).not.toThrow()
 
         // Various start-up messages
-        expect(console.info).toHaveBeenCalledTimes(5)
+        expectConsoleOutput(true, "set", "set", "NEURO_SAN_SERVER_URL-test_value")
     })
 
     it("should throw if any required env vars not set", () => {
@@ -82,7 +96,7 @@ describe("instrumentation", () => {
         expect(() => register()).not.toThrow()
 
         // Various start-up messages
-        expect(console.info).toHaveBeenCalledTimes(5)
+        expectConsoleOutput(false, "set", "set", "NEURO_SAN_SERVER_URL-test_value")
     })
 
     it("Should not throw if optional variables are not set", () => {
@@ -104,6 +118,6 @@ describe("instrumentation", () => {
         })
 
         // Various start-up messages
-        expect(console.info).toHaveBeenCalledTimes(5)
+        expectConsoleOutput(false, "not set", "not set", "NEURO_SAN_SERVER_URL-test_value")
     })
 })
