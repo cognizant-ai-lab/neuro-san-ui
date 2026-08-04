@@ -31,7 +31,8 @@
     },
     "resolutions": {
         "postcss": "8.5.25",
-        "sharp": "0.35.3"
+        "sharp": "0.35.3",
+        "brace-expansion@^2.0.1": "2.1.4"
     },
     "devDependencies": {
         "@eslint/js": "10.0.1",
