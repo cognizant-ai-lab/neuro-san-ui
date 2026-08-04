@@ -238,7 +238,7 @@ describe("SlyDataDialog", () => {
     it("names the keys that get merged in on send, without showing their values", () => {
         renderDialog(["llm_config", "login"])
 
-        expect(screen.getByText(/added automatically to every request/u)).toBeInTheDocument()
+        expect(screen.getByText(/Sent automatically with every request/u)).toBeInTheDocument()
         expect(screen.getByText("llm_config")).toBeInTheDocument()
         expect(screen.getByText("login")).toBeInTheDocument()
     })
@@ -246,6 +246,6 @@ describe("SlyDataDialog", () => {
     it("says nothing about merged keys when there are none", () => {
         renderDialog()
 
-        expect(screen.queryByText(/added automatically to every request/u)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Sent automatically with every request/u)).not.toBeInTheDocument()
     })
 })
