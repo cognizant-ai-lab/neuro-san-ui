@@ -30,8 +30,8 @@
         "node": "^26.0.0"
     },
     "resolutions": {
-        "postcss": "8.5.25",
-        "brace-expansion@^2.0.1": "2.1.4"
+        "brace-expansion@^2.0.1": "2.1.4",
+        "postcss": "8.5.25"
     },
     "devDependencies": {
         "@eslint/js": "10.0.1",
