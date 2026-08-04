@@ -317,7 +317,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                 severity="info"
                 sx={{mt: 0.5, py: 0, "& .MuiAlert-message": {fontSize: "0.75rem"}}}
             >
-                These keys are added automatically to every request:{" "}
+                Sent automatically with every request:{" "}
                 {[...extraSlyDataKeys].sort().map((key, index) => (
                     <Fragment key={key}>
                         {index > 0 && ", "}
@@ -334,7 +334,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                         </Box>
                     </Fragment>
                 ))}
-                . They come from your settings and the selected network, not from this editor.
+                . Supplied by the app, not from this editor.
             </Alert>
         )
 
