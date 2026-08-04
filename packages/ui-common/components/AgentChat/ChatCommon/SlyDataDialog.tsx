@@ -312,14 +312,14 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
      */
     const getMergedKeysNote = () =>
         extraSlyDataKeys.length > 0 && (
-            <Typography
+            <Alert
                 id={`${id}-merged-keys`}
-                sx={{display: "block", mt: 1}}
-                variant="caption"
+                severity="info"
+                sx={{mt: 0.5, py: 0, "& .MuiAlert-message": {fontSize: "0.75rem"}}}
             >
                 Added automatically when you send: {[...extraSlyDataKeys].sort().join(", ")}. These come from your
                 settings and the selected network, not from this editor.
-            </Typography>
+            </Alert>
         )
 
     const getFooter = () => (
