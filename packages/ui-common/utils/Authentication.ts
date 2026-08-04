@@ -35,14 +35,21 @@ export const AD_TENANT_ID = "de08c407-19b9-427d-9fe8-edf254300ca7"
  * of NextAuth's useSession hook.
  */
 export const useAuthentication = () => {
-    const {enableAuthentication} = useEnvironmentStore()
+    const enableAuthentication = useEnvironmentStore((state) => state.enableAuthentication)
+
+    if (enableAuthentication === undefined) {
+        throw new Error("useAuthentication called before authentication mode was loaded")
+    }
 
     if (!enableAuthentication) {
         // Auth disabled: return a stub
         return {data: {user: {name: DEFAULT_USERNAME, image: DEFAULT_USER_IMAGE}}}
     }
-    // Auth enabled: safe to call hooks. Despite the conditional test above, we are guaranteed that
-    // authenticationEnabled is constant for a given build, so we won't be violating the rules of hooks.
+
+    // Auth mode is runtime configuration, not a build-time constant.
+    // This hook relies on the app shell gating render until enableAuthentication is known.
+    // Components that can remain mounted while enableAuthentication changes must not use this hook.
+
     /* eslint-disable react-hooks/rules-of-hooks */
     const {data: session} = useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
@@ -98,7 +105,7 @@ export const smartSignOut = async (
     auth0ClientId: string,
     oidcProvider: OidcProvider
 ) => {
-    const {enableAuthentication} = useEnvironmentStore.getState()
+    const enableAuthentication = useEnvironmentStore.getState().enableAuthentication
 
     if (currentUser === undefined || !enableAuthentication) {
         // Don't know what authentication provider we're using, so just return
@@ -122,3 +129,15 @@ export const smartSignOut = async (
         navigateToUrl(createAuth0LogoutUrl(oidcProvider, auth0Domain, auth0ClientId))
     }
 }
+
+/**
+ * Infer authentication type
+ * @param enableAuthentication Flag indicating whether authentication is enabled or not
+ * @param currentUser The current user, if any.
+ * @param oidcProvider Type of OIDC provider, if there is one.
+ */
+export const getAuthenticationType = (
+    enableAuthentication: boolean,
+    currentUser: string,
+    oidcProvider: OidcProvider
+) => (enableAuthentication ? (currentUser ? `ALB using ${oidcProvider}` : "NextAuth") : "None")

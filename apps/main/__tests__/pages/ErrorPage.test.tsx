@@ -23,12 +23,6 @@ import {LOGO} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 
-vi.mock("next-auth/react", () => ({
-    useSession: () => ({
-        status: "authenticated",
-    }),
-}))
-
 vi.mock("next/router", () => ({
     useRouter: () => ({
         pathname: "",

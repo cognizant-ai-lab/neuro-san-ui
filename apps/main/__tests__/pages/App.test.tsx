@@ -76,7 +76,16 @@ vi.mock("next/router", () => ({
     useRouter: vi.fn(),
 }))
 
-vi.mock("../../../../packages/ui-common/utils/Authentication")
+vi.mock("../../../../packages/ui-common/utils/Authentication", async () => {
+    const actual = await vi.importActual<typeof import("../../../../packages/ui-common/utils/Authentication")>(
+        "../../../../packages/ui-common/utils/Authentication"
+    )
+
+    return {
+        ...actual,
+        useAuthentication: vi.fn(),
+    }
+})
 
 //#endregion Mocks
 
@@ -91,7 +100,7 @@ describe("Main App Component", () => {
     const testSupportEmailAddress = "test@example.com"
     const testLogoServiceToken = "testLogoServiceToken"
 
-    const mockEnvironment = (enableAuthentication: boolean) =>
+    const mockEnvironment = (enableAuthentication: boolean | undefined) =>
         ({
             auth0ClientId: testClientId,
             auth0Domain: testDomain,
@@ -163,6 +172,19 @@ describe("Main App Component", () => {
         expect(state.auth0Domain).toBe("")
         expect(state.supportEmailAddress).toBe(testSupportEmailAddress)
         expect(state.logoServiceToken).toBe(testLogoServiceToken)
+    })
+
+    // This is the case where we haven't yet retrieved the environment variables, so we don't know if authentication
+    // is enabled or not.
+    it("Should render correctly when authentication is undefined", async () => {
+        window.fetch = mockFetch(mockEnvironment(undefined))
+
+        render(APP_COMPONENT)
+
+        await waitFor(() => {
+            const loadingSpinner = document.getElementById("loading-header")
+            expect(loadingSpinner).toBeInTheDocument()
+        })
     })
 
     it("Should handle failure to fetch environment variables", async () => {
