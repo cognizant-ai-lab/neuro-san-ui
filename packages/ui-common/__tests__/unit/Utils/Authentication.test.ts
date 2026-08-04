@@ -61,6 +61,14 @@ describe("useAuthentication", () => {
             expect(result.current.data.user.name).toBe(DEFAULT_USERNAME)
             expect(result.current.data.user.image).toBe(DEFAULT_USER_IMAGE)
         })
+
+        it("Throws if called before authentication setting is retrieved", () => {
+            useEnvironmentStore.getState().setEnableAuthentication(undefined)
+
+            expect(() => renderHook(() => useAuthentication())).toThrow(
+                "useAuthentication called before authentication mode was loaded"
+            )
+        })
     })
 
     describe("signOut", () => {

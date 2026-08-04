@@ -21,7 +21,7 @@ import {FC, ReactElement} from "react"
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
-import {smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {getAuthenticationType, smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Footer} from "../Common/Footer"
 import {Navbar} from "../Common/Navbar"
@@ -47,7 +47,7 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = enableAuthentication ? (currentUser ? `ALB using ${oidcProvider}` : "NextAuth") : "None"
+    const authenticationType = getAuthenticationType(enableAuthentication, currentUser, oidcProvider)
 
     const {data: {user: userInfo} = {}} = useAuthentication()
 
