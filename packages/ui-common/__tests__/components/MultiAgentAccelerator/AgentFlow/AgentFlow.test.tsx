@@ -33,6 +33,7 @@ import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAcce
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useSettingsStore} from "../../../../state/Settings"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
@@ -186,6 +187,9 @@ describe("AgentFlow", () => {
             mode: "light",
         })
         useTempNetworksStore.getState().setTempNetworks([])
+
+        useSettingsStore.getState().resetSettings()
+        useSettingsStore.persist.clearStorage()
     })
 
     // Helper to create a minimal TemporaryNetwork for seeding the store in tests.
@@ -479,7 +483,7 @@ describe("AgentFlow", () => {
             verifyAgentNodes(container)
         })
 
-        it("Should show radial guides only in radial layout with more than one depth", () => {
+        it("Should show radial guides only in radial layout with more than one depth", async () => {
             const {container, rerender} = renderAgentFlowComponent()
 
             // Should show radial guides SVG with more than one node (which is used for the default test network)
@@ -507,7 +511,9 @@ describe("AgentFlow", () => {
             )
 
             // Should not show radial guides SVG with only one node
-            expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-radial-guides")).not.toBeInTheDocument()
+            })
         })
 
         it("Should handle radial guides toggle when layout is linear", async () => {
@@ -541,7 +547,9 @@ describe("AgentFlow", () => {
             await user.click(radialGuidesButton)
 
             // Radial guides should be visible again
-            expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+            await waitFor(() => {
+                expect(container.querySelector("#test-flow-id-radial-guides")).toBeInTheDocument()
+            })
         })
     })
 
