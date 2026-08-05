@@ -61,9 +61,6 @@ on:
             image_tag:
                 description: "The image tag that was pushed to ECR"
                 value: ${{ jobs.build.outputs.image_tag }}
-            noauth_image_tag:
-                description: "The no-auth image tag that was pushed to ECR"
-                value: ${{ jobs.build.outputs.noauth_image_tag }}
 
 env:
     # AWS info needed to push the image to ECR
@@ -82,7 +79,6 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             image_tag: ${{ inputs.DISPLAY_VERSION }}
-            noauth_image_tag: ${{ inputs.DISPLAY_VERSION }}-noauth
         steps:
             - name: Checkout repository
               # v6.0.2
