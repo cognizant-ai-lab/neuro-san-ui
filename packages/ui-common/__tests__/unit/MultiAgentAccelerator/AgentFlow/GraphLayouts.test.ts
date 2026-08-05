@@ -87,6 +87,8 @@ describe("GraphLayouts", () => {
         {origin: "agent3", tools: []},
     ]
 
+    const graphWithoutFrontMan: ConnectivityInfo[] = [{origin: undefined, tools: ["agent2"]}]
+
     it("Should generate a linear layout", () => {
         const {nodes, edges} = layoutLinear({
             ...defaultLayoutParams,
@@ -401,6 +403,20 @@ describe("GraphLayouts", () => {
 
         expect(nodes.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
         expect(edges.length).toBeGreaterThanOrEqual(0) // undefined behavior with bad input
+    })
+
+    it.each([
+        {layoutFunction: layoutRadial, name: "radial", expectedNodes: 0, expectedEdges: 0},
+        {layoutFunction: layoutLinear, name: "linear", expectedNodes: 1, expectedEdges: 0},
+    ])("Should handle a graph with no frontman in $name layout", ({expectedEdges, expectedNodes, layoutFunction}) => {
+        // This is an invalid case. Every network should have a frontman. But let's at least make sure we don't crash.
+        const {nodes, edges} = layoutFunction({
+            ...defaultLayoutParams,
+            agentsInNetwork: graphWithoutFrontMan,
+        })
+
+        expect(nodes.length).toEqual(expectedNodes)
+        expect(edges.length).toEqual(expectedEdges)
     })
 
     describe("Thought Bubble Edge Management", () => {

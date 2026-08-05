@@ -49,6 +49,10 @@ type ApiKeys = Partial<Record<LLMProvider, ApiKeyEntry>>
 
 export type PaletteKey = keyof typeof PALETTES | "brand"
 
+export type Layout = "radial" | "linear"
+
+export type GraphColoringOption = "depth" | "heatmap"
+
 /**
  * User preference settings
  */
@@ -57,8 +61,12 @@ interface Settings {
         readonly agentIconColor: string
         readonly agentNodeColor: string
         readonly autoAgentIconColor: boolean
+        readonly graphColoringOption: GraphColoringOption
+        readonly layout: Layout
         readonly plasmaColor: string
         readonly rangePalette: PaletteKey
+        readonly showRadialGuides: boolean
+        readonly showThoughtBubbles: boolean
         readonly useNativeNames: boolean
     }
     readonly branding: {
@@ -104,11 +112,15 @@ export const LLM_PROVIDER_API_KEY_FIELD = {
 export const DEFAULT_SETTINGS: Settings = {
     appearance: {
         // CSS variables like --bs-green don't work here. TBD why.
-        agentNodeColor: "#2db81f",
         agentIconColor: "black",
+        agentNodeColor: "#2db81f",
         autoAgentIconColor: true,
-        rangePalette: "blue",
+        graphColoringOption: "depth",
+        layout: "radial",
         plasmaColor: "#2db81f",
+        rangePalette: "blue",
+        showRadialGuides: true,
+        showThoughtBubbles: true,
         useNativeNames: false,
     },
     branding: {

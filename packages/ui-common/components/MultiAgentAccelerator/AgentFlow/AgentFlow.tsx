@@ -79,7 +79,7 @@ import {StreamingUnit} from "../../../controller/llm/LlmChat"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {usePalette, useSettingsStore} from "../../../state/Settings"
+import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../../AgentChat/Common/Utils"
@@ -95,6 +95,7 @@ import {
 } from "../TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
+
 //#region: Types
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
@@ -132,8 +133,6 @@ export interface AgentFlowProps {
         SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
     >
 }
-
-type Layout = "radial" | "linear"
 
 //#endregion: Types
 
@@ -265,13 +264,43 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => window.removeEventListener("resize", handleResize)
     }, [handleResize])
 
-    const [layout, setLayout] = useState<Layout>("radial")
+    const updateSettings = useSettingsStore((state) => state.updateSettings)
 
-    const [coloringOption, setColoringOption] = useState<"depth" | "heatmap">("depth")
+    const layout = useSettingsStore((state) => state.settings.appearance.layout)
+    const setLayout = (newLayout: Layout) => {
+        updateSettings({
+            appearance: {
+                layout: newLayout,
+            },
+        })
+    }
 
-    const [enableRadialGuides, setEnableRadialGuides] = useState<boolean>(true)
+    const graphColoringOption = useSettingsStore((state) => state.settings.appearance.graphColoringOption)
+    const setGraphColoringOption = (newValue: GraphColoringOption) => {
+        updateSettings({
+            appearance: {
+                graphColoringOption: newValue,
+            },
+        })
+    }
 
-    const [showThoughtBubbles, setShowThoughtBubbles] = useState<boolean>(true)
+    const showRadialGuides = useSettingsStore((state) => state.settings.appearance.showRadialGuides)
+    const setShowRadialGuides = (newValue: boolean) => {
+        updateSettings({
+            appearance: {
+                showRadialGuides: newValue,
+            },
+        })
+    }
+
+    const showThoughtBubbles = useSettingsStore((state) => state.settings.appearance.showThoughtBubbles)
+    const setShowThoughtBubbles = (newValue: boolean) => {
+        updateSettings({
+            appearance: {
+                showThoughtBubbles: newValue,
+            },
+        })
+    }
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
@@ -377,7 +406,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         return () => clearInterval(cleanupInterval)
     }, [setThoughtBubbleEdges]) // mount/unmount only
 
-    const isHeatmap = coloringOption === "heatmap"
+    const isHeatmap = graphColoringOption === "heatmap"
 
     const palette = usePalette()
 
@@ -406,9 +435,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Create the flow layout depending on user preference
     // Memoize layoutResult so it only recalculates when relevant data changes
-    const layoutResult: LayoutResult = useMemo(
-        () =>
-            layout === "linear"
+    const layoutResult: LayoutResult = useMemo(() => {
+        if (mergedAgentsInNetwork.length > 0) {
+            return layout === "linear"
                 ? layoutLinear({
                       agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
@@ -430,21 +459,23 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                       isTemporaryNetwork,
                       thoughtBubbleEdges,
                       useNativeNames,
-                  }),
-        [
-            agentCounts,
-            agentIconSuggestions,
-            currentConversations,
-            isAgentNetworkDesignerMode,
-            isAwaitingLlm,
-            isHeatmap,
-            isTemporaryNetwork,
-            layout,
-            mergedAgentsInNetwork,
-            thoughtBubbleEdges,
-            useNativeNames,
-        ]
-    )
+                  })
+        } else {
+            return {nodes: [], edges: []}
+        }
+    }, [
+        agentCounts,
+        agentIconSuggestions,
+        currentConversations,
+        isAgentNetworkDesignerMode,
+        isAwaitingLlm,
+        isHeatmap,
+        isTemporaryNetwork,
+        layout,
+        mergedAgentsInNetwork,
+        thoughtBubbleEdges,
+        useNativeNames,
+    ])
 
     const [nodes, setNodes] = useState<RFNode<AgentNodeProps>[]>(layoutResult.nodes)
 
@@ -876,11 +907,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 ))}
                 <ToggleButtonGroup
                     id={`${id}-coloring-toggle`}
-                    value={coloringOption}
+                    value={graphColoringOption}
                     exclusive={true}
                     onChange={(_, newValue) => {
                         if (newValue !== null) {
-                            setColoringOption(newValue)
+                            setGraphColoringOption(newValue)
                         }
                     }}
                     size="small"
@@ -936,7 +967,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
-    const shouldShowRadialGuides = enableRadialGuides && layout === "radial" && maxDepth > 1
+    const shouldShowRadialGuides = showRadialGuides && layout === "radial" && maxDepth > 1
 
     // Generate the control bar for the flow, including layout and radial guides toggles
     const getControls = () => {
@@ -996,9 +1027,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     <span id="radial-guides-span">
                         <ControlButton
                             id="radial-guides-button"
-                            onClick={() => setEnableRadialGuides(!enableRadialGuides)}
+                            onClick={() => setShowRadialGuides(!showRadialGuides)}
                             style={{
-                                backgroundColor: getControlButtonBackgroundColor(enableRadialGuides),
+                                backgroundColor: getControlButtonBackgroundColor(showRadialGuides),
                             }}
                             disabled={layout !== "radial"}
                         >
@@ -1030,8 +1061,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const titleBackgroundColor = alpha(theme.palette.background.paper, 0.75)
 
     const getTitle = () => {
+        if (!networkDisplayName) return null
+
         return (
-            networkDisplayName && (
+            <Box sx={{marginBottom: "1rem"}}>
                 <Box
                     id={`${id}-network-title-bar`}
                     sx={{
@@ -1039,6 +1072,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         display: "flex",
                         gap: 1,
                         left: "50%",
+
                         pointerEvents: "none",
                         position: "absolute",
                         top: 0,
@@ -1050,31 +1084,30 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         title={networkDisplayName}
                         placement="top"
                     >
-                        <Box sx={{pointerEvents: "auto"}}>
-                            <Typography
-                                id={`${id}-network-title`}
-                                variant="subtitle1"
-                                sx={{
-                                    backdropFilter: "blur(6px)",
-                                    backgroundColor: titleBackgroundColor,
-                                    border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                                    borderRadius: 2,
-                                    boxShadow: theme.shadows[6],
-                                    color: theme.palette.text.primary,
-                                    fontWeight: 600,
-                                    letterSpacing: "0.01em",
-                                    lineHeight: 1.35,
-                                    maxWidth: 400,
-                                    overflow: "hidden",
-                                    px: 2,
-                                    py: 0.45,
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                }}
-                            >
-                                {networkDisplayName}
-                            </Typography>
-                        </Box>
+                        <Typography
+                            id={`${id}-network-title`}
+                            variant="subtitle1"
+                            sx={{
+                                backdropFilter: "blur(6px)",
+                                backgroundColor: titleBackgroundColor,
+                                border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
+                                borderRadius: 2,
+                                boxShadow: theme.shadows[6],
+                                color: theme.palette.text.primary,
+                                fontWeight: 600,
+                                letterSpacing: "0.01em",
+                                lineHeight: 1.35,
+                                maxWidth: 400,
+                                overflow: "hidden",
+                                pointerEvents: "auto",
+                                px: 2,
+                                py: 0.45,
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                            }}
+                        >
+                            {networkDisplayName}
+                        </Typography>
                     </Tooltip>
                     {isTemporaryNetwork && !isEditMode && !isAwaitingLlm && onEnterEditMode && (
                         <Button
@@ -1092,7 +1125,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </Button>
                     )}
                 </Box>
-            )
+            </Box>
         )
     }
 
@@ -1130,7 +1163,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 id={`${id}-react-flow-wrapper`}
                 sx={{position: "relative", flex: 1, minHeight: 0}}
             >
-                {networkDisplayName ? <Box sx={{marginBottom: "1rem"}}>{getTitle()}</Box> : null}
+                {getTitle()}
                 <ReactFlow
                     connectionMode={ConnectionMode.Loose}
                     edgeTypes={edgeTypes}
