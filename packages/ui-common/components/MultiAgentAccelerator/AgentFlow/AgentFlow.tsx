@@ -1072,7 +1072,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         display: "flex",
                         gap: 1,
                         left: "50%",
-
                         pointerEvents: "none",
                         position: "absolute",
                         top: 0,
