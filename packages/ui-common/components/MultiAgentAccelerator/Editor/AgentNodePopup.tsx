@@ -20,8 +20,8 @@ import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
 import {FC, useEffect, useState} from "react"
 
-import {ConfirmationModal} from "../Common/ConfirmationModal"
-import {MUIDialog} from "../Common/MUIDialog"
+import {ConfirmationModal} from "../../Common/ConfirmationModal"
+import {MUIDialog} from "../../Common/MUIDialog"
 
 // #region: Types
 
@@ -43,7 +43,7 @@ export interface AgentNodePopupProps {
     readonly initialInstructions?: string
     /** Initial description text shown in the editable field. Defaults to an empty string. */
     readonly initialDescription?: string
-    /** When true the save API call is in-flight; shows an "Applying changes..." button and disables both actions. */
+    /** When true, the save API call is in-flight; shows an "Applying changes..." button and disables both actions. */
     readonly isSaving?: boolean
 }
 

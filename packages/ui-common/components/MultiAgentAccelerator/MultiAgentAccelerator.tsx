@@ -109,8 +109,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Stores whether are currently awaiting LLM response (for knowing when to show spinners)
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
 
-    const [isEditingNetwork, setIsEditingNetwork] = useState(false)
-
     // Track streaming state - controls thought bubble cleanup timer, and enables "zen mode" (hides outer panels after
     // animation)
     const [isStreaming, setIsStreaming] = useState(false)
@@ -688,10 +686,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         }
     }
 
-    const handleEditNetwork = (_networkId: string) => {
-        setIsEditingNetwork(true)
-    }
-
     useEffect(() => {
         // Don't show the tour modal if any of these are true
         if (
@@ -775,7 +769,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         neuroSanServerURL={neuroSanURL}
                         newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
                         onDeleteNetwork={handleDeleteNetwork}
-                        onEditNetwork={handleEditNetwork}
                         setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
                         temporaryNetworks={temporaryNetworks}
                     />
@@ -815,17 +808,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             currentConversations={currentConversations}
                             currentUser={username}
                             isAwaitingLlm={isAwaitingLlm}
-                            isEditMode={isEditingNetwork}
                             isStreaming={isStreaming}
                             isSelectedNetworkTemporary={isSelectedNetworkTemporary}
                             networkDisplayName={networkDisplayName || ""}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
                             neuroSanURL={neuroSanURL}
-                            onEnterEditMode={() => setIsEditingNetwork(true)}
-                            onExitEditMode={() => setIsEditingNetwork(false)}
-                            onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
                             onSaveAgent={onSaveAgent}
                             thoughtBubbleEdges={thoughtBubbleEdges}
+                            setSelectedNetwork={changeSelectedNetwork}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
                     </Box>

@@ -16,9 +16,12 @@ limitations under the License.
 
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+import {
+    AgentNodePopup,
+    AgentNodePopupProps,
+} from "packages/ui-common/components/MultiAgentAccelerator/Editor/AgentNodePopup"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
