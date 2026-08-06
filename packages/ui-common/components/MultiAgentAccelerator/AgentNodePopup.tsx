@@ -18,36 +18,50 @@ import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
-import {FC, useEffect, useState} from "react"
+import {Dispatch, FC, SetStateAction, useEffect, useRef, useState} from "react"
 
+import {AgentNetworkDefinitionEntry} from "./const"
+import {useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
+import {NotificationType, sendNotification} from "../Common/notification"
 
-// #region: Types
+//#region: Types
 
 export interface AgentNodePopupProps {
+    readonly agentId: string
+
     /** The agent's display name — shown read-only in the dialog header area. */
     readonly agentName: string
+
     /** Whether the dialog is open. */
     readonly isOpen: boolean
-    /** Called when the user closes or cancels the dialog without saving. */
-    readonly onClose: () => void
-    /**
-     * Called when the user saves the edited fields.
-     * @param agentName The agent's name (unchanged).
-     * @param instructions The updated instructions text.
-     * @param description The updated description text.
-     */
-    readonly onSave: (agentName: string, instructions: string, description: string) => void
+
     /** Initial instructions text shown in the editable field. Defaults to an empty string. */
     readonly initialInstructions?: string
+
     /** Initial description text shown in the editable field. Defaults to an empty string. */
     readonly initialDescription?: string
-    /** When true the save API call is in-flight; shows an "Applying changes..." button and disables both actions. */
-    readonly isSaving?: boolean
+
+    readonly networkId: string
+
+    readonly onSaveAgent: (
+        agentName: string,
+        updated: AgentNetworkDefinitionEntry[],
+        agentNetworkName: string | undefined,
+        signal: AbortSignal
+    ) => Promise<void>
+
+    readonly setIsPopupOpen: Dispatch<SetStateAction<boolean>>
 }
 
-// #endregion: Types
+//#endregion: Types
+
+//#region: Constants
+
+const AGENT_SAVE_TIMEOUT_MS = 60_000
+
+//#endregion: Constants
 
 /**
  * A popup dialog for viewing and editing an agent node's instructions and description.
@@ -57,20 +71,30 @@ export interface AgentNodePopupProps {
  * - Saving is a no-op until the API endpoint is wired up; `onSave` receives the current values.
  */
 export const AgentNodePopup: FC<AgentNodePopupProps> = ({
+    agentId,
     agentName,
-    isOpen,
-    onClose,
-    onSave,
-    initialInstructions = "",
     initialDescription = "",
-    isSaving = false,
+    initialInstructions = "",
+    isOpen,
+    networkId,
+    onSaveAgent,
+    setIsPopupOpen,
 }) => {
     const [instructionsText, setInstructionsText] = useState<string>(initialInstructions)
     const [descriptionText, setDescriptionText] = useState<string>(initialDescription)
 
     const isDirty = instructionsText !== initialInstructions || descriptionText !== initialDescription
 
+    // True, while the agent-edit request is in-flight so we can disable the Save button.
+    const [isSavingAgent, setIsSavingAgent] = useState<boolean>(false)
+
+    // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
+    const saveAbortControllerRef = useRef<AbortController | null>(null)
+
     const [displayConfirmationModal, setDisplayConfirmationModal] = useState<boolean>(false)
+
+    const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
+    const updateTempNetworkDefinition = useTempNetworksStore((state) => state.updateTempNetworkDefinition)
 
     // Keep local fields in sync when the dialog opens or if initial values change while open.
     // Guarding on isOpen prevents resetting the text during the close animation, which would cause a visible flash.
@@ -81,12 +105,56 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         }
     }, [initialInstructions, initialDescription, isOpen])
 
-    const handleSave = () => {
-        onSave(agentName, instructionsText, descriptionText)
+    const onSave = async () => {
+        if (!agentId) return
+
+        // Find the temp network entry for the currently selected network.
+        const currentTempNetwork = networkId
+            ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
+            : undefined
+
+        // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
+        const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
+        const updatedDefinitions = currentDefinitions.map((entry) =>
+            entry.origin === agentId ? {...entry, instructions: instructionsText, description: descriptionText} : entry
+        )
+        if (networkId) {
+            updateTempNetworkDefinition(networkId, updatedDefinitions)
+        }
+
+        setIsSavingAgent(true)
+        const saveController = new AbortController()
+        saveAbortControllerRef.current = saveController
+        const saveTimeoutId = setTimeout(
+            () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
+            AGENT_SAVE_TIMEOUT_MS
+        )
+        try {
+            await onSaveAgent(
+                agentName,
+                updatedDefinitions,
+                currentTempNetwork?.agentNetworkName,
+                saveController.signal
+            )
+        } catch (e) {
+            console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
+            sendNotification(
+                NotificationType.error,
+                `Failed to save agent "${agentName}".`,
+                String(e),
+                undefined,
+                null // show indefinitely until the user dismisses
+            )
+        } finally {
+            clearTimeout(saveTimeoutId)
+            saveAbortControllerRef.current = null
+            setIsSavingAgent(false)
+            setIsPopupOpen(false)
+        }
     }
 
     const handleClose = () => {
-        if (isSaving) {
+        if (isSavingAgent) {
             return
         }
 
@@ -97,7 +165,12 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
 
         setInstructionsText(initialInstructions)
         setDescriptionText(initialDescription)
-        onClose()
+        // If a save is in-flight, abort it immediately so the stream doesn't hang.
+        saveAbortControllerRef.current?.abort()
+        saveAbortControllerRef.current = null
+
+        setIsPopupOpen(false)
+        setIsSavingAgent(false)
     }
 
     const footer = (
@@ -116,18 +189,18 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                     onClick={handleClose}
                     variant="outlined"
                     size="small"
-                    disabled={isSaving}
+                    disabled={isSavingAgent}
                 >
                     Cancel
                 </Button>
                 <Button
                     id="agent-node-popup-save-btn"
-                    onClick={handleSave}
+                    onClick={onSave}
                     variant="contained"
                     size="small"
-                    disabled={isSaving || !isDirty}
+                    disabled={isSavingAgent || !isDirty}
                     startIcon={
-                        isSaving ? (
+                        isSavingAgent ? (
                             <CircularProgress
                                 size={14}
                                 color="inherit"
@@ -135,7 +208,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                         ) : undefined
                     }
                 >
-                    {isSaving ? "Applying changes..." : "Save"}
+                    {isSavingAgent ? "Applying changes..." : "Save"}
                 </Button>
             </Box>
         </Box>
@@ -151,63 +224,67 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 setDisplayConfirmationModal(false)
                 setInstructionsText(initialInstructions)
                 setDescriptionText(initialDescription)
-                onClose()
+                handleClose()
             }}
-            handleOk={handleSave}
+            handleOk={onSave}
             maskCloseable={false}
             okBtnLabel="Save changes"
             title="Unsaved Changes"
         />
     )
 
+    const getEditPopup = () => (
+        <MUIDialog
+            footer={footer}
+            id="agent-node-popup"
+            isOpen={isOpen}
+            onClose={handleClose}
+            paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
+            title={agentName}
+        >
+            {/* Description — editable */}
+            <TextField
+                disabled={isSavingAgent}
+                fullWidth
+                id="agent-node-popup-description-field"
+                label="Description"
+                multiline
+                onChange={(e) => setDescriptionText(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key !== "Escape") e.stopPropagation()
+                }}
+                placeholder="Enter a short description of this agent…"
+                rows={6}
+                slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
+                size="small"
+                value={descriptionText}
+            />
+            {/* Instructions — editable */}
+            <TextField
+                autoFocus
+                disabled={isSavingAgent}
+                fullWidth
+                id="agent-node-popup-instructions-field"
+                label="Instructions"
+                multiline
+                onChange={(e) => setInstructionsText(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key !== "Escape") e.stopPropagation()
+                }}
+                placeholder="Enter instructions for this agent…"
+                rows={6}
+                slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
+                size="small"
+                sx={{marginTop: 2}}
+                value={instructionsText}
+            />
+        </MUIDialog>
+    )
+
     return (
         <>
             {displayConfirmationModal && getConfirmationModal()}
-            <MUIDialog
-                footer={footer}
-                id="agent-node-popup"
-                isOpen={isOpen}
-                onClose={handleClose}
-                paperProps={{minWidth: "480px", maxWidth: "600px", width: "100%"}}
-                title={agentName}
-            >
-                {/* Description — editable */}
-                <TextField
-                    disabled={isSaving}
-                    fullWidth
-                    id="agent-node-popup-description-field"
-                    label="Description"
-                    multiline
-                    onChange={(e) => setDescriptionText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key !== "Escape") e.stopPropagation()
-                    }}
-                    placeholder="Enter a short description of this agent…"
-                    rows={6}
-                    slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
-                    size="small"
-                    value={descriptionText}
-                />
-                {/* Instructions — editable */}
-                <TextField
-                    autoFocus
-                    disabled={isSaving}
-                    fullWidth
-                    id="agent-node-popup-instructions-field"
-                    label="Instructions"
-                    multiline
-                    onChange={(e) => setInstructionsText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key !== "Escape") e.stopPropagation()
-                    }}
-                    placeholder="Enter instructions for this agent…"
-                    rows={6}
-                    slotProps={{htmlInput: {style: {fontSize: "0.85rem"}}}}
-                    size="small"
-                    sx={{marginTop: 2}}
-                    value={instructionsText}
-                />
-            </MUIDialog>
+            {getEditPopup()}
         </>
     )
 }

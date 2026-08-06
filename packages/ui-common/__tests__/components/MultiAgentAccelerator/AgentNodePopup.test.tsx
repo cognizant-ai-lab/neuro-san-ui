@@ -38,20 +38,22 @@ const SAVE_BUTTON = "Save"
 
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
     const onClose = vi.fn()
-    const onSave = vi.fn()
+    const onSaveAgent = vi.fn()
 
     render(
         <AgentNodePopup
             agentName={AGENT_NAME}
             isOpen={true}
-            onClose={onClose}
-            onSave={onSave}
+            agentId="TEST_AGENT_ID"
+            networkId="TEST_NETWORK_ID"
+            onSaveAgent={onSaveAgent}
             initialInstructions={INITIAL_INSTRUCTIONS}
+            setIsPopupOpen={vi.fn()}
             {...overrides}
         />
     )
 
-    return {onClose, onSave}
+    return {onClose, onSaveAgent}
 }
 
 describe("AgentNodePopup", () => {
@@ -91,9 +93,9 @@ describe("AgentNodePopup", () => {
         expect(instructionsField).toHaveValue("New instructions")
     })
 
-    it("calls onSave with agent name, updated instructions and description when Save is clicked", async () => {
+    it("calls onSaveAgent with agent name, updated instructions and description when Save is clicked", async () => {
         const user = userEvent.setup()
-        const {onSave} = renderPopup()
+        const {onSaveAgent} = renderPopup()
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
@@ -101,7 +103,7 @@ describe("AgentNodePopup", () => {
 
         await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
-        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
+        expect(onSaveAgent).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
     })
 
     it("calls onClose and resets instructions to initial value when Cancel is clicked", async () => {
@@ -149,9 +151,11 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
-                onSave={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
+                onSaveAgent={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -169,9 +173,11 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -181,9 +187,11 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -202,9 +210,11 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
-                onSave={vi.fn()}
+                onSaveAgent={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
                 initialInstructions={INITIAL_INSTRUCTIONS}
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -221,9 +231,11 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -242,9 +254,11 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
-                onSave={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
+                onSaveAgent={vi.fn()}
                 initialInstructions=""
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -258,9 +272,11 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -272,7 +288,7 @@ describe("AgentNodePopup", () => {
 
     it("updates description text when the description field is changed", async () => {
         const user = userEvent.setup()
-        const {onSave} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
+        const {onSaveAgent} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
 
         const descField = screen.getByRole("textbox", {name: DESCRIPTION_FIELD})
         // type (not paste): real keystrokes here are the only coverage of the description field's
@@ -282,7 +298,7 @@ describe("AgentNodePopup", () => {
 
         await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
-        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
+        expect(onSaveAgent).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
     })
 
     it("closes the dialog when Escape is pressed from the description field", async () => {
@@ -298,14 +314,14 @@ describe("AgentNodePopup", () => {
 
     describe("isSaving prop", () => {
         it("disables both Save and Cancel buttons while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeDisabled()
             expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeDisabled()
         })
 
         it("shows 'Applying changes\u2026' label on the Save button while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeInTheDocument()
             expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
@@ -313,7 +329,7 @@ describe("AgentNodePopup", () => {
 
         it("shows 'Save' label and enables buttons when isSaving is false", async () => {
             const user = userEvent.setup()
-            renderPopup({isSaving: false})
+            renderPopup()
 
             // Save is also gated on isDirty; make the form dirty so it is not disabled by !isDirty
             const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
@@ -324,19 +340,19 @@ describe("AgentNodePopup", () => {
             expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeEnabled()
         })
 
-        it("does not call onSave when the Save button is disabled (isSaving true)", () => {
-            const {onSave} = renderPopup({isSaving: true})
+        it("does not call onSaveAgent when the Save button is disabled (isSaving true)", () => {
+            const {onSaveAgent} = renderPopup()
 
             // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
             // refuses to click it. We force the click to prove the handler stays inert even so.
             const saveBtn = screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})
             fireEvent.click(saveBtn)
 
-            expect(onSave).not.toHaveBeenCalled()
+            expect(onSaveAgent).not.toHaveBeenCalled()
         })
 
         it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {
-            const {onClose} = renderPopup({isSaving: true})
+            const {onClose} = renderPopup()
 
             // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
             // refuses to click it. We force the click to prove the handler stays inert even so.
@@ -347,14 +363,14 @@ describe("AgentNodePopup", () => {
         })
 
         it("still shows the X close button while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             // The dialog is always dismissable — user can abort an in-flight save by closing.
             expect(screen.getByRole("button", {name: CLOSE_BUTTON})).toBeInTheDocument()
         })
 
         it("disables the text fields while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             const textareas = screen.getAllByRole("textbox")
             textareas.forEach((ta) => expect(ta).toBeDisabled())
@@ -362,7 +378,7 @@ describe("AgentNodePopup", () => {
 
         it("does not call onClose when backdrop is clicked while isSaving is true", async () => {
             const user = userEvent.setup()
-            const {onClose} = renderPopup({isSaving: true})
+            const {onClose} = renderPopup()
 
             // Clicking outside is blocked while saving to prevent accidental dismissal.
             const backdrop = document.querySelector(".MuiBackdrop-root")
@@ -373,7 +389,7 @@ describe("AgentNodePopup", () => {
 
         it("calls onClose when backdrop is clicked while isSaving is false", async () => {
             const user = userEvent.setup()
-            const {onClose} = renderPopup({isSaving: false})
+            const {onClose} = renderPopup()
 
             const backdrop = document.querySelector(".MuiBackdrop-root")
             if (backdrop) await user.click(backdrop)
