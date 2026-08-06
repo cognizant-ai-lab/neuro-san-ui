@@ -501,11 +501,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Dock (edit-mode prompt bar) state
     const [dockPrompt, setDockPrompt] = useState<string>("")
-    const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
+    // "idle" = no apply in flight, "applying" = applying save, "confirmingStop" = abort confirmation dialog is open
+    const [dockPhase, setDockPhase] = useState<"idle" | "applying" | "confirmingStop">("idle")
+    const isDockPending = dockPhase !== "idle"
     const dockAbortControllerRef = useRef<AbortController | null>(null)
-
-    // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
-    const [stopState, setStopState] = useState<"confirming" | null>(null)
 
     // Inline status banner shown above the dock header after an "apply" succeeds, is canceled, or fails.
     const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
@@ -533,17 +532,17 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [])
 
     const handleStopClick = useCallback(() => {
-        setStopState("confirming")
+        setDockPhase("confirmingStop")
     }, [])
 
     const handleKeepApplying = useCallback(() => {
-        setStopState(null)
+        setDockPhase("applying")
     }, [])
 
     const handleStopAndDiscard = useCallback(() => {
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
-        setStopState(null)
+        setDockPhase("idle")
         showDockBanner({
             severity: "info",
             title: "Applying cancelled.",
@@ -653,7 +652,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             : undefined
         const currentDefinition = currentTempNetwork?.agentNetworkDefinition ?? []
 
-        setIsDockStreaming(true)
+        setDockPhase("applying")
         const controller = new AbortController()
         dockAbortControllerRef.current = controller
         let hasTimedOut = false
@@ -695,18 +694,18 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         } finally {
             clearTimeout(timeoutId)
             dockAbortControllerRef.current = null
-            setIsDockStreaming(false)
+            setDockPhase("idle")
         }
     }, [saveUpdates, currentUser, dockPrompt, networkId, neuroSanURL, showDockBanner, tempNetworks])
 
     const handleExitEditMode = useCallback(() => {
-        if (isDockStreaming) {
+        if (isDockPending) {
             dockAbortControllerRef.current?.abort()
             dockAbortControllerRef.current = null
-            setIsDockStreaming(false)
+            setDockPhase("idle")
         }
         onExitEditMode?.()
-    }, [isDockStreaming, onExitEditMode])
+    }, [isDockPending, onExitEditMode])
 
     // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
     // node popup is open so Escape closes the popup first rather than the whole edit mode.
@@ -1289,13 +1288,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                     void handleDockApply()
                                 }
                             }}
-                            disabled={isDockStreaming}
+                            disabled={isDockPending}
                             slotProps={{htmlInput: {style: {fontSize: "0.75rem"}}}}
                         />
                         <Button
                             variant="contained"
                             onClick={() => void handleDockApply()}
-                            disabled={isDockStreaming || !dockPrompt.trim()}
+                            disabled={isDockPending || !dockPrompt.trim()}
                             sx={{
                                 fontSize: 16,
                                 marginBottom: "1px",
@@ -1306,7 +1305,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 whiteSpace: "nowrap",
                             }}
                             startIcon={
-                                isDockStreaming ? (
+                                isDockPending ? (
                                     <CircularProgress
                                         size={16}
                                         color="inherit"
@@ -1314,7 +1313,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 ) : undefined
                             }
                         >
-                            {isDockStreaming ? "Applying..." : "Apply"}
+                            {isDockPending ? "Applying..." : "Apply"}
                         </Button>
                     </Box>
                 </Box>
@@ -1331,10 +1330,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 />
             )}
             <Backdrop
-                open={isDockStreaming}
+                open={isDockPending}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
-                {stopState === "confirming" ? (
+                {dockPhase === "confirmingStop" ? (
                     <Paper
                         elevation={6}
                         sx={{
