@@ -16,12 +16,9 @@ limitations under the License.
 
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
-import {
-    AgentNodePopup,
-    AgentNodePopupProps,
-} from "packages/ui-common/components/MultiAgentAccelerator/Editor/AgentNodePopup"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
@@ -41,20 +38,20 @@ const SAVE_BUTTON = "Save"
 
 const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
     const onClose = vi.fn()
-    const onSave = vi.fn()
+    const onSaveAgent = vi.fn()
 
     render(
         <AgentNodePopup
             agentName={AGENT_NAME}
             isOpen={true}
             onClose={onClose}
-            onSave={onSave}
+            onSaveAgent={onSaveAgent}
             initialInstructions={INITIAL_INSTRUCTIONS}
             {...overrides}
         />
     )
 
-    return {onClose, onSave}
+    return {onClose, onSaveAgent}
 }
 
 describe("AgentNodePopup", () => {
@@ -94,9 +91,9 @@ describe("AgentNodePopup", () => {
         expect(instructionsField).toHaveValue("New instructions")
     })
 
-    it("calls onSave with agent name, updated instructions and description when Save is clicked", async () => {
+    it("calls onSaveAgent with agent name, updated instructions and description when Save is clicked", async () => {
         const user = userEvent.setup()
-        const {onSave} = renderPopup()
+        const {onSaveAgent} = renderPopup()
 
         const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
         await user.clear(instructionsField)
@@ -104,7 +101,7 @@ describe("AgentNodePopup", () => {
 
         await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
-        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
+        expect(onSaveAgent).toHaveBeenCalledWith(AGENT_NAME, "Updated instructions text", "")
     })
 
     it("calls onClose and resets instructions to initial value when Cancel is clicked", async () => {
@@ -153,7 +150,7 @@ describe("AgentNodePopup", () => {
                 agentName={AGENT_NAME}
                 isOpen={true}
                 onClose={vi.fn()}
-                onSave={vi.fn()}
+                onSaveAgent={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
@@ -172,8 +169,7 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -184,8 +180,7 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -205,8 +200,7 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
-                onSave={vi.fn()}
+                onSaveAgent={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
             />
         )
@@ -224,8 +218,7 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={false}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -246,7 +239,7 @@ describe("AgentNodePopup", () => {
                 agentName={AGENT_NAME}
                 isOpen={true}
                 onClose={vi.fn()}
-                onSave={vi.fn()}
+                onSaveAgent={vi.fn()}
                 initialInstructions=""
             />
         )
@@ -261,8 +254,7 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
-                    onClose={vi.fn()}
-                    onSave={vi.fn()}
+                    onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
                 />
             )
@@ -275,7 +267,7 @@ describe("AgentNodePopup", () => {
 
     it("updates description text when the description field is changed", async () => {
         const user = userEvent.setup()
-        const {onSave} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
+        const {onSaveAgent} = renderPopup({initialInstructions: INITIAL_INSTRUCTIONS})
 
         const descField = screen.getByRole("textbox", {name: DESCRIPTION_FIELD})
         // type (not paste): real keystrokes here are the only coverage of the description field's
@@ -285,7 +277,7 @@ describe("AgentNodePopup", () => {
 
         await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
 
-        expect(onSave).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
+        expect(onSaveAgent).toHaveBeenCalledWith(AGENT_NAME, INITIAL_INSTRUCTIONS, "New description")
     })
 
     it("closes the dialog when Escape is pressed from the description field", async () => {
@@ -327,15 +319,15 @@ describe("AgentNodePopup", () => {
             expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeEnabled()
         })
 
-        it("does not call onSave when the Save button is disabled (isSaving true)", () => {
-            const {onSave} = renderPopup({isSaving: true})
+        it("does not call onSaveAgent when the Save button is disabled (isSaving true)", () => {
+            const {onSaveAgent} = renderPopup({isSaving: true})
 
             // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
             // refuses to click it. We force the click to prove the handler stays inert even so.
             const saveBtn = screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})
             fireEvent.click(saveBtn)
 
-            expect(onSave).not.toHaveBeenCalled()
+            expect(onSaveAgent).not.toHaveBeenCalled()
         })
 
         it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {

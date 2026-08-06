@@ -26,10 +26,10 @@ import {AgentConversation} from "../../../../components/MultiAgentAccelerator/Ag
 import {
     AgentFlow,
     AgentFlowProps,
-    DOCK_BANNER_AUTO_DISMISS_MS,
     filterNodeEvents,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
+import {DOCK_BANNER_AUTO_DISMISS_MS} from "../../../../components/MultiAgentAccelerator/Editor/NetworkEditorDock"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {sendChatQuery} from "../../../../controller/agent/Agent"
 import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"

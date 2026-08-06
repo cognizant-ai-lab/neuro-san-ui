@@ -69,8 +69,7 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
-import {NotificationType, sendNotification} from "../../Common/notification"
-import {AgentNodePopup} from "../Editor/AgentNodePopup"
+import {AgentNodePopup} from "../AgentNodePopup"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
@@ -101,7 +100,6 @@ export interface AgentFlowProps {
      * Setter for changing the selected network.
      */
     readonly setSelectedNetwork?: (network: string | null) => void
-    /** Called when the user closes the edit-mode dock. */
     readonly onSaveAgent?: (
         agentName: string,
         updated: AgentNetworkDefinitionEntry[],
@@ -117,8 +115,6 @@ export interface AgentFlowProps {
 //#endregion: Types
 
 //#region: Constants
-
-const AGENT_SAVE_TIMEOUT_MS = 60_000
 
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
 
@@ -216,7 +212,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
-    const updateTempNetworkDefinition = useTempNetworksStore((state) => state.updateTempNetworkDefinition)
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -406,12 +401,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
-    // True, while the agent-edit request is in-flight so we can disable the Save button.
-    const [isSavingAgent, setIsSavingAgent] = useState<boolean>(false)
-
-    // AbortController for the in-flight save request — stored in a ref so handlePopupClose can cancel it.
-    const saveAbortControllerRef = useRef<AbortController | null>(null)
-
+    const [isEditingNetwork, setIsEditingNetwork] = useState<boolean>(false)
     const openNodeEditor = useCallback(
         (node: RFNode<AgentNodeProps>) => {
             // Popup is only available for temporary networks.
@@ -442,8 +432,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         [openNodeEditor]
     )
 
-    const [isEditingNetwork, setIsEditingNetwork] = useState<boolean>(false)
-
     // ReactFlow makes nodes focusable and selects them on Enter, but it never fires onNodeClick from the keyboard.
     // Route Enter on a focused node to the editor so keyboard users can open a node the same way a click does.
     const handleNodeKeyDown = useCallback<KeyboardEventHandler<HTMLDivElement>>(
@@ -458,72 +446,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (node) openNodeEditor(node)
         },
         [nodes, openNodeEditor]
-    )
-
-    const handlePopupClose = useCallback(() => {
-        // If a save is in-flight, abort it immediately so the stream doesn't hang.
-        saveAbortControllerRef.current?.abort()
-        saveAbortControllerRef.current = null
-        setIsPopupOpen(false)
-        setIsSavingAgent(false)
-    }, [])
-
-    const handlePopupSave = useCallback(
-        async (agentName: string, instructionsText: string, descriptionText: string) => {
-            if (!selectedAgent) return
-
-            // Find the temp network entry for the currently selected network.
-            const currentTempNetwork = networkId
-                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
-                : undefined
-
-            // Produce a new array with the saved agent's fields updated; all other entries pass through unchanged.
-            const currentDefinitions = currentTempNetwork?.agentNetworkDefinition ?? []
-            const updatedDefinitions = currentDefinitions.map((entry) =>
-                entry.origin === selectedAgent.agentId
-                    ? {...entry, instructions: instructionsText, description: descriptionText}
-                    : entry
-            )
-            if (networkId) {
-                updateTempNetworkDefinition(networkId, updatedDefinitions)
-            }
-
-            if (!onSaveAgent) {
-                setIsPopupOpen(false)
-                return
-            }
-
-            setIsSavingAgent(true)
-            const saveController = new AbortController()
-            saveAbortControllerRef.current = saveController
-            const saveTimeoutId = setTimeout(
-                () => saveController.abort(new DOMException("Save timed out", "TimeoutError")),
-                AGENT_SAVE_TIMEOUT_MS
-            )
-            try {
-                await onSaveAgent(
-                    agentName,
-                    updatedDefinitions,
-                    currentTempNetwork?.agentNetworkName,
-                    saveController.signal
-                )
-            } catch (e) {
-                console.error(`Error saving network ${agentName}. See onSaveAgent implementation for details.`, e)
-                sendNotification(
-                    NotificationType.error,
-                    `Failed to save agent "${agentName}".`,
-                    String(e),
-                    undefined,
-                    null // show indefinitely until the user dismisses
-                )
-            } finally {
-                clearTimeout(saveTimeoutId)
-                saveAbortControllerRef.current = null
-                setIsSavingAgent(false)
-                setIsPopupOpen(false)
-            }
-        },
-        [selectedAgent, tempNetworks, updateTempNetworkDefinition, networkId, onSaveAgent]
     )
 
     const edges = layoutResult.edges
@@ -962,9 +884,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     initialInstructions={selectedAgent.initialInstructions}
                     initialDescription={selectedAgent.initialDescription}
                     isOpen={isPopupOpen}
-                    isSaving={isSavingAgent}
-                    onClose={handlePopupClose}
-                    onSave={handlePopupSave}
+                    setIsPopupOpen={setIsPopupOpen}
+                    agentId={selectedAgent.agentId}
+                    networkId={networkId}
+                    onSaveAgent={onSaveAgent}
                 />
             )}
         </Box>

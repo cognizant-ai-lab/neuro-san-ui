@@ -596,7 +596,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     /**
      * Handles a save from the AgentFlow popup: streams the updated definition to the network designer,
-     * collects reservations from each chunk, then upserts the result and navigates if the network changed.
+     * collects reservations from each chunk, then upserts the result, and navigates if the network changed.
      */
     const onSaveAgent = useCallback(
         async (
