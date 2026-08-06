@@ -43,18 +43,19 @@ describe("Navbar", () => {
         render(
             <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
                 <Navbar
+                    authenticationType=""
+                    enableAuthentication={true}
                     id="mock-id"
                     logo={LOGO}
-                    query={undefined}
+                    logoServiceToken={MOCK_LOGO_SERVICE_TOKEN}
                     pathname={pathName}
+                    query={undefined}
+                    signOut={vi.fn()}
+                    supportEmailAddress={MOCK_EMAIL_ADDRESS}
                     userInfo={{
                         name: MOCK_USER,
                         image: "",
                     }}
-                    authenticationType=""
-                    signOut={vi.fn()}
-                    logoServiceToken={MOCK_LOGO_SERVICE_TOKEN}
-                    supportEmailAddress={MOCK_EMAIL_ADDRESS}
                 />
             </ThemeProvider>
         )

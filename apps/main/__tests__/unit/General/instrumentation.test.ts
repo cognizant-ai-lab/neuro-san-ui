@@ -19,28 +19,25 @@ Tests for instrumentation.ts Next.js startup file.
  */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {authenticationEnabled} from "../../../../../packages/ui-common/const"
+import {enableAuthenticationEnvVar} from "../../../Const"
 import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
 vi.mock("../../../../../packages/ui-common/const")
 
-// It's okay to do this in tests
-/* eslint-disable @typescript-eslint/no-dynamic-delete */
-
 const setAllEnvVars = () => {
     // Set all required environment variables
     REQUIRED_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 
     // Set all required-for-authentication environment variables
     REQUIRED_FOR_AUTH_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 
     // Set all optional environment variables
     OPTIONAL_ENV_VARS.forEach((envVar) => {
-        process.env[envVar] = "test_value"
+        process.env[envVar] = `${envVar}-test_value`
     })
 }
 
@@ -48,12 +45,31 @@ describe("instrumentation", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        vi.mocked(authenticationEnabled).mockReturnValue(true)
+        // Default to "authentication enabled"
+        process.env[enableAuthenticationEnvVar] = "true"
         setAllEnvVars()
     })
 
+    const expectConsoleOutput = (
+        authEnabled: boolean,
+        openAIKeySet: string,
+        logoServiceTokenSet: string,
+        neuroSanServerURL: string
+    ) => {
+        expect(console.info).toHaveBeenCalledTimes(5)
+        expect(console.info).toHaveBeenCalledWith("Start-up: Environment variables checked successfully.")
+        expect(console.info).toHaveBeenCalledWith("Authentication enabled:", authEnabled)
+        expect(console.info).toHaveBeenCalledWith("OpenAI API key:", openAIKeySet)
+        expect(console.info).toHaveBeenCalledWith("Logo service token:", logoServiceTokenSet)
+        expect(console.info).toHaveBeenCalledWith("Neuro SAN server URL:", neuroSanServerURL)
+    }
+
     it("should not throw if env vars are all set", () => {
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
         expect(() => register()).not.toThrow()
+
+        // Various start-up messages
+        expectConsoleOutput(true, "set", "set", "NEURO_SAN_SERVER_URL-test_value")
     })
 
     it("should throw if any required env vars not set", () => {
@@ -71,16 +87,21 @@ describe("instrumentation", () => {
     })
 
     it("Should not throw if authentication is disabled and required variable is not set", () => {
-        vi.mocked(authenticationEnabled).mockReturnValue(false)
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
+        process.env[enableAuthenticationEnvVar] = "false"
 
         // Unset an environment variable that is only required for authentication
         delete process.env[REQUIRED_FOR_AUTH_ENV_VARS[0]]
 
         expect(() => register()).not.toThrow()
+
+        // Various start-up messages
+        expectConsoleOutput(false, "set", "set", "NEURO_SAN_SERVER_URL-test_value")
     })
 
     it("Should not throw if optional variables are not set", () => {
-        vi.mocked(authenticationEnabled).mockReturnValue(false)
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
+        process.env[enableAuthenticationEnvVar] = "false"
 
         // Clear all optional environment variables
         OPTIONAL_ENV_VARS.forEach((envVar) => {
@@ -95,5 +116,8 @@ describe("instrumentation", () => {
         OPTIONAL_ENV_VARS.forEach((envVar) => {
             expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining(envVar))
         })
+
+        // Various start-up messages
+        expectConsoleOutput(false, "not set", "not set", "NEURO_SAN_SERVER_URL-test_value")
     })
 })

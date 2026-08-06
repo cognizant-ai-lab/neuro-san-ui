@@ -18,6 +18,7 @@ import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
 import {EnvironmentResponse} from "./Types"
+import {enableAuthenticationEnvVar} from "../../../Const"
 
 /**
  * This function is a handler for the .../environment endpoint. It retrieves environment settings from the
@@ -29,18 +30,20 @@ const handler = (_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>
     res.setHeader("Content-Type", "application/json")
 
     const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
+    const enableAuthentication = process.env[enableAuthenticationEnvVar] !== "false"
     const auth0ClientId = process.env["AUTH0_CLIENT_ID"]
     const auth0Domain = process.env["AUTH0_DOMAIN"]
     const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
     const logoServiceToken = process.env["LOGO_SERVICE_TOKEN"]
 
     res.status(httpStatus.OK).json({
-        backendNeuroSanApiUrl,
         auth0ClientId,
         auth0Domain,
-        supportEmailAddress,
+        enableAuthentication,
+        backendNeuroSanApiUrl,
         logoServiceToken,
-    })
+        supportEmailAddress,
+    } satisfies EnvironmentResponse)
 }
 
 export default handler

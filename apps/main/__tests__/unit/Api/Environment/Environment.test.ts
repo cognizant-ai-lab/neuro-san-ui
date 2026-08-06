@@ -18,7 +18,9 @@ import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {enableAuthenticationEnvVar} from "../../../../Const"
 import handler from "../../../../pages/api/environment"
+import {EnvironmentResponse} from "../../../../pages/api/environment/Types"
 
 describe("Environment API handler", () => {
     withStrictMocks()
@@ -42,6 +44,7 @@ describe("Environment API handler", () => {
         process.env["AUTH0_DOMAIN"] = "test-domain.auth0.com"
         process.env["SUPPORT_EMAIL_ADDRESS"] = "support@example.com"
         process.env["LOGO_SERVICE_TOKEN"] = "test-logo-service-token"
+        process.env[enableAuthenticationEnvVar] = "true"
 
         const {req, res} = createMocks()
 
@@ -49,12 +52,13 @@ describe("Environment API handler", () => {
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(res._getHeaders()["content-type"]).toBe("application/json")
-        expect(res._getJSONData()).toEqual({
-            backendNeuroSanApiUrl: "https://api.example.com",
+        expect(res._getJSONData()).toEqual<EnvironmentResponse>({
             auth0ClientId: "test-client-id",
             auth0Domain: "test-domain.auth0.com",
-            supportEmailAddress: "support@example.com",
+            backendNeuroSanApiUrl: "https://api.example.com",
+            enableAuthentication: true,
             logoServiceToken: "test-logo-service-token",
+            supportEmailAddress: "support@example.com",
         })
     })
 
@@ -72,10 +76,11 @@ describe("Environment API handler", () => {
         handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
-        expect(res._getJSONData()).toEqual({
+        expect(res._getJSONData()).toEqual<EnvironmentResponse>({
             backendNeuroSanApiUrl: "https://api.example.com",
             auth0ClientId: undefined,
             auth0Domain: undefined,
+            enableAuthentication: true, // defaults to true if not set
             supportEmailAddress: undefined,
             logoServiceToken: undefined,
         })
@@ -88,18 +93,20 @@ describe("Environment API handler", () => {
         process.env["AUTH0_DOMAIN"] = ""
         process.env["SUPPORT_EMAIL_ADDRESS"] = ""
         process.env["LOGO_SERVICE_TOKEN"] = ""
+        process.env[enableAuthenticationEnvVar] = ""
 
         const {req, res} = createMocks()
 
         handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
-        expect(res._getJSONData()).toEqual({
-            backendNeuroSanApiUrl: "",
+        expect(res._getJSONData()).toEqual<EnvironmentResponse>({
             auth0ClientId: "",
             auth0Domain: "",
-            supportEmailAddress: "",
+            backendNeuroSanApiUrl: "",
+            enableAuthentication: true, // defaults to true if not set
             logoServiceToken: "",
+            supportEmailAddress: "",
         })
     })
 
@@ -108,8 +115,9 @@ describe("Environment API handler", () => {
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
         delete process.env["AUTH0_CLIENT_ID"]
         delete process.env["AUTH0_DOMAIN"]
-        delete process.env["SUPPORT_EMAIL_ADDRESS"]
         delete process.env["LOGO_SERVICE_TOKEN"]
+        delete process.env["SUPPORT_EMAIL_ADDRESS"]
+        delete process.env[enableAuthenticationEnvVar]
 
         const {req, res} = createMocks({
             method: "POST",
@@ -119,12 +127,13 @@ describe("Environment API handler", () => {
         handler(req, res)
 
         expect(res._getStatusCode()).toBe(httpStatus.OK)
-        expect(res._getJSONData()).toEqual({
-            backendNeuroSanApiUrl: "https://api.example.com",
+        expect(res._getJSONData()).toEqual<EnvironmentResponse>({
             auth0ClientId: undefined,
             auth0Domain: undefined,
-            supportEmailAddress: undefined,
+            backendNeuroSanApiUrl: "https://api.example.com",
+            enableAuthentication: true, // defaults to true if not set
             logoServiceToken: undefined,
+            supportEmailAddress: undefined,
         })
     })
 })

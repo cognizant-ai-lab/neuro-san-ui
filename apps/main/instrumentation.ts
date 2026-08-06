@@ -21,7 +21,7 @@ limitations under the License.
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
-import {authenticationEnabled} from "../../packages/ui-common/const"
+import {enableAuthenticationEnvVar} from "./Const"
 
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
@@ -44,32 +44,44 @@ export const REQUIRED_FOR_AUTH_ENV_VARS = [
  */
 export const OPTIONAL_ENV_VARS = ["LOGO_SERVICE_TOKEN", "OPENAI_API_KEY"]
 
+/**
+ * Check if an environment variable is "missing" (undefined or empty string).
+ * @param envVar - The name of the environment variable to check.
+ * @returns true if the environment variable is missing, false otherwise.
+ */
+const isMissing = (envVar: string) => !process.env[envVar]?.trim()
+
 export const register = () => {
     // Always required env vars
-    const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => !process.env[envVar])
+    const missingEnvVars = REQUIRED_ENV_VARS.filter((envVar) => isMissing(envVar))
     if (missingEnvVars.length > 0) {
-        throw new Error(
-            `Error: The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`
-        )
+        throw new Error(`The following environment variable(s) are empty or undefined:\n${missingEnvVars.join("\n")}`)
     }
 
     // Conditionally required env vars
-    if (authenticationEnabled()) {
-        const missingRequiredForAuthEnvVars = REQUIRED_FOR_AUTH_ENV_VARS.filter((envVar) => !process.env[envVar])
+    const enableAuthentication = process.env[enableAuthenticationEnvVar] !== "false"
+    if (enableAuthentication) {
+        const missingRequiredForAuthEnvVars = REQUIRED_FOR_AUTH_ENV_VARS.filter((envVar) => isMissing(envVar))
         if (missingRequiredForAuthEnvVars.length > 0) {
             throw new Error(
-                "Error: The following environment variable(s) are required for authentication " +
+                "The following environment variable(s) are required for authentication " +
                     `but are empty or undefined:\n${missingRequiredForAuthEnvVars.join("\n")}`
             )
         }
     }
 
     // Optional env vars
-    const missingOptionalEnvVars = OPTIONAL_ENV_VARS.filter((envVar) => !process.env[envVar])
+    const missingOptionalEnvVars = OPTIONAL_ENV_VARS.filter((envVar) => isMissing(envVar))
     if (missingOptionalEnvVars.length > 0) {
         console.warn(
             "Warning: The following optional environment variable(s) are empty or undefined. " +
                 `Some features may not work correctly:\n${missingOptionalEnvVars.join("\n")}`
         )
     }
+
+    console.info("Start-up: Environment variables checked successfully.")
+    console.info("Authentication enabled:", enableAuthentication)
+    console.info("OpenAI API key:", process.env["OPENAI_API_KEY"] ? "set" : "not set")
+    console.info("Logo service token:", process.env["LOGO_SERVICE_TOKEN"] ? "set" : "not set")
+    console.info("Neuro SAN server URL:", process.env["NEURO_SAN_SERVER_URL"])
 }
