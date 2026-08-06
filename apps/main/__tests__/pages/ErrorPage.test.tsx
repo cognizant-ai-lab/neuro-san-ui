@@ -20,13 +20,8 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {default as ErrorPage} from "../../../../packages/ui-common/components/ErrorPage/ErrorPage"
 import {LOGO} from "../../../../packages/ui-common/const"
+import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
-
-vi.mock("next-auth/react", () => ({
-    useSession: () => ({
-        status: "authenticated",
-    }),
-}))
 
 vi.mock("next/router", () => ({
     useRouter: () => ({
@@ -50,6 +45,8 @@ describe("ErrorPage", () => {
         vi.mocked(useAuthentication).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
+
+        useEnvironmentStore.getState().setEnableAuthentication(true)
     })
 
     it("Should render correctly", async () => {

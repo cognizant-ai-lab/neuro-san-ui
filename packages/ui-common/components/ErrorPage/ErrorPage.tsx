@@ -21,7 +21,7 @@ import {FC, ReactElement} from "react"
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
-import {smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {getAuthenticationType, smartSignOut, useAuthentication} from "../../utils/Authentication"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Footer} from "../Common/Footer"
 import {Navbar} from "../Common/Navbar"
@@ -37,7 +37,8 @@ interface ErrorPageProps {
  * @param errorText Error text to be displayed
  */
 const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactElement => {
-    const {auth0ClientId, auth0Domain, supportEmailAddress, logoServiceToken} = useEnvironmentStore()
+    const {auth0ClientId, auth0Domain, enableAuthentication, logoServiceToken, supportEmailAddress} =
+        useEnvironmentStore()
 
     // Access Next.js router
     const router = useRouter()
@@ -46,7 +47,7 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = currentUser ? `ALB using ${oidcProvider}` : "NextAuth"
+    const authenticationType = getAuthenticationType(enableAuthentication, currentUser, oidcProvider)
 
     const {data: {user: userInfo} = {}} = useAuthentication()
 
@@ -61,6 +62,7 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
     return (
         <>
             <Navbar
+                enableAuthentication={enableAuthentication}
                 authenticationType={authenticationType}
                 id="nav-bar"
                 logo={LOGO}

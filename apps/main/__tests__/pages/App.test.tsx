@@ -23,7 +23,6 @@ import {ReactNode} from "react"
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
-import {authenticationEnabled} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import {NeuroSanUI} from "../../pages/_app"
@@ -77,7 +76,16 @@ vi.mock("next/router", () => ({
     useRouter: vi.fn(),
 }))
 
-vi.mock("../../../../packages/ui-common/utils/Authentication")
+vi.mock("../../../../packages/ui-common/utils/Authentication", async () => {
+    const actual = await vi.importActual<typeof import("../../../../packages/ui-common/utils/Authentication")>(
+        "../../../../packages/ui-common/utils/Authentication"
+    )
+
+    return {
+        ...actual,
+        useAuthentication: vi.fn(),
+    }
+})
 
 //#endregion Mocks
 
@@ -92,14 +100,24 @@ describe("Main App Component", () => {
     const testSupportEmailAddress = "test@example.com"
     const testLogoServiceToken = "testLogoServiceToken"
 
+    const mockEnvironment = (enableAuthentication: boolean | undefined) =>
+        ({
+            auth0ClientId: testClientId,
+            auth0Domain: testDomain,
+            backendNeuroSanApiUrl: testNeuroSanURL,
+            enableAuthentication,
+            logoServiceToken: testLogoServiceToken,
+            supportEmailAddress: testSupportEmailAddress,
+        }) satisfies EnvironmentResponse
+
     beforeEach(() => {
         vi.mocked(useAuthentication).mockReturnValue({
             data: {user: {name: "mock-user", image: "mock-image-url"}},
         })
-        vi.mocked(authenticationEnabled).mockReturnValue(true)
 
         // Clear and reset the zustand store before each test
         useEnvironmentStore.setState({
+            enableAuthentication: null,
             backendNeuroSanApiUrl: null,
             auth0ClientId: null,
             auth0Domain: null,
@@ -108,16 +126,7 @@ describe("Main App Component", () => {
         })
 
         user = userEvent.setup()
-
-        const mockEnvironmentResponse: EnvironmentResponse = {
-            backendNeuroSanApiUrl: testNeuroSanURL,
-            auth0ClientId: testClientId,
-            auth0Domain: testDomain,
-            supportEmailAddress: testSupportEmailAddress,
-            logoServiceToken: testLogoServiceToken,
-        }
-
-        window.fetch = mockFetch(mockEnvironmentResponse as Record<string, unknown>)
+        window.fetch = mockFetch(mockEnvironment(true))
         vi.mocked(useRouter).mockReturnValue(createMockRouter())
     })
 
@@ -150,7 +159,7 @@ describe("Main App Component", () => {
     })
 
     it("Should render correctly when authentication is disabled", async () => {
-        vi.mocked(authenticationEnabled).mockReturnValue(false)
+        window.fetch = mockFetch(mockEnvironment(false))
 
         render(APP_COMPONENT)
 
@@ -163,6 +172,19 @@ describe("Main App Component", () => {
         expect(state.auth0Domain).toBe("")
         expect(state.supportEmailAddress).toBe(testSupportEmailAddress)
         expect(state.logoServiceToken).toBe(testLogoServiceToken)
+    })
+
+    // This is the case where we haven't yet retrieved the environment variables, so we don't know if authentication
+    // is enabled or not.
+    it("Should render correctly when authentication is undefined", async () => {
+        window.fetch = mockFetch(mockEnvironment(undefined))
+
+        render(APP_COMPONENT)
+
+        await waitFor(() => {
+            const loadingSpinner = document.getElementById("loading-header")
+            expect(loadingSpinner).toBeInTheDocument()
+        })
     })
 
     it("Should handle failure to fetch environment variables", async () => {
@@ -185,11 +207,39 @@ describe("Main App Component", () => {
         expect(state.supportEmailAddress).toBe(null)
         expect(state.logoServiceToken).toBe(null)
 
-        expect(consoleSpy).toHaveBeenCalledTimes(2)
+        expect(consoleSpy).toHaveBeenCalledTimes(1)
 
         // Both fetches should have failed
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to fetch environment variables"))
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to fetch user info"))
+        expect(consoleSpy).toHaveBeenCalledExactlyOnceWith(
+            expect.stringContaining("Failed to fetch environment variables")
+        )
+    })
+
+    it("Should handle failure to fetch user info", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+
+        window.fetch = vi
+            .fn()
+            // First fetch: /api/environment succeeds
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue(mockEnvironment(true)),
+            })
+            // Second fetch: /api/userInfo fails via !res.ok
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                statusText: "Network Error",
+                json: vi.fn().mockResolvedValue({error: "Network Error"}),
+            })
+
+        render(APP_COMPONENT)
+
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("Failed to fetch user info"))
+        })
+
+        expect(consoleSpy).toHaveBeenCalledTimes(1)
     })
 
     it("Should render the splash page correctly", async () => {
@@ -209,13 +259,16 @@ describe("Main App Component", () => {
 
     it("Should launch the tour when the items is selected from the Help menu", async () => {
         render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
 
         const dispatchSpy = vi.spyOn(window, "dispatchEvent")
 
-        const helpToggle = await screen.findByText("Help")
-        await user.click(helpToggle)
+        // Simulate clicking on the Help menu to open it
+        await user.click(await screen.findByText("Help"))
 
+        // Locate "take a tour" item
         const takeTourItem = await screen.findByText("Take a tour")
+
         await user.click(takeTourItem)
 
         // Make sure we dispatched the correct event to trigger the tour. The actual tour is tested elsewhere.

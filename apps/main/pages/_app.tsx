@@ -37,11 +37,11 @@ import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
 import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
-import {authenticationEnabled, DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
+import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
-import {smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
+import {getAuthenticationType, smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
@@ -56,19 +56,20 @@ type ExtendedAppProps = AppProps & {
 
 const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 
+const onStartTour = () => {
+    // Dispatches the "start tour" event
+    window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
+}
+
 /**
- * Utility component to pass user data along to Navbar. We have to make this a separate component because we need
- * to use useAuthentication for this, and "rules of hooks" apply.
+ * Utility component to pass user data along to Navbar. This component exists to isolate the main app from
+ * the useAuthentication hook, which should only be called once the enableAuthentication setting is known.
  * @param props All props for Navbar except userInfo.
  * @return Navbar with userInfo passed to it.
  */
 const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     const {data} = useAuthentication()
     const userInfo = data?.user
-    const onStartTour = () => {
-        // Dispatches the "start tour" event
-        window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
-    }
 
     return (
         <Navbar
@@ -80,22 +81,17 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
     )
 }
 
-/**
- * Shim to conditionally wrap the app in a SessionProvider if authentication is enabled.
- * Allows us to avoid next-auth errors when authentication is disabled
- */
-const NullableSessionProvider: FC<{children: ReactNode}> = ({children}) =>
-    authenticationEnabled() ? <SessionProvider>{children}</SessionProvider> : <>{children}</>
-
 // Main function.
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
     const {
         auth0ClientId,
         auth0Domain,
+        enableAuthentication,
         backendNeuroSanApiUrl,
         logoServiceToken,
         setAuth0ClientId,
         setAuth0Domain,
+        setEnableAuthentication,
         setBackendNeuroSanApiUrl,
         setLogoServiceToken,
         setSupportEmailAddress,
@@ -109,11 +105,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
 
     // Infer authentication type
-    const authenticationType = authenticationEnabled()
-        ? currentUser
-            ? `ALB using ${oidcProvider}`
-            : "NextAuth"
-        : "None"
+    const authenticationType = getAuthenticationType(enableAuthentication, currentUser, oidcProvider)
 
     const [pageTitle, setPageTitle] = useState<string>(DEFAULT_APP_NAME)
 
@@ -167,8 +159,9 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             setBackendNeuroSanApiUrl(data.backendNeuroSanApiUrl)
             setSupportEmailAddress(data.supportEmailAddress)
             setLogoServiceToken(data.logoServiceToken)
+            setEnableAuthentication(data.enableAuthentication)
 
-            if (authenticationEnabled()) {
+            if (data.enableAuthentication) {
                 // save Auth0 settings if authentication is enabled.
                 setAuth0ClientId(data.auth0ClientId)
                 setAuth0Domain(data.auth0Domain)
@@ -179,11 +172,18 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         }
 
         void getEnvironment()
-    }, [setAuth0ClientId, setAuth0Domain, setBackendNeuroSanApiUrl, setLogoServiceToken, setSupportEmailAddress])
+    }, [
+        setAuth0ClientId,
+        setAuth0Domain,
+        setEnableAuthentication,
+        setBackendNeuroSanApiUrl,
+        setLogoServiceToken,
+        setSupportEmailAddress,
+    ])
 
     useEffect(() => {
         const getUserInfo = async () => {
-            if (!authenticationEnabled()) {
+            if (!enableAuthentication) {
                 // Authentication is disabled, so we don't need to get user info
                 setCurrentUser(DEFAULT_USERNAME)
                 setPicture(DEFAULT_USER_IMAGE)
@@ -222,8 +222,11 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             }
         }
 
-        void getUserInfo()
-    }, [setCurrentUser, setOidcProvider, setPicture])
+        if (enableAuthentication !== undefined) {
+            // We know whether authentication is enabled or not, so we can get the user info
+            void getUserInfo()
+        }
+    }, [enableAuthentication, setCurrentUser, setOidcProvider, setPicture])
 
     const handleSignOut = async () => {
         // Clear our state storage variables
@@ -260,7 +263,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                 <LoadingSpinner id="loading-header" />
             )
         } else {
-            return authenticationEnabled() && Component.authRequired ? (
+            return enableAuthentication && Component.authRequired ? (
                 <Auth>
                     <Component
                         id="body-auth-component"
@@ -276,8 +279,12 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         }
     }
 
+    const isAuthenticationKnown = enableAuthentication !== undefined
+
     if (pathname === "/") {
-        // Main page is special
+        // Main page is special: doesn't have usual header and footer, does have a background image.
+        // In the ALB it is usually set to require authentication, but for historical reasons we don't wrap it in an
+        // auth sandwich for the local testing auth.js/next-auth case.
         body = (
             <div
                 id="body-div"
@@ -294,43 +301,46 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                 />
             </div>
         )
+    } else if (!isAuthenticationKnown) {
+        body = <LoadingSpinner id="loading-header" />
     } else {
-        body = (
-            <NullableSessionProvider>
-                <ErrorBoundary id="error_boundary">
-                    <NavbarWrapper
-                        id="nav-bar"
-                        logo={LOGO}
-                        logoServiceToken={logoServiceToken}
-                        query={query}
-                        pathname={pathname}
-                        authenticationType={authenticationType}
-                        signOut={handleSignOut}
-                        supportEmailAddress={supportEmailAddress}
-                    />
-                    <Container
-                        id="body-container"
-                        maxWidth={false}
-                        sx={{
-                            border: `solid 1px ${theme.palette.grey[300]}`,
-                            display: "flex",
-                            flex: 1,
-                            flexDirection: "column",
-                            minHeight: "90%",
-                        }}
-                    >
-                        {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
-                        {getAppComponent()}
-                    </Container>
-                    <Footer
-                        supportEmailAddress={supportEmailAddress}
-                        logoLinkUrl="https://www.cognizant.com/"
-                        logoUrl="/cognizant-logo-white.svg"
-                        sx={{borderTop: "none", marginTop: 0}}
-                    />
-                </ErrorBoundary>
-            </NullableSessionProvider>
+        const appShell = (
+            <ErrorBoundary id="error_boundary">
+                <NavbarWrapper
+                    enableAuthentication={enableAuthentication}
+                    authenticationType={authenticationType}
+                    id="nav-bar"
+                    logo={LOGO}
+                    logoServiceToken={logoServiceToken}
+                    pathname={pathname}
+                    query={query}
+                    signOut={handleSignOut}
+                    supportEmailAddress={supportEmailAddress}
+                />
+                <Container
+                    id="body-container"
+                    maxWidth={false}
+                    sx={{
+                        border: `solid 1px ${theme.palette.grey[300]}`,
+                        display: "flex",
+                        flex: 1,
+                        flexDirection: "column",
+                        minHeight: "90%",
+                    }}
+                >
+                    {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
+                    {getAppComponent()}
+                </Container>
+                <Footer
+                    supportEmailAddress={supportEmailAddress}
+                    logoLinkUrl="https://www.cognizant.com/"
+                    logoUrl="/cognizant-logo-white.svg"
+                    sx={{borderTop: "none", marginTop: 0}}
+                />
+            </ErrorBoundary>
         )
+
+        body = enableAuthentication ? <SessionProvider>{appShell}</SessionProvider> : appShell
     }
 
     return (

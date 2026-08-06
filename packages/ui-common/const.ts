@@ -35,5 +35,3 @@ export const DEFAULT_USERNAME = "Guest"
  * The default user image to use when the user does not have a profile picture.
  */
 export const DEFAULT_USER_IMAGE = "https://www.gravatar.com/avatar/?d=mp"
-
-export const authenticationEnabled = (): boolean => process.env["NEXT_PUBLIC_ENABLE_AUTHENTICATION"] !== "false"

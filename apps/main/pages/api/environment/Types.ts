@@ -18,6 +18,7 @@ limitations under the License.
 export interface EnvironmentResponse {
     readonly auth0ClientId?: string
     readonly auth0Domain?: string
+    readonly enableAuthentication?: boolean
     readonly backendNeuroSanApiUrl?: string
     readonly logoServiceToken?: string
     readonly supportEmailAddress?: string
