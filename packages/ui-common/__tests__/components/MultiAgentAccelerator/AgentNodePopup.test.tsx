@@ -44,9 +44,11 @@ const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
         <AgentNodePopup
             agentName={AGENT_NAME}
             isOpen={true}
-            onClose={onClose}
+            agentId="TEST_AGENT_ID"
+            networkId="TEST_NETWORK_ID"
             onSaveAgent={onSaveAgent}
             initialInstructions={INITIAL_INSTRUCTIONS}
+            setIsPopupOpen={vi.fn()}
             {...overrides}
         />
     )
@@ -149,9 +151,11 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
                 onSaveAgent={vi.fn()}
                 initialInstructions={INITIAL_INSTRUCTIONS}
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -171,6 +175,9 @@ describe("AgentNodePopup", () => {
                     isOpen={false}
                     onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -182,6 +189,9 @@ describe("AgentNodePopup", () => {
                     isOpen={true}
                     onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -201,7 +211,10 @@ describe("AgentNodePopup", () => {
                 agentName={AGENT_NAME}
                 isOpen={true}
                 onSaveAgent={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
                 initialInstructions={INITIAL_INSTRUCTIONS}
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -220,6 +233,9 @@ describe("AgentNodePopup", () => {
                     isOpen={false}
                     onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -238,9 +254,11 @@ describe("AgentNodePopup", () => {
             <AgentNodePopup
                 agentName={AGENT_NAME}
                 isOpen={true}
-                onClose={vi.fn()}
+                agentId="TEST_AGENT_ID"
+                networkId="TEST_NETWORK_ID"
                 onSaveAgent={vi.fn()}
                 initialInstructions=""
+                setIsPopupOpen={vi.fn()}
             />
         )
 
@@ -254,8 +272,11 @@ describe("AgentNodePopup", () => {
                 <AgentNodePopup
                     agentName={AGENT_NAME}
                     isOpen={true}
+                    agentId="TEST_AGENT_ID"
+                    networkId="TEST_NETWORK_ID"
                     onSaveAgent={vi.fn()}
                     initialInstructions={INITIAL_INSTRUCTIONS}
+                    setIsPopupOpen={vi.fn()}
                 />
             )
         })
@@ -293,14 +314,14 @@ describe("AgentNodePopup", () => {
 
     describe("isSaving prop", () => {
         it("disables both Save and Cancel buttons while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeDisabled()
             expect(screen.getByRole("button", {name: CANCEL_BUTTON})).toBeDisabled()
         })
 
         it("shows 'Applying changes\u2026' label on the Save button while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeInTheDocument()
             expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
@@ -308,7 +329,7 @@ describe("AgentNodePopup", () => {
 
         it("shows 'Save' label and enables buttons when isSaving is false", async () => {
             const user = userEvent.setup()
-            renderPopup({isSaving: false})
+            renderPopup()
 
             // Save is also gated on isDirty; make the form dirty so it is not disabled by !isDirty
             const instructionsField = screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD})
@@ -320,7 +341,7 @@ describe("AgentNodePopup", () => {
         })
 
         it("does not call onSaveAgent when the Save button is disabled (isSaving true)", () => {
-            const {onSaveAgent} = renderPopup({isSaving: true})
+            const {onSaveAgent} = renderPopup()
 
             // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
             // refuses to click it. We force the click to prove the handler stays inert even so.
@@ -331,7 +352,7 @@ describe("AgentNodePopup", () => {
         })
 
         it("does not call onClose when the Cancel button is disabled (isSaving true)", () => {
-            const {onClose} = renderPopup({isSaving: true})
+            const {onClose} = renderPopup()
 
             // fireEvent (not userEvent): the disabled button has pointer-events: none, so userEvent
             // refuses to click it. We force the click to prove the handler stays inert even so.
@@ -342,14 +363,14 @@ describe("AgentNodePopup", () => {
         })
 
         it("still shows the X close button while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             // The dialog is always dismissable — user can abort an in-flight save by closing.
             expect(screen.getByRole("button", {name: CLOSE_BUTTON})).toBeInTheDocument()
         })
 
         it("disables the text fields while isSaving is true", () => {
-            renderPopup({isSaving: true})
+            renderPopup()
 
             const textareas = screen.getAllByRole("textbox")
             textareas.forEach((ta) => expect(ta).toBeDisabled())
@@ -357,7 +378,7 @@ describe("AgentNodePopup", () => {
 
         it("does not call onClose when backdrop is clicked while isSaving is true", async () => {
             const user = userEvent.setup()
-            const {onClose} = renderPopup({isSaving: true})
+            const {onClose} = renderPopup()
 
             // Clicking outside is blocked while saving to prevent accidental dismissal.
             const backdrop = document.querySelector(".MuiBackdrop-root")
@@ -368,7 +389,7 @@ describe("AgentNodePopup", () => {
 
         it("calls onClose when backdrop is clicked while isSaving is false", async () => {
             const user = userEvent.setup()
-            const {onClose} = renderPopup({isSaving: false})
+            const {onClose} = renderPopup()
 
             const backdrop = document.querySelector(".MuiBackdrop-root")
             if (backdrop) await user.click(backdrop)
