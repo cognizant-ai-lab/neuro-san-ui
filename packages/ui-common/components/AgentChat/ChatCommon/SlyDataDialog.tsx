@@ -24,7 +24,7 @@ import IconButton from "@mui/material/IconButton"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {ChangeEvent, FC, Fragment, useEffect, useMemo, useRef, useState} from "react"
+import {ChangeEvent, FC, Fragment, useMemo, useRef, useState} from "react"
 
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
@@ -100,30 +100,21 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     const storedText = useMemo(() => formatSlyData(storedSlyData), [storedSlyData])
 
-    const [text, setText] = useState<string>(storedText)
+    // The user's unsaved edit, or null while they have none. While null, the editor simply renders the store,
+    // so server-echoed updates show up without any syncing code. Once the user edits, their draft is what
+    // renders, and we offer a reload instead of overwriting it (see below).
+    const [draft, setDraft] = useState<string | null>(null)
 
-    // Whether the user has made changes that have not been saved yet
-    const [isDirty, setIsDirty] = useState<boolean>(false)
-
-    // The text the editor was last seeded with, so we can tell "the server changed sly_data" apart from
-    // "the user changed sly_data"
-    const [seededText, setSeededText] = useState<string>(storedText)
+    // What the store held when the user started editing, so we can tell "the server changed sly_data" apart
+    // from "the user changed sly_data"
+    const [draftBaseline, setDraftBaseline] = useState<string | null>(null)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    // Seed the editor when the dialog opens, and keep following the store for as long as the user has not typed
-    // anything. Once there are unsaved edits we leave their text alone and offer a reload instead (see below).
-    useEffect(() => {
-        if (!isOpen) {
-            setIsDirty(false)
-            return
-        }
+    // Derived rather than stored: dirtiness is simply "a draft exists"
+    const isDirty = draft !== null
 
-        if (!isDirty) {
-            setText(storedText)
-            setSeededText(storedText)
-        }
-    }, [isOpen, isDirty, storedText])
+    const text = draft ?? storedText
 
     const parseResult = useMemo(() => parseSlyData(text), [text])
 
@@ -131,22 +122,27 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     // The server echoed new sly_data while the user had unsaved edits. Saying so beats silently discarding
     // either side's version.
-    const wasUpdatedByServer = isDirty && storedText !== seededText
+    const wasUpdatedByServer = isDirty && storedText !== draftBaseline
+
+    /** Records a user edit, snapshotting what the store held when editing began. */
+    const startOrUpdateDraft = (newText: string) => {
+        if (draft === null) {
+            setDraftBaseline(storedText)
+        }
+        setDraft(newText)
+    }
 
     const handleTextChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        setText(event.target.value)
-        setIsDirty(true)
+        startOrUpdateDraft(event.target.value)
     }
 
     const handleReload = () => {
-        setText(storedText)
-        setSeededText(storedText)
-        setIsDirty(false)
+        setDraft(null)
+        setDraftBaseline(null)
     }
 
     const handleClear = () => {
-        setText("{}")
-        setIsDirty(true)
+        startOrUpdateDraft("{}")
     }
 
     const handleExport = () => {
@@ -169,8 +165,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
         // Whatever the file contains goes into the editor as-is. If it isn't usable sly_data, the same validation
         // that guards typing will explain why.
-        setText(await file.text())
-        setIsDirty(true)
+        startOrUpdateDraft(await file.text())
     }
 
     const handleSave = () => {
@@ -178,7 +173,6 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
             return
         }
         setSlyData(networkId, parseResult.value)
-        setIsDirty(false)
         onClose()
     }
 
