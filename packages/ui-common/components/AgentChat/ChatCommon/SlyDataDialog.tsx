@@ -67,9 +67,10 @@ const EDITOR_ROWS = 14
 // Edge length of the image previews, in pixels
 const IMAGE_PREVIEW_SIZE = 96
 
-const SECURITY_WARNING =
-    "We strongly recommend against putting secrets in sly data, here or in any source file. Sly data tends to end " +
-    "up in source control and in logs."
+// Tooltip explaining what sly data is, in end-user terms: it exists to carry values (credentials included) that
+// belong with the request but must stay out of the LLM conversation.
+const SLY_DATA_EXPLAINER =
+    "Data is sent to the agent network in a private channel with each request but kept out of the LLM."
 
 //#endregion: Constants
 
@@ -183,7 +184,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                 id={`${id}-title-icon`}
             />
             <span>Sly data for {networkDisplayName}</span>
-            <InfoTip title={SECURITY_WARNING} />
+            <InfoTip title={SLY_DATA_EXPLAINER} />
         </Box>
     )
 
