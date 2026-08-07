@@ -63,7 +63,7 @@ jobs:
             - name: Setup Node.js environment
               id: setup-node
               # build-common devin/setup-node-env-resolve-node-version
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@9654c6c1e34766ded0fc83d659c79cc8c01c0de2
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@6821fcd32364d3eb07507ccaa143af06544cdc20
               with:
                   clean-install: "true"
 
