@@ -42,10 +42,6 @@ on:
     release:
         types: [published]
 
-concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event.pull_request.head.sha || github.sha }}
-    cancel-in-progress: true
-
 # Minimal default permissions; jobs that need extra permissions override below.
 permissions:
     contents: read
@@ -74,12 +70,13 @@ jobs:
                     "${{ github.event.release.tag_name }}" \
                     "${{ github.sha }}"
 
-    # Step 1: Always run tests on pushes, releases, and pull requests targeting main
+    # Step 1: Run tests on pushes, releases, and fork pull requests
     test:
         if: >
             github.event_name == 'push' ||
             github.event_name == 'release' ||
-            (github.event_name == 'pull_request' && github.base_ref == 'main')
+            (github.event_name == 'pull_request' &&
+             github.event.pull_request.head.repo.full_name != github.repository)
         uses: ./.github/workflows/test.yml
         needs: setup
         with:
