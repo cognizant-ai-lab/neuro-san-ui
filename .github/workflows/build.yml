@@ -67,8 +67,6 @@ env:
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
     ECR_REGISTRY: ${{ vars.ECR_REGISTRY || '123456789012.dkr.ecr.us-east-1.amazonaws.com' }}
     ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY || 'neuro-san/neuro-san-ui' }}
-    # Node.js major version (e.g. 26) used for both setup-node and Docker base image names
-    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
     id-token: write
@@ -88,10 +86,10 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js and install dependencies
-              # build-common 1.0.8
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
+              id: setup-node
+              # build-common 1.0.9
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@b14b3de23cb9aca02b2165e57542335e0c8f5304
               with:
-                  node-version: ${{ env.NODEJS_VERSION }}
                   clean-install: "true"
 
             - name: Generate TypeScript API stubs
@@ -113,6 +111,6 @@ jobs:
                   dockerfile: apps/main/Dockerfile
                   tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}
                   build-args: |
-                      NODEJS_VERSION=${{ env.NODEJS_VERSION }}
+                      NODEJS_VERSION=${{ steps.setup-node.outputs.nodejs-major-version }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
                   quiet: "true"
