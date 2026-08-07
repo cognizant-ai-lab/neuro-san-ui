@@ -75,20 +75,11 @@ jobs:
               with:
                   fetch-depth: 0
 
-            - name: Resolve Node.js version from package.json
-              id: resolve-node
-              shell: bash
-              run: |
-                  NODEJS_VERSION=$(./build_scripts/resolve_nodejs_version.sh)
-                  echo "NODEJS_VERSION=$NODEJS_VERSION" >> $GITHUB_ENV
-                  echo "node_version=$NODEJS_VERSION" >> $GITHUB_OUTPUT
-                  echo "Resolved Node.js major version: $NODEJS_VERSION"
-
             - name: Setup Node.js environment
-              # Use the major Node.js version derived from package.json engines (e.g. 26).
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2 # build-common 1.0.8
+              id: setup-node
+              # Derive Node.js version from package.json engines via build-common.
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@9654c6c1e34766ded0fc83d659c79cc8c01c0de2 # build-common devin/setup-node-env-resolve-node-version
               with:
-                  node-version: ${{ steps.resolve-node.outputs.node_version }}
                   clean-install: "true"
                   registry-url: https://registry.npmjs.org/
 

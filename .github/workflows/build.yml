@@ -85,20 +85,11 @@ jobs:
                   fetch-depth: 0
                   ref: ${{ inputs.revision || github.ref }}
 
-            - name: Resolve Node.js version from package.json
-              id: resolve-node
-              shell: bash
-              run: |
-                  NODEJS_VERSION=$(./build_scripts/resolve_nodejs_version.sh)
-                  echo "NODEJS_VERSION=$NODEJS_VERSION" >> $GITHUB_ENV
-                  echo "node_version=$NODEJS_VERSION" >> $GITHUB_OUTPUT
-                  echo "Resolved Node.js major version: $NODEJS_VERSION"
-
             - name: Setup Node.js and install dependencies
-              # build-common 1.0.8
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
+              id: setup-node
+              # build-common devin/setup-node-env-resolve-node-version
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@9654c6c1e34766ded0fc83d659c79cc8c01c0de2
               with:
-                  node-version: ${{ steps.resolve-node.outputs.node_version }}
                   clean-install: "true"
 
             - name: Generate TypeScript API stubs
@@ -120,6 +111,6 @@ jobs:
                   dockerfile: apps/main/Dockerfile
                   tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ inputs.DISPLAY_VERSION }}
                   build-args: |
-                      NODEJS_VERSION=${{ steps.resolve-node.outputs.node_version }}
+                      NODEJS_VERSION=${{ steps.setup-node.outputs.nodejs-major-version }}
                       NEXT_PUBLIC_NEURO_SAN_UI_VERSION=${{ inputs.DISPLAY_VERSION }}
                   quiet: "true"
