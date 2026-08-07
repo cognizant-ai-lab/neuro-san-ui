@@ -77,8 +77,8 @@ jobs:
 
             - name: Setup Node.js environment
               id: setup-node
-              # Derive Node.js version from package.json engines via build-common.
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@b14b3de23cb9aca02b2165e57542335e0c8f5304 # build-common 1.0.9
+              # build-common 1.0.9
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@b14b3de23cb9aca02b2165e57542335e0c8f5304
               with:
                   clean-install: "true"
                   registry-url: https://registry.npmjs.org/
