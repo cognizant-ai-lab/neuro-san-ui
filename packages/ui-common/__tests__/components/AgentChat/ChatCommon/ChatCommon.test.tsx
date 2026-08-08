@@ -1619,12 +1619,18 @@ describe("ChatCommon", () => {
 
             await sendQuery(TEST_AGENT_MATH_GUY, "query after seeding sly_data")
 
-            // sly_data is the 7th argument to sendChatQuery. The user's value rides along with the entries the
-            // component always supplies.
-            expect(vi.mocked(sendChatQuery).mock.calls[0][6]).toEqual({
-                seeded_by_user: "yes",
-                login: TEST_USER,
-            })
+            // The user's value rides along with the entries the component always supplies (login).
+            expect(sendChatQuery).toHaveBeenCalledExactlyOnceWith(
+                undefined, // neuroSanURL is not set in these props
+                expect.any(AbortSignal),
+                "query after seeding sly_data",
+                TEST_AGENT_MATH_GUY,
+                expect.any(Function),
+                undefined, // no chat context yet: only sly_data has been stored for this network
+                {login: TEST_USER, seeded_by_user: "yes"},
+                TEST_USER,
+                StreamingUnit.Line
+            )
         })
 
         it("Should show the sly_data currently in the store", async () => {
