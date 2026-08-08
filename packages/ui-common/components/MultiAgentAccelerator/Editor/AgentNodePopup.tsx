@@ -20,11 +20,11 @@ import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
 import {Dispatch, FC, SetStateAction, useEffect, useRef, useState} from "react"
 
-import {AgentNetworkDefinitionEntry} from "./const"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {ConfirmationModal} from "../Common/ConfirmationModal"
-import {MUIDialog} from "../Common/MUIDialog"
-import {NotificationType, sendNotification} from "../Common/notification"
+import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {ConfirmationModal} from "../../Common/ConfirmationModal"
+import {MUIDialog} from "../../Common/MUIDialog"
+import {NotificationType, sendNotification} from "../../Common/notification"
+import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region: Types
 

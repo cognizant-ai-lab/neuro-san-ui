@@ -19,8 +19,8 @@ import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
 import {FC, useEffect} from "react"
-import {MockInstance} from "vitest"
 
+import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {
@@ -29,10 +29,8 @@ import {
     filterNodeEvents,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
-import {DOCK_BANNER_AUTO_DISMISS_MS} from "../../../../components/MultiAgentAccelerator/Editor/NetworkEditorDock"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
-import {sendChatQuery} from "../../../../controller/agent/Agent"
-import {ChatMessageType, ChatResponse, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../../state/Settings"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
@@ -40,33 +38,20 @@ import {cleanUpAgentName} from "../../../../utils/AgentName"
 
 //#region Constants
 
-const ABORT_TITLE = "Abort changes?"
 const AGENT_1 = "agent1"
 const AGENT_1_NODE = `[data-id="${AGENT_1}"]`
 const AGENT_2 = "agent2"
 const AGENT_3 = "agent3"
-const APPLIED_BANNER = "Changes applied."
-const APPLY_BUTTON = "Apply"
 // Accessible name of the Save button while a save is in-flight.
 const APPLYING_CHANGES_BUTTON = "Applying changes..."
-const APPLYING_TITLE = "Applying changes to network"
-const CANCELLED_BANNER = "Applying cancelled."
-const CLOSE_EDIT_BUTTON = "close edit mode"
 const CONV_1 = "conv-1"
 const CONV_2 = "conv-2"
 const CONV_WITH_TEXT = "conv-with-text"
-// MUIAlert's dismiss button has aria-label "close".
-const DISMISS_BANNER_BUTTON = "close"
-const DOCK_DEFAULT_RES = "dock-default-res"
 const DOCK_HEADER = "Network Editor"
 const DOCK_NETWORK_ID = "temporary/dock-test-net"
 const DOCK_NETWORK_NAME = "dock_network"
-const EDIT_PROMPT = "Add a node"
-const ELVES_PROMPT = "add some elves to check work"
-const FAILED_BANNER = "Failed to apply network change."
 const FLOW_WRAPPER = '[data-testid="rf__wrapper"]'
 const INSTRUCTIONS_FIELD = "Instructions"
-const KEEP_APPLYING_BUTTON = "Keep applying"
 // display_as value marking an editable LLM agent node.
 const LLM_AGENT_DISPLAY = "llm_agent"
 const MOCK_PLASMA_EDGE_TEST_ID = "mock-plasma-edge"
@@ -87,14 +72,11 @@ const NETWORK = [
         tools: [],
     },
 ] satisfies ConnectivityInfo[]
+
 const OLD_NETWORK_ID = "temporary/old-res"
 const OLD_NETWORK_NAME = "my_network"
-const PROMPT_PLACEHOLDER = "Describe a change to the network"
 const SAVE_BUTTON = "Save"
-// These buttons render a ■ startIcon, so their accessible name isn't a clean string; match the label.
-const STOP_BUTTON = /stop/iu
-const STOP_DISCARD_BUTTON = /stop & discard/iu
-const TEST_AGENT_MUSIC_NERD_PRO = "Music Nerd Pro"
+
 // React Flow edge type for thought-bubble edges (matches the source's edge `type`).
 const THOUGHT_BUBBLE_EDGE_TYPE = "thoughtBubbleEdge"
 const UPDATED_INSTRUCTIONS = "Updated instructions"
@@ -140,9 +122,6 @@ vi.mock("@mui/material/styles", async (importOriginal) => {
         useColorScheme: vi.fn(),
     }
 })
-
-// Handle to the auto-mocked sendChatQuery so tests can stub it without repeating the cast.
-const mockSendChatQuery = vi.mocked(sendChatQuery)
 
 vi.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid={MOCK_PLASMA_EDGE_TEST_ID} />,
@@ -192,22 +171,6 @@ describe("AgentFlow", () => {
         useSettingsStore.persist.clearStorage()
     })
 
-    // Helper to create a minimal TemporaryNetwork for seeding the store in tests.
-    const makeTempNetwork = (
-        networkId: string,
-        agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
-        agentNetworkName?: string
-    ) => ({
-        reservation: {
-            reservation_id: networkId,
-            lifetime_in_seconds: 300,
-            expiration_time_in_seconds: Date.now() / 1000 + 300,
-        },
-        agentInfo: {agent_name: networkId},
-        agentNetworkName,
-        agentNetworkDefinition,
-    })
-
     const currentConversations2: AgentConversation[] = [
         {
             id: "test-conv-1",
@@ -222,11 +185,12 @@ describe("AgentFlow", () => {
         currentConversations: currentConversations2,
         isAwaitingLlm: false,
         isStreaming: false,
+        onSaveAgent: vi.fn(),
         thoughtBubbleEdges: new Map(),
         setThoughtBubbleEdges: vi.fn(),
     }
 
-    const renderAgentFlowComponent = (overrides = {}, mode: PaletteMode = "light") => {
+    const renderAgentFlowComponent = (overrides: Partial<AgentFlowProps> = {}, mode: PaletteMode = "light") => {
         const props = {...defaultProps, ...overrides}
         return render(
             <ThemeProvider theme={createTheme({palette: {mode}})}>
@@ -297,27 +261,34 @@ describe("AgentFlow", () => {
         })
 
         it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
-            const onEnterEditMode = vi.fn()
             const networkName = "Temp Net"
             renderAgentFlowComponent({
                 networkDisplayName: networkName,
-                isSelectedNetworkTemporary: true,
-                isEditMode: false,
+                isTemporaryNetwork: true,
                 isAwaitingLlm: false,
-                onEnterEditMode,
             })
+
+            await screen.findByText(networkName)
+
+            // Network editor should not currently be visible
+            await waitFor(() => {
+                expect(screen.queryByText("Network Editor")).not.toBeInTheDocument()
+            })
+
             // Target the dock's Edit button by its visible text; node hover edit icons share the "Edit"
             // accessible name (via aria-label) but render no text.
             const editBtn = await screen.findByText("Edit")
             await user.click(editBtn)
-            expect(onEnterEditMode).toHaveBeenCalledTimes(1)
+
+            // Now network editor should be visible
+            await screen.findByText("Network Editor")
         })
 
         it("Should hide the Edit button for permanent networks", async () => {
             const networkName = "Regular Net"
             renderAgentFlowComponent({
                 networkDisplayName: networkName,
-                isSelectedNetworkTemporary: false,
+                isTemporaryNetwork: false,
             })
             await screen.findByText(networkName)
             expect(screen.queryByText("Edit")).not.toBeInTheDocument()
@@ -327,10 +298,15 @@ describe("AgentFlow", () => {
             const networkName = "Temp Net"
             renderAgentFlowComponent({
                 networkDisplayName: networkName,
-                isSelectedNetworkTemporary: true,
-                isEditMode: true,
+                isTemporaryNetwork: true,
             })
             await screen.findByText(networkName)
+
+            // Click edit button to enter edit mode
+            const editBtn = await screen.findByText("Edit")
+            await user.click(editBtn)
+
+            // Now the edit button should not be present
             expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
@@ -338,8 +314,7 @@ describe("AgentFlow", () => {
             const networkName = "Temp Net"
             renderAgentFlowComponent({
                 networkDisplayName: networkName,
-                isSelectedNetworkTemporary: true,
-                isEditMode: false,
+                isTemporaryNetwork: true,
                 isAwaitingLlm: true,
             })
             await screen.findByText(networkName)
@@ -459,6 +434,7 @@ describe("AgentFlow", () => {
                         id: "test-conv-frontman",
                         agents: new Set([AGENT_3]),
                         startedAt: new Date(),
+                        type: ChatMessageType.AGENT,
                     },
                 ],
             })
@@ -575,9 +551,7 @@ describe("AgentFlow", () => {
 
     describe("Animation", () => {
         it("Should handle highlighting the active agents", async () => {
-            const {container, rerender} = renderAgentFlowComponent({
-                selectedNetwork: TEST_AGENT_MUSIC_NERD_PRO,
-            })
+            const {container, rerender} = renderAgentFlowComponent()
 
             // Force a re-render by changing layout
             const layoutButton = container.querySelector("#linear-layout-button")
@@ -641,7 +615,7 @@ describe("AgentFlow", () => {
         it("Should render plasma edges between agents in conversation when isAwaitingLlm is true", () => {
             // agent1 and agent2 are connected in NETWORK (agent1 -> agent2)
             // Placing both in the same conversation with a valid type triggers plasma edges
-            const conversationsWithPlasma = [
+            const conversationsWithPlasma: AgentConversation[] = [
                 {
                     id: "plasma-conv",
                     agents: new Set([AGENT_1, AGENT_2]),
@@ -699,12 +673,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversations with text for thought bubbles", () => {
-            const conversationsWithText = [
+            const conversationsWithText: AgentConversation[] = [
                 {
                     id: "test-conv-with-text",
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "What is the weather today?",
+                    type: ChatMessageType.HUMAN,
                 },
             ]
 
@@ -1194,16 +1169,18 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversations with multiple agents", () => {
-            const multiAgentConversations = [
+            const multiAgentConversations: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
+                    type: ChatMessageType.AGENT,
                 },
                 {
                     id: CONV_2,
                     agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1215,12 +1192,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversations with text field", () => {
-            const conversationsWithText = [
+            const conversationsWithText: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1]),
                     startedAt: new Date(),
                     text: "Test inquiry text",
+                    type: ChatMessageType.HUMAN,
                 },
             ]
 
@@ -1240,12 +1218,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle currentConversations becoming null (streaming complete)", () => {
-            const initialConversations = [
+            const initialConversations: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Test message",
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1269,12 +1248,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversation with single agent", () => {
-            const singleAgentConv = [
+            const singleAgentConv: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1]),
                     startedAt: new Date(),
                     text: "Single agent message",
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1286,12 +1266,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversation with three or more agents", () => {
-            const multiAgentConv = [
+            const multiAgentConv: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: "Multi-agent message",
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1303,11 +1284,12 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle conversations without text field", () => {
-            const conversationsWithoutText = [
+            const conversationsWithoutText: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
+                    type: ChatMessageType.AGENT,
                     // No text field
                 },
             ]
@@ -1320,12 +1302,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle empty agents set in conversation", () => {
-            const conversationsWithEmptyAgents = [
+            const conversationsWithEmptyAgents: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set<string>(),
                     startedAt: new Date(),
                     text: "Message with no agents",
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1337,18 +1320,20 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle duplicate conversations with same parsed text", () => {
-            const duplicateConversations = [
+            const duplicateConversations: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: '{"inquiry": "Same message"}',
+                    type: ChatMessageType.AGENT,
                 },
                 {
                     id: CONV_2,
                     agents: new Set([AGENT_2, AGENT_3]),
                     startedAt: new Date(),
                     text: '{"inquiry": "Same message"}', // Duplicate parsed content
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1360,12 +1345,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle very long conversation text", () => {
-            const longTextConv = [
+            const longTextConv: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "a".repeat(1000), // Very long text
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1377,12 +1363,13 @@ describe("AgentFlow", () => {
         })
 
         it("Should handle special characters in conversation text", () => {
-            const specialCharsConv = [
+            const specialCharsConv: AgentConversation[] = [
                 {
                     id: CONV_1,
                     agents: new Set([AGENT_1, AGENT_2]),
                     startedAt: new Date(),
                     text: "Test with émojis 🎉 and spëcial çharacters",
+                    type: ChatMessageType.AGENT,
                 },
             ]
 
@@ -1549,7 +1536,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: OLD_NETWORK_ID,
                 onSaveAgent,
             })
@@ -1596,7 +1583,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: OLD_NETWORK_ID,
                 onSaveAgent,
             })
@@ -1634,7 +1621,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: OLD_NETWORK_ID,
                 onSaveAgent,
             })
@@ -1661,7 +1648,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: OLD_NETWORK_ID,
                 // onSaveAgent intentionally omitted
             })
@@ -1693,7 +1680,7 @@ describe("AgentFlow", () => {
             })
 
             renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: networkKey,
             })
 
@@ -1731,7 +1718,7 @@ describe("AgentFlow", () => {
                     ])
             })
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: networkKey,
             })
 
@@ -1774,7 +1761,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: networkKey,
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: displayAs}],
             })
@@ -1794,7 +1781,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: networkKey,
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
             })
@@ -1835,7 +1822,7 @@ describe("AgentFlow", () => {
             })
 
             const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: networkKey,
                 agentsInNetwork: [{origin: AGENT_1, tools: [], display_as: LLM_AGENT_DISPLAY}],
             })
@@ -1850,789 +1837,59 @@ describe("AgentFlow", () => {
         })
     })
 
-    describe("Network Editor", () => {
-        const makeDockReservationChunk = (reservationId: string, agentNetworkName: string) =>
-            JSON.stringify({
-                response: {
-                    type: "AGENT_FRAMEWORK",
-                    sly_data: {
-                        agent_reservations: [
-                            {
-                                reservation_id: reservationId,
-                                lifetime_in_seconds: 86400,
-                                expiration_time_in_seconds: Date.now() / 1000 + 86400,
-                            },
-                        ],
-                        agent_network_name: agentNetworkName,
-                    },
-                },
-            })
-
-        /**
-         * Mocks sendChatQuery so a dock apply stays in-flight until the returned `release()` is called,
-         * at which point it succeeds with a reservation matching the current network. Lets a test observe
-         * the in-flight overlay without the apply secretly resolving as a failure.
-         */
-        const mockInFlightDockApply = () => {
-            let release!: () => void
-
-            mockSendChatQuery.mockImplementation(
-                (_url, _signal, _query, _agent, chunkCallback) =>
-                    new Promise<ChatResponse>((resolve) => {
-                        release = () => {
-                            chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
-                            resolve({} satisfies ChatResponse)
-                        }
-                    })
-            )
-
-            return () => release()
-        }
-
-        // All dock outcomes — apply, cancel, timeout, and reservation-validation failures — now render
-        // inline banners and are asserted against the DOM. The spy stays as a guard: tests assert
-        // sendNotification's console.debug copy is NOT emitted, confirming nothing escapes to a global toast.
-        let consoleDebugSpy: MockInstance
-
-        beforeEach(() => {
-            consoleDebugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
-            // Default to a successful designer response: a reservation matching the current network.
-            // Tests that need a failure (no/unmatched reservation, throw, timeout) override this.
-            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
-                return {} satisfies ChatResponse
-            })
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(DOCK_NETWORK_ID, [{origin: AGENT_1, tools: []}], DOCK_NETWORK_NAME),
-                    ])
-            })
-        })
-
-        it("shows the topology editor dock when isEditMode and isSelectedNetworkTemporary are true", () => {
+    describe("NetworkEditorDock", () => {
+        it("shows the topology editor dock when isEditMode and isTemporaryNetwork are true", async () => {
             renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: DOCK_NETWORK_ID,
+                networkDisplayName: DOCK_NETWORK_NAME,
             })
+
+            // Click the edit button to enter edit mode
+            const editBtn = await screen.findByText("Edit")
+            await user.click(editBtn)
 
             expect(screen.getByText(DOCK_HEADER)).toBeInTheDocument()
         })
 
         it("does not show the dock when isEditMode is false", () => {
             renderAgentFlowComponent({
-                isEditMode: false,
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: DOCK_NETWORK_ID,
+                networkDisplayName: DOCK_NETWORK_NAME,
             })
 
+            // It is an editable network, but we didn't click the button to enter edit mode.
             expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
         })
 
-        it("does not show the dock when isSelectedNetworkTemporary is false", () => {
+        it("does not show the edit button for permanent networks", async () => {
             renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: false,
+                isTemporaryNetwork: false,
                 networkId: DOCK_NETWORK_ID,
+                networkDisplayName: DOCK_NETWORK_NAME,
             })
 
-            expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
+            // Should still have the title
+            await screen.findByText(DOCK_NETWORK_NAME)
+
+            // ...but no edit button
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
-        it("does not show the dock when isAwaitingLlm is true", () => {
+        it("does not show the edit button when isAwaitingLlm is true", async () => {
             renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
+                isTemporaryNetwork: true,
                 networkId: DOCK_NETWORK_ID,
+                networkDisplayName: DOCK_NETWORK_NAME,
                 isAwaitingLlm: true,
             })
 
-            expect(screen.queryByText(DOCK_HEADER)).not.toBeInTheDocument()
-        })
-
-        it("calls onExitEditMode when the close button is clicked", async () => {
-            const onExitEditMode = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                onExitEditMode,
-            })
-
-            const closeButton = screen.getByRole("button", {name: CLOSE_EDIT_BUTTON})
-            await user.click(closeButton)
-
-            expect(onExitEditMode).toHaveBeenCalledTimes(1)
-        })
-
-        it("exits edit mode when the Escape key is pressed", async () => {
-            const onExitEditMode = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                onExitEditMode,
-            })
-
-            await user.keyboard("{Escape}")
-
-            expect(onExitEditMode).toHaveBeenCalledTimes(1)
-        })
-
-        it("does not exit on Escape when not in edit mode", async () => {
-            const onExitEditMode = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: false,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                onExitEditMode,
-            })
-
-            await user.keyboard("{Escape}")
-
-            expect(onExitEditMode).not.toHaveBeenCalled()
-        })
-
-        it("does not exit edit mode on Escape while the node popup is open", async () => {
-            const onExitEditMode = vi.fn()
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(
-                            DOCK_NETWORK_ID,
-                            [{origin: "agent1", tools: [], display_as: "llm_agent"}],
-                            DOCK_NETWORK_NAME
-                        ),
-                    ])
-            })
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                onExitEditMode,
-            })
-
-            // Open the node popup so Escape should close it first, not exit edit mode.
-            clickFlowNode(screen.getByText(cleanUpAgentName("agent1")))
-            await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-
-            await user.keyboard("{Escape}")
-
-            expect(onExitEditMode).not.toHaveBeenCalled()
-        })
-
-        it("aborts an in-flight dock request if the close button is clicked during streaming", async () => {
-            const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
-            const onExitEditMode = vi.fn()
-            let capturedSignal: AbortSignal | undefined
-            mockSendChatQuery.mockImplementation(
-                (_url: string, signal: AbortSignal) =>
-                    new Promise<ChatResponse>((_resolve, reject) => {
-                        capturedSignal = signal
-                        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                    })
-            )
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onExitEditMode,
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // Wait until the overlay appears (streaming started)
-            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-
-            // Click the close button while request is in-flight
-            await user.click(screen.getByRole("button", {name: CLOSE_EDIT_BUTTON}))
-
-            expect(capturedSignal?.aborted).toBe(true)
-            expect(onExitEditMode).toHaveBeenCalledTimes(1)
-
-            expect(consoleErrorSpy).not.toHaveBeenCalled()
-            expect(consoleDebugSpy).not.toHaveBeenCalled()
-        })
-
-        it("Apply button is disabled when prompt is empty", () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeDisabled()
-        })
-
-        it("Apply button becomes enabled after typing a prompt", async () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste("Add a new agent")
-
-            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
-        })
-
-        it("forwards the dock prompt to sendChatQuery on Apply and replaces the network", async () => {
-            const NEW_DOCK_RES_ID = "dock-new-res"
-            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeDockReservationChunk(NEW_DOCK_RES_ID, DOCK_NETWORK_NAME))
-                return {} satisfies ChatResponse
-            })
-
-            const onNetworkReplaced = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste("Add a legal review agent")
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The typed prompt is forwarded to the designer...
-            expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
-            expect(mockSendChatQuery.mock.calls[0][2]).toBe("Add a legal review agent")
-            // ...and the returned reservation replaces the current network
-            expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${NEW_DOCK_RES_ID}`)
-        })
-
-        it("shows an error banner when dock apply returns no reservations", async () => {
-            mockSendChatQuery.mockResolvedValue({})
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The user sees an error banner explaining no reservation came back
-            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/did not return a reservation/iu)).toBeInTheDocument()
-        })
-
-        it("shows an error banner when dock apply returns a reservation that does not match the network", async () => {
-            // The current network has no name, so the designer's returned network name can't match it,
-            // exercising the "reservation returned but did not match" branch.
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(DOCK_NETWORK_ID, [{origin: AGENT_1, tools: []}], undefined)])
-            })
-            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, "some-other-network"))
-                return {} satisfies ChatResponse
-            })
-
-            const onNetworkReplaced = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The user sees an error banner explaining the reservation did not match, and no navigation occurs
-            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/did not match the current network/iu)).toBeInTheDocument()
-            expect(onNetworkReplaced).not.toHaveBeenCalled()
-        })
-
-        it("shows an error banner and resets state when dock apply throws", async () => {
-            mockSendChatQuery.mockRejectedValue(new Error("Network failure"))
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The user sees an error banner carrying the underlying failure
-            expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/network failure/iu)).toBeInTheDocument()
-            // Button should re-enable after error
-            expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
-        })
-
-        it("shows a timeout error banner that persists when the dock apply request times out", async () => {
-            vi.useFakeTimers()
-
-            // Create a custom UserEvent that is synced with Vitest's fake timers
-            const localUser = userEvent.setup({
-                advanceTimers: vi.advanceTimersByTime,
-            })
-
-            mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
-                return new Promise<ChatResponse>((_resolve, reject) => {
-                    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                })
-            })
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await localUser.click(promptField)
-            await localUser.paste(EDIT_PROMPT)
-
-            const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
-            await localUser.click(applyButton)
-
-            // Advance past the 120-second dock apply timeout
-            act(() => {
-                vi.advanceTimersByTime(121_000)
-            })
-
-            // The user sees an error banner explaining the request timed out...
-            await screen.findByText(/timed out/u)
-
-            // ...and, unlike success/cancel banners, it does not auto-dismiss
-            act(() => {
-                vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
-            })
-            expect(screen.getByText(FAILED_BANNER)).toBeInTheDocument()
-        })
-
-        it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
-            const LOW_EXPIRY = Date.now() / 1000 + 100
-            const HIGH_EXPIRY = Date.now() / 1000 + 86400
-            const FIRST_RES = "res-low"
-            const SECOND_RES = "res-high"
-
-            const makeChunk = (reservationId: string, expiry: number) =>
-                JSON.stringify({
-                    response: {
-                        type: "AGENT_FRAMEWORK",
-                        sly_data: {
-                            agent_reservations: [
-                                {
-                                    reservation_id: reservationId,
-                                    lifetime_in_seconds: 300,
-                                    expiration_time_in_seconds: expiry,
-                                },
-                            ],
-                            agent_network_name: DOCK_NETWORK_NAME,
-                        },
-                    },
-                })
-
-            mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
-                // Send low-expiry first, then high-expiry (high should win)
-                chunkCallback(makeChunk(FIRST_RES, LOW_EXPIRY))
-                chunkCallback(makeChunk(SECOND_RES, HIGH_EXPIRY))
-                return {} satisfies ChatResponse
-            })
-
-            const onNetworkReplaced = vi.fn()
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-                onNetworkReplaced,
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(promptField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The higher-expiry reservation should win
-            expect(onNetworkReplaced).toHaveBeenCalledWith(DOCK_NETWORK_ID, `temporary/${SECOND_RES}`)
-        })
-
-        it("pressing Enter in the prompt field submits the dock apply", async () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.type(promptField, `${EDIT_PROMPT}{Enter}`)
-            expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
-        })
-
-        it("does not show the applying overlay when the dock is idle", () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            // The backdrop keeps its content mounted but hidden while idle, so it must not be visible
-            expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
-        })
-
-        it("shows the applying overlay with the prompt text while apply is in-flight", async () => {
-            // Keep the apply in-flight so the overlay stays mounted; it never resolves, so no cleanup is needed.
-            mockInFlightDockApply()
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(ELVES_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The overlay is shown with its title and the in-flight prompt text
-            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-            expect(screen.getByText(ELVES_PROMPT)).toBeInTheDocument()
-        })
-
-        it("removes the applying overlay once the apply call completes", async () => {
-            const release = mockInFlightDockApply()
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(ELVES_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-
-            await act(async () => {
-                release()
-            })
-
-            await waitFor(() => {
-                expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
-            })
-        })
-
-        it("shows Stop button in backdrop while applying; clicking it shows the confirm card", async () => {
-            const release = mockInFlightDockApply()
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // Stop button should appear while backdrop is open, with no confirm card yet
-            const stopButton = screen.getByRole("button", {name: STOP_BUTTON})
-            expect(stopButton).toBeInTheDocument()
-            expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
-
-            await user.click(stopButton)
-
-            // Confirm card should appear
-            expect(screen.getByText(ABORT_TITLE)).toBeInTheDocument()
-            expect(screen.getByRole("button", {name: KEEP_APPLYING_BUTTON})).toBeInTheDocument()
-            expect(screen.getByRole("button", {name: STOP_DISCARD_BUTTON})).toBeInTheDocument()
-
-            await act(async () => {
-                release()
-            })
-        })
-
-        it("Keep applying dismisses the confirm card and continues streaming", async () => {
-            const release = mockInFlightDockApply()
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            await user.click(screen.getByRole("button", {name: STOP_BUTTON}))
-            await user.click(screen.getByRole("button", {name: KEEP_APPLYING_BUTTON}))
-
-            // Progress card (with Stop button) should be back; backdrop still visible
-            expect(screen.getByRole("button", {name: STOP_BUTTON})).toBeInTheDocument()
-            expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
-
-            await act(async () => {
-                release()
-            })
-        })
-
-        it("Stop & discard aborts the request, hides backdrop, shows a cancel banner, restores prompt", async () => {
-            mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
-                return new Promise<ChatResponse>((_resolve, reject) => {
-                    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
-                })
-            })
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // Open confirm card, then discard
-            await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
-            await user.click(await screen.findByRole("button", {name: STOP_DISCARD_BUTTON}))
-
-            // Backdrop should close
-            await waitFor(() => {
-                expect(screen.getByText(APPLYING_TITLE)).not.toBeVisible()
-            })
-
-            // The user sees a cancel banner and the prompt is left intact for retry
-            expect(await screen.findByText(CANCELLED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/prompt is restored below/iu)).toBeInTheDocument()
-            expect(screen.getByDisplayValue(EDIT_PROMPT)).toBeInTheDocument()
-
-            // Discarding is an intentional abort, not a failure
-            expect(screen.queryByText(FAILED_BANNER)).not.toBeInTheDocument()
-        })
-
-        it("shows a success banner and clears the prompt after dock apply completes", async () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            // The user sees a success banner confirming their changes were applied...
-            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
-            expect(screen.getByText(/network has been updated/iu)).toBeInTheDocument()
-            // ...and the prompt is cleared once the change lands
-            expect(screen.getByPlaceholderText(PROMPT_PLACEHOLDER)).toHaveValue("")
-        })
-
-        it("auto-dismisses the success banner after the timeout elapses", async () => {
-            vi.useFakeTimers()
-
-            // Create a custom UserEvent that is synced with Vitest's fake timers
-            const localUser = userEvent.setup({
-                advanceTimers: vi.advanceTimersByTime,
-            })
-
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const editInput = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await localUser.click(editInput)
-            await localUser.paste(EDIT_PROMPT)
-
-            const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
-            await localUser.click(applyButton)
-
-            await screen.findByText(APPLIED_BANNER)
-
-            // Once the auto-dismiss timer fires, the banner disappears
-            act(() => {
-                vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
-            })
-
-            await waitFor(() => {
-                expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
-            })
-        })
-
-        it("dismisses the banner immediately when its close button is clicked", async () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
-            await user.click(instructionsField)
-            await user.paste(EDIT_PROMPT)
-            await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
-
-            expect(await screen.findByText(APPLIED_BANNER)).toBeInTheDocument()
-
-            // Clicking the banner's close button removes it without waiting for the timer
-            await user.click(screen.getByRole("button", {name: DISMISS_BANNER_BUTTON}))
-            expect(screen.queryByText(APPLIED_BANNER)).not.toBeInTheDocument()
-        })
-
-        it("does nothing when Enter is pressed with an empty prompt", async () => {
-            renderAgentFlowComponent({
-                isEditMode: true,
-                isSelectedNetworkTemporary: true,
-                networkId: DOCK_NETWORK_ID,
-                neuroSanURL: "http://localhost:8080",
-                currentUser: "test-user",
-            })
-
-            // Enter bypasses the disabled Apply button, so handleDockApply runs and must early-return.
-            await user.click(screen.getByPlaceholderText(PROMPT_PLACEHOLDER))
-            await user.keyboard("{Enter}")
-
-            expect(mockSendChatQuery).not.toHaveBeenCalled()
-            // The saving backdrop stays closed, so its title is never shown to the user.
-            expect(screen.getByText(/applying changes to network/iu)).not.toBeVisible()
-        })
-
-        it("Should save edited instructions only to the current network's history entry", async () => {
-            const networkA = "temporary/network-a-save"
-            const networkB = "temporary/network-b-save"
-            const originalInstructions = "Original shared instructions."
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(networkA, [{origin: AGENT_1, tools: [], instructions: originalInstructions}]),
-                        makeTempNetwork(networkB, [{origin: AGENT_1, tools: [], instructions: originalInstructions}]),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: networkA,
-            })
-
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
-            clickFlowNode(agent1Node)
-
-            // Edit the instructions and save
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            await user.clear(instructionsField)
-            await user.click(instructionsField)
-            await user.paste("Updated instructions for Network A.")
-            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
-            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
-
-            // Network A's instructions should be updated
-            const defA = useTempNetworksStore
-                .getState()
-                .tempNetworks.find((n) => n.agentInfo.agent_name === networkA)?.agentNetworkDefinition
-            expect(defA?.find((e) => e.origin === AGENT_1)?.instructions).toBe("Updated instructions for Network A.")
-
-            // Network B's instructions must be untouched
-            const defB = useTempNetworksStore
-                .getState()
-                .tempNetworks.find((n) => n.agentInfo.agent_name === networkB)?.agentNetworkDefinition
-            expect(defB?.find((e) => e.origin === AGENT_1)?.instructions).toBe(originalInstructions)
-        })
-
-        // eslint-disable-next-line max-len -- conflicts with prettier
-        it("Should read instructions only from the current network, not from another network with same agent", async () => {
-            // Two different temporary networks each containing agent1, with different instructions.
-            const networkA = "temporary/network-a"
-            const networkB = "temporary/network-b"
-            const instructionsA = "Instructions specific to Network A."
-            const instructionsB = "Instructions specific to Network B."
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(networkA, [{origin: AGENT_1, tools: [], instructions: instructionsA}]),
-                        makeTempNetwork(networkB, [{origin: AGENT_1, tools: [], instructions: instructionsB}]),
-                    ])
-            })
-
-            // Render with networkB selected
-            const {container} = renderAgentFlowComponent({
-                isSelectedNetworkTemporary: true,
-                networkId: networkB,
-            })
-
-            const agent1Node = container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`)
-            clickFlowNode(agent1Node)
-
-            // Popup should show networkB's instructions, not networkA's
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            expect(instructionsField).toHaveValue(instructionsB)
+            // Should still have the title
+            await screen.findByText(DOCK_NETWORK_NAME)
+
+            // ...but no edit button
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
     })
 })

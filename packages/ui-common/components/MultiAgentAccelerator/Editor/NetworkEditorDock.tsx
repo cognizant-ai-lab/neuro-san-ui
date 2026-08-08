@@ -47,7 +47,7 @@ export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
 export type NetworkEditorDockProps = {
     readonly currentUser: string
     readonly id: string
-    readonly isEditingNetwork: boolean
+    readonly isActive: boolean
     readonly networkId: string
     readonly neuroSanURL: string
     readonly setIsEditingNetwork: (isEditing: boolean) => void
@@ -68,7 +68,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     neuroSanURL,
     currentUser,
     id,
-    isEditingNetwork,
+    isActive,
     networkId,
     setIsEditingNetwork,
     setSelectedNetwork,
@@ -132,13 +132,13 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
     // node popup is open, so Escape closes the popup first rather than the whole edit mode.
     useEffect(() => {
-        if (!isEditingNetwork) return undefined
+        if (!isActive) return undefined
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") handleExitEditMode()
         }
         document.addEventListener("keydown", handleEscape)
         return () => document.removeEventListener("keydown", handleEscape)
-    }, [handleExitEditMode, isEditingNetwork])
+    }, [handleExitEditMode, isActive])
 
     /**
      * Applies the networks returned by the designer: upserts them and triggers navigation if needed.
@@ -240,7 +240,9 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 
     const handleDockApply = useCallback(async () => {
         const readyToApplyEdit = Boolean(dockPrompt.trim() && neuroSanURL && currentUser)
-        if (!readyToApplyEdit) return
+        if (!readyToApplyEdit) {
+            return
+        }
 
         const currentTempNetwork = networkId
             ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
@@ -307,114 +309,115 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         }
     }, [])
 
-    const getBackdrop = () => (
-        <Backdrop
-            open={isDockStreaming}
-            sx={{zIndex: (t) => t.zIndex.modal + 1}}
-        >
-            {stopState === "confirming" ? (
-                <Paper
-                    elevation={6}
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                        px: 4,
-                        py: 3,
-                        borderRadius: 2,
-                        maxWidth: 420,
-                    }}
-                >
-                    <Typography
-                        variant="body1"
-                        sx={{fontWeight: "bold"}}
-                    >
-                        Abort changes?
-                    </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                    >
-                        The in-progress update will be cancelled and discarded. Your network will not be modified.
-                    </Typography>
-                    <Box
+    const getBackdrop = () =>
+        isDockStreaming && (
+            <Backdrop
+                open={isDockStreaming}
+                sx={{zIndex: (t) => t.zIndex.modal + 1}}
+            >
+                {stopState === "confirming" ? (
+                    <Paper
+                        elevation={6}
                         sx={{
                             display: "flex",
-                            gap: 1.5,
-                            justifyContent: "flex-end",
+                            flexDirection: "column",
+                            gap: 2,
+                            px: 4,
+                            py: 3,
+                            borderRadius: 2,
+                            maxWidth: 420,
                         }}
                     >
-                        <Button
-                            variant="outlined"
-                            onClick={handleKeepApplying}
-                        >
-                            Keep applying
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="error"
-                            startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
-                            onClick={handleStopAndDiscard}
-                        >
-                            Stop &amp; discard
-                        </Button>
-                    </Box>
-                </Paper>
-            ) : (
-                <Paper
-                    elevation={6}
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        px: 4,
-                        py: 2.5,
-                        borderRadius: 2,
-                        maxWidth: 480,
-                    }}
-                >
-                    <CircularProgress size={24} />
-                    <Box sx={{flex: 1}}>
                         <Typography
                             variant="body1"
                             sx={{fontWeight: "bold"}}
                         >
-                            Applying changes to network
+                            Abort changes?
                         </Typography>
-                        {dockPrompt && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{mt: 0.25}}
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                        >
+                            The in-progress update will be cancelled and discarded. Your network will not be modified.
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1.5,
+                                justifyContent: "flex-end",
+                            }}
+                        >
+                            <Button
+                                variant="outlined"
+                                onClick={handleKeepApplying}
                             >
-                                {dockPrompt}
-                            </Typography>
-                        )}
-                    </Box>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<span style={{fontSize: "0.65rem"}}>&#9632;</span>}
-                        onClick={handleStopClick}
+                                Keep applying
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
+                                onClick={handleStopAndDiscard}
+                            >
+                                Stop &amp; discard
+                            </Button>
+                        </Box>
+                    </Paper>
+                ) : (
+                    <Paper
+                        elevation={6}
                         sx={{
-                            whiteSpace: "nowrap",
-                            flexShrink: 0,
-                            color: theme.palette.common.white,
-                            borderColor: theme.palette.common.white,
-                            fontWeight: "bold",
-                            "&:hover": {
-                                borderColor: theme.palette.error.main,
-                                color: theme.palette.error.main,
-                                backgroundColor: alpha(theme.palette.error.main, 0.08),
-                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            px: 4,
+                            py: 2.5,
+                            borderRadius: 2,
+                            maxWidth: 480,
                         }}
                     >
-                        Stop
-                    </Button>
-                </Paper>
-            )}
-        </Backdrop>
-    )
+                        <CircularProgress size={24} />
+                        <Box sx={{flex: 1}}>
+                            <Typography
+                                variant="body1"
+                                sx={{fontWeight: "bold"}}
+                            >
+                                Applying changes to network
+                            </Typography>
+                            {dockPrompt && (
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{mt: 0.25}}
+                                >
+                                    {dockPrompt}
+                                </Typography>
+                            )}
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<span style={{fontSize: "0.65rem"}}>&#9632;</span>}
+                            onClick={handleStopClick}
+                            sx={{
+                                whiteSpace: "nowrap",
+                                flexShrink: 0,
+                                color: theme.palette.common.white,
+                                borderColor: theme.palette.common.white,
+                                fontWeight: "bold",
+                                "&:hover": {
+                                    borderColor: theme.palette.error.main,
+                                    color: theme.palette.error.main,
+                                    backgroundColor: alpha(theme.palette.error.main, 0.08),
+                                },
+                            }}
+                        >
+                            Stop
+                        </Button>
+                    </Paper>
+                )}
+            </Backdrop>
+        )
 
     const getDockBanner = () => (
         <MUIAlert
@@ -452,7 +455,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     )
 
     const getEditDock = () =>
-        isEditingNetwork && (
+        isActive && (
             <Box
                 sx={{
                     backdropFilter: "blur(8px)",

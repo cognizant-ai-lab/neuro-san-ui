@@ -69,7 +69,7 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
-import {AgentNodePopup} from "../AgentNodePopup"
+import {AgentNodePopup} from "../Editor/AgentNodePopup"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
@@ -86,7 +86,7 @@ export interface AgentFlowProps {
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
     readonly isStreaming?: boolean
-    readonly isSelectedNetworkTemporary?: boolean
+    readonly isTemporaryNetwork?: boolean
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
     readonly networkId?: string
     readonly neuroSanURL?: string
@@ -150,7 +150,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isStreaming,
-    isSelectedNetworkTemporary: isTemporaryNetwork,
+    isTemporaryNetwork,
     networkDisplayName,
     networkId,
     neuroSanURL,
@@ -870,24 +870,24 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 <NetworkEditorDock
                     currentUser={currentUser}
                     id={`${id}-network-editor-dock`}
+                    isActive={isEditingNetwork}
                     networkId={networkId}
                     neuroSanURL={neuroSanURL}
+                    setIsEditingNetwork={setIsEditingNetwork}
                     setSelectedNetwork={setSelectedNetwork}
                     tempNetworks={tempNetworks}
-                    isEditingNetwork={isEditingNetwork}
-                    setIsEditingNetwork={setIsEditingNetwork}
                 />
             )}
             {selectedAgent && !isAwaitingLlm && (
                 <AgentNodePopup
-                    agentName={selectedAgent.agentName}
-                    initialInstructions={selectedAgent.initialInstructions}
-                    initialDescription={selectedAgent.initialDescription}
-                    isOpen={isPopupOpen}
-                    setIsPopupOpen={setIsPopupOpen}
                     agentId={selectedAgent.agentId}
+                    agentName={selectedAgent.agentName}
+                    initialDescription={selectedAgent.initialDescription}
+                    initialInstructions={selectedAgent.initialInstructions}
+                    isOpen={isPopupOpen}
                     networkId={networkId}
                     onSaveAgent={onSaveAgent}
+                    setIsPopupOpen={setIsPopupOpen}
                 />
             )}
         </Box>

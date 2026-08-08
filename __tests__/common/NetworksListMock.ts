@@ -102,3 +102,19 @@ export const MOCK_CONNECTIVITY_INFO = {
         sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
     },
 }
+
+// Helper to create a minimal TemporaryNetwork for seeding the store in tests.
+export const makeTempNetwork = (
+    networkId: string,
+    agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
+    agentNetworkName?: string
+) => ({
+    reservation: {
+        reservation_id: networkId,
+        lifetime_in_seconds: 300,
+        expiration_time_in_seconds: Date.now() / 1000 + 300,
+    },
+    agentInfo: {agent_name: networkId},
+    agentNetworkName,
+    agentNetworkDefinition,
+})

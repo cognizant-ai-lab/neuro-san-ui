@@ -17,8 +17,8 @@ limitations under the License.
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {AgentNodePopup, AgentNodePopupProps} from "../../../../components/MultiAgentAccelerator/Editor/AgentNodePopup"
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
@@ -372,8 +372,8 @@ describe("AgentNodePopup", () => {
         it("disables the text fields while isSaving is true", () => {
             renderPopup()
 
-            const textareas = screen.getAllByRole("textbox")
-            textareas.forEach((ta) => expect(ta).toBeDisabled())
+            const textAreas = screen.getAllByRole("textbox")
+            textAreas.forEach((ta) => expect(ta).toBeDisabled())
         })
 
         it("does not call onClose when backdrop is clicked while isSaving is true", async () => {
