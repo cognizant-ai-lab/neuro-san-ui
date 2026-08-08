@@ -38,8 +38,17 @@ interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessages
 interface ChatHistoryStore {
     readonly history: Record<string, AgentChatHistory<BaseMessage[]>>
     resetHistory: (agentId: string) => void
+    /**
+     * Replaces the sly_data for an agent outright, so that keys the caller left out are removed. Used by the
+     * sly_data editor, where the user has to be able to delete keys. Contrast with `updateSlyData`, which merges.
+     */
+    setSlyData: (agentId: string, slyData: SlyData) => void
     updateChatContext: (agentId: string, chatContext: ChatContext) => void
     updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
+    /**
+     * Merges incoming sly_data into whatever the agent already has. Used for sly_data echoed by the server during
+     * streaming, where each message carries only the keys that changed.
+     */
     updateSlyData: (agentId: string, slyData: SlyData) => void
     /**
      * Copies the full history entry from `fromId` to `toId`. Used when a temporary network is replaced
@@ -128,6 +137,12 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                     const existing = state.history[agentId]
                     const mergedSlyData = {...existing?.slyData, ...slyData}
                     const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
+                    return {history: newHistory}
+                }),
+            setSlyData: (agentId: string, slyData: SlyData) =>
+                set((state) => {
+                    const existing = state.history[agentId]
+                    const newHistory = {...state.history, [agentId]: {...existing, slyData}}
                     return {history: newHistory}
                 }),
             resetHistory: (agentId: string) =>

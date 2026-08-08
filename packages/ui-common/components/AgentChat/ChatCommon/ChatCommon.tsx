@@ -21,6 +21,7 @@ import {AIMessage, HumanMessage} from "@langchain/core/messages"
 import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import ClearIcon from "@mui/icons-material/Clear"
 import CloseIcon from "@mui/icons-material/Close"
+import DataObjectIcon from "@mui/icons-material/DataObject"
 import TuneIcon from "@mui/icons-material/Tune"
 import Box from "@mui/material/Box"
 import Checkbox from "@mui/material/Checkbox"
@@ -51,12 +52,13 @@ import {
 import {v4 as uuid} from "uuid"
 
 import {ChatHistory, toTurns} from "./ChatHistory"
-import {MAX_TURNS} from "./Const"
+import {MAX_TURNS, SLY_DATA_LOGIN_KEY} from "./Const"
 import {ControlButtons} from "./ControlButtons"
 import {Conversation} from "./Conversation"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
 import {SampleQueries} from "./SampleQueries"
 import {SendButton} from "./SendButton"
+import {SlyDataDialog} from "./SlyDataDialog"
 import {Thinking} from "./Thinking"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
@@ -308,6 +310,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
     const [optionsMenuAnchorEl, setOptionsMenuAnchorEl] = useState<null | HTMLElement>(null)
     const [optionsMenuOpen, setOptionsMenuOpen] = useState<boolean | undefined>(false)
 
+    // Whether the sly_data editor is showing
+    const [slyDataDialogOpen, setSlyDataDialogOpen] = useState<boolean>(false)
+
     // Persistent agent chat history store, which is where we store both kinds of chat histories
     // (see store implementation for details)
     const storedChatHistory = useAgentChatHistoryStore((state) =>
@@ -558,7 +563,11 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                         // It's a Neuro-san agent.
 
                         // Some coded tools (data generator...) expect the username provided in slyData.
-                        const slyDataWithUsername = {...agentChatHistory?.slyData, ...extraSlyData, login: currentUser}
+                        const slyDataWithUsername = {
+                            ...agentChatHistory?.slyData,
+                            ...extraSlyData,
+                            [SLY_DATA_LOGIN_KEY]: currentUser,
+                        }
                         await sendChatQuery(
                             neuroSanURL,
                             controller?.current.signal,
@@ -967,6 +976,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setShouldWrapOutput((prev) => !prev)
     }
 
+    const handleShowSlyData = () => {
+        handleOptionsMenuClose()
+        setSlyDataDialogOpen(true)
+    }
+
+    /**
+     * The sly_data keys that this component merges in on every request, on top of whatever is in the store. The
+     * sly_data editor lists them so that the user isn't surprised by keys arriving at the server that they never
+     * typed -- and, for the API keys among them, so that we never have to display their values.
+     */
+    const getMergedSlyDataKeys = (): readonly string[] => [...Object.keys(extraSlyData ?? {}), SLY_DATA_LOGIN_KEY]
+
     const getOptionsMenu = () => (
         <Menu
             id={`${id}-options-menu`}
@@ -1005,6 +1026,18 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 </ListItemIcon>
                 <ListItemText primary="Wrap output" />
             </MenuItem>
+            {/* Legacy agents talk straight to an LLM and have no sly_data, so there is nothing to show for them */}
+            {!isLegacyAgentType(selectedNetwork) && (
+                <MenuItem
+                    id={`${id}-sly-data-menu-item`}
+                    onClick={handleShowSlyData}
+                >
+                    <ListItemIcon>
+                        <DataObjectIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="Sly data..." />
+                </MenuItem>
+            )}
         </Menu>
     )
 
@@ -1140,6 +1173,16 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     }}
                     okBtnLabel="Yes, clear chat"
                     title={`Clear all chat including history for ${networkDisplayName}?`}
+                />
+            ) : null}
+            {slyDataDialogOpen ? (
+                <SlyDataDialog
+                    extraSlyDataKeys={getMergedSlyDataKeys()}
+                    id={`${id}-sly-data-dialog`}
+                    isOpen={slyDataDialogOpen}
+                    networkDisplayName={networkDisplayName}
+                    networkId={selectedNetwork}
+                    onClose={() => setSlyDataDialogOpen(false)}
                 />
             ) : null}
             <Box
