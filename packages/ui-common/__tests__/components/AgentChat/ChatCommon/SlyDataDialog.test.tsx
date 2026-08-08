@@ -120,6 +120,9 @@ describe("SlyDataDialog", () => {
 
         expect(screen.getByRole("button", {name: "Save"})).toBeDisabled()
         expect(screen.getByRole("button", {name: "Export sly data"})).toBeDisabled()
+        // The parser's message is shown as the editor's helper text. Its exact wording is engine-dependent,
+        // but every variant mentions JSON.
+        expect(getEditor()).toHaveAccessibleDescription(/json/iu)
     })
 
     it("refuses to save a JSON array, since sly data has to be an object", async () => {
