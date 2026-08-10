@@ -283,6 +283,8 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                         >
                             <img
                                 alt={image.path}
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
                                 src={image.src}
                                 style={{
                                     height: IMAGE_PREVIEW_SIZE,
