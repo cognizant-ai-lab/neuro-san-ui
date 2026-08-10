@@ -21,6 +21,12 @@ limitations under the License.
  * but coded tools read from and write to it. It is "super loose": any JSON object the agent network cares to define.
  */
 
+/**
+ * A sly_data payload. Deliberately loose: the shape is defined by each agent network, so the UI can only assume
+ * "a JSON object".
+ */
+export type SlyData = Record<string, unknown>
+
 // How many levels deep to look for image values. Deep enough for realistic payloads, shallow enough that a
 // pathological structure can't lock up the browser.
 const MAX_IMAGE_SEARCH_DEPTH = 6
@@ -55,7 +61,7 @@ export interface SlyDataParseResult {
     readonly error?: string
 
     /** The parsed sly_data. Empty when `error` is set. */
-    readonly value: Record<string, unknown>
+    readonly value: SlyData
 }
 
 /**
@@ -63,7 +69,7 @@ export interface SlyDataParseResult {
  * @param data The sly_data to render. May be undefined, in which case an empty object is rendered.
  * @returns The sly_data as indented JSON text.
  */
-export const formatSlyData = (data?: Record<string, unknown>): string => JSON.stringify(data ?? {}, null, 2)
+export const formatSlyData = (data?: SlyData): string => JSON.stringify(data ?? {}, null, 2)
 
 /**
  * Parses sly_data text supplied by the user, rejecting anything that is not a JSON object.
@@ -95,7 +101,7 @@ export const parseSlyData = (text: string): SlyDataParseResult => {
         return {error: "Sly data must be a JSON object, not a primitive value.", value: {}}
     }
 
-    return {value: parsed as Record<string, unknown>}
+    return {value: parsed as SlyData}
 }
 
 /**
