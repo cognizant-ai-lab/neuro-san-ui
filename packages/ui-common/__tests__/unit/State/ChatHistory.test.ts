@@ -110,6 +110,15 @@ describe("ChatHistory", () => {
         expect(useAgentChatHistoryStore.getState().history["agent7"]?.slyData).toEqual({})
     })
 
+    it("should initialize defaults when setting sly_data on a fresh network", async () => {
+        useAgentChatHistoryStore.getState().setSlyData("agent10", {user: "bob"})
+
+        const entry = useAgentChatHistoryStore.getState().history["agent10"]
+        expect(entry?.chatHistory).toEqual([])
+        expect(entry?.chatContext).toBeNull()
+        expect(entry?.slyData).toEqual({user: "bob"})
+    })
+
     it("should leave other parts of the history alone when setting sly_data", async () => {
         useAgentChatHistoryStore.getState().updateChatHistory("agent8", TEST_MESSAGES)
         useAgentChatHistoryStore.getState().setSlyData("agent8", {user: "bob"})
