@@ -1595,6 +1595,36 @@ describe("ChatCommon", () => {
             expect(sendChatQuery).toHaveBeenCalledTimes(1)
         })
 
+        it("Should not persist echoed BYOK keys into the sly_data store", async () => {
+            act(() => {
+                useAgentChatHistoryStore.getState().resetHistory(TEST_AGENT_MATH_GUY)
+            })
+
+            renderChatCommonComponent()
+
+            const chunkWithSecret: ChatResponse = {
+                response: {
+                    type: ChatMessageType.AGENT_FRAMEWORK,
+                    text: "done",
+                    sly_data: {
+                        llm_config: {openai_api_key: "sk-should-never-persist"},
+                        running_cost: 3,
+                    },
+                },
+            }
+
+            mockSendChatQuery(({callback}) => {
+                callback(JSON.stringify(chunkWithSecret))
+            })
+
+            await sendQuery(TEST_AGENT_MATH_GUY, "query that echoes a secret")
+
+            await waitFor(() => {
+                const storedSlyData = useAgentChatHistoryStore.getState().history[TEST_AGENT_MATH_GUY]?.slyData
+                expect(storedSlyData).toEqual({running_cost: 3})
+            })
+        })
+
         const openSlyDataEditor = async () => {
             await user.click(screen.getByTestId("TuneIcon"))
             await user.click(screen.getByRole("menuitem", {name: "Sly data..."}))
@@ -1626,7 +1656,7 @@ describe("ChatCommon", () => {
                 "query after seeding sly_data",
                 TEST_AGENT_MATH_GUY,
                 expect.any(Function),
-                undefined, // no chat context yet: only sly_data has been stored for this network
+                null, // no chat context yet: setSlyData initializes a fresh entry with null context
                 {login: TEST_USER, seeded_by_user: "yes"},
                 TEST_USER,
                 StreamingUnit.Line
