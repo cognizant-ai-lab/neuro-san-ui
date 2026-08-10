@@ -20,11 +20,11 @@ import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
 import {Dispatch, FC, SetStateAction, useEffect, useRef, useState} from "react"
 
-import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
-import {ConfirmationModal} from "../../Common/ConfirmationModal"
-import {MUIDialog} from "../../Common/MUIDialog"
-import {NotificationType, sendNotification} from "../../Common/notification"
-import {AgentNetworkDefinitionEntry} from "../const"
+import {AgentNetworkDefinitionEntry} from "./const"
+import {useTempNetworksStore} from "../../state/TemporaryNetworks"
+import {ConfirmationModal} from "../Common/ConfirmationModal"
+import {MUIDialog} from "../Common/MUIDialog"
+import {NotificationType, sendNotification} from "../Common/notification"
 
 //#region: Types
 
@@ -153,6 +153,14 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
         }
     }
 
+    const onClose = () => {
+        // If a save is in-flight, abort it immediately so the stream doesn't hang.
+        saveAbortControllerRef.current?.abort()
+        saveAbortControllerRef.current = null
+        setIsPopupOpen(false)
+        setIsSavingAgent(false)
+    }
+
     const handleClose = () => {
         if (isSavingAgent) {
             return
@@ -165,12 +173,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
 
         setInstructionsText(initialInstructions)
         setDescriptionText(initialDescription)
-        // If a save is in-flight, abort it immediately so the stream doesn't hang.
-        saveAbortControllerRef.current?.abort()
-        saveAbortControllerRef.current = null
-
-        setIsPopupOpen(false)
-        setIsSavingAgent(false)
+        onClose()
     }
 
     const footer = (
@@ -224,7 +227,7 @@ export const AgentNodePopup: FC<AgentNodePopupProps> = ({
                 setDisplayConfirmationModal(false)
                 setInstructionsText(initialInstructions)
                 setDescriptionText(initialDescription)
-                handleClose()
+                onClose()
             }}
             handleOk={onSave}
             maskCloseable={false}

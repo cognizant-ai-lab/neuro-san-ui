@@ -69,7 +69,7 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
-import {AgentNodePopup} from "../Editor/AgentNodePopup"
+import {AgentNodePopup} from "../AgentNodePopup"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
@@ -398,7 +398,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         initialInstructions: string
         initialDescription: string
     } | null>(null)
-
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
     const [isEditingNetwork, setIsEditingNetwork] = useState<boolean>(false)
@@ -882,8 +881,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 <AgentNodePopup
                     agentId={selectedAgent.agentId}
                     agentName={selectedAgent.agentName}
-                    initialDescription={selectedAgent.initialDescription}
                     initialInstructions={selectedAgent.initialInstructions}
+                    initialDescription={selectedAgent.initialDescription}
+
                     isOpen={isPopupOpen}
                     networkId={networkId}
                     onSaveAgent={onSaveAgent}

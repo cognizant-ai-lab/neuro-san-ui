@@ -312,6 +312,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     const getBackdrop = () =>
         isDockStreaming && (
             <Backdrop
+                id="network-editor-dock-backdrop"
                 open={isDockStreaming}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >

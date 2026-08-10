@@ -108,7 +108,7 @@ export const makeTempNetwork = (
     networkId: string,
     agentNetworkDefinition?: AgentNetworkDefinitionEntry[],
     agentNetworkName?: string
-) => ({
+): TemporaryNetwork => ({
     reservation: {
         reservation_id: networkId,
         lifetime_in_seconds: 300,
