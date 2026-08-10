@@ -8,9 +8,7 @@ import {persist, PersistStorage, StorageValue} from "zustand/middleware"
 
 import {indexedDBStorage} from "./IndexedDBStorage"
 import {ChatContext} from "../generated/neuro-san/NeuroSanClient"
-
-// Define a type to represent sly_data, which is super loose and can be almost anything depending on the agent.
-type SlyData = Record<string, unknown>
+import {SlyData} from "../utils/SlyData"
 
 // Maximum number of messages to keep in the chat history for each agent. Once we reach this limit, we will start
 // dropping old messages.
@@ -141,7 +139,10 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                 }),
             setSlyData: (agentId: string, slyData: SlyData) =>
                 set((state) => {
-                    const existing = state.history[agentId]
+                    // The editor can save sly_data before any conversation exists, so initialize the rest of the
+                    // entry with the same defaults readers expect instead of leaving the fields undefined.
+                    const fallback: AgentChatHistory<BaseMessage[]> = {chatHistory: [], chatContext: null, slyData}
+                    const existing = state.history[agentId] ?? fallback
                     const newHistory = {...state.history, [agentId]: {...existing, slyData}}
                     return {history: newHistory}
                 }),
