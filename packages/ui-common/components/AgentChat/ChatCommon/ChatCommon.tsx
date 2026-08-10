@@ -451,9 +451,12 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 return
             }
 
-            // Shallow merge existing slyData with incoming chatMessage.sly_data
+            // Shallow merge existing slyData with incoming chatMessage.sly_data.
+            // Defense in depth: never let BYOK API keys enter the persistent store, even if a network echoes
+            // them back -- the store is displayed and exportable via the sly_data editor.
             if (chatMessage.sly_data) {
-                updateSlyData(selectedNetwork, chatMessage.sly_data)
+                const {llm_config: _, ...echoedSlyData} = chatMessage.sly_data
+                updateSlyData(selectedNetwork, echoedSlyData)
             }
 
             // It's a ChatMessage. Does it have chat context? Only AGENT_FRAMEWORK messages can have chat context.
