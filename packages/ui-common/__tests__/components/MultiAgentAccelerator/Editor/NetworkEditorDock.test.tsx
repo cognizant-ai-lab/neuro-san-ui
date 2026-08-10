@@ -480,6 +480,42 @@ describe("NetworkEditorDock", () => {
         })
     })
 
+    it("clears the confirm card if the request completes while it is open, so the next apply streams", async () => {
+        const release = mockInFlightDockApply()
+
+        renderNetworkEditorDock()
+
+        const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(instructionsField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        // Open the confirm card, then let the in-flight request complete without confirming.
+        await user.click(await screen.findByRole("button", {name: STOP_BUTTON}))
+        screen.getByText(ABORT_TITLE)
+
+        await act(async () => {
+            release()
+        })
+
+        // The completed apply must clear the stale confirm state.
+        await screen.findByText(APPLIED_BANNER)
+        expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
+
+        // A fresh apply should stream, not resurface the confirm card immediately.
+        const nextRelease = mockInFlightDockApply()
+        await user.click(instructionsField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        await screen.findByRole("button", {name: STOP_BUTTON})
+        expect(screen.queryByText(ABORT_TITLE)).not.toBeInTheDocument()
+
+        await act(async () => {
+            nextRelease()
+        })
+    })
+
     it("Stop & discard aborts the request, hides backdrop, shows a cancel banner, restores prompt", async () => {
         mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
             return new Promise<ChatResponse>((_resolve, reject) => {

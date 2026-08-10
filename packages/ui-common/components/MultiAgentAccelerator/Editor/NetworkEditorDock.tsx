@@ -81,11 +81,12 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 
     // Dock (edit-mode prompt bar) state
     const [dockPrompt, setDockPrompt] = useState<string>("")
-    const [isDockStreaming, setIsDockStreaming] = useState<boolean>(false)
-    const dockAbortControllerRef = useRef<AbortController | null>(null)
 
-    // Stop-confirm overlay state: null = not shown, "confirming" = abort dialog open.
-    const [stopState, setStopState] = useState<"confirming" | null>(null)
+    // "idle" = no apply in flight, "applying" = applying save, "confirmingStop" = abort confirmation dialog is open
+    const [state, setState] = useState<"idle" | "applying" | "confirmingStop">("idle")
+    const isPending = state !== "idle"
+
+    const dockAbortControllerRef = useRef<AbortController | null>(null)
 
     // Show a dock banner. Success/cancel banners auto-dismiss; error banners persist until dismissed.
     const showDockBanner = useCallback((bannerInfo: {severity: AlertColor; title: string; detail: string}) => {
@@ -97,11 +98,11 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     }, [])
 
     const handleStopClick = useCallback(() => {
-        setStopState("confirming")
+        setState("confirmingStop")
     }, [])
 
     const handleKeepApplying = useCallback(() => {
-        setStopState(null)
+        setState("applying")
     }, [])
 
     const handleDismissBanner = useCallback(() => {
@@ -112,7 +113,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     const handleStopAndDiscard = useCallback(() => {
         dockAbortControllerRef.current?.abort()
         dockAbortControllerRef.current = null
-        setStopState(null)
+        setState("idle")
         showDockBanner({
             severity: "info",
             title: "Applying cancelled.",
@@ -121,13 +122,13 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     }, [showDockBanner])
 
     const handleExitEditMode = useCallback(() => {
-        if (isDockStreaming) {
+        if (isPending) {
             dockAbortControllerRef.current?.abort()
             dockAbortControllerRef.current = null
-            setIsDockStreaming(false)
+            setState("idle")
         }
         setIsEditingNetwork(false)
-    }, [isDockStreaming, setIsEditingNetwork])
+    }, [isPending, setIsEditingNetwork])
 
     // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
     // node popup is open, so Escape closes the popup first rather than the whole edit mode.
@@ -249,7 +250,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             : undefined
         const currentDefinition = currentTempNetwork?.agentNetworkDefinition ?? []
 
-        setIsDockStreaming(true)
+        setState("applying")
         const controller = new AbortController()
         dockAbortControllerRef.current = controller
         let hasTimedOut = false
@@ -289,7 +290,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         } finally {
             clearTimeout(timeoutId)
             dockAbortControllerRef.current = null
-            setIsDockStreaming(false)
+            setState("idle")
         }
     }, [
         applyNetworkDesignerChanges,
@@ -310,13 +311,13 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     }, [])
 
     const getBackdrop = () =>
-        isDockStreaming && (
+        isPending && (
             <Backdrop
                 id="network-editor-dock-backdrop"
-                open={isDockStreaming}
+                open={isPending}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
-                {stopState === "confirming" ? (
+                {state === "confirmingStop" ? (
                     <Paper
                         elevation={6}
                         sx={{
@@ -519,13 +520,13 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                                 void handleDockApply()
                             }
                         }}
-                        disabled={isDockStreaming}
+                        disabled={isPending}
                         slotProps={{htmlInput: {style: {fontSize: "0.75rem"}}}}
                     />
                     <Button
                         variant="contained"
                         onClick={() => void handleDockApply()}
-                        disabled={isDockStreaming || !dockPrompt.trim()}
+                        disabled={isPending || !dockPrompt.trim()}
                         sx={{
                             fontSize: 16,
                             marginBottom: "1px",
@@ -536,7 +537,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                             whiteSpace: "nowrap",
                         }}
                         startIcon={
-                            isDockStreaming ? (
+                            isPending ? (
                                 <CircularProgress
                                     size={16}
                                     color="inherit"
@@ -544,7 +545,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                             ) : undefined
                         }
                     >
-                        {isDockStreaming ? "Applying..." : "Apply"}
+                        {isPending ? "Applying..." : "Apply"}
                     </Button>
                 </Box>
             </Box>
