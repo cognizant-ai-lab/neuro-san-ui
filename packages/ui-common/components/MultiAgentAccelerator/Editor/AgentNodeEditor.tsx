@@ -68,7 +68,7 @@ const AGENT_SAVE_TIMEOUT_MS = 60_000
  *
  * - Agent name is displayed read-only in the dialog header.
  * - Both instructions and description are editable.
- * - Saving is a no-op until the API endpoint is wired up; `onSave` receives the current values.
+ * - Saving updates the temporary definition and delegates persistence to `onSaveAgent`
  */
 export const AgentNodeEditor: FC<AgentNodeEditorProps> = ({
     agentId,

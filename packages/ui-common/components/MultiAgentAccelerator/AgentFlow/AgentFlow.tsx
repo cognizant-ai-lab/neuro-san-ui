@@ -85,6 +85,7 @@ export interface AgentFlowProps {
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
+    readonly isEditingNetwork?: boolean
     readonly isStreaming?: boolean
     readonly isTemporaryNetwork?: boolean
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
@@ -100,6 +101,7 @@ export interface AgentFlowProps {
      * Setter for changing the selected network.
      */
     readonly setSelectedNetwork?: (network: string | null) => void
+    readonly setIsEditingNetwork?: (value: boolean) => void
     readonly onSaveAgent?: (
         agentName: string,
         updated: AgentNetworkDefinitionEntry[],
@@ -149,6 +151,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
+    isEditingNetwork,
     isStreaming,
     isTemporaryNetwork,
     networkDisplayName,
@@ -156,6 +159,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     neuroSanURL,
     onSaveAgent,
     thoughtBubbleEdges,
+    setIsEditingNetwork,
     setSelectedNetwork,
     setThoughtBubbleEdges,
 }) => {
@@ -400,7 +404,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     } | null>(null)
     const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false)
 
-    const [isEditingNetwork, setIsEditingNetwork] = useState<boolean>(false)
     const openNodeEditor = useCallback(
         (node: RFNode<AgentNodeProps>) => {
             // Popup is only available for temporary networks.
@@ -869,7 +872,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 <NetworkEditorDock
                     currentUser={currentUser}
                     id={`${id}-network-editor-dock`}
-                    isActive={isEditingNetwork}
+                    isEditingNetwork={isEditingNetwork}
                     networkId={networkId}
                     neuroSanURL={neuroSanURL}
                     setIsEditingNetwork={setIsEditingNetwork}

@@ -47,7 +47,7 @@ export const BANNER_AUTO_DISMISS_MS = 5_000
 export type NetworkEditorDockProps = {
     readonly currentUser: string
     readonly id: string
-    readonly isActive: boolean
+    readonly isEditingNetwork: boolean
     readonly networkId: string
     readonly neuroSanURL: string
     readonly setIsEditingNetwork: (isEditing: boolean) => void
@@ -68,7 +68,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     neuroSanURL,
     currentUser,
     id,
-    isActive,
+    isEditingNetwork,
     networkId,
     setIsEditingNetwork,
     setSelectedNetwork,
@@ -130,16 +130,17 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         setIsEditingNetwork(false)
     }, [isPending, setIsEditingNetwork])
 
-    // Pressing Escape exits edit mode, mirroring the explicit exit button. Skip while the
-    // node popup is open, so Escape closes the popup first rather than the whole edit mode.
+    // Add an event listener to allow the user to exit edit mode using Escape
     useEffect(() => {
-        if (!isActive) return undefined
+        if (!isEditingNetwork) {
+            return undefined
+        }
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") handleExitEditMode()
         }
         document.addEventListener("keydown", handleEscape)
         return () => document.removeEventListener("keydown", handleEscape)
-    }, [handleExitEditMode, isActive])
+    }, [handleExitEditMode, isEditingNetwork])
 
     /**
      * Applies the networks returned by the designer: upserts them and triggers navigation if needed.
@@ -307,6 +308,8 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     useEffect(() => {
         return () => {
             clearTimeout(bannerTimeoutRef.current)
+            abortControllerRef.current?.abort()
+            abortControllerRef.current = null
         }
     }, [])
 
@@ -457,7 +460,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     )
 
     const getEditDock = () =>
-        isActive && (
+        isEditingNetwork && (
             <Box
                 sx={{
                     backdropFilter: "blur(8px)",

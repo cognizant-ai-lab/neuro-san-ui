@@ -255,67 +255,6 @@ describe("AgentFlow", () => {
             expect(screen.queryByText(networkName)).not.toBeInTheDocument()
         })
 
-        it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
-            const networkName = "Temp Net"
-            renderAgentFlowComponent({
-                networkDisplayName: networkName,
-                isTemporaryNetwork: true,
-                isAwaitingLlm: false,
-            })
-
-            await screen.findByText(networkName)
-
-            // Network editor should not currently be visible
-            await waitFor(() => {
-                expect(screen.queryByText("Network Editor")).not.toBeInTheDocument()
-            })
-
-            // Target the dock's Edit button by its visible text; node hover edit icons share the "Edit"
-            // accessible name (via aria-label) but render no text.
-            const editBtn = await screen.findByText("Edit")
-            await user.click(editBtn)
-
-            // Now network editor should be visible
-            await screen.findByText("Network Editor")
-        })
-
-        it("Should hide the Edit button for permanent networks", async () => {
-            const networkName = "Regular Net"
-            renderAgentFlowComponent({
-                networkDisplayName: networkName,
-                isTemporaryNetwork: false,
-            })
-            await screen.findByText(networkName)
-            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
-        })
-
-        it("Should not show the Edit button when already in edit mode", async () => {
-            const networkName = "Temp Net"
-            renderAgentFlowComponent({
-                networkDisplayName: networkName,
-                isTemporaryNetwork: true,
-            })
-            await screen.findByText(networkName)
-
-            // Click edit button to enter edit mode
-            const editBtn = await screen.findByText("Edit")
-            await user.click(editBtn)
-
-            // Now the edit button should not be present
-            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
-        })
-
-        it("Should not show the Edit button when awaiting LLM", async () => {
-            const networkName = "Temp Net"
-            renderAgentFlowComponent({
-                networkDisplayName: networkName,
-                isTemporaryNetwork: true,
-                isAwaitingLlm: true,
-            })
-            await screen.findByText(networkName)
-            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
-        })
-
         it("Should allow switching between heatmap and depth displays", async () => {
             const {container} = renderAgentFlowComponent()
 
@@ -1674,18 +1613,77 @@ describe("AgentFlow", () => {
     })
 
     describe("NetworkEditorDock", () => {
-        it("shows the topology editor dock when isEditMode and isTemporaryNetwork are true", async () => {
+        it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
+            const networkName = "Temp Net"
+            const setIsEditingNetwork = vi.fn()
             renderAgentFlowComponent({
+                networkDisplayName: networkName,
+                isTemporaryNetwork: true,
+                isAwaitingLlm: false,
+                setIsEditingNetwork,
+            })
+
+            await screen.findByText(networkName)
+
+            // Network editor should not currently be visible
+            await waitFor(() => {
+                expect(screen.queryByText("Network Editor")).not.toBeInTheDocument()
+            })
+
+            // Target the dock's Edit button by its visible text; node hover edit icons share the "Edit"
+            // accessible name (via aria-label) but render no text.
+            const editBtn = await screen.findByText("Edit")
+            await user.click(editBtn)
+
+            expect(setIsEditingNetwork).toHaveBeenCalledWith(true)
+        })
+
+        it("Should hide the Edit button for permanent networks", async () => {
+            const networkName = "Regular Net"
+            renderAgentFlowComponent({
+                networkDisplayName: networkName,
+                isTemporaryNetwork: false,
+            })
+            await screen.findByText(networkName)
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+        })
+
+        it("Should not show the Edit button when already in edit mode", async () => {
+            const networkName = "Temp Net"
+
+            renderAgentFlowComponent({
+                networkDisplayName: networkName,
+                isTemporaryNetwork: true,
+                isEditingNetwork: true,
+                setIsEditingNetwork: vi.fn(),
+            })
+
+            await screen.findByText(networkName)
+
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+        })
+
+        it("Should not show the Edit button when awaiting LLM", async () => {
+            const networkName = "Temp Net"
+            renderAgentFlowComponent({
+                networkDisplayName: networkName,
+                isTemporaryNetwork: true,
+                isAwaitingLlm: true,
+            })
+            await screen.findByText(networkName)
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
+        })
+
+        it("shows the network editor dock when isEditingNetwork and isTemporaryNetwork are true", () => {
+            renderAgentFlowComponent({
+                isEditingNetwork: true,
                 isTemporaryNetwork: true,
                 networkId: DOCK_NETWORK_ID,
                 networkDisplayName: DOCK_NETWORK_NAME,
             })
 
-            // Click the edit button to enter edit mode
-            const editBtn = await screen.findByText("Edit")
-            await user.click(editBtn)
-
             expect(screen.getByText(DOCK_HEADER)).toBeInTheDocument()
+            expect(screen.queryByText("Edit")).not.toBeInTheDocument()
         })
 
         it("does not show the dock when isEditMode is false", () => {

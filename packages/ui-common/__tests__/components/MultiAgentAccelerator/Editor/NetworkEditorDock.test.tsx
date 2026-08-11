@@ -128,7 +128,7 @@ describe("NetworkEditorDock", () => {
     const defaultProps: NetworkEditorDockProps = {
         currentUser: "test-user",
         id: "test-dock-id",
-        isActive: true,
+        isEditingNetwork: true,
         networkId: DOCK_NETWORK_ID,
         neuroSanURL: "http://localhost:8080",
         setIsEditingNetwork: vi.fn(),
@@ -148,7 +148,7 @@ describe("NetworkEditorDock", () => {
     })
 
     it("Hides the dock when not in edit mode", () => {
-        const {container} = renderNetworkEditorDock({isActive: false})
+        const {container} = renderNetworkEditorDock({isEditingNetwork: false})
 
         // Should render nothing, not even Backdrop
         expect(container).toBeEmptyDOMElement()
@@ -177,7 +177,7 @@ describe("NetworkEditorDock", () => {
 
     it("does not exit on Escape when not in edit mode", async () => {
         const setIsEditingNetwork = vi.fn()
-        renderNetworkEditorDock({isActive: false, setIsEditingNetwork})
+        renderNetworkEditorDock({isEditingNetwork: false, setIsEditingNetwork})
 
         await user.keyboard("{Escape}")
 
@@ -389,7 +389,7 @@ describe("NetworkEditorDock", () => {
     })
 
     it("does not show the applying overlay when the dock is idle", () => {
-        const {container} = renderNetworkEditorDock({isActive: false})
+        const {container} = renderNetworkEditorDock({isEditingNetwork: false})
 
         // Neither backdrop nor dock should be shown when inactive
         expect(container).toBeEmptyDOMElement()
