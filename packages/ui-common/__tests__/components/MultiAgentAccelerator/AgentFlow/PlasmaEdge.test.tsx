@@ -20,30 +20,53 @@ import {Position} from "@xyflow/react"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {PlasmaEdge, PlasmaEdgeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge"
 
+// Add shim for function not defined by JSDom
+declare global {
+    interface SVGElement {
+        getTotalLength: () => number
+        getPointAtLength: (distance: number) => {x: number; y: number}
+    }
+}
+
+Object.defineProperties(SVGElement.prototype, {
+    getTotalLength: {
+        configurable: true,
+        writable: true,
+        value: () => 100,
+    },
+    getPointAtLength: {
+        configurable: true,
+        writable: true,
+        value: (distance: number) => ({x: distance, y: distance}),
+    },
+})
+
 describe("PlasmaEdge", () => {
     withStrictMocks()
 
     const renderPlasmaEdge = (overrides: Partial<PlasmaEdgeProps> = {}) =>
         render(
-            <PlasmaEdge
-                id="test-edge"
-                source="test-source"
-                target="test-target"
-                sourceX={0}
-                sourceY={0}
-                targetX={200}
-                targetY={120}
-                sourcePosition={Position.Left}
-                targetPosition={Position.Right}
-                {...overrides}
-            />
+            <svg>
+                <PlasmaEdge
+                    id="test-edge"
+                    source="test-source"
+                    target="test-target"
+                    sourceX={0}
+                    sourceY={0}
+                    targetX={200}
+                    targetY={120}
+                    sourcePosition={Position.Left}
+                    targetPosition={Position.Right}
+                    {...overrides}
+                />
+            </svg>
         )
 
     it("renders and runs animation", () => {
         vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         // Mock getContext to provide minimal API used by the component
-        const fakeCtx: Partial<CanvasRenderingContext2D> = {
+        const fakeCtx = Object.assign(Object.create(null) as CanvasRenderingContext2D, {
             setTransform: vi.fn(),
             scale: vi.fn(),
             clearRect: vi.fn(),
@@ -52,7 +75,7 @@ describe("PlasmaEdge", () => {
             fill: vi.fn(),
             save: vi.fn(),
             restore: vi.fn(),
-        }
+        })
 
         const randomSpy = vi.spyOn(Math, "random")
         // Mock successive random values to cover each of the branches
@@ -61,67 +84,51 @@ describe("PlasmaEdge", () => {
             .mockReturnValueOnce(0.9) // first render: t = 0.9
             .mockReturnValueOnce(0.9) // first render: 0.9 < 0.1 => false, covers inner else
 
-        const origGetContext = HTMLCanvasElement.prototype.getContext
-        const origRAF = global.requestAnimationFrame
-        const origCAF = global.cancelAnimationFrame
-        const origGetTotalLength = (Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength
-        const origGetPointAtLength = (
-            Element.prototype as unknown as {getPointAtLength?: (length: number) => {x: number; y: number}}
-        ).getPointAtLength
+        const getContextSpy = vi.spyOn(HTMLCanvasElement.prototype, "getContext")
+        const requestAnimationFrameSpy = vi.spyOn(global, "requestAnimationFrame")
+        const cancelAnimationFrameSpy = vi.spyOn(global, "cancelAnimationFrame")
 
         let rafCallback: FrameRequestCallback | undefined
 
-        try {
-            HTMLCanvasElement.prototype.getContext = vi.fn(
-                () => fakeCtx as CanvasRenderingContext2D
-            ) as unknown as typeof HTMLCanvasElement.prototype.getContext
-            ;(Element.prototype as unknown as {getTotalLength?: () => number}).getTotalLength = vi.fn(() => 100)
-            ;(
-                Element.prototype as unknown as {getPointAtLength?: (length: number) => {x: number; y: number}}
-            ).getPointAtLength = vi.fn((length: number) => ({x: length, y: length}))
-
-            global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-                rafCallback = callback
-                return 1
-            })
-
-            global.cancelAnimationFrame = vi.fn()
-
-            // First render with default props
-            const view = renderPlasmaEdge()
-            expect(view.container.querySelector("canvas")).not.toBeNull()
-            view.unmount()
-
-            // Now render with specific props to test animation
-            const {unmount, container} = renderPlasmaEdge({
-                maxParticles: 1,
-                particlesPerFrame: 1,
-            })
-
-            expect(container.querySelector("canvas")).not.toBeNull()
-            expect(container.querySelector("path")).not.toBeNull()
-            expect(global.requestAnimationFrame).toHaveBeenCalled()
-
-            act(() => {
-                rafCallback?.(0)
-                rafCallback?.(16)
-            })
-
-            expect(fakeCtx.clearRect).toHaveBeenCalled()
-            expect(fakeCtx.arc).toHaveBeenCalled()
-
-            unmount()
-            expect(global.cancelAnimationFrame).toHaveBeenCalled()
-        } finally {
-            HTMLCanvasElement.prototype.getContext = origGetContext
-            global.requestAnimationFrame = origRAF
-            global.cancelAnimationFrame = origCAF
-            const elementPrototype = Element.prototype as unknown as {
-                getTotalLength?: () => number
-                getPointAtLength?: (length: number) => {x: number; y: number}
+        getContextSpy.mockImplementation((contextId) => {
+            if (contextId === "2d") {
+                return fakeCtx
             }
-            elementPrototype.getTotalLength = origGetTotalLength
-            elementPrototype.getPointAtLength = origGetPointAtLength
-        }
+
+            return null
+        })
+
+        requestAnimationFrameSpy.mockImplementation((callback: FrameRequestCallback) => {
+            rafCallback = callback
+            return 1
+        })
+
+        cancelAnimationFrameSpy.mockImplementation(vi.fn())
+
+        // First render with default props
+        const view = renderPlasmaEdge()
+        expect(view.container.querySelector("canvas")).not.toBeNull()
+        view.unmount()
+
+        // Now render with specific props to test animation
+        const {unmount, container} = renderPlasmaEdge({
+            maxParticles: 1,
+            particlesPerFrame: 1,
+        })
+
+        expect(container.querySelector("canvas")).not.toBeNull()
+        expect(container.querySelector("path")).not.toBeNull()
+        expect(requestAnimationFrameSpy).toHaveBeenCalled()
+
+        act(() => {
+            rafCallback?.(0)
+            rafCallback?.(16)
+        })
+
+        expect(fakeCtx.clearRect).toHaveBeenCalled()
+        expect(fakeCtx.arc).toHaveBeenCalled()
+
+        unmount()
+        expect(cancelAnimationFrameSpy).toHaveBeenCalled()
     })
 })
