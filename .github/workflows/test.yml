@@ -45,8 +45,6 @@ on:
 env:
     # AWS info needed to push the image to ECR
     AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-    # Node.js major version (e.g. 26) used for both setup-node and Docker base image names
-    NODEJS_VERSION: ${{ vars.NODEJS_VERSION }}
 
 permissions:
     contents: read
@@ -63,11 +61,10 @@ jobs:
                   ref: ${{ inputs.revision || github.ref }}
 
             - name: Setup Node.js environment
-              # build-common 1.0.8
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@30321843331e00848309b34e08b839e1f6490ba2
+              id: setup-node
+              # build-common 1.0.9
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@b14b3de23cb9aca02b2165e57542335e0c8f5304
               with:
-                  # Must be a major version (e.g. 26) because it is also used in Docker base image names.
-                  node-version: ${{ vars.NODEJS_VERSION }}
                   clean-install: "true"
 
             - name: Install prerequisites for code generation
@@ -119,7 +116,7 @@ jobs:
               if: success() || failure()
               run: |
                   docker --version
-                  docker build --quiet --check --build-arg NODEJS_VERSION=$NODEJS_VERSION --file apps/main/Dockerfile .
+                  docker build --quiet --check --build-arg NODEJS_VERSION=${{ steps.setup-node.outputs.nodejs-major-version }} --file apps/main/Dockerfile .
 
             - name: Run TypeScript compilation
               id: tsc
