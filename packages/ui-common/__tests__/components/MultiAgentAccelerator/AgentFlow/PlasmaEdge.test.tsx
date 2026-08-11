@@ -39,8 +39,8 @@ describe("PlasmaEdge", () => {
             />
         )
 
-    it("renders and runs animation with mocked canvas context, SVG methods, and RAF", () => {
-        const errSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+    it("renders and runs animation", () => {
+        vi.spyOn(console, "error").mockImplementation(vi.fn())
 
         // Mock getContext to provide minimal API used by the component
         const fakeCtx: Partial<CanvasRenderingContext2D> = {
@@ -53,6 +53,13 @@ describe("PlasmaEdge", () => {
             save: vi.fn(),
             restore: vi.fn(),
         }
+
+        const randomSpy = vi.spyOn(Math, "random")
+        // Mock successive random values to cover each of the branches
+        randomSpy
+            .mockReturnValue(0) // default: create particles deterministically
+            .mockReturnValueOnce(0.9) // first render: t = 0.9
+            .mockReturnValueOnce(0.9) // first render: 0.9 < 0.1 => false, covers inner else
 
         const origGetContext = HTMLCanvasElement.prototype.getContext
         const origRAF = global.requestAnimationFrame
@@ -115,7 +122,6 @@ describe("PlasmaEdge", () => {
             }
             elementPrototype.getTotalLength = origGetTotalLength
             elementPrototype.getPointAtLength = origGetPointAtLength
-            errSpy.mockRestore()
         }
     })
 })

@@ -3,7 +3,7 @@ import {defineConfig} from "vitest/config"
 export default defineConfig({
     test: {
         coverage: {
-            enabled: false,
+            enabled: true,
             exclude: [
                 "**/.next/**",
                 "**/__tests__/**",
@@ -20,7 +20,7 @@ export default defineConfig({
             // For now use instanbul provider as we're merging with jest results.
             // Once we are fully migrated to vitest, consider switching to v8.
             provider: "istanbul",
-            reporter: ["text-summary"],
+            reporter: ["lcov"],
             thresholds: {
                 statements: -74,
                 branches: -125,
