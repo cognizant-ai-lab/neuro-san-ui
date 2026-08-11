@@ -32,13 +32,13 @@ import {
 } from "../TemporaryNetworks"
 
 //#region Constants
-const DOCK_PROMPT_PLACEHOLDER = "Describe a change to the network"
-const DOCK_STREAM_TIMEOUT_MS = 120_000
+const PROMPT_PLACEHOLDER = "Describe a change to the network"
+const STREAM_TIMEOUT_MS = 120_000
 
 // How long the dock's status banner stays visible before auto-dismissing. Error banners persist until dismissed.
 // Exported for tests.
 
-export const DOCK_BANNER_AUTO_DISMISS_MS = 5_000
+export const BANNER_AUTO_DISMISS_MS = 5_000
 
 //#endregion Constants
 
@@ -76,7 +76,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 }) => {
     const theme = useTheme()
     // Inline status banner shown above the dock header after an "apply" succeeds, is canceled, or fails.
-    const [dockBanner, setDockBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
+    const [banner, setBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Dock (edit-mode prompt bar) state
@@ -86,14 +86,14 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     const [state, setState] = useState<"idle" | "applying" | "confirmingStop">("idle")
     const isPending = state !== "idle"
 
-    const dockAbortControllerRef = useRef<AbortController | null>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     // Show a dock banner. Success/cancel banners auto-dismiss; error banners persist until dismissed.
-    const showDockBanner = useCallback((bannerInfo: {severity: AlertColor; title: string; detail: string}) => {
+    const showBanner = useCallback((bannerInfo: {severity: AlertColor; title: string; detail: string}) => {
         clearTimeout(bannerTimeoutRef.current)
-        setDockBanner(bannerInfo)
+        setBanner(bannerInfo)
         if (bannerInfo.severity !== "error") {
-            bannerTimeoutRef.current = setTimeout(() => setDockBanner(null), DOCK_BANNER_AUTO_DISMISS_MS)
+            bannerTimeoutRef.current = setTimeout(() => setBanner(null), BANNER_AUTO_DISMISS_MS)
         }
     }, [])
 
@@ -107,24 +107,24 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 
     const handleDismissBanner = useCallback(() => {
         clearTimeout(bannerTimeoutRef.current)
-        setDockBanner(null)
+        setBanner(null)
     }, [])
 
     const handleStopAndDiscard = useCallback(() => {
-        dockAbortControllerRef.current?.abort()
-        dockAbortControllerRef.current = null
+        abortControllerRef.current?.abort()
+        abortControllerRef.current = null
         setState("idle")
-        showDockBanner({
+        showBanner({
             severity: "info",
             title: "Applying cancelled.",
             detail: "Nothing was changed. Your prompt is restored below.",
         })
-    }, [showDockBanner])
+    }, [showBanner])
 
     const handleExitEditMode = useCallback(() => {
         if (isPending) {
-            dockAbortControllerRef.current?.abort()
-            dockAbortControllerRef.current = null
+            abortControllerRef.current?.abort()
+            abortControllerRef.current = null
             setState("idle")
         }
         setIsEditingNetwork(false)
@@ -148,7 +148,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     const saveUpdates = useCallback(
         (newNetworksFromSave: TemporaryNetwork[], currentAgentNetworkName: string | undefined): boolean => {
             if (newNetworksFromSave.length === 0) {
-                showDockBanner({
+                showBanner({
                     severity: "error",
                     title: "Failed to apply network change.",
                     detail: "The network designer did not return a reservation. Please try again.",
@@ -170,14 +170,14 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             }
 
             // Reservations came back, but none matched the current network — surface this in the dock banner.
-            showDockBanner({
+            showBanner({
                 severity: "error",
                 title: "Failed to apply network change.",
                 detail: "A reservation was returned but did not match the current network. Please try again.",
             })
             return false
         },
-        [networkId, setSelectedNetwork, showDockBanner]
+        [networkId, setSelectedNetwork, showBanner]
     )
 
     /**
@@ -239,7 +239,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         [currentUser, neuroSanURL]
     )
 
-    const handleDockApply = useCallback(async () => {
+    const handleApply = useCallback(async () => {
         const readyToApplyEdit = Boolean(dockPrompt.trim() && neuroSanURL && currentUser)
         if (!readyToApplyEdit) {
             return
@@ -252,12 +252,12 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 
         setState("applying")
         const controller = new AbortController()
-        dockAbortControllerRef.current = controller
+        abortControllerRef.current = controller
         let hasTimedOut = false
         const timeoutId = setTimeout(() => {
             hasTimedOut = true
             controller.abort()
-        }, DOCK_STREAM_TIMEOUT_MS)
+        }, STREAM_TIMEOUT_MS)
         try {
             const newNetworks = await applyNetworkDesignerChanges(
                 controller.signal,
@@ -268,7 +268,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             const appliedSuccess = saveUpdates(newNetworks, currentTempNetwork?.agentNetworkName)
             if (appliedSuccess) {
                 setDockPrompt("")
-                showDockBanner({
+                showBanner({
                     severity: "success",
                     title: "Changes applied.",
                     detail: "Your network has been updated.",
@@ -278,18 +278,18 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             const isAbort = e instanceof DOMException && e.name === "AbortError"
             if (isAbort) {
                 if (hasTimedOut) {
-                    showDockBanner({
+                    showBanner({
                         severity: "error",
                         title: "Failed to apply network change.",
                         detail: "The request timed out. Please try again.",
                     })
                 }
             } else {
-                showDockBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
+                showBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
             }
         } finally {
             clearTimeout(timeoutId)
-            dockAbortControllerRef.current = null
+            abortControllerRef.current = null
             setState("idle")
         }
     }, [
@@ -299,7 +299,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         networkId,
         neuroSanURL,
         saveUpdates,
-        showDockBanner,
+        showBanner,
         tempNetworks,
     ])
 
@@ -421,12 +421,12 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             </Backdrop>
         )
 
-    const getDockBanner = () => (
+    const getBanner = () => (
         <MUIAlert
             closeable
             id={id}
             onClose={handleDismissBanner}
-            severity={dockBanner.severity}
+            severity={banner.severity}
             sx={{
                 borderRadius: 0,
                 // Override MUIAlert's default 1rem bottom margin so the banner sits flush
@@ -450,8 +450,8 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 variant="caption"
                 component="span"
             >
-                <strong>{dockBanner.title}</strong>
-                {` ${dockBanner.detail}`}
+                <strong>{banner.title}</strong>
+                {` ${banner.detail}`}
             </Typography>
         </MUIAlert>
     )
@@ -469,7 +469,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 }}
             >
                 {/* Status banner: shown after an "apply" succeeds, is canceled, or fails */}
-                {dockBanner && getDockBanner()}
+                {banner && getBanner()}
                 {/* Dock header */}
                 <Box
                     sx={{
@@ -509,7 +509,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                     <TextField
                         autoFocus
                         fullWidth
-                        placeholder={DOCK_PROMPT_PLACEHOLDER}
+                        placeholder={PROMPT_PLACEHOLDER}
                         variant="outlined"
                         size="small"
                         value={dockPrompt}
@@ -517,7 +517,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault()
-                                void handleDockApply()
+                                void handleApply()
                             }
                         }}
                         disabled={isPending}
@@ -525,7 +525,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                     />
                     <Button
                         variant="contained"
-                        onClick={() => void handleDockApply()}
+                        onClick={() => void handleApply()}
                         disabled={isPending || !dockPrompt.trim()}
                         sx={{
                             fontSize: 16,

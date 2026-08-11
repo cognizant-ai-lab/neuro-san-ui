@@ -20,15 +20,15 @@ import CircularProgress from "@mui/material/CircularProgress"
 import TextField from "@mui/material/TextField"
 import {Dispatch, FC, SetStateAction, useEffect, useRef, useState} from "react"
 
-import {AgentNetworkDefinitionEntry} from "./const"
-import {useTempNetworksStore} from "../../state/TemporaryNetworks"
-import {ConfirmationModal} from "../Common/ConfirmationModal"
-import {MUIDialog} from "../Common/MUIDialog"
-import {NotificationType, sendNotification} from "../Common/notification"
+import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {ConfirmationModal} from "../../Common/ConfirmationModal"
+import {MUIDialog} from "../../Common/MUIDialog"
+import {NotificationType, sendNotification} from "../../Common/notification"
+import {AgentNetworkDefinitionEntry} from "../const"
 
 //#region: Types
 
-export interface AgentNodePopupProps {
+export interface AgentNodeEditorProps {
     readonly agentId: string
 
     /** The agent's display name — shown read-only in the dialog header area. */
@@ -70,7 +70,7 @@ const AGENT_SAVE_TIMEOUT_MS = 60_000
  * - Both instructions and description are editable.
  * - Saving is a no-op until the API endpoint is wired up; `onSave` receives the current values.
  */
-export const AgentNodePopup: FC<AgentNodePopupProps> = ({
+export const AgentNodeEditor: FC<AgentNodeEditorProps> = ({
     agentId,
     agentName,
     initialDescription = "",

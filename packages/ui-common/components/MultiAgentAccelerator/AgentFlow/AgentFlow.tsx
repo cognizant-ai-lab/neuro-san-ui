@@ -69,7 +69,7 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
-import {AgentNodePopup} from "../AgentNodePopup"
+import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
@@ -878,7 +878,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 />
             )}
             {selectedAgent && !isAwaitingLlm && (
-                <AgentNodePopup
+                <AgentNodeEditor
                     agentId={selectedAgent.agentId}
                     agentName={selectedAgent.agentName}
                     initialInstructions={selectedAgent.initialInstructions}

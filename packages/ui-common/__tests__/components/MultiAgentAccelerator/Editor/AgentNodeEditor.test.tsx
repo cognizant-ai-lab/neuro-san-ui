@@ -17,10 +17,13 @@ limitations under the License.
 import {act, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
-import {makeTempNetwork} from "../../../../../__tests__/common/NetworksListMock"
-import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {AgentNodePopup, AgentNodePopupProps} from "../../../components/MultiAgentAccelerator/AgentNodePopup"
-import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
+import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {
+    AgentNodeEditor,
+    AgentNodeEditorProps,
+} from "../../../../components/MultiAgentAccelerator/Editor/AgentNodeEditor"
+import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
@@ -29,36 +32,36 @@ const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
 // getByRole's `name` string option matches them exactly — no regex needed.
 const APPLYING_CHANGES_BUTTON = "Applying changes..."
 const CANCEL_BUTTON = "Cancel"
-// MUIDialog's dismiss icon uses aria-label="close" (lowercase).
+// MUIDialog's "dismiss" icon uses aria-label="close" (lowercase).
 const CLOSE_BUTTON = "close"
 const DESCRIPTION_FIELD = "Description"
 const DISCARD_CHANGES_BUTTON = "Discard changes"
 const INSTRUCTIONS_FIELD = "Instructions"
-// Instructions field placeholder — used to detect the field is absent when the dialog is closed.
+// "Instructions" field placeholder — used to detect the field is absent when the dialog is closed.
 const INSTRUCTIONS_PLACEHOLDER = "Enter instructions for this agent…"
 const SAVE_BUTTON = "Save"
 const NETWORK_ID = "TEST_NETWORK_ID"
 const NETWORK_NAME = "Test network name"
 const AGENT_ID = "TEST_AGENT_ID"
 
-const renderPopup = (overrides: Partial<AgentNodePopupProps> = {}) => {
-    const props: AgentNodePopupProps = {
+const renderPopup = (overrides: Partial<AgentNodeEditorProps> = {}) => {
+    const props: AgentNodeEditorProps = {
         agentId: AGENT_ID,
         agentName: AGENT_NAME,
         initialInstructions: INITIAL_INSTRUCTIONS,
         isOpen: true,
         networkId: NETWORK_ID,
-        onSaveAgent: vi.fn<AgentNodePopupProps["onSaveAgent"]>().mockResolvedValue(undefined),
+        onSaveAgent: vi.fn<AgentNodeEditorProps["onSaveAgent"]>().mockResolvedValue(undefined),
         setIsPopupOpen: vi.fn(),
         ...overrides,
     }
 
-    render(<AgentNodePopup {...props} />)
+    render(<AgentNodeEditor {...props} />)
 
     return props
 }
 
-describe("AgentNodePopup", () => {
+describe("AgentNodeEditor", () => {
     withStrictMocks()
 
     let user: UserEvent
@@ -181,7 +184,7 @@ describe("AgentNodePopup", () => {
 
     it("resets instructions to initialInstructions when dialog is reopened", async () => {
         const {rerender} = render(
-            <AgentNodePopup
+            <AgentNodeEditor
                 agentName={AGENT_NAME}
                 isOpen={true}
                 agentId="TEST_AGENT_ID"
@@ -203,7 +206,7 @@ describe("AgentNodePopup", () => {
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             rerender(
-                <AgentNodePopup
+                <AgentNodeEditor
                     agentName={AGENT_NAME}
                     isOpen={false}
                     onSaveAgent={vi.fn()}
@@ -217,7 +220,7 @@ describe("AgentNodePopup", () => {
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             rerender(
-                <AgentNodePopup
+                <AgentNodeEditor
                     agentName={AGENT_NAME}
                     isOpen={true}
                     onSaveAgent={vi.fn()}
@@ -239,7 +242,7 @@ describe("AgentNodePopup", () => {
         // resetting instructionsText back to initialInstructions during the MUI exit animation — causing a
         // visible flash of the original value before the dialog fully closed.
         const {rerender} = render(
-            <AgentNodePopup
+            <AgentNodeEditor
                 agentName={AGENT_NAME}
                 isOpen={true}
                 onSaveAgent={vi.fn()}
@@ -260,7 +263,7 @@ describe("AgentNodePopup", () => {
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             rerender(
-                <AgentNodePopup
+                <AgentNodeEditor
                     agentName={AGENT_NAME}
                     isOpen={false}
                     onSaveAgent={vi.fn()}
@@ -283,7 +286,7 @@ describe("AgentNodePopup", () => {
         // When the parent loads the real instructions asynchronously and passes new initialInstructions
         // while the dialog is already open, the field should update to reflect it.
         const {rerender} = render(
-            <AgentNodePopup
+            <AgentNodeEditor
                 agentName={AGENT_NAME}
                 isOpen={true}
                 agentId="TEST_AGENT_ID"
@@ -301,7 +304,7 @@ describe("AgentNodePopup", () => {
         // eslint-disable-next-line testing-library/no-unnecessary-act
         await act(async () => {
             rerender(
-                <AgentNodePopup
+                <AgentNodeEditor
                     agentName={AGENT_NAME}
                     isOpen={true}
                     agentId="TEST_AGENT_ID"
@@ -360,7 +363,7 @@ describe("AgentNodePopup", () => {
         let resolveSave: (() => void) | undefined
 
         const renderSavingPopup = () => {
-            const onSaveAgent = vi.fn<AgentNodePopupProps["onSaveAgent"]>(
+            const onSaveAgent = vi.fn<AgentNodeEditorProps["onSaveAgent"]>(
                 () =>
                     new Promise<void>((resolve) => {
                         resolveSave = resolve

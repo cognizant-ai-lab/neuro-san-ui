@@ -5,7 +5,7 @@ import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMo
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
-    DOCK_BANNER_AUTO_DISMISS_MS,
+    BANNER_AUTO_DISMISS_MS,
     NetworkEditorDock,
     NetworkEditorDockProps,
 } from "../../../../components/MultiAgentAccelerator/Editor/NetworkEditorDock"
@@ -331,7 +331,7 @@ describe("NetworkEditorDock", () => {
 
         // ...and, unlike success/cancel banners, it does not auto-dismiss
         act(() => {
-            vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+            vi.advanceTimersByTime(BANNER_AUTO_DISMISS_MS + 100)
         })
         expect(screen.getByText(FAILED_BANNER)).toBeInTheDocument()
     })
@@ -584,7 +584,7 @@ describe("NetworkEditorDock", () => {
 
         // Once the auto-dismiss timer fires, the banner disappears
         act(() => {
-            vi.advanceTimersByTime(DOCK_BANNER_AUTO_DISMISS_MS + 100)
+            vi.advanceTimersByTime(BANNER_AUTO_DISMISS_MS + 100)
         })
 
         await waitFor(() => {
