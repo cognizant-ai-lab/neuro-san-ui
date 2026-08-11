@@ -47,6 +47,23 @@ const mockSendChatQuery = vi.mocked(sendChatQuery)
 
 //#endregion Mocks
 
+const makeChunk = (reservationId: string, expiry: number) =>
+    JSON.stringify({
+        response: {
+            type: ChatMessageType.AGENT_FRAMEWORK,
+            sly_data: {
+                agent_reservations: [
+                    {
+                        reservation_id: reservationId,
+                        lifetime_in_seconds: 300,
+                        expiration_time_in_seconds: expiry,
+                    },
+                ],
+                agent_network_name: DOCK_NETWORK_NAME,
+            },
+        } satisfies ChatMessage,
+    })
+
 describe("NetworkEditorDock", () => {
     withStrictMocks()
 
@@ -137,7 +154,7 @@ describe("NetworkEditorDock", () => {
         expect(container).toBeEmptyDOMElement()
     })
 
-    it("calls setIsEditingNetwork when the close button is clicked", async () => {
+    it("exits edit mode when the close button is clicked", async () => {
         const setIsEditingNetwork = vi.fn()
         renderNetworkEditorDock({setIsEditingNetwork})
 
@@ -341,23 +358,6 @@ describe("NetworkEditorDock", () => {
         const HIGH_EXPIRY = Date.now() / 1000 + 86400
         const FIRST_RES = "res-low"
         const SECOND_RES = "res-high"
-
-        const makeChunk = (reservationId: string, expiry: number) =>
-            JSON.stringify({
-                response: {
-                    type: ChatMessageType.AGENT_FRAMEWORK,
-                    sly_data: {
-                        agent_reservations: [
-                            {
-                                reservation_id: reservationId,
-                                lifetime_in_seconds: 300,
-                                expiration_time_in_seconds: expiry,
-                            },
-                        ],
-                        agent_network_name: DOCK_NETWORK_NAME,
-                    },
-                } satisfies ChatMessage,
-            })
 
         mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
             // Send low-expiry first, then high-expiry (high should win)
@@ -618,5 +618,51 @@ describe("NetworkEditorDock", () => {
 
         // The saving backdrop goes away when inactive
         expect(screen.queryByText(/applying changes to network/iu)).not.toBeInTheDocument()
+    })
+
+    it("Handles an invalid chunk correctly", async () => {
+        mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+            chunkCallback("not a chat message")
+            return {} satisfies ChatResponse
+        })
+
+        renderNetworkEditorDock()
+
+        const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(promptField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        // Should cause an alert to be displayed
+        expect(await screen.findByRole("alert")).toHaveTextContent(/Failed to apply network change/u)
+    })
+
+    it("Handles a chat message without reservations gracefully", async () => {
+        mockSendChatQuery.mockImplementation(async (_url, _signal, _query, _agent, chunkCallback) => {
+            chunkCallback(
+                JSON.stringify({
+                    response: {
+                        type: ChatMessageType.AGENT_FRAMEWORK,
+                        sly_data: {
+                            agent_reservations: [
+                                // No reservations in this chunk
+                            ],
+                            agent_network_name: DOCK_NETWORK_NAME,
+                        },
+                    } satisfies ChatMessage,
+                })
+            )
+            return {} satisfies ChatResponse
+        })
+
+        renderNetworkEditorDock()
+
+        const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(promptField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        // Should cause an alert to be displayed
+        expect(await screen.findByRole("alert")).toHaveTextContent(/Failed to apply network change/u)
     })
 })

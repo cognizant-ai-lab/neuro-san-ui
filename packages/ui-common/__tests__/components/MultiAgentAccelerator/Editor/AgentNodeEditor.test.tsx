@@ -468,5 +468,21 @@ describe("AgentNodeEditor", () => {
 
             expect(setIsPopupOpen).toHaveBeenCalledExactlyOnceWith(false)
         })
+
+        it("handles missing networkID", async () => {
+            const initialNetwork = makeTempNetwork(NETWORK_ID, [{origin: AGENT_ID, tools: []}], NETWORK_NAME)
+            useTempNetworksStore.getState().setTempNetworks([initialNetwork])
+
+            const {onSaveAgent, setIsPopupOpen} = renderPopup({networkId: undefined})
+
+            await initiateSave()
+
+            await waitFor(() => {
+                expect(onSaveAgent).toHaveBeenCalledExactlyOnceWith(AGENT_NAME, [], undefined, expect.any(AbortSignal))
+            })
+
+            expect(useTempNetworksStore.getState().tempNetworks).toStrictEqual([initialNetwork])
+            expect(setIsPopupOpen).toHaveBeenCalledExactlyOnceWith(false)
+        })
     })
 })
