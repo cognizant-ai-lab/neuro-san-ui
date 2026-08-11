@@ -104,7 +104,7 @@ describe("AgentNodeEditor", () => {
         expect(instructionsField).toHaveValue("New instructions")
     })
 
-    it("handles Save being clicked correctly", async () => {
+    it("handles Save correctly", async () => {
         const network = makeTempNetwork(NETWORK_ID, [{origin: AGENT_ID, tools: []}], NETWORK_NAME)
         useTempNetworksStore.getState().setTempNetworks([network])
 

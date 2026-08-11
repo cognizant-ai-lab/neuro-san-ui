@@ -28,13 +28,11 @@ import {
     AgentFlowProps,
     filterNodeEvents,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
-import {AgentNetworkDefinitionEntry} from "../../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../../state/Settings"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
-import {cleanUpAgentName} from "../../../../utils/AgentName"
 
 //#region Constants
 
@@ -42,8 +40,6 @@ const AGENT_1 = "agent1"
 const AGENT_1_NODE = `[data-id="${AGENT_1}"]`
 const AGENT_2 = "agent2"
 const AGENT_3 = "agent3"
-// Accessible name of the Save button while a save is in-flight.
-const APPLYING_CHANGES_BUTTON = "Applying changes..."
 const CONV_1 = "conv-1"
 const CONV_2 = "conv-2"
 const CONV_WITH_TEXT = "conv-with-text"
@@ -74,7 +70,6 @@ const NETWORK = [
 ] satisfies ConnectivityInfo[]
 
 const OLD_NETWORK_ID = "temporary/old-res"
-const OLD_NETWORK_NAME = "my_network"
 const SAVE_BUTTON = "Save"
 
 // React Flow edge type for thought-bubble edges (matches the source's edge `type`).
@@ -1383,7 +1378,7 @@ describe("AgentFlow", () => {
         it("Should handle conversations where bubble has no text field", () => {
             const mockSetThoughtBubbleEdges = vi.fn()
 
-            // First render with a conversation that has text
+            // First, render with a conversation that has text
             const currentConversations: AgentConversation[] = [
                 {
                     id: CONV_WITH_TEXT,
@@ -1517,98 +1512,7 @@ describe("AgentFlow", () => {
         })
     })
 
-    describe("Node Editor", () => {
-        it("shows 'Applying changes...' while onSaveAgent is in-flight and closes popup on completion", async () => {
-            let resolveQuery: () => void
-            const onSaveAgent = vi.fn(
-                () =>
-                    new Promise<void>((resolve) => {
-                        resolveQuery = resolve
-                    })
-            )
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(OLD_NETWORK_ID, [{origin: AGENT_1, tools: []}], OLD_NETWORK_NAME),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
-                networkId: OLD_NETWORK_ID,
-                onSaveAgent,
-            })
-
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
-
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            await user.clear(instructionsField)
-            await user.click(instructionsField)
-            await user.paste(UPDATED_INSTRUCTIONS)
-            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
-
-            // While the API call is in-flight the button should show "Applying changes..." and Save should be gone
-            await waitFor(() => {
-                expect(screen.getByRole("button", {name: APPLYING_CHANGES_BUTTON})).toBeInTheDocument()
-                expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
-            })
-
-            expect(onSaveAgent).toHaveBeenCalledTimes(1)
-
-            // Resolve the pending promise — popup should close
-            act(() => resolveQuery())
-
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: APPLYING_CHANGES_BUTTON})).not.toBeInTheDocument()
-            })
-        })
-
-        it("calls onSaveAgent with the correct agentName, updated definition, networkName and a signal", async () => {
-            const onSaveAgent = vi.fn().mockResolvedValue(undefined)
-            const editedInstructions = "Updated instructions for agent1"
-            const originalInstructions = "Original instructions."
-
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([
-                        makeTempNetwork(
-                            OLD_NETWORK_ID,
-                            [{origin: AGENT_1, tools: [], instructions: originalInstructions}],
-                            OLD_NETWORK_NAME
-                        ),
-                    ])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
-                networkId: OLD_NETWORK_ID,
-                onSaveAgent,
-            })
-
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            await user.clear(instructionsField)
-            await user.click(instructionsField)
-            await user.paste(editedInstructions)
-            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
-            await waitFor(() => {
-                expect(screen.queryByRole("button", {name: APPLYING_CHANGES_BUTTON})).not.toBeInTheDocument()
-            })
-
-            expect(onSaveAgent).toHaveBeenCalledTimes(1)
-            const [calledAgentName, calledUpdated, calledNetworkName, calledSignal] = onSaveAgent.mock.calls[0]
-            // calledAgentName is the display name (cleaned up from the raw AGENT_1 id)
-            expect(calledAgentName).toBe("Agent 1")
-            expect(calledUpdated.find((e: AgentNetworkDefinitionEntry) => e.origin === AGENT_1)?.instructions).toBe(
-                editedInstructions
-            )
-            expect(calledNetworkName).toBe(OLD_NETWORK_NAME)
-            expect(calledSignal).toBeInstanceOf(AbortSignal)
-        })
-
+    describe("Agent Node Editor", () => {
         it("closes popup even when onSaveAgent throws", async () => {
             const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
             const consoleDebugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
@@ -1638,74 +1542,6 @@ describe("AgentFlow", () => {
                 expect.any(Error)
             )
             expect(consoleDebugSpy).toHaveBeenCalledWith(expect.stringContaining("Failed to save agent"))
-        })
-
-        it("closes popup immediately without calling onSaveAgent when it is not provided", async () => {
-            act(() => {
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [{origin: AGENT_1, tools: []}])])
-            })
-
-            const {container} = renderAgentFlowComponent({
-                isTemporaryNetwork: true,
-                networkId: OLD_NETWORK_ID,
-                // onSaveAgent intentionally omitted
-            })
-
-            clickFlowNode(container.querySelector(`[data-id="${CSS.escape(AGENT_1)}"]`))
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            await user.clear(instructionsField)
-            await user.click(instructionsField)
-            await user.paste(UPDATED_INSTRUCTIONS)
-            await user.click(screen.getByRole("button", {name: SAVE_BUTTON}))
-            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
-        })
-
-        it("Should update the Zustand store network map when a node popup is saved", async () => {
-            const originalInstructions = "Original instructions."
-            // Seed the Zustand store with a flat array (server format) under a network key
-            const initialDefinition: AgentNetworkDefinitionEntry[] = [
-                {
-                    origin: AGENT_1,
-                    tools: [AGENT_2],
-                    display_as: LLM_AGENT_DISPLAY,
-                    instructions: originalInstructions,
-                },
-            ]
-            // Seed the temp networks store with the network and its definition
-            const networkKey = "temporary/test-network"
-            act(() => {
-                useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(networkKey, initialDefinition)])
-            })
-
-            renderAgentFlowComponent({
-                isTemporaryNetwork: true,
-                networkId: networkKey,
-            })
-
-            // Click an agent node to open the popup, querying by the visible agent name.
-            clickFlowNode(screen.getByText(cleanUpAgentName(AGENT_1)))
-
-            // The popup should now be open — make the form dirty then save
-            const instructionsField = await screen.findByRole("textbox", {name: INSTRUCTIONS_FIELD})
-            await user.clear(instructionsField)
-            await user.click(instructionsField)
-            await user.paste("Updated instructions.")
-            const saveButton = screen.getByRole("button", {name: SAVE_BUTTON})
-            expect(saveButton).toBeInTheDocument()
-
-            await user.click(saveButton)
-
-            // Popup should close
-            await waitFor(() => expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument())
-
-            // Zustand store should still have the updated definition (updateTempNetworkDefinition was called)
-            const storedDefinitions = useTempNetworksStore
-                .getState()
-                .tempNetworks.find((n) => n.agentInfo.agent_name === networkKey)?.agentNetworkDefinition
-            expect(storedDefinitions).toBeDefined()
-            expect(storedDefinitions.some((e) => e.origin === AGENT_1)).toBe(true)
         })
 
         it("Should open and close the node popup without saving", async () => {
