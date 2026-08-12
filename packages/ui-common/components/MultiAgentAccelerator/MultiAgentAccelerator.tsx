@@ -598,7 +598,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     /**
      * Handles a save from the AgentFlow popup: streams the updated definition to the network designer,
-     * collects reservations from each chunk, then upserts the result and navigates if the network changed.
+     * collects reservations from each chunk, then upserts the result, and navigates if the network changed.
      */
     const onSaveAgent = useCallback(
         async (
@@ -815,17 +815,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             currentConversations={currentConversations}
                             currentUser={username}
                             isAwaitingLlm={isAwaitingLlm}
-                            isEditMode={isEditingNetwork}
+                            isEditingNetwork={isEditingNetwork}
                             isStreaming={isStreaming}
-                            isSelectedNetworkTemporary={isSelectedNetworkTemporary}
+                            isTemporaryNetwork={isSelectedNetworkTemporary}
                             networkDisplayName={networkDisplayName || ""}
                             networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
                             neuroSanURL={neuroSanURL}
-                            onEnterEditMode={() => setIsEditingNetwork(true)}
-                            onExitEditMode={() => setIsEditingNetwork(false)}
-                            onNetworkReplaced={(_old, newId) => changeSelectedNetwork(newId)}
                             onSaveAgent={onSaveAgent}
+                            setIsEditingNetwork={setIsEditingNetwork}
                             thoughtBubbleEdges={thoughtBubbleEdges}
+                            setSelectedNetwork={changeSelectedNetwork}
                             setThoughtBubbleEdges={setThoughtBubbleEdges}
                         />
                     </Box>

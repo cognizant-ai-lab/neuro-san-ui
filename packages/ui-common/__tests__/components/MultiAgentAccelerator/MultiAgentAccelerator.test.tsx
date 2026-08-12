@@ -93,11 +93,13 @@ const tourStepText = (content: ReactNode): string =>
 const NEURO_SAN_SERVER_URL = "https://default.example.com"
 
 const conversationMock = vi.fn()
+const agentFlowMock = vi.fn()
 const temporaryNetworksMock = vi.fn()
 const networkIconSuggestionsMock = vi.fn()
 let onDeleteNetwork: (a: string, b: boolean) => void
 let onSaveAgent: AgentFlowProps["onSaveAgent"]
 let setSelectedNetwork: (network: string) => void
+let onEditNetwork: (network: string) => void
 
 // Mock dependencies
 vi.mock("next-auth/react")
@@ -107,6 +109,7 @@ vi.mock("../../../controller/agent/IconSuggestions")
 
 vi.mock("../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow", () => ({
     AgentFlow: (props: AgentFlowProps) => {
+        agentFlowMock(props)
         conversationMock(props.currentConversations)
         onSaveAgent = props.onSaveAgent
         return (
@@ -152,6 +155,7 @@ vi.mock("../../../components/MultiAgentAccelerator/Sidebar/Sidebar", async (impo
             temporaryNetworksMock(props.temporaryNetworks)
             networkIconSuggestionsMock(props.networkIconSuggestions)
             onDeleteNetwork = props.onDeleteNetwork
+            onEditNetwork = props.onEditNetwork
             setSelectedNetwork = props.setSelectedNetwork
 
             const OriginalSidebar = originalModule.Sidebar
@@ -1316,6 +1320,22 @@ describe("MultiAgentAccelerator", () => {
             await waitFor(() => {
                 const lastCall = conversationMock.mock.calls[conversationMock.mock.calls.length - 1]
                 expect(lastCall[0]).toBeNull()
+            })
+        })
+
+        it("should handle onEditNetwork request from SideBar", async () => {
+            renderMultiAgentAcceleratorPage()
+
+            await act(async () => {
+                onEditNetwork(TEST_AGENT_MATH_GUY)
+            })
+
+            await waitFor(() => {
+                expect(agentFlowMock).toHaveBeenLastCalledWith(
+                    expect.objectContaining({
+                        isEditingNetwork: true,
+                    })
+                )
             })
         })
     })
