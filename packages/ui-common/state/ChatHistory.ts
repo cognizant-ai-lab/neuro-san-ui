@@ -8,9 +8,7 @@ import {persist, PersistStorage, StorageValue} from "zustand/middleware"
 
 import {indexedDBStorage} from "./IndexedDBStorage"
 import {ChatContext} from "../generated/neuro-san/NeuroSanClient"
-
-// Define a type to represent sly_data, which is super loose and can be almost anything depending on the agent.
-type SlyData = Record<string, unknown>
+import {SlyData} from "../utils/SlyData"
 
 // Maximum number of messages to keep in the chat history for each agent. Once we reach this limit, we will start
 // dropping old messages.
@@ -38,8 +36,17 @@ interface AgentChatHistory<T = BaseMessage[] | ReturnType<typeof mapChatMessages
 interface ChatHistoryStore {
     readonly history: Record<string, AgentChatHistory<BaseMessage[]>>
     resetHistory: (agentId: string) => void
+    /**
+     * Replaces the sly_data for an agent outright, so that keys the caller left out are removed. Used by the
+     * sly_data editor, where the user has to be able to delete keys. Contrast with `updateSlyData`, which merges.
+     */
+    setSlyData: (agentId: string, slyData: SlyData) => void
     updateChatContext: (agentId: string, chatContext: ChatContext) => void
     updateChatHistory: (agentId: string, messages: BaseMessage[]) => void
+    /**
+     * Merges incoming sly_data into whatever the agent already has. Used for sly_data echoed by the server during
+     * streaming, where each message carries only the keys that changed.
+     */
     updateSlyData: (agentId: string, slyData: SlyData) => void
     /**
      * Copies the full history entry from `fromId` to `toId`. Used when a temporary network is replaced
@@ -128,6 +135,15 @@ export const useAgentChatHistoryStore = create<ChatHistoryStore>()(
                     const existing = state.history[agentId]
                     const mergedSlyData = {...existing?.slyData, ...slyData}
                     const newHistory = {...state.history, [agentId]: {...existing, slyData: mergedSlyData}}
+                    return {history: newHistory}
+                }),
+            setSlyData: (agentId: string, slyData: SlyData) =>
+                set((state) => {
+                    // The editor can save sly_data before any conversation exists, so initialize the rest of the
+                    // entry with the same defaults readers expect instead of leaving the fields undefined.
+                    const fallback: AgentChatHistory<BaseMessage[]> = {chatHistory: [], chatContext: null, slyData}
+                    const existing = state.history[agentId] ?? fallback
+                    const newHistory = {...state.history, [agentId]: {...existing, slyData}}
                     return {history: newHistory}
                 }),
             resetHistory: (agentId: string) =>

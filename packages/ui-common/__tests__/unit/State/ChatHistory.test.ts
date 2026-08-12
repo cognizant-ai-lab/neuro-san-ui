@@ -89,6 +89,43 @@ describe("ChatHistory", () => {
         expect(updatedHistory["agent4"]?.slyData).toEqual(slyData)
     })
 
+    it("should merge sly_data when updating, so a streamed message only has to carry what changed", async () => {
+        useAgentChatHistoryStore.getState().updateSlyData("agent5", {charges: 1, user: "bob"})
+        useAgentChatHistoryStore.getState().updateSlyData("agent5", {charges: 2})
+
+        expect(useAgentChatHistoryStore.getState().history["agent5"]?.slyData).toEqual({charges: 2, user: "bob"})
+    })
+
+    it("should replace sly_data when setting it, so the editor can delete keys", async () => {
+        useAgentChatHistoryStore.getState().updateSlyData("agent6", {charges: 1, user: "bob"})
+        useAgentChatHistoryStore.getState().setSlyData("agent6", {charges: 2})
+
+        expect(useAgentChatHistoryStore.getState().history["agent6"]?.slyData).toEqual({charges: 2})
+    })
+
+    it("should let sly_data be emptied", async () => {
+        useAgentChatHistoryStore.getState().updateSlyData("agent7", {user: "bob"})
+        useAgentChatHistoryStore.getState().setSlyData("agent7", {})
+
+        expect(useAgentChatHistoryStore.getState().history["agent7"]?.slyData).toEqual({})
+    })
+
+    it("should initialize defaults when setting sly_data on a fresh network", async () => {
+        useAgentChatHistoryStore.getState().setSlyData("agent10", {user: "bob"})
+
+        const entry = useAgentChatHistoryStore.getState().history["agent10"]
+        expect(entry?.chatHistory).toEqual([])
+        expect(entry?.chatContext).toBeNull()
+        expect(entry?.slyData).toEqual({user: "bob"})
+    })
+
+    it("should leave other parts of the history alone when setting sly_data", async () => {
+        useAgentChatHistoryStore.getState().updateChatHistory("agent8", TEST_MESSAGES)
+        useAgentChatHistoryStore.getState().setSlyData("agent8", {user: "bob"})
+
+        expect(useAgentChatHistoryStore.getState().history["agent8"]?.chatHistory).toEqual(TEST_MESSAGES)
+    })
+
     it("should copy history from one agent to another", async () => {
         useAgentChatHistoryStore.getState().updateChatHistory("agentA", TEST_MESSAGES)
         useAgentChatHistoryStore.getState().updateSlyData("agentA", {key: "value"})
