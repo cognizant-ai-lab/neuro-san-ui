@@ -765,7 +765,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="20%"
-                minSize="5%"
+                minSize="10%"
                 panelRef={leftPanelRef}
             >
                 <Sidebar
@@ -789,7 +789,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="45%"
-                minSize="5%"
+                minSize="10%"
             >
                 <ReactFlowProvider>
                     <Box
@@ -800,7 +800,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                             alignItems: "center",
                             width: "100%",
                             height: "100%",
-                            maxWidth: 1000,
                             margin: "0 auto",
                         }}
                     >
@@ -836,7 +835,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="35%"
-                minSize="5%"
+                minSize="15%"
                 panelRef={rightPanelRef}
             >
                 <ChatCommon
