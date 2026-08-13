@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import Close from "@mui/icons-material/Close"
-import DragIndicator from "@mui/icons-material/DragIndicator"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
@@ -27,7 +26,7 @@ import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
 import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {useJoyride} from "react-joyride"
-import {Group, Panel, Separator, usePanelRef} from "react-resizable-panels"
+import {Group, Panel, usePanelRef} from "react-resizable-panels"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
@@ -46,6 +45,7 @@ import {
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
+import {PanelSeparator} from "./PanelSeparator"
 import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
@@ -1123,67 +1123,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         </Snackbar>
     )
 
-    const getResizableSeparator = () => (
-        <Separator
-            style={{
-                width: "14px",
-                cursor: "col-resize",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-            }}
-        >
-            <Box
-                sx={{
-                    width: "14px",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "background-color 120ms ease",
-
-                    "&:hover": {
-                        backgroundColor: "action.hover",
-                    },
-
-                    "&:hover .separator-grip": {
-                        borderColor: "primary.main",
-                        backgroundColor: "background.paper",
-                        color: "primary.main",
-                        boxShadow: 2,
-                        opacity: 1,
-                    },
-                }}
-            >
-                <Box
-                    className="separator-grip"
-                    sx={{
-                        width: "18px",
-                        height: "44px",
-                        borderRadius: "999px",
-                        border: "1px solid",
-                        borderColor: "divider",
-                        backgroundColor: "background.default",
-                        color: "text.secondary",
-                        opacity: 0.75,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition:
-                            "background-color 120ms ease, border-color 120ms ease, color 120ms ease, " +
-                            "box-shadow 120ms ease, opacity 120ms ease",
-                    }}
-                >
-                    <DragIndicator
-                        fontSize="small"
-                        sx={{fontSize: "1rem"}}
-                    />
-                </Box>
-            </Box>
-        </Separator>
-    )
-
     return (
         <>
             {getNeuroSanStudioCallout()}
@@ -1194,9 +1133,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getDeleteNetworkConfirmationModal()}
             <Group>
                 {getLeftPanel()}
-                {getResizableSeparator()}
+                <PanelSeparator />
                 {getCenterPanel()}
-                {getResizableSeparator()}
+                <PanelSeparator />
                 {getRightPanel()}
             </Group>
             {getStopButton()}
