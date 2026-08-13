@@ -131,4 +131,4 @@ jobs:
               run: |
                   node --version
                   yarn vitest --version
-                  yarn test
+                  yarn test --coverage
