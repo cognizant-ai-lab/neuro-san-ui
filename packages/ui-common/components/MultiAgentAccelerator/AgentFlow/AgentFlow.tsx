@@ -166,15 +166,57 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const theme = useTheme()
 
     const {fitView} = useReactFlow()
+    const flowWrapperRef = useRef<HTMLDivElement | null>(null)
+    const fitViewFrameRef = useRef<number | null>(null)
 
-    const handleResize = useCallback(() => {
-        void fitView() // Adjusts the view to fit after resizing
+    const scheduleFitView = useCallback(() => {
+        if (fitViewFrameRef.current !== null) {
+            window.cancelAnimationFrame(fitViewFrameRef.current)
+        }
+
+        fitViewFrameRef.current = window.requestAnimationFrame(() => {
+            fitViewFrameRef.current = null
+            void fitView()
+        })
     }, [fitView])
 
     useEffect(() => {
-        window.addEventListener("resize", handleResize)
-        return () => window.removeEventListener("resize", handleResize)
-    }, [handleResize])
+        return () => {
+            if (fitViewFrameRef.current !== null) {
+                window.cancelAnimationFrame(fitViewFrameRef.current)
+                fitViewFrameRef.current = null
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        window.addEventListener("resize", scheduleFitView)
+        return () => window.removeEventListener("resize", scheduleFitView)
+    }, [scheduleFitView])
+
+    useEffect(() => {
+        const wrapper = flowWrapperRef.current
+        if (!wrapper || typeof ResizeObserver === "undefined") {
+            return undefined
+        }
+
+        const resizeObserver = new ResizeObserver(([entry]) => {
+            if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+                scheduleFitView()
+            }
+        })
+
+        resizeObserver.observe(wrapper)
+
+        return () => {
+            resizeObserver.disconnect()
+
+            if (fitViewFrameRef.current !== null) {
+                window.cancelAnimationFrame(fitViewFrameRef.current)
+                fitViewFrameRef.current = null
+            }
+        }
+    }, [scheduleFitView])
 
     const updateSettings = useSettingsStore((state) => state.updateSettings)
 
@@ -459,11 +501,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     )
 
     useEffect(() => {
-        // Schedule a fitView after the layout is set to ensure the view is adjusted correctly
-        setTimeout(() => {
-            void fitView()
-        }, 50)
-    }, [agentsInNetwork, fitView, layout])
+        scheduleFitView()
+    }, [agentsInNetwork, layout, scheduleFitView])
 
     const onNodesChange = useCallback(
         (changes: NodeChange<RFNode<AgentNodeProps>>[]) => {
@@ -829,6 +868,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         >
             <Box
                 id={`${id}-react-flow-wrapper`}
+                ref={flowWrapperRef}
                 sx={{
                     display: "flex",
                     flex: 1,

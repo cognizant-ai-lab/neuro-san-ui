@@ -85,10 +85,13 @@ const NEURO_SAN_PING_INTERVAL_MS = 30_000
 
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
-const SidebarAside = styled("aside")({
+const SidebarAside = styled("aside")(({theme}) => ({
+    borderRightStyle: "solid",
+    borderRightWidth: "1px",
     height: "100%",
+    marginRight: theme.spacing(1),
     overflowY: "auto",
-    paddingRight: "0.75rem",
+    paddingRight: theme.spacing(1.5),
 
     [`& .${SPARKLE_HIGHLIGHT_CLASS}`]: {
         background: "linear-gradient(90deg, gold, orange, cyan, magenta, gold)",
@@ -98,7 +101,7 @@ const SidebarAside = styled("aside")({
         borderRadius: "4px",
         opacity: 1,
     },
-})
+}))
 
 // Styled component for the sidebar heading, which is sticky at the top of the sidebar.
 const SidebarHeading = styled("h2")(({theme}) => ({
