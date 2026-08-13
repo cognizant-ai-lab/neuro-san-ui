@@ -86,8 +86,6 @@ const NEURO_SAN_PING_INTERVAL_MS = 30_000
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
 const SidebarAside = styled("aside")({
-    borderRightStyle: "solid",
-    borderRightWidth: "1px",
     height: "100%",
     overflowY: "auto",
     paddingRight: "0.75rem",

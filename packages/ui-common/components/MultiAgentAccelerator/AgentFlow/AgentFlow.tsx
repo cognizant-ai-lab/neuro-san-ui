@@ -731,72 +731,68 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
-    const titleBackgroundColor = alpha(theme.palette.background.paper, 0.75)
-
     const getTitle = () => {
         if (!networkDisplayName) return null
 
         return (
-            <Box sx={{marginBottom: "1rem"}}>
-                <Box
-                    id={`${id}-network-title-bar`}
-                    sx={{
-                        alignItems: "center",
-                        display: "flex",
-                        gap: 1,
-                        left: "50%",
-                        pointerEvents: "none",
-                        position: "absolute",
-                        top: 0,
-                        transform: "translateX(-50%)",
-                        zIndex: getZIndex(2, theme),
-                    }}
+            <Box
+                id={`${id}-network-title-bar`}
+                sx={{
+                    alignItems: "center",
+                    display: "flex",
+                    gap: 1,
+                    left: "50%",
+                    pointerEvents: "none",
+                    position: "absolute",
+                    top: theme.spacing(1),
+                    transform: "translateX(-50%)",
+                    zIndex: getZIndex(2, theme),
+                }}
+            >
+                <Tooltip
+                    title={networkDisplayName}
+                    placement="top"
                 >
-                    <Tooltip
-                        title={networkDisplayName}
-                        placement="top"
+                    <Typography
+                        id={`${id}-network-title`}
+                        variant="subtitle1"
+                        sx={{
+                            backdropFilter: "blur(6px)",
+                            backgroundColor: alpha(theme.palette.background.paper, 0.75),
+                            border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
+                            borderRadius: 2,
+                            boxShadow: theme.shadows[6],
+                            color: theme.palette.text.primary,
+                            fontWeight: 600,
+                            letterSpacing: "0.01em",
+                            lineHeight: 1.35,
+                            maxWidth: 400,
+                            overflow: "hidden",
+                            pointerEvents: "auto",
+                            px: 2,
+                            py: 0.45,
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                        }}
                     >
-                        <Typography
-                            id={`${id}-network-title`}
-                            variant="subtitle1"
-                            sx={{
-                                backdropFilter: "blur(6px)",
-                                backgroundColor: titleBackgroundColor,
-                                border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                                borderRadius: 2,
-                                boxShadow: theme.shadows[6],
-                                color: theme.palette.text.primary,
-                                fontWeight: 600,
-                                letterSpacing: "0.01em",
-                                lineHeight: 1.35,
-                                maxWidth: 400,
-                                overflow: "hidden",
-                                pointerEvents: "auto",
-                                px: 2,
-                                py: 0.45,
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            {networkDisplayName}
-                        </Typography>
-                    </Tooltip>
-                    {isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm && (
-                        <Button
-                            id={`${id}-enter-edit-mode-btn`}
-                            variant="contained"
-                            size="small"
-                            onClick={() => setIsEditingNetwork(true)}
-                            startIcon={<EditIcon />}
-                            sx={{
-                                pointerEvents: "auto",
-                                "&:hover": {backgroundColor: theme.palette.primary.main},
-                            }}
-                        >
-                            Edit
-                        </Button>
-                    )}
-                </Box>
+                        {networkDisplayName}
+                    </Typography>
+                </Tooltip>
+                {isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm && (
+                    <Button
+                        id={`${id}-enter-edit-mode-btn`}
+                        variant="contained"
+                        size="small"
+                        onClick={() => setIsEditingNetwork(true)}
+                        startIcon={<EditIcon />}
+                        sx={{
+                            pointerEvents: "auto",
+                            "&:hover": {backgroundColor: theme.palette.primary.main},
+                        }}
+                    >
+                        Edit
+                    </Button>
+                )}
             </Box>
         )
     }
@@ -833,7 +829,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         >
             <Box
                 id={`${id}-react-flow-wrapper`}
-                sx={{position: "relative", flex: 1, minHeight: 0}}
+                sx={{
+                    display: "flex",
+                    flex: 1,
+                    flexDirection: "column",
+                    minHeight: 0,
+                    position: "relative",
+                    pt: theme.spacing(4),
+                }}
             >
                 {getTitle()}
                 <ReactFlow
