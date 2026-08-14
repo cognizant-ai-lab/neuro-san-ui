@@ -189,23 +189,21 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
     }, [])
 
-    useEffect(() => {
-        window.addEventListener("resize", scheduleFitView)
-        return () => window.removeEventListener("resize", scheduleFitView)
-    }, [scheduleFitView])
-
     /**
      * Effect to observe the flow wrapper's size and trigger fitView when it changes.
-     * This ensures that the flow view adjusts to the container size.
+     * This ensures that the flow view adjusts to the container size. If the user resizes that window itself,
+     * that will also cause the container size to change so this event will catch it.
      */
     useEffect(() => {
+        if (!flowWrapperRef.current) return undefined
+
         const resizeObserver = new ResizeObserver(([entry]) => {
             if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
                 scheduleFitView()
             }
         })
 
-        resizeObserver.observe(flowWrapperRef?.current)
+        resizeObserver.observe(flowWrapperRef.current)
 
         return () => {
             resizeObserver.disconnect()
