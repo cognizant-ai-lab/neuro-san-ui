@@ -441,6 +441,15 @@ describe("MultiAgentAccelerator", () => {
     })
 
     describe("Zen Mode", () => {
+        const expectPanelState = (panelTestId: string, expectedState: "expanded" | "collapsed") => {
+            const panel = screen.getByTestId(panelTestId)
+            if (expectedState === "expanded") {
+                expect(panel).not.toHaveStyle({"flex-grow": 0})
+            } else {
+                expect(panel).toHaveStyle({"flex-grow": 0})
+            }
+        }
+
         it("should handle Zen mode animation correctly", async () => {
             renderMultiAgentAcceleratorPage()
 
@@ -462,26 +471,39 @@ describe("MultiAgentAccelerator", () => {
             // Make sure Stop button is not in document
             expect(screen.queryByLabelText("Stop")).not.toBeInTheDocument()
 
-            // Force Zen mode by setting isAwaitingLlm to true
+            // Force Zen mode by calling onStreamingStarted
             await act(async () => {
                 setIsAwaitingLlm(true)
+                onStreamingStarted()
             })
 
             // Stop button should be in document in Zen mode
             await screen.findByLabelText("Stop")
 
-            // Left panel: should be hidden in Zen mode
-            await waitFor(() => {
-                expect(document.getElementById("multi-agent-accelerator-sidebar-sidebar")).not.toBeVisible()
-            })
+            // Left panel: should be collapsed in Zen mode
+            expectPanelState("multi-agent-accelerator-left-panel", "collapsed")
 
             // Center panel: Agent Flow. Should still be visible in Zen mode
-            await waitFor(() => {
-                expect(document.getElementById("multi-agent-accelerator-agent-flow-container")).toBeVisible()
-            })
+            expectPanelState("multi-agent-accelerator-center-panel", "expanded")
 
             // Right panel: Chat window should be hidden in Zen mode
-            expect(await screen.findByTestId("test-chat-common")).not.toBeVisible()
+            expectPanelState("multi-agent-accelerator-right-panel", "collapsed")
+
+            // Simulate "end streaming"
+            await act(async () => {
+                setIsAwaitingLlm(false)
+                onStreamingComplete()
+            })
+
+            // Panels should now be expanded again
+            // Left panel
+            expectPanelState("multi-agent-accelerator-left-panel", "expanded")
+
+            // Center panel
+            expectPanelState("multi-agent-accelerator-center-panel", "expanded")
+
+            // Right panel
+            expectPanelState("multi-agent-accelerator-right-panel", "expanded")
         })
 
         it("should correctly handle Zen mode being disabled", async () => {
@@ -492,19 +514,37 @@ describe("MultiAgentAccelerator", () => {
 
             screen.getByText("Agent Networks")
 
+            // Simulate streaming started
             await act(async () => {
                 setIsAwaitingLlm(true)
+                onStreamingStarted()
             })
 
-            // Panels should all still be visible even with isAwaitingLlm true because Zen mode is disabled
-            // Left panel: should be hidden in Zen mode
-            expect(document.getElementById("multi-agent-accelerator-sidebar-sidebar")).toBeVisible()
+            // No panels should be collapsed during streaming, since Zen mode is disabled.
+            // Left panel
+            expectPanelState("multi-agent-accelerator-left-panel", "expanded")
 
-            // Center panel: Agent Flow. Should always be visible
-            expect(document.getElementById("multi-agent-accelerator-agent-flow-container")).toBeVisible()
+            // Center panel
+            expectPanelState("multi-agent-accelerator-center-panel", "expanded")
 
-            // Right panel: Chat window should be hidden in Zen mode
-            expect(await screen.findByTestId("test-chat-common")).toBeVisible()
+            // Right panel
+            expectPanelState("multi-agent-accelerator-right-panel", "expanded")
+
+            // Simulate "end streaming"
+            await act(async () => {
+                setIsAwaitingLlm(false)
+                onStreamingComplete()
+            })
+
+            // Panels should still all be expanded after streaming complete
+            // Left panel
+            expectPanelState("multi-agent-accelerator-left-panel", "expanded")
+
+            // Center panel
+            expectPanelState("multi-agent-accelerator-center-panel", "expanded")
+
+            // Right panel
+            expectPanelState("multi-agent-accelerator-right-panel", "expanded")
         })
     })
 
