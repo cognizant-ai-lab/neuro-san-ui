@@ -871,41 +871,37 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         )
     }
 
-    const getStopButton = () => {
-        return (
-            <>
-                {isAwaitingLlm && enableZenMode && (
-                    <Box
-                        id="stop-button-container"
+    const getStopButton = () =>
+        isAwaitingLlm &&
+        enableZenMode && (
+            <Box
+                id="stop-button-container"
+                sx={{
+                    position: "absolute",
+                    bottom: "1rem",
+                    right: "1rem",
+                    zIndex: getZIndex(2, theme),
+                }}
+            >
+                <Tooltip title="Stop response (Esc)">
+                    <LlmChatButton
+                        aria-label="Stop"
+                        id="stop-output-button"
+                        onClick={handleExternalStop}
                         sx={{
-                            position: "absolute",
-                            bottom: "1rem",
-                            right: "1rem",
-                            zIndex: getZIndex(2, theme),
+                            "&:hover": {
+                                backgroundColor: "error.main",
+                            },
                         }}
                     >
-                        <Tooltip title="Stop response (Esc)">
-                            <LlmChatButton
-                                aria-label="Stop"
-                                id="stop-output-button"
-                                onClick={handleExternalStop}
-                                sx={{
-                                    "&:hover": {
-                                        backgroundColor: "error.main",
-                                    },
-                                }}
-                            >
-                                <StopCircle
-                                    fontSize="large"
-                                    id="stop-button-icon"
-                                />
-                            </LlmChatButton>
-                        </Tooltip>
-                    </Box>
-                )}
-            </>
+                        <StopCircle
+                            fontSize="large"
+                            id="stop-button-icon"
+                        />
+                    </LlmChatButton>
+                </Tooltip>
+            </Box>
         )
-    }
 
     const getDeleteNetworkConfirmationModal = () =>
         confirmationModalOpen ? (
@@ -994,62 +990,63 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
      * Popper to show real-time progress of the Agent Network Designer output as we receive it from the backend.
      * Only displayed when Agent Network Designer is active.
      */
-    const getProgressPopper = () => (
-        <Box
-            sx={{
-                display: isStreaming && isNetworkDesignerMode ? "block" : "none",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "600px",
-                height: "600px",
-                zIndex: getZIndex(2, theme),
-            }}
-        >
-            <ReactFlowProvider>
-                <Box
-                    sx={{
-                        alignItems: "center",
-                        background: "var(--bs-secondary)",
-                        border: "4px solid var(--bs-yellow)",
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                        justifyContent: "center",
-                        margin: "0 auto",
-                        maxWidth: 1000,
-                        opacity: "95%",
-                        width: "100%",
-                    }}
-                >
-                    <Typography
-                        variant="h6"
-                        sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
+    const getProgressPopper = () =>
+        isStreaming &&
+        isNetworkDesignerMode && (
+            <Box
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "600px",
+                    height: "600px",
+                    zIndex: getZIndex(2, theme),
+                }}
+            >
+                <ReactFlowProvider>
+                    <Box
+                        sx={{
+                            alignItems: "center",
+                            background: "var(--bs-secondary)",
+                            border: "4px solid var(--bs-yellow)",
+                            display: "flex",
+                            flexDirection: "column",
+                            height: "100%",
+                            justifyContent: "center",
+                            margin: "0 auto",
+                            maxWidth: 1000,
+                            opacity: "95%",
+                            width: "100%",
+                        }}
                     >
-                        Network Preview
-                    </Typography>
-                    {agentsInNetworkDesigner?.length > 0 ? (
-                        <AgentFlow
-                            id="and-network-preview"
-                            key="and-network-preview"
-                            agentsInNetwork={agentsInNetworkDesigner}
-                            isAgentNetworkDesignerMode={true}
-                            isAwaitingLlm={false}
-                            isStreaming={false}
-                            thoughtBubbleEdges={EMPTY_THOUGHT_BUBBLE_EDGES}
-                        />
-                    ) : (
                         <Typography
-                            variant="body1"
-                            sx={{color: "white"}}
+                            variant="h6"
+                            sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
                         >
-                            Awaiting status from Agent Network Designer...
+                            Network Preview
                         </Typography>
-                    )}
-                </Box>
-            </ReactFlowProvider>
-        </Box>
-    )
+                        {agentsInNetworkDesigner?.length > 0 ? (
+                            <AgentFlow
+                                id="and-network-preview"
+                                key="and-network-preview"
+                                agentsInNetwork={agentsInNetworkDesigner}
+                                isAgentNetworkDesignerMode={true}
+                                isAwaitingLlm={false}
+                                isStreaming={false}
+                                thoughtBubbleEdges={EMPTY_THOUGHT_BUBBLE_EDGES}
+                            />
+                        ) : (
+                            <Typography
+                                variant="body1"
+                                sx={{color: "white"}}
+                            >
+                                Awaiting status from Agent Network Designer...
+                            </Typography>
+                        )}
+                    </Box>
+                </ReactFlowProvider>
+            </Box>
+        )
 
     const getMissingApiKeysAlert = () =>
         hasMissingApiKeys && (
@@ -1136,14 +1133,26 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getTourModal()}
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
-            <Group>
-                {getLeftPanel()}
-                <PanelSeparator />
-                {getCenterPanel()}
-                <PanelSeparator />
-                {getRightPanel()}
-            </Group>
-            {getStopButton()}
+
+            <Box
+                id="multi-agent-accelerator-container"
+                sx={{
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
+                    minHeight: 0,
+                }}
+            >
+                <Group>
+                    {getLeftPanel()}
+                    <PanelSeparator />
+                    {getCenterPanel()}
+                    <PanelSeparator />
+                    {getRightPanel()}
+                </Group>
+
+                {getStopButton()}
+            </Box>
         </>
     )
 }

@@ -60,7 +60,7 @@ import {
     getConnectivity,
     sendNetworkDesignerRequest,
 } from "../../../controller/agent/Agent"
-import {getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
+import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../../controller/agent/IconSuggestions"
 import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSuggestions"
 import {
     ChatMessageType,
@@ -247,7 +247,7 @@ vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     },
 }))
 
-const renderMultiAgentAcceleratorPage = () =>
+const renderMultiAgentAccelerator = () =>
     render(
         <SnackbarProvider>
             <MultiAgentAccelerator
@@ -286,7 +286,7 @@ describe("MultiAgentAccelerator", () => {
 
     describe("Basic Rendering", () => {
         it("should render the component and change the network when item is clicked in the sidebar", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // click to expand networks
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -320,7 +320,7 @@ describe("MultiAgentAccelerator", () => {
 
         it("should render the component correctly with 'native names' option on or off", async () => {
             useSettingsStore.getState().updateSettings({appearance: {useNativeNames: false}})
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // click to expand networks
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -344,7 +344,7 @@ describe("MultiAgentAccelerator", () => {
                 ...MOCK_CONNECTIVITY_INFO,
                 metadata: {},
             })
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Expand networks
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -370,7 +370,7 @@ describe("MultiAgentAccelerator", () => {
 
             vi.mocked(getNetworkIconSuggestions).mockResolvedValue(iconSuggestions)
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
 
@@ -384,7 +384,7 @@ describe("MultiAgentAccelerator", () => {
             // Mock getAgentNetworks to reject with an error
             vi.mocked(getAgentNetworks).mockRejectedValue(new Error("Failed to fetch agent networks"))
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Assert the console.debug call
             await waitFor(() => {
@@ -401,7 +401,7 @@ describe("MultiAgentAccelerator", () => {
             // Mock getAgentNetworks to reject with an error
             vi.mocked(getConnectivity).mockRejectedValue(new Error("Failed to fetch connectivity"))
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Expand networks
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -430,10 +430,31 @@ describe("MultiAgentAccelerator", () => {
             vi.mocked(getNetworkIconSuggestions).mockRejectedValue(new Error("Failed to fetch icon suggestions"))
 
             const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await waitFor(() => {
                 expect(warnSpy).toHaveBeenCalledWith(
                     expect.stringContaining("Unable to get network icon suggestions"),
+                    expect.any(Error)
+                )
+            })
+        })
+
+        it("Should handle getAgentIconSuggestions failure gracefully", async () => {
+            vi.mocked(getAgentIconSuggestions).mockRejectedValue(new Error("Failed to fetch icon suggestions"))
+
+            const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+
+            renderMultiAgentAccelerator()
+
+            const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+            await user.click(header)
+
+            const network = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
+            await user.click(network)
+
+            await waitFor(() => {
+                expect(warnSpy).toHaveBeenCalledWith(
+                    expect.stringContaining("Unable to get agent icon suggestions"),
                     expect.any(Error)
                 )
             })
@@ -451,7 +472,7 @@ describe("MultiAgentAccelerator", () => {
         }
 
         it("should handle Zen mode animation correctly", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await screen.findByText("Agent Networks")
 
@@ -510,7 +531,7 @@ describe("MultiAgentAccelerator", () => {
             // Disable Zen mode
             useSettingsStore.getState().updateSettings({behavior: {enableZenMode: false}})
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             screen.getByText("Agent Networks")
 
@@ -550,7 +571,7 @@ describe("MultiAgentAccelerator", () => {
 
     describe("Chat Message Handling", () => {
         it("should handle receiving an agent conversation chat message", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Simulate receiving a chat message
             const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
@@ -574,7 +595,7 @@ describe("MultiAgentAccelerator", () => {
             const agentConversations = await import("../../../components/MultiAgentAccelerator/AgentConversations")
             vi.spyOn(agentConversations, "extractConversations").mockReturnValue(null)
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Simulate receiving a chat message
             const mockChunk = JSON.stringify(MATH_GUY_MESSAGE)
@@ -596,7 +617,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("should handle receiving an end of conversation chat message", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Set up one active agent
             const activeAgentChunk = JSON.stringify(MATH_GUY_MESSAGE)
@@ -646,7 +667,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should handle receiving something that isn't a ChatMessage", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await act(async () => {
                 const result = onChunkReceived("I am not a ChatMessage")
                 expect(result).toEqual(true)
@@ -656,7 +677,7 @@ describe("MultiAgentAccelerator", () => {
 
     describe("Interaction Handling", () => {
         it("calls handleStopMock on Escape key when isAwaitingLlm is true", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 setIsAwaitingLlm(true)
@@ -669,7 +690,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("ignores presses of keys other than Escape", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 setIsAwaitingLlm(true)
@@ -682,7 +703,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should clear the chat when the Add New Network button is clicked", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await screen.findByTestId("test-chat-common")
 
             handleClearChatMock.mockClear()
@@ -694,7 +715,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should NOT clear the chat when a regular network is selected", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await screen.findByTestId("test-chat-common")
 
             handleClearChatMock.mockClear()
@@ -717,7 +738,7 @@ describe("MultiAgentAccelerator", () => {
 
             useTempNetworksStore.setState({tempNetworks: [expiredTemporaryNetwork]})
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Expand temporary networks section
             const header = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_FOLDER))
@@ -751,7 +772,7 @@ describe("MultiAgentAccelerator", () => {
         // Render the page, feed the default reservation chunk, and wait until the resulting temp network shows
         // up in `temporaryNetworksMock`. Returns the expected agent name for follow-up assertions.
         const seedTemporaryNetworkFromDefaultReservation = async (): Promise<string> => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await act(async () => {
                 onChunkReceived(JSON.stringify(RESERVATION_CHAT_MESSAGE))
             })
@@ -780,7 +801,7 @@ describe("MultiAgentAccelerator", () => {
         }
 
         const renderAndWaitForSidebar = async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await screen.findByText("Agent Networks")
         }
 
@@ -790,7 +811,7 @@ describe("MultiAgentAccelerator", () => {
             })
 
         it("Should detect agent registrations in the chat stream", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Set up a temporary network
             await act(async () => {
@@ -814,7 +835,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should detect network hocon in the chat stream", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Process the chunk with the network hocon
             await act(async () => {
@@ -845,7 +866,7 @@ describe("MultiAgentAccelerator", () => {
                 },
             }
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 onChunkReceived(JSON.stringify(reservationWithDefinition))
@@ -914,7 +935,7 @@ describe("MultiAgentAccelerator", () => {
                 },
             }
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 onChunkReceived(JSON.stringify(chunkA))
@@ -943,12 +964,12 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("Should detect agent progress messages in the chat stream", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             const popperTitle = "Network Preview"
 
-            // Popover should not be displayed before selecting the network
-            expect(screen.queryByText(popperTitle)).not.toBeVisible()
+            // Popover should not be in the DOM before selecting the network
+            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
 
             await act(async () => {
                 setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
@@ -978,12 +999,12 @@ describe("MultiAgentAccelerator", () => {
                 onStreamingComplete()
             })
 
-            // Popover should be closed
-            expect(screen.queryByText(popperTitle)).not.toBeVisible()
+            // Popover should be gone
+            expect(screen.queryByText(popperTitle)).not.toBeInTheDocument()
         })
 
         it("Should handle non-progress messages while in Agent Network Designer mode without crashing", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 setSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)
@@ -1140,7 +1161,7 @@ describe("MultiAgentAccelerator", () => {
                 advanceTimers: vi.advanceTimersByTime,
             })
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Set up a temporary network
             const expirationTimeSeconds = 60
@@ -1268,7 +1289,7 @@ describe("MultiAgentAccelerator", () => {
 
         it("upserts the returned network and re-selects it when a matching reservation is streamed", async () => {
             mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Select a network so onSaveAgent has a selectedNetwork to copy chat history from.
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -1350,7 +1371,7 @@ describe("MultiAgentAccelerator", () => {
 
     describe("Event Handling", () => {
         it("should reset conversations onStreamingComplete is called", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 onStreamingComplete()
@@ -1364,7 +1385,7 @@ describe("MultiAgentAccelerator", () => {
         })
 
         it("should handle onEditNetwork request from SideBar", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 onEditNetwork(TEST_AGENT_MATH_GUY)
@@ -1387,7 +1408,7 @@ describe("MultiAgentAccelerator", () => {
             })
 
             vi.useFakeTimers({now: Date.now()})
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Haven't shown announcement yet
             useAnnouncementsStore.getState().reset(AnnouncementId.NeuroSanStudioGithubStar)
@@ -1437,7 +1458,7 @@ describe("MultiAgentAccelerator", () => {
         }
 
         it("is undefined for a permanent network", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             const header = await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
             await user.click(header)
@@ -1457,7 +1478,7 @@ describe("MultiAgentAccelerator", () => {
         it("includes definition, name, and hocon for a temporary network", async () => {
             useTempNetworksStore.setState({tempNetworks: [tempNetworkWithDefinition]})
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await screen.findByText("Agent Networks")
 
             await act(async () => {
@@ -1492,7 +1513,7 @@ describe("MultiAgentAccelerator", () => {
                 },
             })
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
             await screen.findByText("Agent Networks")
 
             await act(async () => {
@@ -1553,7 +1574,7 @@ describe("MultiAgentAccelerator", () => {
                 },
             })
 
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await act(async () => {
                 setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
@@ -1571,10 +1592,40 @@ describe("MultiAgentAccelerator", () => {
             )
         })
 
+        it("handles missing agent name in current temp network", async () => {
+            useTempNetworksStore.setState({
+                tempNetworks: [
+                    {
+                        ...tempNetworkWithDefinition,
+                        agentNetworkName: undefined,
+                    },
+                ],
+            })
+
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                setSelectedNetwork(TEMPORARY_NETWORK.agentInfo.agent_name)
+            })
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        selectedNetwork: TEMPORARY_NETWORK.agentInfo.agent_name,
+                        extraSlyData: {
+                            [AGENT_NETWORK_DEFINITION_KEY]: agentNetworkDefinition,
+                            [AGENT_NETWORK_HOCON]: TEMPORARY_NETWORK.networkHocon,
+                        },
+                    })
+                )
+            })
+        })
+
         it("handles an error when fetching agent function", async () => {
             vi.spyOn(console, "warn").mockImplementation(vi.fn())
             vi.mocked(getAgentFunction).mockRejectedValue(new Error("Failed to fetch agent function"))
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             // Search for something known to make sure rendering settled
             await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
@@ -1597,7 +1648,7 @@ describe("MultiAgentAccelerator", () => {
         }
 
         it("should run the tour when requested and successfully visit each step", async () => {
-            renderMultiAgentAcceleratorPage()
+            renderMultiAgentAccelerator()
 
             await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
 
@@ -1653,7 +1704,7 @@ describe("MultiAgentAccelerator", () => {
                     advanceTimers: vi.advanceTimersByTime,
                 })
 
-                renderMultiAgentAcceleratorPage()
+                renderMultiAgentAccelerator()
 
                 // Let initial fetch/useEffect work settle. Note: vi.waitFor() here, not RTL waitFor(), since the
                 // vitest version is "fake timers aware"

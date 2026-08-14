@@ -125,7 +125,7 @@ vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubb
     ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
 }))
 
-const mockFitView = vi.hoisted(() => vi.fn())
+const mockFitView = vi.fn()
 
 vi.mock("@xyflow/react", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@xyflow/react")>()
