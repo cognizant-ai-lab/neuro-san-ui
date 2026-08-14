@@ -663,6 +663,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // Mark that streaming has started
         setIsStreaming(true)
 
+        // Collapse outer panels for Zen mode
         if (enableZenMode) {
             leftPanelRef?.current?.collapse()
             rightPanelRef?.current?.collapse()
@@ -676,6 +677,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setAgentsInNetworkDesigner([])
         resetState()
 
+        // Un-collapse outer panels for Zen mode
         if (enableZenMode) {
             leftPanelRef?.current?.expand()
             rightPanelRef?.current?.expand()
@@ -765,6 +767,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="20%"
+                id="multi-agent-accelerator-left-panel"
                 minSize="10%"
                 panelRef={leftPanelRef}
             >
@@ -789,6 +792,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="45%"
+                id="multi-agent-accelerator-center-panel"
                 minSize="10%"
             >
                 <ReactFlowProvider>
@@ -835,6 +839,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             <Panel
                 collapsible={true}
                 defaultSize="35%"
+                id="multi-agent-accelerator-right-panel"
                 minSize="15%"
                 panelRef={rightPanelRef}
             >

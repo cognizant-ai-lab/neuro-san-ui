@@ -14,7 +14,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
         content:
             "Welcome to Cognizant AI Lab Multi-Agent Accelerator! This tour will give you a quick overview of " +
             "the application.",
-        target: () => document.querySelector("#multi-agent-accelerator-grid"),
+        target: () => document.querySelector("#multi-agent-accelerator-center-panel"),
         placement: "center",
     },
     {
@@ -50,7 +50,7 @@ export const MAIN_TOUR_STEPS: Step[] = [
             "These are the agents within the current network. The arrows show the flow of information between " +
             "them and the tools used by each agent. For networks you have created, you can click on an agent " +
             "to edit it",
-        target: () => document.querySelector("#multi-agent-accelerator-grid-agent-flow"),
+        target: () => document.querySelector("#multi-agent-accelerator-center-panel"),
         placement: "auto",
     },
     {
@@ -84,7 +84,8 @@ export const MAIN_TOUR_STEPS: Step[] = [
     },
     {
         content:
-            "Click this button to display a menu that allows you to choose how content is displayed in the chat window",
+            "Click this button to display a menu that allows you to choose how content is displayed in the chat " +
+            "window. Here you can also enter any sly_data items required by the network (advanced).",
         target: () => document.querySelector("#agent-network-ui-options-menu-button-container"),
         placement: "bottom",
     },

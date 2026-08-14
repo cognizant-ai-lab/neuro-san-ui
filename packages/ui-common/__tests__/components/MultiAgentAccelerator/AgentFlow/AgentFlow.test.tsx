@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, PaletteMode, ThemeProvider, useColorScheme} from "@mui/material/styles"
+import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
 import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {NodePositionChange, NodeRemoveChange, ReactFlowProvider} from "@xyflow/react"
@@ -109,15 +109,6 @@ vi.mock("notistack", async (importOriginal) => {
     }
 })
 
-vi.mock("@mui/material/styles", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@mui/material/styles")>()
-
-    return {
-        ...actual,
-        useColorScheme: vi.fn(),
-    }
-})
-
 vi.mock("../../../../components/MultiAgentAccelerator/AgentFlow/PlasmaEdge", () => ({
     PlasmaEdge: () => <g data-testid={MOCK_PLASMA_EDGE_TEST_ID} />,
 }))
@@ -134,6 +125,18 @@ vi.mock("../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubb
     ThoughtBubbleOverlay: (props: ThoughtBubbleOverlayProps) => __MockThoughtBubbleOverlayImpl(props),
 }))
 
+const mockFitView = vi.hoisted(() => vi.fn())
+
+vi.mock("@xyflow/react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@xyflow/react")>()
+
+    return {
+        ...actual,
+        useReactFlow: () => ({
+            fitView: mockFitView,
+        }),
+    }
+})
 //#endregion Mocks
 
 describe("AgentFlow", () => {
@@ -150,16 +153,7 @@ describe("AgentFlow", () => {
         }
 
         user = userEvent.setup()
-        vi.mocked(useColorScheme).mockReturnValue({
-            colorScheme: undefined,
-            darkColorScheme: undefined,
-            lightColorScheme: undefined,
-            setColorScheme: vi.fn(),
-            setMode: vi.fn(),
-            systemMode: undefined,
-            allColorSchemes: ["light", "dark"],
-            mode: "light",
-        })
+
         useTempNetworksStore.getState().setTempNetworks([])
 
         useSettingsStore.getState().resetSettings()
@@ -185,6 +179,46 @@ describe("AgentFlow", () => {
         setThoughtBubbleEdges: vi.fn(),
     }
 
+    class MockResizeObserver {
+        static instances: MockResizeObserver[] = []
+
+        readonly observedElements: Element[] = []
+        readonly callback: ResizeObserverCallback
+
+        readonly observe = vi.fn((element: Element) => {
+            this.observedElements.push(element)
+        })
+
+        readonly unobserve = vi.fn((element: Element) => {
+            const index = this.observedElements.indexOf(element)
+            if (index >= 0) {
+                this.observedElements.splice(index, 1)
+            }
+        })
+
+        readonly disconnect = vi.fn(() => {
+            this.observedElements.length = 0
+        })
+
+        constructor(callback: ResizeObserverCallback) {
+            MockResizeObserver.instances.push(this)
+            this.callback = callback
+        }
+
+        trigger(width: number, height: number) {
+            this.callback(
+                [
+                    {
+                        contentRect: {
+                            width,
+                            height,
+                        } as DOMRectReadOnly,
+                    } as ResizeObserverEntry,
+                ],
+                this
+            )
+        }
+    }
     const renderAgentFlowComponent = (overrides: Partial<AgentFlowProps> = {}, mode: PaletteMode = "light") => {
         const props = {...defaultProps, ...overrides}
         return render(
@@ -480,6 +514,56 @@ describe("AgentFlow", () => {
             const removeEvent: NodeRemoveChange = {id: "", type: "remove"}
             expect(filterNodeEvents(removeEvent, false)).toBe(false)
             expect(filterNodeEvents(removeEvent, true)).toBe(false)
+        })
+
+        it("Should refit the graph when the flow wrapper resizes", async () => {
+            const originalResizeObserverDescriptor = Object.getOwnPropertyDescriptor(globalThis, "ResizeObserver")
+
+            Object.defineProperty(globalThis, "ResizeObserver", {
+                value: MockResizeObserver,
+                configurable: true,
+                writable: true,
+            })
+
+            const requestAnimationFrameSpy = vi
+                .spyOn(window, "requestAnimationFrame")
+                .mockImplementation((callback) => {
+                    callback(0)
+                    return 1
+                })
+
+            try {
+                MockResizeObserver.instances = []
+                mockFitView.mockClear()
+
+                renderAgentFlowComponent()
+
+                const resizeObserver = await waitFor(() => {
+                    const observer = MockResizeObserver.instances.find((instance) =>
+                        instance.observedElements.some((element) => element.id === "test-flow-id-react-flow-wrapper")
+                    )
+
+                    expect(observer).toBeDefined()
+                    return observer
+                })
+
+                mockFitView.mockClear()
+
+                act(() => {
+                    resizeObserver.trigger(800, 600)
+                })
+
+                expect(requestAnimationFrameSpy).toHaveBeenCalled()
+                expect(mockFitView).toHaveBeenCalled()
+            } finally {
+                if (originalResizeObserverDescriptor) {
+                    Object.defineProperty(globalThis, "ResizeObserver", originalResizeObserverDescriptor)
+                } else {
+                    Reflect.deleteProperty(globalThis, "ResizeObserver")
+                }
+
+                requestAnimationFrameSpy.mockRestore()
+            }
         })
     })
 
