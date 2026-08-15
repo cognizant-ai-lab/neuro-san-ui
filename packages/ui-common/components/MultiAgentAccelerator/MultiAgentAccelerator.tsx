@@ -762,114 +762,108 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const hasMissingApiKeys = getMissingApiKeys().size > 0
 
-    const getLeftPanel = () => {
-        return (
-            <Panel
-                collapsible={true}
-                defaultSize="20%"
-                id="multi-agent-accelerator-left-panel"
-                minSize="10%"
-                panelRef={leftPanelRef}
-            >
-                <Sidebar
-                    id="multi-agent-accelerator-sidebar"
-                    isAwaitingLlm={isAwaitingLlm}
-                    networkIconSuggestions={networkIconSuggestions}
-                    networks={networks}
-                    neuroSanServerURL={neuroSanURL}
-                    newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                    onDeleteNetwork={handleDeleteNetwork}
-                    onEditNetwork={handleEditNetwork}
-                    setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
-                    temporaryNetworks={temporaryNetworks}
-                />
-            </Panel>
-        )
-    }
+    const getLeftPanel = () => (
+        <Panel
+            collapsible={true}
+            defaultSize="20%"
+            id="multi-agent-accelerator-left-panel"
+            minSize="10%"
+            panelRef={leftPanelRef}
+        >
+            <Sidebar
+                id="multi-agent-accelerator-sidebar"
+                isAwaitingLlm={isAwaitingLlm}
+                networkIconSuggestions={networkIconSuggestions}
+                networks={networks}
+                neuroSanServerURL={neuroSanURL}
+                newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                onDeleteNetwork={handleDeleteNetwork}
+                onEditNetwork={handleEditNetwork}
+                setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
+                temporaryNetworks={temporaryNetworks}
+            />
+        </Panel>
+    )
 
-    const getCenterPanel = () => {
-        return (
-            <Panel
-                collapsible={true}
-                defaultSize="45%"
-                id="multi-agent-accelerator-center-panel"
-                minSize="10%"
-            >
-                <ReactFlowProvider>
-                    <Box
-                        id="multi-agent-accelerator-agent-flow-container"
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            width: "100%",
-                            height: "100%",
-                            margin: "0 auto",
-                        }}
-                    >
-                        <AgentFlow
-                            agentCounts={agentCounts}
-                            agentsInNetwork={agentsInNetwork}
-                            agentIconSuggestions={agentIconSuggestions}
-                            id="multi-agent-accelerator-agent-flow"
-                            key="multi-agent-accelerator-agent-flow"
-                            currentConversations={currentConversations}
-                            currentUser={username}
-                            isAwaitingLlm={isAwaitingLlm}
-                            isEditingNetwork={isEditingNetwork}
-                            isStreaming={isStreaming}
-                            isTemporaryNetwork={isSelectedNetworkTemporary}
-                            networkDisplayName={networkDisplayName || ""}
-                            networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
-                            neuroSanURL={neuroSanURL}
-                            onSaveAgent={onSaveAgent}
-                            setIsEditingNetwork={setIsEditingNetwork}
-                            thoughtBubbleEdges={thoughtBubbleEdges}
-                            setSelectedNetwork={changeSelectedNetwork}
-                            setThoughtBubbleEdges={setThoughtBubbleEdges}
-                        />
-                    </Box>
-                </ReactFlowProvider>
-            </Panel>
-        )
-    }
+    const getCenterPanel = () => (
+        <Panel
+            collapsible={true}
+            defaultSize="45%"
+            id="multi-agent-accelerator-center-panel"
+            minSize="10%"
+        >
+            <ReactFlowProvider>
+                <Box
+                    id="multi-agent-accelerator-agent-flow-container"
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        width: "100%",
+                        height: "100%",
+                        margin: "0 auto",
+                    }}
+                >
+                    <AgentFlow
+                        agentCounts={agentCounts}
+                        agentsInNetwork={agentsInNetwork}
+                        agentIconSuggestions={agentIconSuggestions}
+                        id="multi-agent-accelerator-agent-flow"
+                        key="multi-agent-accelerator-agent-flow"
+                        currentConversations={currentConversations}
+                        currentUser={username}
+                        isAwaitingLlm={isAwaitingLlm}
+                        isEditingNetwork={isEditingNetwork}
+                        isStreaming={isStreaming}
+                        isTemporaryNetwork={isSelectedNetworkTemporary}
+                        networkDisplayName={networkDisplayName || ""}
+                        networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
+                        neuroSanURL={neuroSanURL}
+                        onSaveAgent={onSaveAgent}
+                        setIsEditingNetwork={setIsEditingNetwork}
+                        thoughtBubbleEdges={thoughtBubbleEdges}
+                        setSelectedNetwork={changeSelectedNetwork}
+                        setThoughtBubbleEdges={setThoughtBubbleEdges}
+                    />
+                </Box>
+            </ReactFlowProvider>
+        </Panel>
+    )
 
-    const getRightPanel = () => {
-        return (
-            <Panel
-                collapsible={true}
-                defaultSize="35%"
-                id="multi-agent-accelerator-right-panel"
-                minSize="15%"
-                panelRef={rightPanelRef}
-            >
-                <ChatCommon
-                    agentPlaceholders={{
-                        [AGENT_NETWORK_DESIGNER_ID]: "Describe in plain language the network you would like to build.",
-                    }}
-                    currentUser={username}
-                    customAgentGreetings={{
-                        [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
-                    }}
-                    extraSlyData={extraSlyData}
-                    id="agent-network-ui"
-                    isAwaitingLlm={isAwaitingLlm}
-                    key={selectedNetwork ?? "no-network"}
-                    hasMissingApiKeys={hasMissingApiKeys}
-                    networkDescription={networkDescription}
-                    neuroSanURL={neuroSanURL}
-                    onChunkReceived={onChunkReceived}
-                    onStreamingComplete={onStreamingComplete}
-                    onStreamingStarted={onStreamingStarted}
-                    ref={chatRef}
-                    sampleQueries={sampleQueries}
-                    setIsAwaitingLlm={setIsAwaitingLlm}
-                    selectedNetwork={selectedNetwork}
-                    setSelectedNetwork={changeSelectedNetwork}
-                />
-            </Panel>
-        )
-    }
+    const getRightPanel = () => (
+        <Panel
+            collapsible={true}
+            defaultSize="35%"
+            id="multi-agent-accelerator-right-panel"
+            minSize="15%"
+            panelRef={rightPanelRef}
+        >
+            <ChatCommon
+                agentPlaceholders={{
+                    [AGENT_NETWORK_DESIGNER_ID]: "Describe in plain language the network you would like to build.",
+                }}
+                currentUser={username}
+                customAgentGreetings={{
+                    [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
+                }}
+                extraSlyData={extraSlyData}
+                id="agent-network-ui"
+                isAwaitingLlm={isAwaitingLlm}
+                key={selectedNetwork ?? "no-network"}
+                hasMissingApiKeys={hasMissingApiKeys}
+                networkDescription={networkDescription}
+                neuroSanURL={neuroSanURL}
+                onChunkReceived={onChunkReceived}
+                onStreamingComplete={onStreamingComplete}
+                onStreamingStarted={onStreamingStarted}
+                ref={chatRef}
+                sampleQueries={sampleQueries}
+                setIsAwaitingLlm={setIsAwaitingLlm}
+                selectedNetwork={selectedNetwork}
+                setSelectedNetwork={changeSelectedNetwork}
+            />
+        </Panel>
+    )
 
     const getStopButton = () =>
         isAwaitingLlm &&
