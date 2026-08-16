@@ -25,7 +25,7 @@ import {FC} from "react"
 
 import {Layout, useSettingsStore} from "../../../state/Settings"
 
-export const AgentFlowControls: FC = () => {
+export const CustomControls: FC = () => {
     const theme = useTheme()
 
     const updateSettings = useSettingsStore((state) => state.updateSettings)

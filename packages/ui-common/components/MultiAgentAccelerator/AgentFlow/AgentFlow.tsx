@@ -14,14 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import EditIcon from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
-import {alpha, useTheme} from "@mui/material/styles"
-import ToggleButton from "@mui/material/ToggleButton"
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
-import Tooltip from "@mui/material/Tooltip"
-import Typography from "@mui/material/Typography"
+import {useTheme} from "@mui/material/styles"
 import {
     applyNodeChanges,
     Background,
@@ -48,7 +42,6 @@ import {
 } from "react"
 
 import {AgentConversation} from "../AgentConversations"
-import {AgentFlowControls} from "./AgentFlowControls"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {
     AgentNetworkDefinitionEntry,
@@ -57,13 +50,15 @@ import {
     DEFAULT_FRONTMAN_Y_POS,
     LEVEL_SPACING,
 } from "../const"
+import {CustomControls} from "./CustomControls"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
+import {Legend} from "./Legend"
 import {PlasmaEdge} from "./PlasmaEdge"
+import {Title} from "./Title"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {GraphColoringOption, usePalette, useSettingsStore} from "../../../state/Settings"
+import {useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
-import {getZIndex} from "../../../utils/zIndexLayers"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
@@ -205,18 +200,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         }
     }, [scheduleFitView])
 
-    const updateSettings = useSettingsStore((state) => state.updateSettings)
-
     const layout = useSettingsStore((state) => state.settings.appearance.layout)
 
     const graphColoringOption = useSettingsStore((state) => state.settings.appearance.graphColoringOption)
-    const setGraphColoringOption = (newValue: GraphColoringOption) => {
-        updateSettings({
-            appearance: {
-                graphColoringOption: newValue,
-            },
-        })
-    }
 
     const showRadialGuides = useSettingsStore((state) => state.settings.appearance.showRadialGuides)
 
@@ -326,8 +312,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [setThoughtBubbleEdges]) // mount/unmount only
 
     const isHeatmap = graphColoringOption === "heatmap"
-
-    const palette = usePalette()
 
     // Merge agents from active thought bubbles with agentsInNetwork for layout
     // This ensures bubble edges persist even when agents disappear from the network
@@ -543,170 +527,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
-    // Generate Legend for depth or heatmap colors
-    const getLegend = () => {
-        const length = isHeatmap ? palette.length : Math.min(maxDepth, palette.length)
-        return (
-            <Box
-                id={`${id}-legend`}
-                sx={{
-                    alignItems: "center",
-                    backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    boxShadow: `0 2px 8px ${alpha(theme.palette.text.primary, 0.18)}`,
-                    borderRadius: "5px",
-                    display: "flex",
-                    padding: theme.spacing(0.5),
-                    position: "absolute",
-                    right: theme.spacing(2),
-                    top: theme.spacing(4),
-                    zIndex: getZIndex(2, theme),
-                }}
-            >
-                {/* Depth palette */}
-                {Array.from({length}, (_, i) => (
-                    <Box
-                        id={`${id}-legend-depth-${i}`}
-                        key={i}
-                        sx={{
-                            alignItems: "center",
-                            backgroundColor: palette[i],
-                            borderRadius: "50%",
-                            color: theme.palette.getContrastText(palette[i]),
-                            display: "flex",
-                            fontSize: "0.5rem",
-                            justifyContent: "center",
-                            marginLeft: theme.spacing(0.75),
-                            width: "15px",
-                        }}
-                    >
-                        {i}
-                    </Box>
-                ))}
-                <ToggleButtonGroup
-                    id={`${id}-coloring-toggle`}
-                    value={graphColoringOption}
-                    exclusive={true}
-                    onChange={(_, newValue) => {
-                        if (newValue !== null) {
-                            setGraphColoringOption(newValue)
-                        }
-                    }}
-                    size="small"
-                    sx={{
-                        marginLeft: theme.spacing(2),
-                        "& .MuiToggleButton-root": {
-                            borderColor: theme.palette.divider,
-                            color: theme.palette.text.primary,
-                            minHeight: 22,
-                            px: 1,
-                            "&:hover": {
-                                backgroundColor: theme.palette.action.hover,
-                            },
-                            "&.Mui-selected": {
-                                backgroundColor: theme.palette.action.selected,
-                                borderColor: theme.palette.text.primary,
-                            },
-                            "&.Mui-selected:hover": {
-                                backgroundColor: theme.palette.action.selected,
-                                borderColor: theme.palette.text.primary,
-                            },
-                        },
-                    }}
-                >
-                    <ToggleButton
-                        id={`${id}-depth-toggle`}
-                        value="depth"
-                        sx={{
-                            fontSize: "0.5rem",
-                            height: "1rem",
-                        }}
-                    >
-                        Depth
-                    </ToggleButton>
-                    <ToggleButton
-                        id={`${id}-heatmap-toggle`}
-                        value="heatmap"
-                        sx={{
-                            fontSize: "0.5rem",
-                            height: "1rem",
-                        }}
-                    >
-                        Heatmap
-                    </ToggleButton>
-                </ToggleButtonGroup>
-            </Box>
-        )
-    }
-
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
     const shouldShowRadialGuides = showRadialGuides && layout === "radial" && maxDepth > 1
-
-    const getTitle = () => {
-        if (!networkDisplayName) return null
-
-        return (
-            <Box
-                id={`${id}-network-title-bar`}
-                sx={{
-                    alignItems: "center",
-                    display: "flex",
-                    gap: 1,
-                    left: "50%",
-                    pointerEvents: "none",
-                    position: "absolute",
-                    top: theme.spacing(1),
-                    transform: "translateX(-50%)",
-                    zIndex: getZIndex(2, theme),
-                }}
-            >
-                <Tooltip
-                    title={networkDisplayName}
-                    placement="top"
-                >
-                    <Typography
-                        id={`${id}-network-title`}
-                        variant="subtitle1"
-                        sx={{
-                            backdropFilter: "blur(6px)",
-                            backgroundColor: alpha(theme.palette.background.paper, 0.75),
-                            border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                            borderRadius: 2,
-                            boxShadow: theme.shadows[6],
-                            color: theme.palette.text.primary,
-                            fontWeight: 600,
-                            letterSpacing: "0.01em",
-                            lineHeight: 1.35,
-                            maxWidth: 400,
-                            overflow: "hidden",
-                            pointerEvents: "auto",
-                            px: 2,
-                            py: 0.45,
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        {networkDisplayName}
-                    </Typography>
-                </Tooltip>
-                {isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm && (
-                    <Button
-                        id={`${id}-enter-edit-mode-btn`}
-                        variant="contained"
-                        size="small"
-                        onClick={() => setIsEditingNetwork(true)}
-                        startIcon={<EditIcon />}
-                        sx={{
-                            pointerEvents: "auto",
-                            "&:hover": {backgroundColor: theme.palette.primary.main},
-                        }}
-                    >
-                        Edit
-                    </Button>
-                )}
-            </Box>
-        )
-    }
 
     return (
         <Box
@@ -750,7 +572,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     pt: theme.spacing(4),
                 }}
             >
-                {getTitle()}
+                <Title
+                    id={`${id}-network-title-bar`}
+                    networkDisplayName={networkDisplayName}
+                    setIsEditingNetwork={setIsEditingNetwork}
+                    showEditButton={false}
+                />
                 <ReactFlow
                     connectionMode={ConnectionMode.Loose}
                     edgeTypes={edgeTypes}
@@ -766,11 +593,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 >
                     {!isAwaitingLlm && (
                         <>
-                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditingNetwork
-                                ? getLegend()
-                                : null}
+                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditingNetwork && (
+                                <Legend
+                                    id="legend"
+                                    maxDepth={maxDepth}
+                                />
+                            )}
                             <Background id={`${id}-background`} />
-                            {!isAgentNetworkDesignerMode && !isEditingNetwork && <AgentFlowControls />}
+                            {!isAgentNetworkDesignerMode && !isEditingNetwork && <CustomControls />}
                             {shouldShowRadialGuides ? getRadialGuides() : null}
                         </>
                     )}
