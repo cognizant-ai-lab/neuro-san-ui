@@ -14,11 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import AdjustRoundedIcon from "@mui/icons-material/AdjustRounded"
-import ChatBubbleOutlinedIcon from "@mui/icons-material/ChatBubbleOutlined"
 import EditIcon from "@mui/icons-material/Edit"
-import HubOutlinedIcon from "@mui/icons-material/HubOutlined"
-import ScatterPlotOutlinedIcon from "@mui/icons-material/ScatterPlotOutlined"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import {alpha, useTheme} from "@mui/material/styles"
@@ -30,8 +26,6 @@ import {
     applyNodeChanges,
     Background,
     ConnectionMode,
-    ControlButton,
-    Controls,
     EdgeTypes,
     NodeChange,
     NodeMouseHandler,
@@ -54,6 +48,7 @@ import {
 } from "react"
 
 import {AgentConversation} from "../AgentConversations"
+import {AgentFlowControls} from "./AgentFlowControls"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
 import {
     AgentNetworkDefinitionEntry,
@@ -66,7 +61,7 @@ import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./
 import {PlasmaEdge} from "./PlasmaEdge"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
+import {GraphColoringOption, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
@@ -213,13 +208,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const updateSettings = useSettingsStore((state) => state.updateSettings)
 
     const layout = useSettingsStore((state) => state.settings.appearance.layout)
-    const setLayout = (newLayout: Layout) => {
-        updateSettings({
-            appearance: {
-                layout: newLayout,
-            },
-        })
-    }
 
     const graphColoringOption = useSettingsStore((state) => state.settings.appearance.graphColoringOption)
     const setGraphColoringOption = (newValue: GraphColoringOption) => {
@@ -231,22 +219,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }
 
     const showRadialGuides = useSettingsStore((state) => state.settings.appearance.showRadialGuides)
-    const setShowRadialGuides = (newValue: boolean) => {
-        updateSettings({
-            appearance: {
-                showRadialGuides: newValue,
-            },
-        })
-    }
 
     const showThoughtBubbles = useSettingsStore((state) => state.settings.appearance.showThoughtBubbles)
-    const setShowThoughtBubbles = (newValue: boolean) => {
-        updateSettings({
-            appearance: {
-                showThoughtBubbles: newValue,
-            },
-        })
-    }
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
@@ -665,102 +639,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         )
     }
 
-    // Get the background color for the control buttons; differs based on whether the button is active or not
-    const getControlButtonBackgroundColor = (isActive: boolean) => {
-        return isActive ? theme.palette.action.selected : undefined
-    }
-
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
     const shouldShowRadialGuides = showRadialGuides && layout === "radial" && maxDepth > 1
-
-    // Generate the control bar for the flow, including layout and radial guides toggles
-    const getControls = () => {
-        return (
-            <Controls
-                position="top-left"
-                style={{
-                    position: "absolute",
-                    top: "0px",
-                    left: "0px",
-                    height: "auto",
-                    width: "auto",
-                }}
-                showInteractive={true}
-            >
-                <Tooltip
-                    id="radial-layout-tooltip"
-                    title="Radial layout"
-                    placement="right"
-                >
-                    <span id="radial-layout-span">
-                        <ControlButton
-                            id="radial-layout-button"
-                            onClick={() => setLayout("radial")}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
-                            }}
-                        >
-                            <HubOutlinedIcon id="radial-layout-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="linear-layout-tooltip"
-                    title="Linear layout"
-                    placement="right"
-                >
-                    <span id="linear-layout-span">
-                        <ControlButton
-                            id="linear-layout-button"
-                            onClick={() => setLayout("linear")}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
-                            }}
-                        >
-                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="radial-guides-tooltip"
-                    title={`Enable/disable radial guides${
-                        layout === "radial" ? "" : " (only available in radial layout)"
-                    }`}
-                    placement="right"
-                >
-                    <span id="radial-guides-span">
-                        <ControlButton
-                            id="radial-guides-button"
-                            onClick={() => setShowRadialGuides(!showRadialGuides)}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(showRadialGuides),
-                            }}
-                            disabled={layout !== "radial"}
-                        >
-                            <AdjustRoundedIcon id="radial-guides-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="thought-bubble-tooltip"
-                    title={`Toggle thought bubbles ${showThoughtBubbles ? "off" : "on"}`}
-                    placement="right"
-                >
-                    <span id="thought-bubble-span">
-                        <ControlButton
-                            id="thought-bubble-button"
-                            onClick={() => setShowThoughtBubbles(!showThoughtBubbles)}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
-                            }}
-                        >
-                            <ChatBubbleOutlinedIcon id="thought-bubble-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-            </Controls>
-        )
-    }
 
     const getTitle = () => {
         if (!networkDisplayName) return null
@@ -890,7 +770,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                                 ? getLegend()
                                 : null}
                             <Background id={`${id}-background`} />
-                            {!isAgentNetworkDesignerMode && !isEditingNetwork && getControls()}
+                            {!isAgentNetworkDesignerMode && !isEditingNetwork && <AgentFlowControls />}
                             {shouldShowRadialGuides ? getRadialGuides() : null}
                         </>
                     )}
