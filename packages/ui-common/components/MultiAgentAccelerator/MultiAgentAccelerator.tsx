@@ -144,6 +144,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // LLM providers for which BYOK keys are supported by the current network
     const [supportedByokProviders, setSupportedByokProviders] = useState<ReadonlySet<LLMProvider>>(new Set())
 
+    // The sly_data_schema advertised by the current network, if any. Drives schema hints in the sly_data dialog.
+    const [slyDataSchema, setSlyDataSchema] = useState<Record<string, unknown> | undefined>(undefined)
+
     const neuroSanURL = useSettingsStore((state) => state.settings.externalServices.neuroSanUrl) ?? defaultNeuroSanUrl
 
     // Tracks how many times each agent has been involved in the conversation
@@ -390,6 +393,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 // Reset before fetching
                 setNetworkDescription("")
                 setSupportedByokProviders(new Set())
+                setSlyDataSchema(undefined)
 
                 // Get agent function from server
                 const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, username)
@@ -397,6 +401,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
                 const schema = agentFunction?.function?.sly_data_schema
                 setSupportedByokProviders(getSupportedLlmProviders(schema))
+                setSlyDataSchema(schema)
             } catch (e) {
                 console.warn(`Unable to get agent details for network ${selectedNetwork}:`, e)
             }
@@ -861,6 +866,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 setIsAwaitingLlm={setIsAwaitingLlm}
                 selectedNetwork={selectedNetwork}
                 setSelectedNetwork={changeSelectedNetwork}
+                slyDataSchema={slyDataSchema}
             />
         </Panel>
     )
