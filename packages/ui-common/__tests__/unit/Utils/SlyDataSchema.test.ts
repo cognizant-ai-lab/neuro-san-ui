@@ -183,6 +183,11 @@ describe("buildSlyDataTemplate", () => {
         })
     })
 
+    it("seeds an empty object for an object node that declares no properties", () => {
+        const schema = {properties: {config: {type: "object"}}, type: "object"}
+        expect(buildSlyDataTemplate(schema, {})).toStrictEqual({config: {}})
+    })
+
     it("never seeds excluded keys", () => {
         expect(buildSlyDataTemplate(BYOK_SCHEMA, {}, ["llm_config"])).toStrictEqual({running_cost: 0})
     })
