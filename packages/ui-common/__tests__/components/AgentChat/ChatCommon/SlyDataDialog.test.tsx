@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {act, render, screen} from "@testing-library/react"
+import {act, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -36,6 +36,29 @@ const DIALOG_ID = "test-sly-data-dialog"
 // A one-pixel transparent GIF, as a data URI
 const IMAGE_DATA_URI = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
+// The shape of neuro-san's math_guy example schema: two required scalars
+const MATH_GUY_SCHEMA = {
+    properties: {
+        x: {description: "The first operand", type: "float"},
+        y: {description: "The second operand", type: "float"},
+    },
+    required: ["x", "y"],
+    type: "object",
+}
+
+// The shape of a BYOK network's schema: one scalar plus the app-managed llm_config block
+const BYOK_SCHEMA = {
+    properties: {
+        llm_config: {
+            properties: {openai_api_key: {type: "string"}},
+            type: "object",
+        },
+        running_cost: {description: "Fake billing so far", type: "float"},
+    },
+    required: ["llm_config"],
+    type: "object",
+}
+
 describe("SlyDataDialog", () => {
     withStrictMocks()
 
@@ -52,7 +75,7 @@ describe("SlyDataDialog", () => {
         })
     })
 
-    const renderDialog = (extraSlyDataKeys?: readonly string[]) =>
+    const renderDialog = (extraSlyDataKeys?: readonly string[], slyDataSchema?: Record<string, unknown>) =>
         render(
             <SlyDataDialog
                 extraSlyDataKeys={extraSlyDataKeys}
@@ -61,6 +84,7 @@ describe("SlyDataDialog", () => {
                 networkDisplayName="Music Nerd Pro"
                 networkId={NETWORK_ID}
                 onClose={onCloseMock}
+                slyDataSchema={slyDataSchema}
             />
         )
 
@@ -250,5 +274,75 @@ describe("SlyDataDialog", () => {
         renderDialog()
 
         expect(screen.queryByText(/Sent automatically with every request/u)).not.toBeInTheDocument()
+    })
+
+    it("shows no schema hints and no template button when the network declares no schema", () => {
+        renderDialog()
+
+        expect(screen.queryByText(/This network expects/u)).not.toBeInTheDocument()
+        expect(screen.queryByRole("button", {name: "Fill sly data template"})).not.toBeInTheDocument()
+    })
+
+    it("ignores an unusable schema rather than breaking the dialog", () => {
+        vi.spyOn(console, "warn").mockImplementation(() => undefined)
+
+        renderDialog(undefined, {type: "object"})
+
+        expect(screen.queryByText(/This network expects/u)).not.toBeInTheDocument()
+        expect(getEditor()).toHaveValue("{}")
+    })
+
+    it("lists the keys the network expects, with type, requiredness and description", () => {
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+
+        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        expect(hints.getByText("x")).toBeInTheDocument()
+        expect(hints.getByText("y")).toBeInTheDocument()
+        expect(hints.getAllByText(/\(float, required\)/u)).toHaveLength(2)
+        expect(hints.getByText(/The first operand/u)).toBeInTheDocument()
+    })
+
+    it("leaves the app-supplied keys out of the schema hints", () => {
+        renderDialog(["llm_config"], BYOK_SCHEMA)
+
+        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        expect(hints.getByText("running_cost")).toBeInTheDocument()
+        expect(hints.queryByText("llm_config")).not.toBeInTheDocument()
+    })
+
+    it("renders a bare key when the schema gives no type, requiredness or description", () => {
+        renderDialog(undefined, {properties: {plain: {}}, type: "object"})
+
+        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        expect(hints.getByText("plain")).toBeInTheDocument()
+        expect(hints.queryByText(/\(/u)).not.toBeInTheDocument()
+    })
+
+    it("seeds the expected keys as a template, keeping existing values", async () => {
+        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3}))
+
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+        await user.click(screen.getByRole("button", {name: "Fill sly data template"}))
+
+        expect(getEditor()).toHaveValue('{\n  "x": 3,\n  "y": 0\n}')
+
+        // The template is only a draft until the user saves it
+        expect(getSlyData()).toEqual({x: 3})
+        await user.click(screen.getByRole("button", {name: "Save"}))
+        expect(getSlyData()).toEqual({x: 3, y: 0})
+    })
+
+    it("never seeds the app-supplied keys into the template", async () => {
+        renderDialog(["llm_config"], BYOK_SCHEMA)
+        await user.click(screen.getByRole("button", {name: "Fill sly data template"}))
+
+        expect(getEditor()).toHaveValue('{\n  "running_cost": 0\n}')
+    })
+
+    it("disables the template button while the JSON does not parse", async () => {
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+        await replaceEditorContents("{oops")
+
+        expect(screen.getByRole("button", {name: "Fill sly data template"})).toBeDisabled()
     })
 })
