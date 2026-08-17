@@ -18,6 +18,7 @@ import DataObjectIcon from "@mui/icons-material/DataObject"
 import DeleteOutlined from "@mui/icons-material/DeleteOutlined"
 import FileDownloadOutlined from "@mui/icons-material/FileDownloadOutlined"
 import FileUploadOutlined from "@mui/icons-material/FileUploadOutlined"
+import PlaylistAddOutlined from "@mui/icons-material/PlaylistAddOutlined"
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
@@ -29,6 +30,7 @@ import {ChangeEvent, FC, Fragment, useMemo, useRef, useState} from "react"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {findImageValues, formatSlyData, parseSlyData} from "../../../utils/SlyData"
+import {buildSlyDataTemplate, describeSlyDataSchema, SlyDataSchemaEntry} from "../../../utils/SlyDataSchema"
 import {StyledButton} from "../../Common/ConfirmationModal"
 import {MUIDialog} from "../../Common/MUIDialog"
 import InfoTip from "../../Settings/InfoTip"
@@ -53,6 +55,12 @@ export interface SlyDataDialogProps {
     readonly networkDisplayName: string
 
     readonly onClose: () => void
+
+    /**
+     * The sly_data_schema the network's front man advertises, if any. When present and usable, the dialog lists
+     * the expected keys and offers to seed them as a template.
+     */
+    readonly slyDataSchema?: Record<string, unknown>
 }
 //#endregion: Types
 
@@ -72,7 +80,24 @@ const IMAGE_PREVIEW_SIZE = 96
 const SLY_DATA_EXPLAINER =
     "Data is sent to the agent network in a private channel with each request but kept out of the LLM."
 
+// Styling for a sly_data key name rendered as an inline code chip
+const KEY_CHIP_SX = {
+    backgroundColor: "action.hover",
+    borderRadius: 0.5,
+    fontFamily: "monospace",
+    px: 0.5,
+} as const
+
 //#endregion: Constants
+
+/**
+ * Renders the parenthetical qualifiers after a schema key name, eg. " (float, required)".
+ * Empty when the schema declares neither a type nor requiredness.
+ */
+const describeEntryQualifiers = (entry: SlyDataSchemaEntry): string => {
+    const qualifiers = [entry.type, entry.isRequired ? "required" : undefined].filter(Boolean)
+    return qualifiers.length > 0 ? ` (${qualifiers.join(", ")})` : ""
+}
 
 /**
  * Dialog for viewing and editing the sly_data of the selected agent network.
@@ -93,6 +118,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
     networkId,
     networkDisplayName,
     onClose,
+    slyDataSchema,
 }) => {
     const storedSlyData = useAgentChatHistoryStore((state) =>
         networkId ? state.history[networkId]?.slyData : undefined
@@ -121,6 +147,13 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     const images = useMemo(() => findImageValues(parseResult.value), [parseResult])
 
+    // The keys the network says it expects, minus the ones the app supplies on its own. Empty for the many
+    // networks that do not advertise a schema, in which case the dialog looks exactly as it always has.
+    const schemaEntries = useMemo(
+        () => describeSlyDataSchema(slyDataSchema, extraSlyDataKeys),
+        [slyDataSchema, extraSlyDataKeys]
+    )
+
     // The server echoed new sly_data while the user had unsaved edits. Saying so beats silently discarding
     // either side's version.
     const wasUpdatedByServer = isDirty && storedText !== draftBaseline
@@ -144,6 +177,10 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     const handleClear = () => {
         startOrUpdateDraft("{}")
+    }
+
+    const handleFillTemplate = () => {
+        startOrUpdateDraft(formatSlyData(buildSlyDataTemplate(slyDataSchema, parseResult.value, extraSlyDataKeys)))
     }
 
     const handleExport = () => {
@@ -190,6 +227,21 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     const getToolbar = () => (
         <Box sx={{display: "flex", gap: 0.5, justifyContent: "flex-end"}}>
+            {schemaEntries.length > 0 && (
+                <Tooltip title="Insert the keys this network expects (keeps your values)">
+                    <span>
+                        <IconButton
+                            aria-label="Fill sly data template"
+                            disabled={Boolean(parseResult.error)}
+                            id={`${id}-template-button`}
+                            onClick={handleFillTemplate}
+                            size="small"
+                        >
+                            <PlaylistAddOutlined fontSize="small" />
+                        </IconButton>
+                    </span>
+                </Tooltip>
+            )}
             <Tooltip title="Import from a JSON file">
                 <span>
                     <IconButton
@@ -240,6 +292,47 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
             />
         </Box>
     )
+
+    /**
+     * Lists the keys the network says it expects, so the user knows what to fill in without reading the
+     * network's source. Renders nothing when the network advertises no usable schema.
+     */
+    const getSchemaHints = () =>
+        schemaEntries.length > 0 && (
+            <Box
+                id={`${id}-schema-hints`}
+                sx={{mb: 0.5}}
+            >
+                <Typography
+                    sx={{fontSize: "0.75rem"}}
+                    variant="caption"
+                >
+                    This network expects:
+                </Typography>
+                <Box
+                    component="ul"
+                    sx={{listStyle: "none", m: 0, pl: 1.5}}
+                >
+                    {schemaEntries.map((entry) => (
+                        <Typography
+                            component="li"
+                            key={entry.key}
+                            sx={{display: "block", fontSize: "0.75rem"}}
+                            variant="caption"
+                        >
+                            <Box
+                                component="code"
+                                sx={KEY_CHIP_SX}
+                            >
+                                {entry.key}
+                            </Box>
+                            {describeEntryQualifiers(entry)}
+                            {entry.description ? `: ${entry.description}` : ""}
+                        </Typography>
+                    ))}
+                </Box>
+            </Box>
+        )
 
     const getServerUpdateAlert = () =>
         wasUpdatedByServer && (
@@ -320,12 +413,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                         {index > 0 && ", "}
                         <Box
                             component="code"
-                            sx={{
-                                backgroundColor: "action.hover",
-                                borderRadius: 0.5,
-                                fontFamily: "monospace",
-                                px: 0.5,
-                            }}
+                            sx={KEY_CHIP_SX}
                         >
                             {key}
                         </Box>
@@ -366,6 +454,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
             title={getTitle()}
         >
             {getToolbar()}
+            {getSchemaHints()}
             {getServerUpdateAlert()}
             <TextField
                 error={Boolean(parseResult.error)}
