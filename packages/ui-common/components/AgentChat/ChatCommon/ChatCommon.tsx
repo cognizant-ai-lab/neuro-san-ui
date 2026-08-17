@@ -197,6 +197,12 @@ export interface ChatCommonProps {
      * If true, indicates that the user is missing API keys for one or more LLM providers.
      */
     readonly hasMissingApiKeys?: boolean
+
+    /**
+     * The sly_data_schema the selected network's front man advertises, if any. Enables schema hints in the
+     * sly_data dialog.
+     */
+    readonly slyDataSchema?: Record<string, unknown>
 }
 
 // Type for forward ref to expose the handleStop and handleClearChat functions
@@ -273,6 +279,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         setIsAwaitingLlm,
         setPreviousResponse,
         setSelectedNetwork,
+        slyDataSchema,
         title,
     } = props
     // MUI theme
@@ -1186,6 +1193,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     networkDisplayName={networkDisplayName}
                     networkId={selectedNetwork}
                     onClose={() => setSlyDataDialogOpen(false)}
+                    slyDataSchema={slyDataSchema}
                 />
             ) : null}
             <Box
