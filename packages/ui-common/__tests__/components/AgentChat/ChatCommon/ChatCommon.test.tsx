@@ -1673,6 +1673,21 @@ describe("ChatCommon", () => {
             expect(await openSlyDataEditor()).toHaveValue('{\n  "charges": 7\n}')
         })
 
+        it("Should show the network's schema hints in the sly_data editor", async () => {
+            renderChatCommonComponent({
+                slyDataSchema: {
+                    properties: {x: {description: "The first operand", type: "float"}},
+                    required: ["x"],
+                    type: "object",
+                },
+            })
+
+            await openSlyDataEditor()
+
+            expect(screen.getByText(/This network expects/u)).toBeInTheDocument()
+            expect(screen.getByText(/\(float, required\)/u)).toBeInTheDocument()
+        })
+
         it("Should not offer the sly_data editor for legacy agents, which have no sly_data", async () => {
             renderChatCommonComponent({selectedNetwork: LegacyAgentType.DataGenerator})
 
