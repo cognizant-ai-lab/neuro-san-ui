@@ -54,7 +54,6 @@ import {
     notifySaveError,
     streamNetworkDesignerUpsert,
 } from "./TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
 import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
 import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
@@ -82,9 +81,6 @@ export interface MultiAgentAcceleratorProps {
     readonly defaultNeuroSanUrl: string
 }
 
-// Optimization to avoid creating a new empty map on every render
-const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
-
 /**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
  * @param backendNeuroSanApiUrl Initial URL of the backend Neuro-San API. User can change this in the UI.
@@ -109,8 +105,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const [isEditingNetwork, setIsEditingNetwork] = useState(false)
 
-    // Track streaming state - controls thought bubble cleanup timer, and enables "zen mode" (hides outer panels after
-    // animation)
+    // Track streaming state. Allows modifying showing different UI during streaming (e.g. collapsing panels
+    // in "Zen" mode)
     const [isStreaming, setIsStreaming] = useState(false)
 
     const [networks, setNetworks] = useState<readonly AgentInfo[]>([])
@@ -163,11 +159,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const [currentConversations, setCurrentConversations] = useState<AgentConversation[]>([])
 
     const [networkToBeDeleted, setNetworkToBeDeleted] = useState<string | null>(null)
-
-    // State to hold thought bubble edges - avoids duplicates across layout recalculations
-    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
-        Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
-    >(new Map())
 
     const [confirmationModalOpen, setConfirmationModalOpen] = useState<boolean>(false)
     const [tourModalOpen, setTourModalOpen] = useState<boolean>(false)
@@ -222,7 +213,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const markAnnouncementShown = useAnnouncementsStore((state) => state.markShown)
 
     const resetState = useCallback(() => {
-        setThoughtBubbleEdges(new Map())
         setIsStreaming(false)
     }, [])
 
@@ -826,9 +816,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         neuroSanURL={neuroSanURL}
                         onSaveAgent={onSaveAgent}
                         setIsEditingNetwork={setIsEditingNetwork}
-                        thoughtBubbleEdges={thoughtBubbleEdges}
                         setSelectedNetwork={changeSelectedNetwork}
-                        setThoughtBubbleEdges={setThoughtBubbleEdges}
                     />
                 </Box>
             </ReactFlowProvider>
@@ -1033,7 +1021,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 isAgentNetworkDesignerMode={true}
                                 isAwaitingLlm={false}
                                 isStreaming={false}
-                                thoughtBubbleEdges={EMPTY_THOUGHT_BUBBLE_EDGES}
                             />
                         ) : (
                             <Typography

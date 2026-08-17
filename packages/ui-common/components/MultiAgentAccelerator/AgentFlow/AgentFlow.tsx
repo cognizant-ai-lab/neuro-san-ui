@@ -29,17 +29,7 @@ import {
     useReactFlow,
     useStore,
 } from "@xyflow/react"
-import {
-    Dispatch,
-    FC,
-    KeyboardEventHandler,
-    SetStateAction,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react"
+import {FC, KeyboardEventHandler, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {AgentConversation} from "../AgentConversations"
 import {AgentNode, AgentNodeProps, NODE_HEIGHT, NODE_WIDTH} from "./AgentNode"
@@ -98,10 +88,6 @@ export interface AgentFlowProps {
         agentNetworkName: string | undefined,
         signal: AbortSignal
     ) => Promise<void>
-    readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
-    readonly setThoughtBubbleEdges?: Dispatch<
-        SetStateAction<Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>>
-    >
 }
 
 //#endregion: Types
@@ -148,10 +134,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     networkId,
     neuroSanURL,
     onSaveAgent,
-    thoughtBubbleEdges,
     setIsEditingNetwork,
     setSelectedNetwork,
-    setThoughtBubbleEdges,
 }) => {
     const theme = useTheme()
 
@@ -219,6 +203,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
         hoveredBubbleIdRef.current = bubbleId
     }, [])
+
+    // Thought bubble edges
+    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
+        Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
+    >(new Map())
 
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
@@ -530,6 +519,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
     const shouldShowRadialGuides = showRadialGuides && layout === "radial" && maxDepth > 1
 
+    // Only show edit button for temporary networks where we're not already editing and not awaiting LLM response
+    const showEditButton = isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm
+
     return (
         <Box
             id={`${id}-outer-box`}
@@ -576,7 +568,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     id={`${id}-network-title-bar`}
                     networkDisplayName={networkDisplayName}
                     setIsEditingNetwork={setIsEditingNetwork}
-                    showEditButton={false}
+                    showEditButton={showEditButton}
                 />
                 <ReactFlow
                     connectionMode={ConnectionMode.Loose}
