@@ -1592,6 +1592,32 @@ describe("MultiAgentAccelerator", () => {
             )
         })
 
+        it("passes the network's sly_data_schema through to the chat", async () => {
+            const schema = {
+                properties: {x: {description: "The first operand", type: "float"}},
+                required: ["x"],
+                type: "object",
+            }
+            vi.mocked(getAgentFunction).mockResolvedValue({
+                function: {sly_data_schema: schema},
+            } satisfies FunctionResponse)
+
+            renderMultiAgentAccelerator()
+
+            await act(async () => {
+                setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+            })
+
+            await screen.findByText(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+
+            expect(chatCommonMock).toHaveBeenCalledWith(
+                expect.objectContaining<Partial<ChatCommonProps>>({
+                    selectedNetwork: `${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`,
+                    slyDataSchema: schema,
+                })
+            )
+        })
+
         it("handles missing agent name in current temp network", async () => {
             useTempNetworksStore.setState({
                 tempNetworks: [
