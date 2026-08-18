@@ -300,6 +300,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
     const getSchemaHints = () =>
         schemaEntries.length > 0 && (
             <Box
+                data-testid={`${id}-schema-hints`}
                 id={`${id}-schema-hints`}
                 sx={{mb: 0.5}}
             >
