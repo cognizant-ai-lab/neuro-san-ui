@@ -295,7 +295,7 @@ describe("SlyDataDialog", () => {
     it("lists the keys the network expects, with type, requiredness and description", () => {
         renderDialog(undefined, MATH_GUY_SCHEMA)
 
-        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
         expect(hints.getByText("x")).toBeInTheDocument()
         expect(hints.getByText("y")).toBeInTheDocument()
         expect(hints.getAllByText(/\(float, required\)/u)).toHaveLength(2)
@@ -305,7 +305,7 @@ describe("SlyDataDialog", () => {
     it("leaves the app-supplied keys out of the schema hints", () => {
         renderDialog(["llm_config"], BYOK_SCHEMA)
 
-        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
         expect(hints.getByText("running_cost")).toBeInTheDocument()
         expect(hints.queryByText("llm_config")).not.toBeInTheDocument()
     })
@@ -313,7 +313,7 @@ describe("SlyDataDialog", () => {
     it("renders a bare key when the schema gives no type, requiredness or description", () => {
         renderDialog(undefined, {properties: {plain: {}}, type: "object"})
 
-        const hints = within(screen.getByText(/This network expects/u).parentElement)
+        const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
         expect(hints.getByText("plain")).toBeInTheDocument()
         expect(hints.queryByText(/\(/u)).not.toBeInTheDocument()
     })
