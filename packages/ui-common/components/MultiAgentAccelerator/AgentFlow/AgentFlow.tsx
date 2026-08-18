@@ -41,7 +41,7 @@ import {
     LEVEL_SPACING,
 } from "../const"
 import {CustomControls} from "./CustomControls"
-import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
+import {layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
 import {Legend} from "./Legend"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {Title} from "./Title"
@@ -52,7 +52,6 @@ import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
-import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
 import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
 
 //#region: Types
@@ -91,12 +90,6 @@ export interface AgentFlowProps {
 }
 
 //#endregion: Types
-
-//#region: Constants
-
-const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
-
-//#endregion: Constants
 
 //#region: Helpers
 
@@ -137,6 +130,10 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     setIsEditingNetwork,
     setSelectedNetwork,
 }) => {
+    if (currentConversations && currentConversations.length > 0) {
+        console.debug(`AgentFlow: Rendering ${currentConversations.length} conversations`, currentConversations)
+    }
+
     const theme = useTheme()
 
     const {fitView} = useReactFlow()
@@ -190,24 +187,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const showRadialGuides = useSettingsStore((state) => state.settings.appearance.showRadialGuides)
 
-    const showThoughtBubbles = useSettingsStore((state) => state.settings.appearance.showThoughtBubbles)
-
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
-
-    // Track conversation IDs we've already processed to prevent re-adding after expiry
-    const processedConversationIdsRef = useRef<Set<string>>(new Set())
-
-    // Track which bubble is currently being hovered
-    const hoveredBubbleIdRef = useRef<string | null>(null)
-    const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
-        hoveredBubbleIdRef.current = bubbleId
-    }, [])
-
-    // Thought bubble edges
-    const [thoughtBubbleEdges, setThoughtBubbleEdges] = useState<
-        Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
-    >(new Map())
 
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
@@ -220,136 +201,31 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         isStreamingRef.current = isStreaming
     })
 
-    // Clear processed conversation IDs when thought bubble edges are cleared (streaming ends)
-    useEffect(() => {
-        if (thoughtBubbleEdges.size === 0) {
-            processedConversationIdsRef.current.clear()
-        }
-    }, [thoughtBubbleEdges.size])
-
-    // Add new thought bubble edges for incoming conversations.
-    useEffect(() => {
-        if (!currentConversations || currentConversations.length === 0) return
-
-        setThoughtBubbleEdges?.((prev) => {
-            const processedText = new Set<string>()
-            for (const entry of prev.values()) {
-                const text = (entry.edge.data as {text?: string})?.text?.trim()
-                if (text) processedText.add(text)
-            }
-
-            let edgesMap: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}> | null = null
-
-            for (const conv of currentConversations) {
-                const convText = conv.text?.trim()
-                const agentList = [...conv.agents]
-
-                if (
-                    convText &&
-                    agentList.length >= 2 &&
-                    !processedText.has(convText) &&
-                    !processedConversationIdsRef.current.has(conv.id)
-                ) {
-                    if (!edgesMap) edgesMap = new Map(prev)
-
-                    processedConversationIdsRef.current.add(conv.id)
-                    processedText.add(convText)
-
-                    const edge: ThoughtBubbleEdgeShape = {
-                        id: `thought-bubble-${conv.id}`,
-                        source: agentList[0],
-                        target: agentList[1],
-                        type: "thoughtBubbleEdge",
-                        data: {
-                            text: conv.text,
-                            showAlways: showThoughtBubbles,
-                            conversationId: conv.id,
-                            agents: agentList,
-                            type: conv.type,
-                        },
-                        style: {pointerEvents: "none" as const},
-                    }
-                    addThoughtBubbleEdge(edgesMap, conv.id, edge) // also enforces MAX_GLOBAL_THOUGHT_BUBBLES
-                }
-            }
-
-            return edgesMap ?? prev
-        })
-    }, [currentConversations, showThoughtBubbles, setThoughtBubbleEdges])
-
-    // Clean up expired thought bubble edges — created once on mount, reads isStreaming via ref.
-    useEffect(() => {
-        const cleanupInterval = setInterval(() => {
-            if (!isStreamingRef.current) return
-
-            const now = Date.now()
-            setThoughtBubbleEdges?.((prev) => {
-                let changed = false
-                const edgesMap = new Map(prev)
-                for (const [convId, entry] of prev) {
-                    const isHovered = hoveredBubbleIdRef.current === `thought-bubble-${convId}`
-                    if (!isHovered && now - entry.timestamp >= THOUGHT_BUBBLE_TIMEOUT_MS) {
-                        edgesMap.delete(convId)
-                        changed = true
-                    }
-                }
-                return changed ? edgesMap : prev
-            })
-        }, 1000)
-
-        return () => clearInterval(cleanupInterval)
-    }, [setThoughtBubbleEdges]) // mount/unmount only
-
     const isHeatmap = graphColoringOption === "heatmap"
-
-    // Merge agents from active thought bubbles with agentsInNetwork for layout
-    // This ensures bubble edges persist even when agents disappear from the network
-    const bubbleAgentIds: Set<string> = useMemo(() => {
-        const ids = new Set<string>()
-        thoughtBubbleEdges.forEach(({edge}) => {
-            const agents = (edge.data as {agents?: string[]})?.agents ?? []
-            agents.forEach((agentId) => ids.add(agentId))
-        })
-        return ids
-    }, [thoughtBubbleEdges])
-
-    const mergedAgentsInNetwork: ConnectivityInfo[] = useMemo(() => {
-        // Add any missing agents from bubbles as minimal ConnectivityInfo
-        const existingIds = new Set(agentsInNetwork.map((a) => a.origin))
-        const missing = [...bubbleAgentIds].filter((bubbleAgentId) => !existingIds.has(bubbleAgentId))
-        const minimalAgents = missing.map((missingId): ConnectivityInfo => ({
-            origin: missingId,
-            tools: [] as string[],
-            display_as: undefined,
-        }))
-        return [...agentsInNetwork, ...minimalAgents]
-    }, [agentsInNetwork, bubbleAgentIds])
 
     // Create the flow layout depending on user preference
     // Memoize layoutResult so it only recalculates when relevant data changes
     const layoutResult: LayoutResult = useMemo(() => {
-        if (mergedAgentsInNetwork.length > 0) {
+        if (agentsInNetwork.length > 0) {
             return layout === "linear"
                 ? layoutLinear({
                       agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      agentsInNetwork: mergedAgentsInNetwork,
+                      agentsInNetwork,
                       currentConversations,
                       isAgentNetworkDesignerMode,
                       isAwaitingLlm,
                       isTemporaryNetwork,
-                      thoughtBubbleEdges,
                       useNativeNames,
                   })
                 : layoutRadial({
                       agentCounts: isHeatmap ? agentCounts : undefined,
                       agentIconSuggestions,
-                      agentsInNetwork: mergedAgentsInNetwork,
+                      agentsInNetwork,
                       currentConversations,
                       isAgentNetworkDesignerMode,
                       isAwaitingLlm,
                       isTemporaryNetwork,
-                      thoughtBubbleEdges,
                       useNativeNames,
                   })
         } else {
@@ -358,14 +234,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     }, [
         agentCounts,
         agentIconSuggestions,
+        agentsInNetwork,
         currentConversations,
         isAgentNetworkDesignerMode,
         isAwaitingLlm,
         isHeatmap,
         isTemporaryNetwork,
         layout,
-        mergedAgentsInNetwork,
-        thoughtBubbleEdges,
         useNativeNames,
     ])
 
@@ -433,12 +308,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     const edges = layoutResult.edges
 
-    // Make sure to extract only thought bubble edges for the overlay.
-    const thoughtBubbleEdgesForOverlay: ThoughtBubbleEdgeShape[] = useMemo(
-        () => edges.filter((e): e is ThoughtBubbleEdgeShape => e.type === "thoughtBubbleEdge"),
-        [edges]
-    )
-
     useEffect(() => {
         scheduleFitView()
     }, [agentsInNetwork, layout, scheduleFitView])
@@ -470,7 +339,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const edgeTypes: EdgeTypes = useMemo(
         () => ({
             plasmaEdge: PlasmaEdge,
-            thoughtBubbleEdge: ThoughtBubbleEdge,
         }),
         []
     )
@@ -598,11 +466,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     )}
                 </ReactFlow>
                 <ThoughtBubbleOverlay
-                    nodes={nodes}
-                    edges={thoughtBubbleEdgesForOverlay}
-                    showThoughtBubbles={showThoughtBubbles}
+                    currentConversations={currentConversations}
                     isStreaming={isStreaming}
-                    onBubbleHoverChange={handleBubbleHoverChange}
                 />
             </Box>
             {isTemporaryNetwork && !isAwaitingLlm && (

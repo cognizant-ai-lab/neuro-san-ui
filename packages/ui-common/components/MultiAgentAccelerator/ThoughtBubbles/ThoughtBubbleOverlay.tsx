@@ -1,21 +1,24 @@
 import {styled} from "@mui/material/styles"
-import type {Node as RFNode} from "@xyflow/react"
-import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {FC, Fragment, useCallback, useEffect, useMemo, useRef} from "react"
 
 import {ThoughtBubble} from "./StyledThoughtBubble"
-import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {AgentConversation} from "../AgentConversations"
 
 // #region: Types
 
 interface ThoughtBubbleOverlayProps {
-    readonly nodes: RFNode[]
-    readonly edges: ThoughtBubbleEdgeShape[]
-    readonly showThoughtBubbles?: boolean
-    readonly isStreaming?: boolean
-    readonly onBubbleHoverChange?: (bubbleId: string | null) => void
+    readonly currentConversations: AgentConversation[]
 }
 
+interface RenderableBubble {
+    readonly id: string
+    readonly conversationId: string
+    readonly text: string
+    readonly agents: string[]
+    readonly type: ChatMessageType
+    readonly timestamp: number
+}
 // #endregion: Types
 
 // #region: Constants
@@ -55,119 +58,15 @@ const TruncatedText = styled("div")<{isHovered: boolean; isTruncated: boolean}>(
 
 // #endregion: Styled Components
 
-export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
-    nodes,
-    edges,
-    showThoughtBubbles = true,
-    isStreaming = false,
-    onBubbleHoverChange,
-}) => {
-    /**
-     * A pure, managed timestamp that can be safely referenced during renders.
-     * Instead of calling the impure Date.now() directly in the render phase (which violates React's purity rules
-     * and triggers linting warnings), the component captures timestamps at controlled moments and stores them
-     * in state.
-     */
-    const [time, setTime] = useState(() => Date.now())
-
-    // hoveredBubbleId: id of currently hovered bubble (or null)
-    const [hoveredBubbleId, setHoveredBubbleId] = useState<string | null>(null)
-    // truncatedBubbles: set of edge ids whose text overflows the collapsed box
-    const [truncatedBubbles, setTruncatedBubbles] = useState<Set<string>>(new Set())
-    // bubbleStates: track animation state of each bubble and when it's entered (used to delay line rendering
-    // until the bubble's entrance animation delay has passed)
-    const [bubbleStates, setBubbleStates] = useState<
-        Map<string, {isVisible: boolean; isExiting: boolean; enteredAt: number}>
-    >(new Map())
-    // hoverTimeoutRef: used to debounce clearing of hovered state on mouse leave
-    const hoverTimeoutRef = useRef<number | ReturnType<typeof setTimeout> | null>(null)
+export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({currentConversations}) => {
     // textRefs: mapping of edge id -> DOM node for measuring scrollHeight/clientHeight
     const textRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
     // animationTimeouts: track timeouts for bubble removal
     const animationTimeouts = useRef<Map<string, number | ReturnType<typeof setTimeout>>>(new Map())
+
     // Refs for SVG lines to update without re-rendering
     const lineRefs = useRef<Map<string, SVGLineElement>>(new Map())
-    // Ref to the overlay container so we can observe layout changes more precisely
-    const overlayRef = useRef<HTMLDivElement | null>(null)
-    // rAF ref for scheduling post-paint updates
-    const rafRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null)
-    const mountedRef = useRef(true)
-
-    // Effect to update `time` every second to trigger re-renders for animation timing and line updates.
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setTime(Date.now())
-        }, 250)
-
-        return () => clearInterval(interval)
-    }, [])
-
-    // Filter edges with meaningful text (memoized to prevent infinite re-renders)
-    const thoughtBubbleEdges = useMemo(
-        () =>
-            edges.filter((e) => {
-                const text = e.data?.text
-                return typeof text === "string" && text?.length > 0
-            }),
-        [edges]
-    )
-
-    // Find frontman node (depth === 0, similar to isFrontman logic in AgentNode.tsx)
-    const frontmanNode = useMemo(() => {
-        if (!nodes || !Array.isArray(nodes) || nodes.length === 0) return null
-        return nodes.find((n) => n.data["depth"] === 0)
-    }, [nodes])
-
-    // Handle bubble lifecycle (appear/disappear animations)
-    useEffect(() => {
-        const currentEdgeIds = new Set(thoughtBubbleEdges.map((e) => e.id))
-
-        setBubbleStates((prev) => {
-            const previousBubbleIds = new Set(prev.keys())
-
-            // Find new bubbles that should appear
-            const newBubbles = thoughtBubbleEdges.filter((e) => !previousBubbleIds.has(e.id))
-
-            // Find bubbles that should disappear
-            const removingBubbles = [...previousBubbleIds].filter((id) => !currentEdgeIds.has(id))
-
-            const newState = new Map(prev)
-
-            // Add new bubbles in entering state. Record when they entered so we can delay showing
-            // connecting lines until the bubble's entrance animation delay.
-            newBubbles.forEach((edge) => {
-                newState.set(edge.id, {isVisible: true, isExiting: false, enteredAt: time})
-            })
-
-            // Mark removing bubbles as exiting
-            removingBubbles.forEach((id) => {
-                const currentState = newState.get(id)
-                if (currentState) {
-                    newState.set(id, {...currentState, isExiting: true})
-
-                    // Clear any existing timeout
-                    const existingTimeout = animationTimeouts.current.get(id)
-                    if (existingTimeout) {
-                        clearTimeout(existingTimeout)
-                    }
-
-                    // Schedule removal after exit animation
-                    const timeout = window.setTimeout(() => {
-                        setBubbleStates((s) => {
-                            const updatedState = new Map(s)
-                            updatedState.delete(id)
-                            return updatedState
-                        })
-                        animationTimeouts.current.delete(id)
-                    }, 400) // Match exit animation duration (0.4s)
-
-                    animationTimeouts.current.set(id, timeout)
-                }
-            })
-
-            return newState
-        })
-    }, [thoughtBubbleEdges, time])
 
     // Cleanup timeouts on unmount
     useEffect(() => {
@@ -178,111 +77,19 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
         }
     }, [])
 
-    // Sort edges to prioritize frontman's edges first
-    const sortedEdges: ThoughtBubbleEdgeShape[] = useMemo(() => {
-        if (!frontmanNode) return thoughtBubbleEdges
-        const frontmanEdges = thoughtBubbleEdges.filter(
-            (e) => e.source === frontmanNode.id || e.target === frontmanNode.id
-        )
-        const otherEdges = thoughtBubbleEdges.filter(
-            (e) => e.source !== frontmanNode.id && e.target !== frontmanNode.id
-        )
-        return [...frontmanEdges, ...otherEdges]
-    }, [thoughtBubbleEdges, frontmanNode])
-
-    // Determine which agents are currently "active" using the same logic as AgentNode.
-    // An agent is active if any current conversation includes that agent's id.
-    const activeAgentIds: Set<string> = useMemo(() => {
-        const set = new Set<string>()
-        if (!nodes || !Array.isArray(nodes)) return set
-
-        for (const node of nodes) {
-            const getConversations = node.data?.["getConversations"]
-            if (typeof getConversations === "function") {
-                const conversations = getConversations()
-                if (Array.isArray(conversations)) {
-                    const hasSelf = conversations.some((conversation) => conversation?.agents?.has?.(node.id))
-                    if (hasSelf) {
-                        set.add(node.id)
-                    }
-                }
-            }
-        }
-
-        return set
-    }, [nodes])
-
-    // Check truncation after render, but only when nothing is hovered
-    // (to avoid measuring expanded bubbles)
-    useEffect(() => {
-        // Skip truncation check if any bubble is hovered
-        if (hoveredBubbleId !== null) return
-
-        const newTruncated = new Set<string>()
-
-        textRefs.current.forEach((element, edgeId) => {
-            // If scrollHeight > clientHeight then the content overflows (truncated)
-            if (element && element.scrollHeight > element.clientHeight) {
-                newTruncated.add(edgeId)
-            }
-        })
-
-        setTruncatedBubbles((prev) => {
-            // Only update if something changed
-            if (prev.size !== newTruncated.size) return newTruncated
-
-            // Check if the contents are the same
-            for (const id of newTruncated) {
-                if (!prev.has(id)) return newTruncated
-            }
-
-            return prev
-        })
-    }, [hoveredBubbleId, sortedEdges, textRefs]) // Re-check when edges change or hover state changes
-
-    // Notify parent when hover state changes
-    const handleHoverChange = useCallback(
-        (bubbleId: string | null) => {
-            // Clear any pending timeout
-            if (hoverTimeoutRef.current) {
-                clearTimeout(hoverTimeoutRef.current)
-                hoverTimeoutRef.current = null
-            }
-
-            if (bubbleId === null) {
-                // Delay clearing the hover state when mouse leaves to prevent accidental unhover
-                // "window." to satisfy TypeScript
-                hoverTimeoutRef.current = window.setTimeout(() => {
-                    setHoveredBubbleId(null)
-                    if (onBubbleHoverChange) {
-                        onBubbleHoverChange(null)
-                    }
-                }, 200) // 200ms delay before clearing hover
-            } else {
-                // Immediately set hover when mouse enters
-                setHoveredBubbleId(bubbleId)
-                if (onBubbleHoverChange) {
-                    onBubbleHoverChange(bubbleId)
-                }
-            }
-        },
-        [onBubbleHoverChange]
-    )
-
     // Calculate line coordinates - measurement only. Can be called from rAF/update loop.
     const calculateLineCoordinates = useCallback(
         (
-            edge: ThoughtBubbleEdgeShape,
+            bubble: RenderableBubble,
             bubbleIndex: number,
             agentRectCache?: Map<string, DOMRect>
         ): {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null => {
-            // Skip HUMAN conversation types - no lines for human bubbles
-            if (edge.data?.type === ChatMessageType.HUMAN) {
+            if (bubble.type === ChatMessageType.HUMAN) {
                 return null
             }
 
             // Get actual bubble DOM position (fresh every time)
-            const bubbleElement = document.querySelector(`[data-bubble-id="${CSS.escape(edge.id)}"]`)
+            const bubbleElement = document.querySelector(`[data-bubble-id="${CSS.escape(bubble.id)}"]`)
             let bubbleX: number
             let bubbleY: number
 
@@ -300,15 +107,8 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
             // Determine which agents to point to. If the edge supplies an `agents` array in
             // data (provided by AgentFlow), use that. Otherwise, fallback to the explicit
             // edge.target/edge.source pair (single target).
-            let agentIds: string[] = Array.isArray(edge.data?.agents)
-                ? edge.data?.agents
-                : [edge.target || edge.source].filter(Boolean)
+            const agentIds = bubble.agents
 
-            if (agentIds.length === 0) return null
-
-            // Filter out any agents that are not currently active (we only draw lines to active agents).
-            // Always apply filtering based on the activeAgentIds set.
-            agentIds = agentIds.filter((id) => activeAgentIds.has(id))
             if (agentIds.length === 0) return null
 
             // For each agent id, find its visual element and calculate mid-point.
@@ -341,117 +141,28 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
             return results
         },
-        [activeAgentIds]
+        []
     )
 
-    // Memoize the resolved edges so updateAllLines (and effects depending on it)
-    // doesn't get recreated on every render unnecessarily.
-    const renderableBubbles = useMemo(
-        () =>
-            // Get all bubbles to render (including exiting ones)
-            [...bubbleStates.keys()]
-                .map((id) => sortedEdges.find((e) => e.id === id) ?? edges.find((e) => e.id === id))
-                .filter((edge) => edge !== undefined),
-        [bubbleStates, sortedEdges, edges]
-    )
+    const renderableBubbles: RenderableBubble[] = useMemo(() => {
+        return currentConversations
+            ?.map((conversation): RenderableBubble | null => {
+                const text = conversation.text?.trim()
+                const agents = [...conversation.agents]
 
-    // Update all SVG lines imperatively after paint. This reads DOM (getBoundingClientRect)
-    // and writes attributes on existing <line> elements stored in `lineRefs`.
-    const updateAllLines = useCallback(() => {
-        try {
-            renderableBubbles.forEach((edge, index) => {
-                const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false, enteredAt: 0}
-                if (!bubbleState.isVisible || bubbleState.isExiting) return
+                if (!text || agents.length === 0) return null
 
-                // Respect the entrance animation delay gating (lines appear only after bubble start)
-                const elapsed = time - (bubbleState?.enteredAt ?? 0)
-                const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
-                if (elapsed < animationDelay) return
-
-                const coordsArray = calculateLineCoordinates(edge, index)
-
-                if (!coordsArray || coordsArray.length === 0) return
-
-                for (const coords of coordsArray) {
-                    const lineKey = `${edge.id}-${coords.targetAgent}`
-                    const lineEl = lineRefs.current.get(lineKey)
-                    if (lineEl) {
-                        // Update attributes imperatively
-                        lineEl.setAttribute("x1", String(coords.x1))
-                        lineEl.setAttribute("y1", String(coords.y1))
-                        lineEl.setAttribute("x2", String(coords.x2))
-                        lineEl.setAttribute("y2", String(coords.y2))
-                    }
+                return {
+                    id: `thought-bubble-${conversation.id}`,
+                    conversationId: conversation.id,
+                    text,
+                    agents,
+                    type: conversation.type,
+                    timestamp: conversation.startedAt.getTime(),
                 }
             })
-        } catch (err) {
-            // Guard against unexpected DOM errors during measurement
-            // Do not throw to avoid breaking the app
-
-            console.error("ThoughtBubbleOverlay: updateAllLines error", err)
-        }
-    }, [bubbleStates, calculateLineCoordinates, renderableBubbles, time])
-
-    // Schedule post-paint updates with rAF and ResizeObserver. Also, optionally run a
-    // continuous loop while `isStreaming` is true to keep lines in sync during streaming.
-    useEffect(() => {
-        mountedRef.current = true
-
-        const schedule = () => {
-            if (rafRef.current != null) return
-            rafRef.current = requestAnimationFrame(() => {
-                rafRef.current = null
-                if (!mountedRef.current) return
-                updateAllLines()
-            })
-        }
-
-        // Initial schedule
-        schedule()
-
-        // Resize observer to detect layout/size changes
-        const ro = new ResizeObserver(() => schedule())
-        try {
-            if (overlayRef.current) ro.observe(overlayRef.current)
-            else ro.observe(document.body)
-        } catch {
-            // Ignore if RO observation fails in some test environments
-        }
-
-        // Window resize
-        window.addEventListener("resize", schedule)
-
-        // If streaming, run a continuous rAF loop to keep up with frequent layout updates
-        let streamingRaf: number | null = null
-        const startStreamingLoop = () => {
-            if (streamingRaf != null) return
-            const loop = () => {
-                updateAllLines()
-                streamingRaf = requestAnimationFrame(loop)
-            }
-            streamingRaf = requestAnimationFrame(loop)
-        }
-        const stopStreamingLoop = () => {
-            if (streamingRaf != null) {
-                cancelAnimationFrame(streamingRaf)
-                streamingRaf = null
-            }
-        }
-
-        if (isStreaming) startStreamingLoop()
-
-        return () => {
-            mountedRef.current = false
-            if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
-            ro.disconnect()
-            window.removeEventListener("resize", schedule)
-            stopStreamingLoop()
-        }
-    }, [updateAllLines, isStreaming])
-
-    // Don't render anything if thought bubbles are disabled
-    // This check is placed after all hooks so hook ordering stays consistent across renders.
-    if (!showThoughtBubbles) return null
+            .filter((bubble): bubble is RenderableBubble => bubble !== null)
+    }, [currentConversations])
 
     return (
         <OverlayContainer>
@@ -467,28 +178,20 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                     opacity: 1,
                 }}
             >
-                {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
+                {renderableBubbles?.map((bubble, index) => {
                     // Per-bubble staggered animation delay in milliseconds (for line animations)
                     const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
 
-                    const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false, enteredAt: 0}
-                    if (!bubbleState.isVisible) return null
-
-                    // Only render lines after the bubble's entrance animation delay has elapsed.
-                    const elapsed = time - (bubbleState.enteredAt || 0)
-                    const shouldShowLines = elapsed >= animationDelay
-                    if (!shouldShowLines) return null
-
                     // Calculate fresh coordinates for this line (may return multiple targets)
-                    const coordsArray = calculateLineCoordinates(edge, index) as
+                    const coordsArray = calculateLineCoordinates(bubble, index) as
                         {x1: number; y1: number; x2: number; y2: number; targetAgent: string}[] | null
 
                     if (!coordsArray || coordsArray.length === 0) return null
 
                     return (
-                        <g key={`line-group-${edge.id}`}>
+                        <g key={`line-group-${bubble.id}`}>
                             {coordsArray.map((coords) => {
-                                const lineKey = `${edge.id}-${coords.targetAgent}`
+                                const lineKey = `${bubble.id}-${coords.targetAgent}`
                                 return (
                                     <line
                                         key={`line-${lineKey}`}
@@ -507,11 +210,13 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                         strokeWidth="3"
                                         strokeDasharray="3,3"
                                         style={{
-                                            opacity: bubbleState.isExiting ? 0 : CONNECTING_LINE_OPACITY,
+                                            opacity: CONNECTING_LINE_OPACITY,
                                             transition: (() => {
-                                                const duration = bubbleState.isExiting ? 400 : 600
-                                                const delay = bubbleState.isExiting ? 0 : animationDelay
-                                                return `opacity ${duration}ms cubic-bezier(0.2, 0, 0.2, 1) ${delay}ms`
+                                                const duration = 600
+                                                return (
+                                                    `opacity ${duration}ms cubic-bezier(0.2, 0, 0.2, 1) ` +
+                                                    `${animationDelay}ms`
+                                                )
                                             })(),
                                         }}
                                     />
@@ -522,29 +227,29 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                 })}
             </svg>
 
-            {renderableBubbles.map((edge: ThoughtBubbleEdgeShape, index: number) => {
-                const text = edge.data?.text
+            {renderableBubbles?.map((bubble, index) => {
+                const text = bubble?.text
                 if (!text) return null
 
                 // Per-bubble staggered animation delay in milliseconds
                 const animationDelay = index * LAYOUT_BUBBLES_ANIMATION_DELAY_MS
 
-                const isHovered = hoveredBubbleId === edge.id
-                const isTruncated = truncatedBubbles.has(edge.id)
-                const bubbleState = bubbleStates.get(edge.id) || {isVisible: true, isExiting: false}
+                const isHovered = false
+                const isTruncated = false
+                const bubbleState = {isVisible: true, isExiting: false}
 
                 return (
-                    <Fragment key={edge.id}>
+                    <Fragment key={bubble.id}>
                         <ThoughtBubble
-                            data-bubble-id={edge.id}
+                            data-bubble-id={bubble.id}
                             isHovered={isHovered}
                             isTruncated={isTruncated}
                             animationDelay={animationDelay}
                             bubbleIndex={index}
                             isVisible={bubbleState.isVisible}
                             isExiting={bubbleState.isExiting}
-                            onMouseEnter={() => handleHoverChange(edge.id)}
-                            onMouseLeave={() => handleHoverChange(null)}
+                            // onMouseEnter={() => handleHoverChange(edge.id)}
+                            // onMouseLeave={() => handleHoverChange(null)}
                         >
                             <TruncatedText
                                 isHovered={isHovered}
@@ -552,9 +257,9 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                 ref={(el: HTMLDivElement | null) => {
                                     // Store/remove this text node in `textRefs` for truncation checks.
                                     if (el) {
-                                        textRefs.current.set(edge.id, el)
+                                        textRefs.current.set(bubble.id, el)
                                     } else {
-                                        textRefs.current.delete(edge.id)
+                                        textRefs.current.delete(bubble.id)
                                     }
                                 }}
                             >
