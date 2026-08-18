@@ -23,7 +23,7 @@ interface ThoughtBubbleProps {
 
 //#endregion: Types
 
-export const ThoughtBubble = styled("div", {
+export const StyledThoughtBubble = styled("div", {
     shouldForwardProp: (prop) =>
         !["isHovered", "isTruncated", "animationDelay", "bubbleIndex", "isVisible", "isExiting"].includes(
             prop as string

@@ -59,7 +59,12 @@ import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../control
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggestions"
-import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
+import {
+    AgentInfo,
+    ChatMessageType,
+    ConnectivityInfo,
+    ConnectivityResponse,
+} from "../../generated/neuro-san/NeuroSanClient"
 import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
@@ -75,6 +80,8 @@ import {ConfirmationModal, StyledButton} from "../Common/ConfirmationModal"
 import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
+
+const FAKE_CONVERSATIONS = true
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -431,6 +438,20 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         a?.origin.localeCompare(b?.origin)
                     )
                     setAgentsInNetwork(agentsInNetworkSorted)
+                    if (FAKE_CONVERSATIONS && agentsInNetworkSorted && agentsInNetworkSorted.length >= 2) {
+                        setCurrentConversations([
+                            {
+                                id: "test-conv-with-text",
+                                agents: new Set([agentsInNetworkSorted[0].origin, agentsInNetworkSorted[1].origin]),
+                                startedAt: new Date(),
+                                text: "What is the weather today?",
+                                type: ChatMessageType.HUMAN,
+                            },
+                        ])
+                    } else {
+                        setCurrentConversations([])
+                    }
+
                     const sampleQueriesTmp = connectivity?.metadata?.["sample_queries"]
                     if (Array.isArray(sampleQueriesTmp)) {
                         setSampleQueries(sampleQueriesTmp)
