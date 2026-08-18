@@ -30,9 +30,6 @@ import {KNOWN_MESSAGE_TYPES_FOR_PLASMA} from "../../AgentChat/Common/Utils"
 import {BASE_RADIUS, DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS, LEVEL_SPACING} from "../const"
 import {getFrontman, getParentAgents, getParents} from "./GraphStructure"
 import {isEditableAgent} from "../TemporaryNetworks"
-import {ThoughtBubbleEdgeShape} from "../ThoughtBubbles/ThoughtBubbleEdge"
-
-export const MAX_GLOBAL_THOUGHT_BUBBLES = 5
 
 const FRONTMAN_OFFSET_X = (NODE_WIDTH * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2
 const FRONTMAN_OFFSET_Y = (NODE_HEIGHT * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2
@@ -43,42 +40,6 @@ const FRONTMAN_OFFSET_Y = (NODE_HEIGHT * (FRONTMAN_SIZE_MULTIPLIER - 1)) / 2
 export type LayoutResult = {
     nodes: RFNode<AgentNodeProps>[]
     edges: Edge[]
-}
-
-export const addThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    conversationId: string,
-    edge: ThoughtBubbleEdgeShape
-) => {
-    // Add with timestamp for age-based cleanup
-    thoughtBubbleEdges.set(conversationId, {
-        edge,
-        timestamp: Date.now(),
-    })
-
-    // Enforce max limit - remove oldest if over limit
-    if (thoughtBubbleEdges.size > MAX_GLOBAL_THOUGHT_BUBBLES) {
-        const entries = [...thoughtBubbleEdges.entries()]
-        const sorted = entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
-        const toRemove = sorted.slice(0, sorted.length - MAX_GLOBAL_THOUGHT_BUBBLES)
-
-        toRemove.forEach(([id]) => {
-            thoughtBubbleEdges.delete(id)
-        })
-    }
-}
-
-export const removeThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    conversationId: string
-) => {
-    thoughtBubbleEdges.delete(conversationId)
-}
-
-export const getThoughtBubbleEdges = (
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
-): ThoughtBubbleEdgeShape[] => {
-    return [...thoughtBubbleEdges.values()].map((item) => item.edge)
 }
 
 // Helper function for plasma edges to check if two agents are in the same conversation
@@ -135,7 +96,6 @@ export type LayoutOptions = {
     readonly isAgentNetworkDesignerMode: boolean
     readonly isAwaitingLlm: boolean
     readonly isTemporaryNetwork?: boolean
-    readonly thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
     readonly useNativeNames: boolean
 }
 
@@ -147,7 +107,6 @@ export const layoutRadial = ({
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isTemporaryNetwork = false,
-    thoughtBubbleEdges,
     useNativeNames,
 }: LayoutOptions): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
@@ -276,14 +235,6 @@ export const layoutRadial = ({
         })
     })
 
-    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
-    const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: ThoughtBubbleEdgeShape) =>
-        edgesInNetwork.every((existing: Edge) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge")
-    )
-
-    edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
-
     return {nodes: nodesInNetwork, edges: edgesInNetwork}
 }
 
@@ -295,7 +246,6 @@ export const layoutLinear = ({
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
     isTemporaryNetwork = false,
-    thoughtBubbleEdges,
     useNativeNames,
 }: LayoutOptions): LayoutResult => {
     const nodesInNetwork: RFNode<AgentNodeProps>[] = []
@@ -353,14 +303,6 @@ export const layoutLinear = ({
         }
     })
 
-    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
-    const bubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbleEdgesToAdd = bubbleEdges.filter((edge: Edge) =>
-        edgesInNetwork.every((existing: Edge) => existing.id !== edge.id && edge.type === "thoughtBubbleEdge")
-    )
-
-    edgesInNetwork.push(...thoughtBubbleEdgesToAdd)
-
     const dagreGraph = new dagre.graphlib.Graph()
     dagreGraph.setDefaultEdgeLabel(() => ({}))
 
@@ -413,14 +355,6 @@ export const layoutLinear = ({
         isAwaitingLlm && !isAgentNetworkDesignerMode
             ? edgesInNetwork.filter((edge) => areInSameConversation(currentConversations, edge.source, edge.target))
             : edgesInNetwork
-
-    // Add thought bubble edges from cache to avoid duplicates across layout recalculations
-    const globalBubbleEdges = getThoughtBubbleEdges(thoughtBubbleEdges)
-    const thoughtBubbles = globalBubbleEdges.filter((edge: ThoughtBubbleEdgeShape) =>
-        filteredEdges.every((existing: Edge) => existing.id !== edge.id)
-    )
-
-    filteredEdges.push(...thoughtBubbles)
 
     return {nodes: nodesTmp, edges: filteredEdges}
 }
