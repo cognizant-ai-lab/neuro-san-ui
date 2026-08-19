@@ -127,14 +127,33 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     const storedText = useMemo(() => formatSlyData(storedSlyData), [storedSlyData])
 
+    // The keys the network says it expects, minus the ones the app supplies on its own. Empty for the many
+    // networks that do not advertise a schema, in which case the dialog looks exactly as it always has.
+    const schemaEntries = useMemo(
+        () => describeSlyDataSchema(slyDataSchema, extraSlyDataKeys),
+        [slyDataSchema, extraSlyDataKeys]
+    )
+
+    // The network's sly_data skeleton, pretty-printed, or null when it advertises no usable schema
+    const templateText = useMemo(
+        () =>
+            schemaEntries.length > 0 ? formatSlyData(buildSlyDataTemplate(slyDataSchema, {}, extraSlyDataKeys)) : null,
+        [schemaEntries, slyDataSchema, extraSlyDataKeys]
+    )
+
+    // When the dialog opens onto an empty store and the network declares a schema, start from the template so
+    // the user fills in blanks instead of typing structure. It is an ordinary unsaved draft: nothing touches
+    // the store unless they save. The dialog is mounted fresh on every open, so this is per-open behavior.
+    const prefillText = storedText === "{}" ? templateText : null
+
     // The user's unsaved edit, or null while they have none. While null, the editor simply renders the store,
     // so server-echoed updates show up without any syncing code. Once the user edits, their draft is what
     // renders, and we offer a reload instead of overwriting it (see below).
-    const [draft, setDraft] = useState<string | null>(null)
+    const [draft, setDraft] = useState<string | null>(prefillText)
 
     // What the store held when the user started editing, so we can tell "the server changed sly_data" apart
     // from "the user changed sly_data"
-    const [draftBaseline, setDraftBaseline] = useState<string | null>(null)
+    const [draftBaseline, setDraftBaseline] = useState<string | null>(prefillText === null ? null : storedText)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -146,13 +165,6 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
     const parseResult = useMemo(() => parseSlyData(text), [text])
 
     const images = useMemo(() => findImageValues(parseResult.value), [parseResult])
-
-    // The keys the network says it expects, minus the ones the app supplies on its own. Empty for the many
-    // networks that do not advertise a schema, in which case the dialog looks exactly as it always has.
-    const schemaEntries = useMemo(
-        () => describeSlyDataSchema(slyDataSchema, extraSlyDataKeys),
-        [slyDataSchema, extraSlyDataKeys]
-    )
 
     // The server echoed new sly_data while the user had unsaved edits. Saying so beats silently discarding
     // either side's version.
@@ -175,8 +187,10 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
         setDraftBaseline(null)
     }
 
+    // On a network with a schema, "clear" means back to the blank template rather than to nothing:
+    // stranding the user on {} would force them to rebuild the structure the network just told us about.
     const handleClear = () => {
-        startOrUpdateDraft("{}")
+        startOrUpdateDraft(templateText ?? "{}")
     }
 
     const handleFillTemplate = () => {
@@ -267,7 +281,13 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                     </IconButton>
                 </span>
             </Tooltip>
-            <Tooltip title="Clear all sly data (takes effect when you save)">
+            <Tooltip
+                title={
+                    templateText === null
+                        ? "Clear all sly data (takes effect when you save)"
+                        : "Reset to the network's expected keys (takes effect when you save)"
+                }
+            >
                 <span>
                     <IconButton
                         aria-label="Clear sly data"
