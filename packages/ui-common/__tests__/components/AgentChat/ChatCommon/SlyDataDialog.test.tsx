@@ -345,4 +345,31 @@ describe("SlyDataDialog", () => {
 
         expect(screen.getByRole("button", {name: "Fill sly data template"})).toBeDisabled()
     })
+
+    it("pre-populates an empty editor with the network's template", () => {
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+
+        expect(getEditor()).toHaveValue('{\n  "x": 0,\n  "y": 0\n}')
+
+        // It is an ordinary unsaved draft: no reload alert, and nothing in the store until the user saves
+        expect(screen.queryByRole("button", {name: "Reload"})).not.toBeInTheDocument()
+        expect(getSlyData()).toBeUndefined()
+    })
+
+    it("shows stored values instead of the template when the network already has sly data", () => {
+        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3}))
+
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+
+        expect(getEditor()).toHaveValue('{\n  "x": 3\n}')
+    })
+
+    it("resets to the template, not to nothing, when clearing on a network with a schema", async () => {
+        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {extra: 9, x: 3}))
+
+        renderDialog(undefined, MATH_GUY_SCHEMA)
+        await user.click(screen.getByRole("button", {name: "Clear sly data"}))
+
+        expect(getEditor()).toHaveValue('{\n  "x": 0,\n  "y": 0\n}')
+    })
 })
