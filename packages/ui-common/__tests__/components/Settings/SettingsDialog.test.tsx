@@ -14,6 +14,12 @@ import {DEFAULT_SETTINGS, getApiKey, LogoSource, useSettingsStore} from "../../.
 // Mock notification system
 vi.mock("../../../components/Common/notification")
 
+// Fading checkmark behavior is covered by FadingCheckmark.test.tsx.
+vi.mock("../../../components/Settings/FadingCheckmark", () => ({
+    FadingCheckmark: (): null => null,
+    useCheckmarkFade: () => ({show: false, trigger: vi.fn()}),
+}))
+
 const TEST_API_KEY = "test-api-key-123"
 
 // Pseudo expiration time
@@ -41,7 +47,7 @@ describe("SettingsDialog", () => {
         useSettingsStore.persist.clearStorage()
         useEnvironmentStore.getState().setBackendNeuroSanApiUrl(undefined)
 
-        user = userEvent.setup()
+        user = userEvent.setup({delay: null})
         originalFetch = global.fetch
     })
 
@@ -59,6 +65,10 @@ describe("SettingsDialog", () => {
             const applyButton = screen.getByRole("button", {name: /Apply/u})
             await user.click(applyButton)
         }
+    }
+
+    const mockBrandingResult = () => {
+        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
     }
 
     it("renders the SettingsDialog with default props", async () => {
@@ -703,8 +713,7 @@ describe("SettingsDialog", () => {
     })
 
     it("applies branding for requested customer", async () => {
-        global.fetch = mockFetch(BRANDING_SUGGESTIONS_RESPONSE)
-
+        mockBrandingResult()
         render(
             <SettingsDialog
                 id="settings-dialog"
@@ -714,8 +723,6 @@ describe("SettingsDialog", () => {
         )
 
         expect(useSettingsStore.getState().settings.branding.logoSource).toEqual<LogoSource>("none")
-
-        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"}).closest("span").closest("div")
 
         const customerName = "Acme"
         await enterCustomerName(customerName)
@@ -733,19 +740,41 @@ describe("SettingsDialog", () => {
         expect(brandingSettings.background).toBe(BRANDING_SUGGESTIONS_RESPONSE.background)
         expect(brandingSettings.rangePalette).toEqual(BRANDING_SUGGESTIONS_RESPONSE.rangePalette)
         expect(brandingSettings.iconSuggestion).toBe(BRANDING_SUGGESTIONS_RESPONSE.iconSuggestion)
+        expect(brandingSettings.logoSource).toBe("auto")
+    })
 
-        // Now try using Enter to submit a new customer name and check that it also applies branding
-        const newCustomerName = "Acme 2"
-        await enterCustomerName(newCustomerName, false)
+    it("applies branding when Enter is pressed", async () => {
+        mockBrandingResult()
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+                logoServiceToken="test-logo-service-token-456"
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName, false)
         await user.keyboard("{Enter}")
 
-        // Check that the store was updated with the new customer name
-        expect(useSettingsStore.getState().settings.branding.customer).toBe(newCustomerName)
-
-        // Successfully retrieving a customer name should update the logo source to "auto" to show the new logo
+        expect(useSettingsStore.getState().settings.branding.customer).toBe(customerName)
         expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
+    })
 
-        // Try different logo options
+    it("changes the logo source for branded customers", async () => {
+        mockBrandingResult()
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+                logoServiceToken="test-logo-service-token-456"
+            />
+        )
+
+        const customerName = "Acme"
+        await enterCustomerName(customerName)
+        const logoOptionsContainer = screen.getByRole("group", {name: "logo-selection"}).closest("span").closest("div")
+
         const logoNoneButton = within(logoOptionsContainer).getByRole("button", {name: "None"})
         await user.click(logoNoneButton)
 
@@ -776,14 +805,26 @@ describe("SettingsDialog", () => {
         expect(useSettingsStore.getState().settings.branding.logoSource).toBe("auto")
 
         // Should show the logo from logo.dev with the correct URL (we can check for the img element and its src)
-        const logoImg = within(logoOptionsContainer).getByRole("img", {name: "Acme 2 Logo"})
+        const logoImg = within(logoOptionsContainer).getByRole("img", {name: `${customerName} Logo`})
         expect(logoImg).toBeInTheDocument()
         expect(logoImg).toHaveAttribute(
             "src",
-            expect.stringContaining(`https://img.logo.dev/name/${encodeURIComponent(newCustomerName)}`)
+            expect.stringContaining(`https://img.logo.dev/name/${encodeURIComponent(customerName)}`)
+        )
+    })
+
+    it("clears branding settings", async () => {
+        mockBrandingResult()
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+                logoServiceToken="test-logo-service-token-456"
+            />
         )
 
-        // Now clear branding
+        await enterCustomerName("Acme")
+
         const clearBrandingButton = screen.getByRole("button", {name: "Clear"})
         await user.click(clearBrandingButton)
 
