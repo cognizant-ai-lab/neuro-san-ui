@@ -84,9 +84,9 @@ const SLY_DATA_EXPLAINER =
 //#endregion: Constants
 
 // A sly_data key name rendered as an inline code chip
-const KeyChip = styled(Box)(({theme}) => ({
+const KeyChip = styled("code")(({theme}) => ({
     backgroundColor: theme.palette.action.hover,
-    borderRadius: theme.shape.borderRadius * 0.5,
+    borderRadius: `calc(${theme.shape.borderRadius}px * 0.5)`,
     fontFamily: "monospace",
     paddingLeft: theme.spacing(0.5),
     paddingRight: theme.spacing(0.5),
@@ -343,7 +343,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                             sx={{display: "block", fontSize: "0.75rem"}}
                             variant="caption"
                         >
-                            <KeyChip component="code">{entry.key}</KeyChip>
+                            <KeyChip>{entry.key}</KeyChip>
                             {describeEntryQualifiers(entry)}
                             {entry.description ? `: ${entry.description}` : ""}
                         </Typography>
@@ -429,7 +429,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                 {[...extraSlyDataKeys].sort().map((key, index) => (
                     <Fragment key={key}>
                         {index > 0 && ", "}
-                        <KeyChip component="code">{key}</KeyChip>
+                        <KeyChip>{key}</KeyChip>
                     </Fragment>
                 ))}
                 . Supplied by the app, not from this editor.
