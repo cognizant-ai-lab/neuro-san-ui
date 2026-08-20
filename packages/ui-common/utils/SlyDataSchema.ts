@@ -73,6 +73,8 @@ export interface SlyDataSchemaEntry {
 /**
  * Whether a schema node describes an object. An explicit `type: "object"` counts, and so does an untyped node
  * that declares `properties` -- schema authors routinely omit the redundant `type`.
+ * @param node The schema node to examine.
+ * @returns True if the node describes an object value.
  */
 const isObjectNode = (node: SchemaNodeType): boolean =>
     node.type === "object" || (node.type === undefined && node.properties !== undefined)
@@ -80,6 +82,8 @@ const isObjectNode = (node: SchemaNodeType): boolean =>
 /**
  * Validates a server-supplied sly_data_schema and returns its root node, or null if there is nothing usable.
  * A root is usable when it is object-shaped and declares at least one property.
+ * @param schema The sly_data_schema as received from the server. May be anything.
+ * @returns The validated root node, or null when the schema is absent or unusable.
  */
 const parseSchemaRoot = (schema: unknown): SchemaNodeType | null => {
     if (schema === undefined || schema === null) {
@@ -128,6 +132,10 @@ export const describeSlyDataSchema = (
  * Produces the template value for one schema node, folding in whatever the user already has.
  * An existing value always wins -- even one that contradicts the schema -- because a template must never
  * destroy user input. Objects are merged recursively so a partially-filled nested value gains its missing keys.
+ * @param node The schema node describing this value.
+ * @param existing The value currently at this position, or undefined if there is none.
+ * @param depth How many object levels deep this node is, for the recursion cap.
+ * @returns The existing value, or a default appropriate for the declared type when there is none.
  */
 const templateValue = (node: SchemaNodeType, existing: unknown, depth: number): unknown => {
     if (isObjectNode(node)) {
