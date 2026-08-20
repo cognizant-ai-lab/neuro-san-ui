@@ -22,6 +22,7 @@ import PlaylistAddOutlined from "@mui/icons-material/PlaylistAddOutlined"
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
+import {styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
@@ -80,15 +81,16 @@ const IMAGE_PREVIEW_SIZE = 96
 const SLY_DATA_EXPLAINER =
     "Data is sent to the agent network in a private channel with each request but kept out of the LLM."
 
-// Styling for a sly_data key name rendered as an inline code chip
-const KEY_CHIP_SX = {
-    backgroundColor: "action.hover",
-    borderRadius: 0.5,
-    fontFamily: "monospace",
-    px: 0.5,
-} as const
-
 //#endregion: Constants
+
+// A sly_data key name rendered as an inline code chip
+const KeyChip = styled(Box)(({theme}) => ({
+    backgroundColor: theme.palette.action.hover,
+    borderRadius: theme.shape.borderRadius * 0.5,
+    fontFamily: "monospace",
+    paddingLeft: theme.spacing(0.5),
+    paddingRight: theme.spacing(0.5),
+}))
 
 /**
  * Renders the parenthetical qualifiers after a schema key name, eg. " (float, required)".
@@ -341,12 +343,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                             sx={{display: "block", fontSize: "0.75rem"}}
                             variant="caption"
                         >
-                            <Box
-                                component="code"
-                                sx={KEY_CHIP_SX}
-                            >
-                                {entry.key}
-                            </Box>
+                            <KeyChip component="code">{entry.key}</KeyChip>
                             {describeEntryQualifiers(entry)}
                             {entry.description ? `: ${entry.description}` : ""}
                         </Typography>
@@ -432,12 +429,7 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                 {[...extraSlyDataKeys].sort().map((key, index) => (
                     <Fragment key={key}>
                         {index > 0 && ", "}
-                        <Box
-                            component="code"
-                            sx={KEY_CHIP_SX}
-                        >
-                            {key}
-                        </Box>
+                        <KeyChip component="code">{key}</KeyChip>
                     </Fragment>
                 ))}
                 . Supplied by the app, not from this editor.
