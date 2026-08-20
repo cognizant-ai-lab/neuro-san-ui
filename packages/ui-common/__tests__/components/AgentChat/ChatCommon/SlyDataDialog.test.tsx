@@ -320,7 +320,7 @@ describe("SlyDataDialog", () => {
     })
 
     it("seeds the expected keys as a template, keeping existing values", async () => {
-        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3}))
+        useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3})
 
         renderDialog(undefined, MATH_GUY_SCHEMA)
         await user.click(screen.getByRole("button", {name: "Fill sly data template"}))
@@ -358,7 +358,7 @@ describe("SlyDataDialog", () => {
     })
 
     it("shows stored values instead of the template when the network already has sly data", () => {
-        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3}))
+        useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {x: 3})
 
         renderDialog(undefined, MATH_GUY_SCHEMA)
 
@@ -366,7 +366,7 @@ describe("SlyDataDialog", () => {
     })
 
     it("resets to the template, not to nothing, when clearing on a network with a schema", async () => {
-        act(() => useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {extra: 9, x: 3}))
+        useAgentChatHistoryStore.getState().setSlyData(NETWORK_ID, {extra: 9, x: 3})
 
         renderDialog(undefined, MATH_GUY_SCHEMA)
         await user.click(screen.getByRole("button", {name: "Clear sly data"}))
