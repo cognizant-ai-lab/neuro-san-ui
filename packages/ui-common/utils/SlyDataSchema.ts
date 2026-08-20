@@ -32,11 +32,18 @@ import {SlyData} from "./SlyData"
 // (mcp-style http_headers nest three levels), shallow enough that a pathological schema cannot recurse away.
 const MAX_TEMPLATE_DEPTH = 5
 
-// Scalar type names accepted for each kind of template value. Neuro-san's names first, but the JSON Schema
-// spellings cost nothing to accept and schema authors do write them.
-const INT_TYPES: ReadonlySet<string> = new Set(["int", "integer"])
-const FLOAT_TYPES: ReadonlySet<string> = new Set(["double", "float", "number"])
-const BOOL_TYPES: ReadonlySet<string> = new Set(["bool", "boolean"])
+// Default template value for each recognized scalar type name. Neuro-san's names are canonical, but the
+// JSON Schema spellings cost nothing to accept and schema authors do write them.
+const SCALAR_TYPE_DEFAULTS: Record<string, unknown> = {
+    bool: false,
+    boolean: false,
+    double: 0,
+    float: 0,
+    int: 0,
+    integer: 0,
+    number: 0,
+    string: "",
+}
 
 /**
  * One node of a sly_data_schema document. Loose on purpose: extra keys are the schema author's business.
@@ -158,18 +165,8 @@ const templateValue = (node: SchemaNodeType, existing: unknown, depth: number): 
         return existing
     }
 
-    if (node.type === "string") {
-        return ""
-    }
-    if (INT_TYPES.has(node.type) || FLOAT_TYPES.has(node.type)) {
-        return 0
-    }
-    if (BOOL_TYPES.has(node.type)) {
-        return false
-    }
-
-    // A type we do not understand: null marks "fill me in" without guessing a shape
-    return null
+    // A type we do not understand maps to null: "fill me in" without guessing a shape
+    return SCALAR_TYPE_DEFAULTS[node.type] ?? null
 }
 
 /**
