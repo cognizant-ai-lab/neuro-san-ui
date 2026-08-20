@@ -132,7 +132,7 @@ describe("describeSlyDataSchema", () => {
     ])("warns and returns nothing for %s", (_label: string, schema: unknown) => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
         expect(describeSlyDataSchema(schema)).toStrictEqual([])
-        expect(warn).toHaveBeenCalledTimes(1)
+        expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("sly_data_schema"), expect.anything())
     })
 })
 
@@ -206,7 +206,7 @@ describe("buildSlyDataTemplate", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
         const existing = {kept: true}
         expect(buildSlyDataTemplate({type: "object"}, existing)).toBe(existing)
-        expect(warn).toHaveBeenCalledTimes(1)
+        expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("sly_data_schema"), expect.anything())
     })
 
     it("stops materializing objects beyond the depth cap", () => {
