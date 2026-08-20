@@ -284,12 +284,13 @@ describe("SlyDataDialog", () => {
     })
 
     it("ignores an unusable schema rather than breaking the dialog", () => {
-        vi.spyOn(console, "warn").mockImplementation(() => undefined)
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
 
         renderDialog(undefined, {type: "object"})
 
         expect(screen.queryByText(/This network expects/u)).not.toBeInTheDocument()
         expect(getEditor()).toHaveValue("{}")
+        expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("sly_data_schema"), expect.anything())
     })
 
     it("lists the keys the network expects, with type, requiredness and description", () => {
