@@ -296,17 +296,17 @@ describe("SlyDataDialog", () => {
         renderDialog(undefined, MATH_GUY_SCHEMA)
 
         const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
-        expect(hints.getByText("x")).toBeInTheDocument()
-        expect(hints.getByText("y")).toBeInTheDocument()
+        hints.getByText("x")
+        hints.getByText("y")
+        hints.getByText(/The first operand/u)
         expect(hints.getAllByText(/\(float, required\)/u)).toHaveLength(2)
-        expect(hints.getByText(/The first operand/u)).toBeInTheDocument()
     })
 
     it("leaves the app-supplied keys out of the schema hints", () => {
         renderDialog(["llm_config"], BYOK_SCHEMA)
 
         const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
-        expect(hints.getByText("running_cost")).toBeInTheDocument()
+        hints.getByText("running_cost")
         expect(hints.queryByText("llm_config")).not.toBeInTheDocument()
     })
 
@@ -314,7 +314,7 @@ describe("SlyDataDialog", () => {
         renderDialog(undefined, {properties: {plain: {}}, type: "object"})
 
         const hints = within(screen.getByTestId(`${DIALOG_ID}-schema-hints`))
-        expect(hints.getByText("plain")).toBeInTheDocument()
+        hints.getByText("plain")
         expect(hints.queryByText(/\(/u)).not.toBeInTheDocument()
     })
 
