@@ -1684,8 +1684,9 @@ describe("ChatCommon", () => {
 
             await openSlyDataEditor()
 
-            expect(screen.getByText(/This network expects/u)).toBeInTheDocument()
-            expect(screen.getByText(/\(float, required\)/u)).toBeInTheDocument()
+            // getByText throws when the element is missing, so these are the assertions
+            screen.getByText(/This network expects/u)
+            screen.getByText(/\(float, required\)/u)
         })
 
         it("Should not offer the sly_data editor for legacy agents, which have no sly_data", async () => {
