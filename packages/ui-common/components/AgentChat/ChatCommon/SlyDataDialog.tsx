@@ -95,6 +95,8 @@ const KeyChip = styled("code")(({theme}) => ({
 /**
  * Renders the parenthetical qualifiers after a schema key name, eg. " (float, required)".
  * Empty when the schema declares neither a type nor requiredness.
+ * @param entry The schema entry to describe.
+ * @returns The qualifier text, with a leading space, or an empty string.
  */
 const describeEntryQualifiers = (entry: SlyDataSchemaEntry): string => {
     const qualifiers = [entry.type, entry.isRequired ? "required" : undefined].filter(Boolean)
