@@ -87,8 +87,8 @@ jobs:
 
             - name: Setup Node.js and install dependencies
               id: setup-node
-              # build-common 1.0.9
-              uses: cognizant-ai-lab/build-common/actions/setup-node-env@b14b3de23cb9aca02b2165e57542335e0c8f5304
+              # build-common 1.0.11
+              uses: cognizant-ai-lab/build-common/actions/setup-node-env@a70df67b0d623e56f34159de26c38989cd315d26
               with:
                   clean-install: "true"
 
@@ -96,16 +96,16 @@ jobs:
               run: yarn generate
 
             - name: Authenticate to AWS and login to ECR
-              # build-common 1.0.9
-              uses: cognizant-ai-lab/build-common/actions/aws-ecr-auth@b14b3de23cb9aca02b2165e57542335e0c8f5304
+              # build-common 1.0.11
+              uses: cognizant-ai-lab/build-common/actions/aws-ecr-auth@a70df67b0d623e56f34159de26c38989cd315d26
               with:
                   aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
                   aws-role-name: ${{ vars.AWS_ROLE_NAME }}
                   aws-region: ${{ env.AWS_REGION }}
 
             - name: Build and push Docker image to ECR
-              # build-common 1.0.9
-              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@b14b3de23cb9aca02b2165e57542335e0c8f5304
+              # build-common 1.0.11
+              uses: cognizant-ai-lab/build-common/actions/docker-buildx-push@a70df67b0d623e56f34159de26c38989cd315d26
               with:
                   context: .
                   dockerfile: apps/main/Dockerfile
