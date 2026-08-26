@@ -465,10 +465,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </>
                     )}
                 </ReactFlow>
-                <ThoughtBubbleOverlay
-                    currentConversations={currentConversations}
-                    isStreaming={isStreaming}
-                />
+                <ThoughtBubbleOverlay currentConversations={currentConversations} />
             </Box>
             {isTemporaryNetwork && !isAwaitingLlm && (
                 <NetworkEditorDock
