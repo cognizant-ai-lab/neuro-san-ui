@@ -51,7 +51,7 @@ styled("div")<{isHovered: boolean; isTruncated: boolean}>(({isHovered, isTruncat
 }))
 // #endregion: Styled Components
 
-export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({currentConversations}) => {
+export const ThoughtBubbles: FC<ThoughtBubbleOverlayProps> = ({currentConversations}) => {
     // animationTimeouts: track timeouts for bubble removal
     const animationTimeouts = useRef<Map<string, number | ReturnType<typeof setTimeout>>>(new Map())
 

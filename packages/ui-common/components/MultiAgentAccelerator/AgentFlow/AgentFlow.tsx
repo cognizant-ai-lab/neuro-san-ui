@@ -52,7 +52,7 @@ import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
-import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
+import {ThoughtBubbles} from "../ThoughtBubbles/ThoughtBubbles"
 
 //#region: Types
 export interface AgentFlowProps {
@@ -465,7 +465,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </>
                     )}
                 </ReactFlow>
-                <ThoughtBubbleOverlay currentConversations={currentConversations} />
+                <ThoughtBubbles currentConversations={currentConversations} />
             </Box>
             {isTemporaryNetwork && !isAwaitingLlm && (
                 <NetworkEditorDock
