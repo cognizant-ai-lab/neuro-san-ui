@@ -83,6 +83,7 @@ export const ThoughtBubbles: FC<ThoughtBubblesProps> = ({currentConversations}) 
         <OverlayContainer>
             {renderableConversations?.map((conversation) => {
                 const text = conversation.text?.trim()
+                const structure = conversation.structure ? JSON.stringify(conversation.structure, null, 2) : ""
                 const id = `thought-bubble-${conversation.id}`
                 const {leftPos, topPos} = getBubblePositionForNode(conversation)
 
@@ -94,7 +95,7 @@ export const ThoughtBubbles: FC<ThoughtBubblesProps> = ({currentConversations}) 
                         height={BUBBLE_HEIGHT}
                         key={id}
                         style={{left: leftPos, pointerEvents: "auto", position: "fixed", top: topPos}}
-                        text={text}
+                        text={`${text}${structure ? `: ${structure}` : ""}`}
                         textColor="var(--bs-red)"
                         width={BUBBLE_WIDTH}
                     />

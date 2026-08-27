@@ -391,6 +391,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Only show edit button for temporary networks where we're not already editing and not awaiting LLM response
     const showEditButton = isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm
 
+    // We hide the legend in certain situations
     const shouldShowLegend = agentsInNetwork.length > 0 && !isAgentNetworkDesignerMode && !isEditingNetwork
 
     return (

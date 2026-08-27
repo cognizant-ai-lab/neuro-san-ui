@@ -20,15 +20,22 @@ import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanCl
 
 export interface AgentConversation {
     // The specific agents involved in this conversation path
-    agents: Set<string>
+    readonly agents: Set<string>
+
     // Unique identifier for the conversation
-    id: string
+    readonly id: string
+
     // Timestamp when the conversation started
-    startedAt: Date
+    readonly startedAt: Date
+
+    // The structure of the conversation, which may include metadata like total tokens or tool end status
+    readonly structure?: Record<string, unknown>
+
     // The conversation text to display in thought bubbles
-    text?: string
+    readonly text?: string
+
     // The conversation type
-    type: ChatMessageType
+    readonly type: ChatMessageType
 }
 
 export const isFinalMessage = (chatMessage: {
@@ -54,6 +61,7 @@ export const extractConversation = (chatMessage: ChatMessage): AgentConversation
               id: `conv_${uuid()}`,
               agents: new Set(agents),
               startedAt: new Date(),
+              structure: chatMessage.structure,
               text: chatMessage.text,
               type: chatMessage.type,
           }
