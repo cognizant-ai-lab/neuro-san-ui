@@ -28,7 +28,7 @@ import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} 
 import {useJoyride} from "react-joyride"
 import {Group, Panel, usePanelRef} from "react-resizable-panels"
 
-import {AgentConversation, extractConversations} from "./AgentConversations"
+import {AgentConversation, extractConversation} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
 import {AgentFlow} from "./AgentFlow/AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
@@ -160,8 +160,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         setSelectedNetwork(next)
         setAgentCounts(new Map())
     }, [])
-
-    const conversationsRef = useRef<AgentConversation[] | null>(null)
 
     const [currentConversations, setCurrentConversations] = useState<AgentConversation[]>([])
 
@@ -438,19 +436,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         a?.origin.localeCompare(b?.origin)
                     )
                     setAgentsInNetwork(agentsInNetworkSorted)
-                    if (FAKE_CONVERSATIONS && agentsInNetworkSorted && agentsInNetworkSorted.length >= 2) {
-                        setCurrentConversations([
-                            {
-                                id: "test-conv-with-text",
-                                agents: new Set([agentsInNetworkSorted[0].origin, agentsInNetworkSorted[1].origin]),
-                                startedAt: new Date(),
-                                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                                type: ChatMessageType.HUMAN,
-                            },
-                        ])
-                    } else {
-                        setCurrentConversations([])
-                    }
+                    setCurrentConversations([])
 
                     const sampleQueriesTmp = connectivity?.metadata?.["sample_queries"]
                     if (Array.isArray(sampleQueriesTmp)) {
@@ -579,10 +565,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
 
             // Conversations between agents
-            const result = extractConversations(chatMessage, conversationsRef.current)
+            const result = extractConversation(chatMessage)
             if (result != null) {
-                conversationsRef.current = result
-                setCurrentConversations(result)
+                setCurrentConversations((prevConversations) => [...prevConversations, result])
             }
 
             // Update agent hit counts
@@ -688,8 +673,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const onStreamingComplete = useCallback(() => {
         // When streaming is complete, clean up any refs and state
-        conversationsRef.current = null
-        setCurrentConversations(null)
+        setCurrentConversations([])
         setAgentsInNetworkDesigner([])
         resetState()
 
@@ -826,7 +810,23 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         agentIconSuggestions={agentIconSuggestions}
                         id="multi-agent-accelerator-agent-flow"
                         key="multi-agent-accelerator-agent-flow"
-                        currentConversations={currentConversations}
+                        currentConversations={
+                            FAKE_CONVERSATIONS
+                                ? [
+                                      {
+                                          id: "test-conv-with-text",
+                                          agents:
+                                              agentsInNetwork?.length >= 2
+                                                  ? new Set([agentsInNetwork[0].origin, agentsInNetwork[1].origin])
+                                                  : new Set(),
+                                          startedAt: new Date(),
+                                          // eslint-disable-next-line max-len
+                                          text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                                          type: ChatMessageType.HUMAN,
+                                      },
+                                  ]
+                                : currentConversations
+                        }
                         currentUser={username}
                         isAwaitingLlm={isAwaitingLlm}
                         isEditingNetwork={isEditingNetwork}
