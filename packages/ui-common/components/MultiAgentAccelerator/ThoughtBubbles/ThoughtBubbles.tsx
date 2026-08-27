@@ -1,6 +1,5 @@
 import {styled} from "@mui/material/styles"
-import Typography from "@mui/material/Typography"
-import {FC, Fragment, useEffect, useMemo, useRef} from "react"
+import {FC, useEffect, useMemo, useRef} from "react"
 
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {AgentConversation} from "../AgentConversations"
@@ -91,8 +90,8 @@ export const ThoughtBubbles: FC<ThoughtBubbleOverlayProps> = ({currentConversati
         const topPos = rect.top - BUBBLE_HEIGHT / 2 - BUBBLE_OFFSET_Y
 
         return {
-            left: Math.min(left, window.innerWidth - BUBBLE_WIDTH - BUBBLE_DISTANCE_FROM_RIGHT_EDGE),
-            top: Math.max(topPos, 20),
+            leftPos: Math.min(left, window.innerWidth - BUBBLE_WIDTH - BUBBLE_DISTANCE_FROM_RIGHT_EDGE),
+            topPos: Math.max(topPos, 20),
         }
     }
     const renderableBubbles: RenderableBubble[] = useMemo(() => {
@@ -118,47 +117,26 @@ export const ThoughtBubbles: FC<ThoughtBubbleOverlayProps> = ({currentConversati
     return (
         <OverlayContainer>
             {renderableBubbles?.map((bubble) => {
-                const text = bubble?.text
-                if (!text) return null
+                const {id, text} = bubble
 
-                const position = getBubblePositionForNode(bubble)
+                if (!text) {
+                    return null
+                }
+
+                const {leftPos, topPos} = getBubblePositionForNode(bubble)
 
                 return (
-                    <Fragment key={bubble.id}>
-                        <ThoughtBubble
-                            backgroundColor="#EEF2FF"
-                            color="#6366F1"
-                            textColor="var(--bs-red)"
-                            width={BUBBLE_WIDTH}
-                            height={BUBBLE_HEIGHT}
-                            style={{
-                                position: "fixed",
-                                left: position.left,
-                                top: position.top,
-                                pointerEvents: "auto",
-                            }}
-                            data-bubble-id={bubble.id}
-                        >
-                            <Typography
-                                sx={{
-                                    borderRadius: 1,
-                                    display: "-webkit-box",
-                                    fontSize: "8px",
-                                    fontWeight: "700",
-                                    overflow: "hidden",
-                                    overflowWrap: "anywhere",
-                                    px: 0.25,
-                                    paddingBottom: 0,
-                                    paddingTop: 0,
-                                    textAlign: "center",
-                                    WebkitBoxOrient: "vertical",
-                                    WebkitLineClamp: 4,
-                                }}
-                            >
-                                {text}
-                            </Typography>
-                        </ThoughtBubble>
-                    </Fragment>
+                    <ThoughtBubble
+                        backgroundColor="#EEF2FF"
+                        color="#6366F1"
+                        data-bubble-id={id}
+                        height={BUBBLE_HEIGHT}
+                        key={id}
+                        style={{left: leftPos, pointerEvents: "auto", position: "fixed", top: topPos}}
+                        text={text}
+                        textColor="var(--bs-red)"
+                        width={BUBBLE_WIDTH}
+                    />
                 )
             })}
         </OverlayContainer>
