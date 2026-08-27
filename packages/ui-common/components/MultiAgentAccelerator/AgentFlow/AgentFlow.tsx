@@ -391,6 +391,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // Only show edit button for temporary networks where we're not already editing and not awaiting LLM response
     const showEditButton = isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm
 
+    const shouldShowLegend = agentsInNetwork.length > 0 && !isAgentNetworkDesignerMode && !isEditingNetwork
+
     return (
         <Box
             id={`${id}-outer-box`}
@@ -454,7 +456,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 >
                     {!isAwaitingLlm && (
                         <>
-                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditingNetwork && (
+                            {shouldShowLegend && (
                                 <Legend
                                     id="legend"
                                     maxDepth={maxDepth}
