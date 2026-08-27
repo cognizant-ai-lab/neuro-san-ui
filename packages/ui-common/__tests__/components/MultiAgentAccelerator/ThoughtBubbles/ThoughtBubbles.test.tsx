@@ -19,7 +19,7 @@ import {userEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
-import {ThoughtBubbleOverlay} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleOverlay"
+import {ThoughtBubbles} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbles"
 import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
 
 describe("ThoughtBubbleOverlay", () => {
@@ -54,7 +54,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={false}
@@ -70,7 +70,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -88,7 +88,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "nonexistent", "node2", "Test message")]
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -103,7 +103,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={null}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -119,7 +119,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={[]}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -133,7 +133,7 @@ describe("ThoughtBubbleOverlay", () => {
 
     it("Should handle empty edges array", () => {
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[]}
                 showThoughtBubbles={true}
@@ -183,7 +183,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -211,7 +211,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -243,7 +243,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -263,7 +263,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -277,7 +277,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edgesAdded = [...edges, createMockEdge("edge3", "node1", "node2", "Third message")]
 
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edgesAdded}
                 showThoughtBubbles={true}
@@ -292,7 +292,7 @@ describe("ThoughtBubbleOverlay", () => {
         edgesRemoved.splice(1, 1) // Remove second message
 
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edgesRemoved}
                 showThoughtBubbles={true}
@@ -329,7 +329,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[humanEdge]}
                 showThoughtBubbles={true}
@@ -354,7 +354,7 @@ describe("ThoughtBubbleOverlay", () => {
         }
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[edgeEmptyAgents]}
                 showThoughtBubbles={true}
@@ -376,7 +376,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         expect(() =>
             render(
-                <ThoughtBubbleOverlay
+                <ThoughtBubbles
                     nodes={mockNodes}
                     edges={[edge]}
                     showThoughtBubbles={true}
@@ -395,7 +395,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Hover test message")]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -421,7 +421,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node1", "Self-referencing edge")]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -442,7 +442,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -476,7 +476,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges2: ThoughtBubbleEdgeShape[] = [createMockEdge("edge2", "node1", "node2", "Updated message")]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges1}
                 showThoughtBubbles={true}
@@ -488,7 +488,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Change edges while hovering
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges2}
                 showThoughtBubbles={true}
@@ -505,7 +505,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges3: ThoughtBubbleEdgeShape[] = [createMockEdge("edge3", "node1", "node2", "Message 3")]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges1}
                 showThoughtBubbles={true}
@@ -516,7 +516,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Rapidly change edges to trigger timeout clearing logic
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges2}
                 showThoughtBubbles={true}
@@ -524,7 +524,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
 
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges3}
                 showThoughtBubbles={true}
@@ -542,7 +542,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -560,7 +560,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -585,7 +585,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges1}
                 showThoughtBubbles={true}
@@ -597,7 +597,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Remove edge2 (should trigger exit animation)
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges2}
                 showThoughtBubbles={true}
@@ -606,7 +606,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Quickly add edge2 back (should trigger timeout clearing for the existing removal)
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges3}
                 showThoughtBubbles={true}
@@ -622,7 +622,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges1: ThoughtBubbleEdgeShape[] = [createMockEdge("edge1", "node1", "node2", "Message 1")]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges1}
                 showThoughtBubbles={true}
@@ -633,7 +633,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Remove all edges (should find exiting bubble in original edges array)
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 // Remove all edges
                 edges={[]}
@@ -669,7 +669,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -682,7 +682,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Rerender to trigger truncation check
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -706,7 +706,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -748,7 +748,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -776,7 +776,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges3 = [createMockEdge("edge3", "node1", "node2", "Message 3")]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges1}
                 showThoughtBubbles={true}
@@ -785,7 +785,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Add more edges
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges2}
                 showThoughtBubbles={true}
@@ -794,7 +794,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Completely replace all edges
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges3}
                 showThoughtBubbles={true}
@@ -831,7 +831,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Should not throw when provider returns non-array
         expect(() =>
             render(
-                <ThoughtBubbleOverlay
+                <ThoughtBubbles
                     nodes={nodesWithProvider}
                     edges={edges}
                     showThoughtBubbles={true}
@@ -870,7 +870,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Render with showThoughtBubbles=false so the overlay element is not attached
         render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[]}
                 showThoughtBubbles={false}
@@ -888,7 +888,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge1", "node1", "node2", "Test message")]
 
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -897,7 +897,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Simulate scenario where edge might be undefined during state transitions
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[]}
                 showThoughtBubbles={true}
@@ -944,7 +944,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         const {container, rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -958,7 +958,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Rerender to force recalculation of shouldShowLines
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -992,7 +992,7 @@ describe("ThoughtBubbleOverlay", () => {
         }
 
         const {container, rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[humanEdge]}
                 showThoughtBubbles={true}
@@ -1001,7 +1001,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         await act(async () => vi.advanceTimersByTime(200))
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[humanEdge]}
                 showThoughtBubbles={true}
@@ -1033,7 +1033,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edgeTargetingInactive = createMockEdge("edge-inactive", "node1", "node2", "Should not have lines")
 
         const {container: c2, rerender: r2} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
@@ -1042,7 +1042,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         await act(async () => vi.advanceTimersByTime(200))
         r2(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={[edgeTargetingInactive]}
                 showThoughtBubbles={true}
@@ -1063,7 +1063,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge-fallback", "node1", "node2", "Fallback test")]
 
         const {container, rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1076,7 +1076,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         await act(async () => vi.advanceTimersByTime(200))
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1101,7 +1101,7 @@ describe("ThoughtBubbleOverlay", () => {
         }
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={[]}
                 edges={[edge]}
                 showThoughtBubbles={true}
@@ -1140,7 +1140,7 @@ describe("ThoughtBubbleOverlay", () => {
         const spy = vi.spyOn(Date, "now").mockImplementation(() => now + 10000)
 
         const {container, unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={[node]}
                 edges={[edge]}
                 isStreaming={true}
@@ -1187,7 +1187,7 @@ describe("ThoughtBubbleOverlay", () => {
         ]
 
         const {rerender, unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={nodesWithProvider}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1195,7 +1195,7 @@ describe("ThoughtBubbleOverlay", () => {
         )
         await act(async () => vi.advanceTimersByTime(200))
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1240,7 +1240,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Render component normally first so React can mount without our failure injection
         const {rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1250,7 +1250,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Fast-forward time so bubble entrance animation delay passes and re-render so lines are added
         vi.setSystemTime(10000)
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1292,7 +1292,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Start streaming by re-rendering with isStreaming=true so the effect starts the RAF loop
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1321,7 +1321,7 @@ describe("ThoughtBubbleOverlay", () => {
         }
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[edge]}
                 showThoughtBubbles={true}
@@ -1337,7 +1337,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge-stream-no-agent", "node1", "node2", "Stream no agent")]
 
         const {unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1383,7 +1383,7 @@ describe("ThoughtBubbleOverlay", () => {
         const consoleErrSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
 
         const {container, rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[dupEdge]}
                 showThoughtBubbles={true}
@@ -1392,7 +1392,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         await act(async () => vi.advanceTimersByTime(200))
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[dupEdge]}
                 showThoughtBubbles={true}
@@ -1412,7 +1412,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge-unmount-stream", "node1", "node2", "Unmount stream")]
 
         const {unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1430,7 +1430,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edges = [createMockEdge("edge-toggle-stream", "node1", "node2", "Toggle stream")]
 
         const {rerender, unmount} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={edges}
                 showThoughtBubbles={true}
@@ -1441,7 +1441,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Enable streaming
         expect(() =>
             rerender(
-                <ThoughtBubbleOverlay
+                <ThoughtBubbles
                     nodes={mockNodes}
                     edges={edges}
                     showThoughtBubbles={true}
@@ -1453,7 +1453,7 @@ describe("ThoughtBubbleOverlay", () => {
         // Disable streaming again
         expect(() =>
             rerender(
-                <ThoughtBubbleOverlay
+                <ThoughtBubbles
                     nodes={mockNodes}
                     edges={edges}
                     showThoughtBubbles={true}
@@ -1471,7 +1471,7 @@ describe("ThoughtBubbleOverlay", () => {
         const edge = createMockEdge("edge-exit-remove", "node1", "node2", "Exit remove")
 
         const {container, rerender} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[edge]}
                 showThoughtBubbles={true}
@@ -1480,7 +1480,7 @@ describe("ThoughtBubbleOverlay", () => {
 
         // Now remove the edge to trigger exit animation
         rerender(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[]}
                 showThoughtBubbles={true}
@@ -1507,7 +1507,7 @@ describe("ThoughtBubbleOverlay", () => {
         document.body.append(agentEl)
 
         const {container} = render(
-            <ThoughtBubbleOverlay
+            <ThoughtBubbles
                 nodes={mockNodes}
                 edges={[edge]}
                 showThoughtBubbles={true}
