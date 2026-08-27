@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {v4 as uuid} from "uuid"
+
 import {ChatMessage, ChatMessageType} from "../../generated/neuro-san/NeuroSanClient"
 
 export interface AgentConversation {
@@ -38,70 +40,22 @@ export const isFinalMessage = (chatMessage: {
     return Boolean(isAgentFinalResponse || isCodedToolFinalResponse)
 }
 
-export const createConversation = (agents: string[], text: string, type: ChatMessageType): AgentConversation => ({
-    // Could use crypto.randomUUID, but it's only available under HTTPS, and don't want to use a different
-    // solution for HTTP on localhost.
-    id: `conv_${Date.now()}${Math.random().toString(36).slice(2, 10)}`,
-    agents: new Set(agents),
-    startedAt: new Date(),
-    text,
-    type,
-})
-
-const processAgentCompletion = (conversations: AgentConversation[], tools: string[]): AgentConversation[] => {
-    const toolsToRemove = new Set(tools)
-
-    // For each conversation:
-    // 1) Remove all agents whose tool is in toolsToRemove
-    // 2) Only keep conversations that still have agents left
-    return (
-        conversations
-            .map((conv) => {
-                // Remove all matching tools from this conversation's agents
-                const updatedAgents = new Set([...conv.agents].filter((agent) => !toolsToRemove.has(agent)))
-                // Return a new conversation object with updated agents
-                return {...conv, agents: updatedAgents}
-            })
-            // Filter out conversations that have no agents left
-            .filter((conv) => conv.agents.size > 0)
-    )
-}
-
-export const extractConversations = (
-    chatMessage: ChatMessage,
-    currentConversations: AgentConversation[] | null
-): AgentConversation[] | null => {
-    const updatedConversations = [...(currentConversations || [])]
-
-    // If there are no origins in a chat message, return current state
+export const extractConversation = (chatMessage: ChatMessage): AgentConversation | null => {
+    // If there are no origins in a chat message, can't extract a conversation
     if (!chatMessage?.origin?.length) {
-        return currentConversations
+        return null
     }
 
-    const isFinal = isFinalMessage(chatMessage)
     const agents: string[] = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
 
-    let finalConversations: AgentConversation[] | null
-
-    // Check if this is an AGENT message and if it's a final message, i.e. an end event (could be an AGENT final
-    // message or coded tool end, see isFinalMessage function)
-    if (chatMessage.type === ChatMessageType.AGENT && isFinal) {
-        const currentConversationsToUpdate = processAgentCompletion(updatedConversations, agents)
-        finalConversations = currentConversationsToUpdate.length === 0 ? [] : currentConversationsToUpdate
-    } else {
-        // Create a new conversation for this communication path
-        let inquiryText: string | undefined
-        const params = chatMessage.structure?.["params"]
-        if (params && typeof params === "object" && "inquiry" in params) {
-            inquiryText = (params as {inquiry?: string}).inquiry
-        }
-        const textToShow = inquiryText || chatMessage.text
-        // Show inquiry (from structure), that's only for networks that use AAOSA with a JSON format.
-        // Otherwise, show the raw data from the `text` field of the chat message.
-        const newConversation = createConversation(agents, textToShow, chatMessage.type)
-        updatedConversations.push(newConversation)
-        finalConversations = updatedConversations
-    }
-
-    return finalConversations
+    return agents?.length >= 2
+        ? {
+              // Generate a UUID for the conversation ID
+              id: `conv_${uuid()}`,
+              agents: new Set(agents),
+              startedAt: new Date(),
+              text: chatMessage.text,
+              type: chatMessage.type,
+          }
+        : null
 }
