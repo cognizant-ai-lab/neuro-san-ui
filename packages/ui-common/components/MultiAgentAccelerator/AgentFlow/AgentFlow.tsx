@@ -186,6 +186,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const graphColoringOption = useSettingsStore((state) => state.settings.appearance.graphColoringOption)
 
     const showRadialGuides = useSettingsStore((state) => state.settings.appearance.showRadialGuides)
+    const showThoughtBubbles = useSettingsStore((state) => state.settings.appearance.showThoughtBubbles)
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
@@ -465,7 +466,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         </>
                     )}
                 </ReactFlow>
-                <ThoughtBubbles currentConversations={currentConversations} />
+                {showThoughtBubbles && <ThoughtBubbles currentConversations={currentConversations} />}
             </Box>
             {isTemporaryNetwork && !isAwaitingLlm && (
                 <NetworkEditorDock

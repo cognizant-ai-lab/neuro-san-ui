@@ -81,7 +81,7 @@ import {MUIAlert} from "../Common/MUIAlert"
 import {MUIDialog} from "../Common/MUIDialog"
 import {closeNotification, NotificationType, sendNotification} from "../Common/notification"
 
-const FAKE_CONVERSATIONS = true
+const FAKE_CONVERSATIONS = false
 
 export interface MultiAgentAcceleratorProps {
     readonly username: string
@@ -444,7 +444,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                                 id: "test-conv-with-text",
                                 agents: new Set([agentsInNetworkSorted[0].origin, agentsInNetworkSorted[1].origin]),
                                 startedAt: new Date(),
-                                text: "What is the weather today?",
+                                text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
                                 type: ChatMessageType.HUMAN,
                             },
                         ])
