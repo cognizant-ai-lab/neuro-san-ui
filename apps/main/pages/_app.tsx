@@ -25,7 +25,6 @@ import startCase from "lodash-es/startCase"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
-import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
 
@@ -42,6 +41,7 @@ import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {getAuthenticationType, smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
+import {NextAuthSessionProvider} from "../../../packages/ui-common/utils/NextAuthAdapter"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
@@ -340,7 +340,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             </ErrorBoundary>
         )
 
-        body = enableAuthentication ? <SessionProvider>{appShell}</SessionProvider> : appShell
+        body = enableAuthentication ? <NextAuthSessionProvider>{appShell}</NextAuthSessionProvider> : appShell
     }
 
     return (

@@ -18,9 +18,9 @@ limitations under the License.
  * Utility functions relating to authentication
  */
 
-import {signIn, useSession} from "next-auth/react"
 import {ReactNode, useEffect} from "react"
 
+import {getSessionAdapter} from "../../utils/SessionAdapter"
 import {PageLoader} from "../Common/PageLoader"
 
 // Use this provider for authentication via next-auth. It *must* correspond to one of those listed in
@@ -40,12 +40,12 @@ interface AuthProps {
  * @return children (protected) components if user is authenticated, otherwise "Loading" message.
  */
 export const Auth = ({children}: AuthProps) => {
-    // Suppress no-shadow rule -- we have to use what the API gives us
-    // eslint-disable-next-line no-shadow
-    const {data: session, status} = useSession()
+    const adapter = getSessionAdapter()
+    const {data: session} = adapter.useSession()
+    const sessionStatus = adapter.useSessionStatus()
 
     const isUser = Boolean(session?.user)
-    const loading = status === "loading"
+    const loading = sessionStatus === "loading"
 
     useEffect(() => {
         if (loading) {
@@ -57,9 +57,9 @@ export const Auth = ({children}: AuthProps) => {
         // By explicitly specifying the provider here, it skips the annoying and unnecessary next-auth interstitial
         // screen and goes straight to the login screen of AUTHENTICATION_PROVIDER.
         if (!isUser) {
-            void signIn(AUTHENTICATION_PROVIDER)
+            void adapter.signIn(AUTHENTICATION_PROVIDER)
         }
-    }, [isUser, loading])
+    }, [adapter, isUser, loading])
 
     if (isUser && !loading) {
         return <>{children}</>

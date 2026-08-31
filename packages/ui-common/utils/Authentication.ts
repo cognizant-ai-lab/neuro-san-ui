@@ -16,9 +16,8 @@ limitations under the License.
 
 // See main function comment for more details.
 
-import {signOut, useSession} from "next-auth/react"
-
 import {navigateToUrl} from "./BrowserNavigation"
+import {getSessionAdapter} from "./SessionAdapter"
 import {OidcProvider} from "./types"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../const"
 import {useEnvironmentStore} from "../state/Environment"
@@ -51,7 +50,7 @@ export const useAuthentication = () => {
     // Components that can remain mounted while enableAuthentication changes must not use this hook.
 
     /* eslint-disable react-hooks/rules-of-hooks */
-    const {data: session} = useSession()
+    const {data: session} = getSessionAdapter().useSession()
     const {currentUser: albUser, picture: albPicture} = useUserInfoStore()
     /* eslint-enable react-hooks/rules-of-hooks */
     return {
@@ -114,7 +113,7 @@ export const smartSignOut = async (
 
     if (oidcProvider === "NextAuth") {
         // NextAuth case
-        await signOut({redirect: true})
+        await getSessionAdapter().signOut({redirect: true})
     } else {
         // ALB case
 

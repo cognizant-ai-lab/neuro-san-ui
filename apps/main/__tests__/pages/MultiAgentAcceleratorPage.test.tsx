@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
-import {useSession} from "next-auth/react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {MultiAgentAcceleratorProps} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
+import {setSessionAdapter} from "../../../../packages/ui-common/utils/SessionAdapter"
 import {MultiAgentAcceleratorPage} from "../../pages/multiAgentAccelerator"
 
 const MOCK_USER = "mock-user"
@@ -31,7 +31,6 @@ const NEURO_SAN_SERVER_URL = "https://default.example.com"
 const MAA_TEXT = "Mock MultiAgentAccelerator component."
 
 // Mock dependencies
-vi.mock("next-auth/react")
 
 vi.mock("../../../../packages/ui-common/controller/agent/Agent")
 
@@ -48,13 +47,11 @@ describe("Multi Agent Accelerator Page", () => {
     withStrictMocks()
 
     beforeEach(() => {
-        vi.mocked(useSession).mockReturnValue({
-            status: undefined,
-            update: vi.fn(),
-            data: {
-                user: {name: MOCK_USER, image: MOCK_IMAGE},
-                expires: "",
-            },
+        setSessionAdapter({
+            useSession: () => ({data: {user: {name: MOCK_USER, image: MOCK_IMAGE}}}),
+            useSessionStatus: () => "authenticated",
+            signIn: vi.fn(),
+            signOut: vi.fn(),
         })
     })
 

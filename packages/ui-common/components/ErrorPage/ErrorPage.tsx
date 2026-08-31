@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 import Box from "@mui/material/Box"
-import {useRouter} from "next/router.js"
 import {FC, ReactElement} from "react"
 
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/Environment"
 import {useUserInfoStore} from "../../state/UserInfo"
 import {getAuthenticationType, smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {getCurrentLocation} from "../../utils/BrowserNavigation"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Footer} from "../Common/Footer"
 import {Navbar} from "../Common/Navbar"
@@ -40,8 +40,7 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
     const {auth0ClientId, auth0Domain, enableAuthentication, logoServiceToken, supportEmailAddress} =
         useEnvironmentStore()
 
-    // Access Next.js router
-    const router = useRouter()
+    const {pathname, query} = getCurrentLocation()
 
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
@@ -67,8 +66,8 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
                 id="nav-bar"
                 logo={LOGO}
                 logoServiceToken={logoServiceToken}
-                pathname={router.pathname}
-                query={router.query}
+                pathname={pathname}
+                query={query}
                 signOut={handleSignOut}
                 supportEmailAddress={supportEmailAddress}
                 userInfo={userInfo}

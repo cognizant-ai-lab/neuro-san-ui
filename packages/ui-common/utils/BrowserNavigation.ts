@@ -23,3 +23,12 @@ limitations under the License.
 export const navigateToUrl = (url: string): void => {
     window.location.href = url
 }
+
+/**
+ * @returns The current pathname, and the query string parsed into a plain object
+ */
+export const getCurrentLocation = (): {pathname: string; query: Record<string, string>} => {
+    const {pathname = "", search = ""} = globalThis.location ?? {}
+
+    return {pathname, query: Object.fromEntries(new URLSearchParams(search))}
+}

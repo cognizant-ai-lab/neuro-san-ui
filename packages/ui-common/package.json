@@ -1,7 +1,7 @@
 {
     "name": "@cognizant-ai-lab/ui-common",
     "description": "A shared UI component library for Cognizant AI Labs projects",
-    "version": "1.5.0",
+    "version": "1.12.0",
     "type": "module",
     "scripts": {
         "build": "yarn clean && yarn generate && yarn run --top-level tsc --project tsconfig.build.json && fix-esm-import-path dist > /dev/null",
@@ -52,15 +52,18 @@
     "peerDependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
-        "@mui/icons-material": "^9.0.0",
-        "@mui/material": "^9.0.0",
-        "@mui/system": "^9.0.0",
-        "@mui/x-tree-view": "^9.1.0",
-        "next": "^16.3.0",
-        "next-auth": "5.0.0-beta.32",
+        "@mui/icons-material": "^7.3.1 || ^8.0.0 || ^9.0.0",
+        "@mui/material": "^7.3.1 || ^8.0.0 || ^9.0.0",
+        "@mui/system": "^7.3.1 || ^8.0.0 || ^9.0.0",
+        "@mui/x-tree-view": "^8.22.0 || ^9.1.0",
+        "next-auth": "^5.0.0-beta.29",
         "react": "^19.2.4",
-        "react-dom": "^19.2.4",
-        "typescript": "^5.9.3"
+        "react-dom": "^19.2.4"
+    },
+    "peerDependenciesMeta": {
+        "next-auth": {
+            "optional": true
+        }
     },
     "repository": {
         "type": "git",
@@ -73,10 +76,33 @@
     "types": "dist/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
         },
-        "./const": "./const.ts"
+        "./const": {
+            "types": "./dist/const.d.ts",
+            "import": "./dist/const.js"
+        },
+        "./controller/*": {
+            "types": "./dist/controller/*.d.ts",
+            "import": "./dist/controller/*.js"
+        },
+        "./components/*": {
+            "types": "./dist/components/*.d.ts",
+            "import": "./dist/components/*.js"
+        },
+        "./state/*": {
+            "types": "./dist/state/*.d.ts",
+            "import": "./dist/state/*.js"
+        },
+        "./utils/*": {
+            "types": "./dist/utils/*.d.ts",
+            "import": "./dist/utils/*.js"
+        },
+        "./Theme/*": {
+            "types": "./dist/Theme/*.d.ts",
+            "import": "./dist/Theme/*.js"
+        }
     },
     "files": [
         "dist"
