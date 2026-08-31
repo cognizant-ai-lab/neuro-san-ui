@@ -23,9 +23,9 @@ import {useAuthentication} from "../../../utils/Authentication"
 import {
     getSessionAdapter,
     resetSessionAdapter,
-    setSessionAdapter,
     type Session,
     type SessionUser,
+    setSessionAdapter,
 } from "../../../utils/SessionAdapter"
 
 describe("SessionAdapter", () => {
