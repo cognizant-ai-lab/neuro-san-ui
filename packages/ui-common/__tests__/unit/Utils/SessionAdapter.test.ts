@@ -20,7 +20,13 @@ import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {useAuthentication} from "../../../utils/Authentication"
-import {getSessionAdapter, resetSessionAdapter, setSessionAdapter} from "../../../utils/SessionAdapter"
+import {
+    getSessionAdapter,
+    resetSessionAdapter,
+    setSessionAdapter,
+    type Session,
+    type SessionUser,
+} from "../../../utils/SessionAdapter"
 
 describe("SessionAdapter", () => {
     withStrictMocks()
@@ -39,7 +45,14 @@ describe("SessionAdapter", () => {
         })
 
         it("reports that no session is available, so apps without a login still render", () => {
-            expect(getSessionAdapter().useSession().data).toBeUndefined()
+            const session: Session = getSessionAdapter().useSession()
+            const user: SessionUser | undefined = session.data?.user
+            expect(session.data).toBeUndefined()
+            expect(user).toBeUndefined()
+        })
+
+        it("reports unauthenticated, so apps without a login still render", () => {
+            expect(getSessionAdapter().useSessionStatus()).toBe("unauthenticated")
         })
     })
 

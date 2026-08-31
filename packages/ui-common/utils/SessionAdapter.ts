@@ -49,7 +49,7 @@ const NO_SESSION: Session = {data: undefined}
 const NOT_REGISTERED_MESSAGE =
     "No session adapter is registered, so this package cannot sign the user in or out. If your app uses " +
     "next-auth, render `NextAuthSessionProvider` from " +
-    "\"@cognizant-ai-lab/ui-common/utils/NextAuthAdapter\" in place of next-auth's own `SessionProvider`. " +
+    '"@cognizant-ai-lab/ui-common/utils/NextAuthAdapter" in place of next-auth\'s own `SessionProvider`. ' +
     "Otherwise register your own adapter with `setSessionAdapter`."
 
 /**

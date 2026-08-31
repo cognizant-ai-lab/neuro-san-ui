@@ -60,6 +60,19 @@ describe("ErrorPage", () => {
         await screen.findByText(new RegExp(LOGO, "u"))
     })
 
+    it("Should render when authentication has not produced a user yet", async () => {
+        vi.mocked(useAuthentication).mockReturnValue({} as ReturnType<typeof useAuthentication>)
+
+        render(
+            <ErrorPage
+                id="test-error-page"
+                errorText="Error page for testing"
+            />
+        )
+
+        await screen.findByText(new RegExp(LOGO, "u"))
+    })
+
     it("Should handle sign out correctly", async () => {
         render(
             <ErrorPage

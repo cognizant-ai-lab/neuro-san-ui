@@ -76,4 +76,11 @@ describe("hashString", () => {
         const result = hashString(input)
         expect(result).toBe("1c0002518a359e")
     })
+
+    it("should treat a missing code point as zero", () => {
+        vi.spyOn(String.prototype, "codePointAt").mockReturnValueOnce(undefined)
+
+        // Same as hashing a null character, whose code point is 0
+        expect(hashString("a")).toBe(hashString("\0"))
+    })
 })
