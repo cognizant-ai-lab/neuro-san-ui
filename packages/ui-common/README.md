@@ -197,34 +197,48 @@ exports the `PALETTES` used for agent visualization.
 Nothing in this package requires an authentication library. Components that show a signed-in user, such as
 `Navbar`, take that information as props, and everything works with no session at all.
 
-If your app uses [next-auth](https://authjs.dev/), install it and swap its `SessionProvider` for ours. That is the
-only wiring step, and it points the components in this package at your session:
+This applies to `ErrorBoundary` too. It hands the session details you give it to the error page it renders as a
+fallback, so wire it up with whatever your app already knows about the user:
 
 ```tsx
-import {NextAuthSessionProvider} from "@cognizant-ai-lab/ui-common/utils/NextAuthAdapter"
+import {ErrorBoundary} from "@cognizant-ai-lab/ui-common"
 
 export default function App({children}) {
-    return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>
+    return (
+        <ErrorBoundary
+            id="error-boundary"
+            userInfo={{name: "Ada", image: "https://example.com/ada.png"}}
+            authenticationType="None"
+            signOut={() => endYourSession()}
+        >
+            {children}
+        </ErrorBoundary>
+    )
 }
 ```
 
-`next-auth` is an optional peer dependency, needed only for that module:
+Two modules do use [next-auth](https://authjs.dev/): `components/Authentication/Auth`, a guard that redirects
+anonymous visitors to a login screen, and `utils/Authentication`, which reads the signed-in user and signs them out.
+Neither is re-exported from the package root, so you only pull next-auth in if you import them by subpath:
+
+```tsx
+import {Auth} from "@cognizant-ai-lab/ui-common/components/Authentication/Auth"
+```
+
+`next-auth` is an optional peer dependency, needed only for those two modules:
 
 ```bash
 npm install next-auth@beta
 ```
-
-To use a different provider, implement `SessionAdapter` from `@cognizant-ai-lab/ui-common/utils/SessionAdapter`
-and call `setSessionAdapter` once at module scope, before your first render.
 
 ## Troubleshooting
 
 **`ERESOLVE` or peer dependency warnings on install.** Check that you are on React 19.2.4 or newer, and on MUI 7.3.1
 or newer.
 
-**`Failed to resolve import "next-auth/react"`.** Only `utils/NextAuthAdapter` imports next-auth. If you see
-this, something in your app imports that module; either install `next-auth` or stop importing it. The package
-root does not reach it.
+**`Failed to resolve import "next-auth/react"`.** Only `components/Authentication/Auth` and `utils/Authentication`
+import next-auth. If you see this, something in your app imports one of them; either install `next-auth` or stop
+importing it. The package root does not reach either module.
 
 **Large bundle.** Import through subpaths rather than the package root. See [Importing](#importing).
 

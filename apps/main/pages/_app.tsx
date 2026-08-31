@@ -25,6 +25,7 @@ import startCase from "lodash-es/startCase"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
+import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
 import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
 
@@ -34,14 +35,13 @@ import {Footer} from "../../../packages/ui-common/components/Common/Footer"
 import {LoadingSpinner} from "../../../packages/ui-common/components/Common/LoadingSpinner"
 import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
-import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
+import {ErrorBoundary, ErrorBoundaryProps} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
 import {getAuthenticationType, smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
-import {NextAuthSessionProvider} from "../../../packages/ui-common/utils/NextAuthAdapter"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
 import {createAppTheme} from "../theme"
@@ -77,6 +77,24 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
             id="nav-bar"
             userInfo={userInfo}
             onStartTour={onStartTour}
+        />
+    )
+}
+
+/**
+ * Utility component to pass user data along to the error boundary's fallback page. This component exists for the
+ * same reason as NavbarWrapper: the useAuthentication hook should only be called once the enableAuthentication
+ * setting is known.
+ * @param props All props for ErrorBoundary except userInfo.
+ * @return ErrorBoundary with userInfo passed to it.
+ */
+const ErrorBoundaryWrapper = (props: Omit<ErrorBoundaryProps, "userInfo">): ReactElement => {
+    const {data} = useAuthentication()
+
+    return (
+        <ErrorBoundary
+            {...props}
+            userInfo={data?.user}
         />
     )
 }
@@ -305,7 +323,11 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         body = <LoadingSpinner id="loading-header" />
     } else {
         const appShell = (
-            <ErrorBoundary id="error_boundary">
+            <ErrorBoundaryWrapper
+                id="error_boundary"
+                authenticationType={authenticationType}
+                signOut={handleSignOut}
+            >
                 <NavbarWrapper
                     enableAuthentication={enableAuthentication}
                     authenticationType={authenticationType}
@@ -337,10 +359,10 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     logoUrl="/cognizant-logo-white.svg"
                     sx={{borderTop: "none", marginTop: 0}}
                 />
-            </ErrorBoundary>
+            </ErrorBoundaryWrapper>
         )
 
-        body = enableAuthentication ? <NextAuthSessionProvider>{appShell}</NextAuthSessionProvider> : appShell
+        body = enableAuthentication ? <SessionProvider>{appShell}</SessionProvider> : appShell
     }
 
     return (

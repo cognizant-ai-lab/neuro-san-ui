@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
+import {signIn, useSession} from "next-auth/react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Auth} from "../../../components/Authentication/Auth"
-import {SessionStatus, setSessionAdapter} from "../../../utils/SessionAdapter"
 
 const AUTH_CHILDREN_TEXT = "Mock Auth"
 
@@ -28,38 +28,36 @@ const AUTH_ELEMENT = (
     </Auth>
 )
 
-const renderWithSession = (user: {name: string} | undefined, sessionStatus: SessionStatus) => {
-    const signIn = vi.fn()
-
-    setSessionAdapter({
-        useSession: () => ({data: user === undefined ? null : {user}}),
-        useSessionStatus: () => sessionStatus,
-        signIn,
-        signOut: vi.fn(),
-    })
-
-    render(AUTH_ELEMENT)
-
-    return {signIn}
-}
+vi.mock("next-auth/react")
 
 describe("Auth Component", () => {
     withStrictMocks()
 
-    it("should render a spinner while the session is loading", () => {
-        renderWithSession(undefined, "loading")
+    it("should render a spinner when status is loading", () => {
+        vi.mocked(useSession).mockReturnValue({data: null, status: "loading", update: undefined})
+        render(AUTH_ELEMENT)
 
-        screen.getByText("Loading... Please wait")
+        expect(screen.getByText("Loading... Please wait")).toBeInTheDocument()
     })
 
     it("should call signIn when user is not authenticated", () => {
-        const {signIn} = renderWithSession(undefined, "unauthenticated")
+        vi.mocked(useSession).mockReturnValue({
+            data: {user: undefined, expires: undefined},
+            status: undefined,
+            update: undefined,
+        })
+        render(AUTH_ELEMENT)
 
         expect(signIn).toHaveBeenCalledWith("auth0")
     })
 
     it("should pass through children when user is authenticated", async () => {
-        const {signIn} = renderWithSession({name: "Test User"}, "authenticated")
+        vi.mocked(useSession).mockReturnValue({
+            data: {user: {name: "Test User", email: "test@example.com"}, expires: undefined},
+            status: "authenticated",
+            update: undefined,
+        })
+        render(AUTH_ELEMENT)
 
         expect(signIn).not.toHaveBeenCalled()
         await screen.findByText(AUTH_CHILDREN_TEXT)

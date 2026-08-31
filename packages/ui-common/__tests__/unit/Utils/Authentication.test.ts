@@ -15,7 +15,8 @@ limitations under the License.
 */
 
 import {renderHook} from "@testing-library/react"
-import {Mock, MockInstance} from "vitest"
+import {signOut} from "next-auth/react"
+import {MockInstance} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
@@ -23,9 +24,10 @@ import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME} from "../../../const"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {AD_TENANT_ID, smartSignOut, useAuthentication} from "../../../utils/Authentication"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
-import {setSessionAdapter} from "../../../utils/SessionAdapter"
 
-let signOut: Mock<(options?: {redirect?: boolean}) => unknown>
+vi.mock("next-auth/react")
+
+const mockedSignOut = vi.mocked(signOut)
 
 let navigateToUrlSpy: MockInstance<typeof BrowserNavigation.navigateToUrl>
 
@@ -39,14 +41,6 @@ describe("useAuthentication", () => {
 
     beforeEach(() => {
         navigateToUrlSpy = vi.spyOn(BrowserNavigation, "navigateToUrl").mockImplementation(() => undefined)
-
-        signOut = vi.fn<(options?: {redirect?: boolean}) => unknown>()
-        setSessionAdapter({
-            useSession: () => ({data: undefined}),
-            useSessionStatus: () => "unauthenticated",
-            signIn: vi.fn(),
-            signOut,
-        })
 
         oldFetch = window.fetch
         window.fetch = mockFetch({})
@@ -79,6 +73,8 @@ describe("useAuthentication", () => {
 
     describe("signOut", () => {
         it("Does nothing if currentUser not available", async () => {
+            mockedSignOut.mockResolvedValueOnce(undefined)
+
             await smartSignOut(undefined, null, null, null)
 
             expect(signOut).not.toHaveBeenCalled()
