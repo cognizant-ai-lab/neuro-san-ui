@@ -70,8 +70,8 @@ Neuro-San URL is editable from within the UI, so `defaultNeuroSanUrl` is only th
 
 ## Importing
 
-Every module is available at a subpath that mirrors the source layout, and the whole public surface is also
-re-exported from the package root.
+Every module is available at a subpath that mirrors the source layout, and nearly the whole public surface is also
+re-exported from the package root. See [Authentication](#authentication) for the two exceptions.
 
 ```typescript
 // Recommended: import the module you need.
@@ -201,7 +201,7 @@ This applies to `ErrorBoundary` too. It hands the session details you give it to
 fallback, so wire it up with whatever your app already knows about the user:
 
 ```tsx
-import {ErrorBoundary} from "@cognizant-ai-lab/ui-common"
+import {ErrorBoundary} from "@cognizant-ai-lab/ui-common/components/ErrorPage/ErrorBoundary"
 
 export default function App({children}) {
     return (
