@@ -1,67 +1,78 @@
 # @cognizant-ai-lab/ui-common
 
-A comprehensive React component library and utilities package for building user interfaces for Neuro-san AI
-applications. Contains components for chat interfaces, multi-agent flow visualization, theming and more.
+React components and utilities for building Neuro-San AI applications: chat interfaces, multi-agent flow
+visualization, theming, and typed clients for the Neuro-San API.
 
-## Copyright
+Works in Vite, Next.js, or any bundler that understands ES modules, with no Node polyfills to configure. Ships
+TypeScript declarations for every export.
 
-Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
+## Requirements
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+| Requirement | Version                              |
+| ----------- | ------------------------------------ |
+| React       | 19.2.4 or newer                      |
+| MUI         | 7.3.1 or newer (7, 8, or 9)          |
+| Module type | ES modules (the package is ESM-only) |
 
-    https://www.apache.org/licenses/LICENSE-2.0
+## Installation
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Install the package together with its peer dependencies:
+
+```bash
+npm install @cognizant-ai-lab/ui-common \
+    @mui/material @mui/system @mui/icons-material @mui/x-tree-view \
+    @emotion/react @emotion/styled
+```
+
+If you use npm 7 or newer, the peer dependencies are installed automatically and you can shorten this to
+`npm install @cognizant-ai-lab/ui-common`. Yarn and pnpm do not install peers automatically, so list them
+explicitly as above.
+
+`next-auth` is an optional peer. You only need it if you use the authentication components described in
+[Authentication](#authentication).
 
 ## Quickstart
 
-For this quickstart, we'll show how to use the `MultiAgentAccelerator` component, which is a demo application
-showcasing the components in this package.
-
-You will need access to a Neuro-san API backend to use the components in this package.
-
-If you don't already have a ReactJS application, create one, for example, using [Create React App](https://create-react-app.dev/):
-The following assumes you're using TypeScript (recommended):
+Create a React app, if you do not have one already. Any React 19 setup works. Vite is the quickest:
 
 ```bash
-npx create-react-app my-app --template typescript
+npm create vite@latest my-app -- --template react-ts
 cd my-app
+npm install
 ```
 
-Install the library:
+Add the library and its peers:
 
 ```bash
-npm install @cognizant-ai-lab/ui-common
+npm install @cognizant-ai-lab/ui-common \
+    @mui/material @mui/system @mui/icons-material @mui/x-tree-view \
+    @emotion/react @emotion/styled
 ```
 
-Then edit `src/App.tsx` (assuming TypeScript) and replace the contents with the code below:
+Replace `src/App.tsx` with the Multi-Agent Accelerator, a demo application that showcases the components in this
+package. You will need a running Neuro-San API backend to talk to:
 
 ```tsx
-export default function MyApp() {
+import {MultiAgentAccelerator} from "@cognizant-ai-lab/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
+
+export default function App() {
     return (
         <MultiAgentAccelerator
-            userInfo={{userName: "Alice", userImage: "https://example.com/alice.png"}}
-            backendNeuroSanApiUrl="https://my-neuro-san-api.example.com"
+            username="Alice"
+            defaultNeuroSanUrl="https://my-neuro-san-api.example.com"
         />
     )
 }
 ```
 
-Run your app with `npm start` or `yarn start`, and you should see the Multi-Agent Accelerator interface,
-which is a demo application showcasing the components in this package. You can select an agent, chat with that agent
-via the chat interface, and visualize the agent network flow.
+Run it with `npm run dev`. You can select an agent, chat with it, and visualize the agent network flow. The
+Neuro-San URL is editable from within the UI, so `defaultNeuroSanUrl` is only the starting value.
 
 ## Features
 
 - **UI Components**: Ready-to-use React components for AI chat interfaces, navigation, dialogs, and more
 - **Multi-Agent Visualization**: Interactive flow diagrams for visualizing agent networks
-- **Authentication**: Built-in authentication components supporting multiple providers
+- **Authentication**: Optional next-auth components, with everything else working with no session at all
 - **State Management**: Zustand-based stores for environment, settings, and user info
 - **Theme Support**: Dark mode support with customizable, MUI-based theming
 - **Type Safety**: Full TypeScript support with generated OpenAPI types
@@ -80,208 +91,243 @@ Among the technologies and libraries used in this package are:
 - TypeScript
 - Zustand
 
-## Package Structure
+## Importing
+
+Every module is available at a subpath that mirrors the source layout, and nearly the whole public surface is also
+re-exported from the package root. See [Authentication](#authentication) for the two exceptions.
+
+```typescript
+// Recommended: import the module you need.
+import {MUIDialog} from "@cognizant-ai-lab/ui-common/components/Common/MUIDialog"
+import {testConnection} from "@cognizant-ai-lab/ui-common/controller/agent/Agent"
+import {useEnvironmentStore} from "@cognizant-ai-lab/ui-common/state/Environment"
+
+// Also supported: the package root.
+import {MUIDialog, testConnection, useEnvironmentStore} from "@cognizant-ai-lab/ui-common"
+```
+
+Prefer subpath imports. The package root is a barrel that references every module, so importing from it pulls the
+entire library, including MUI and the flow visualization, into your bundle. Importing a single dialog through a
+subpath costs a few hundred kilobytes; importing it through the root costs several megabytes.
+
+The available subpath prefixes are `components/*`, `controller/*`, `state/*`, `utils/*`, `Theme/*`, and `const`.
+
+Subpaths mirror the source layout:
 
 ```
 ui-common/
 ├── components/         # React components
 │   ├── AgentChat/      # Chat interface components
-│   ├── Authentication/ # Auth components
+│   ├── Authentication/ # Auth components (next-auth, subpath only)
 │   ├── ChatBot/        # ChatBot components
 │   ├── Common/         # Common UI components (dialogs, navbar, etc.)
 │   ├── ErrorPage/      # Error handling components
+│   ├── Logo/           # Logo components
 │   ├── MultiAgentAccelerator/ # Agent flow visualization
 │   └── Settings/       # Settings dialog components
 ├── controller/         # Backend interaction controllers
-│   ├── agent/         # Agent API controllers
-│   └── llm/           # LLM interaction controllers
-├── state/             # Zustand state stores
-├── Theme/             # Theming utilities
-├── utils/             # Utility functions
-└── generated/         # Auto-generated API types
+│   ├── agent/          # Agent API controllers
+│   ├── llm/            # LLM interaction controllers
+│   └── Types/          # Shared controller types
+├── state/              # Zustand state stores
+├── Theme/              # Theming utilities
+├── utils/              # Utility functions
+└── generated/          # Auto-generated API types
 ```
 
-## Usage
+## Components
 
-#### Example application
+### MultiAgentAccelerator
 
-Refer to [MAUI](https://github.com/cognizant-ai-lab/neuro-san-ui/tree/main/apps/main), the Multi-Agent Accelerator UI,
-for a real-world application example that uses these components.
+The full demo application: sidebar, agent flow graph, and chat.
 
-### Basic Import
+| Prop                 | Type     | Description                                                                |
+| -------------------- | -------- | -------------------------------------------------------------------------- |
+| `username`           | `string` | Identifier used for backend interactions, for personalization and tracking |
+| `defaultNeuroSanUrl` | `string` | Initial Neuro-San API URL. The user can change this in the UI              |
 
-```typescript
-import {ChatCommon, Navbar, MUIDialog, LoadingSpinner, useEnvironment, useUserInfo} from "@cognizant-ai-lab/ui-common"
-```
+### ChatCommon
 
-### Using Components
-
-#### ChatCommon
-
-See `ChatCommonProps` for all available props and their types. Here's a basic example of how to use the `ChatCommon`
-component in a React application:
+The chat interface on its own. See `ChatCommonProps` for the full list of props.
 
 ```tsx
-import {ChatCommon} from "@cognizant-ai-lab/ui-common"
-import {AIMessage, HumanMessage} from "@langchain/core/messages"
+import {ChatCommon} from "@cognizant-ai-lab/ui-common/components/AgentChat/ChatCommon/ChatCommon"
 import {useState} from "react"
 
 function ChatInterface() {
     const [isAwaitingLlm, setIsAwaitingLlm] = useState(false)
+    const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null)
 
     return (
         <ChatCommon
             id="agent-network-ui"
-            ref={chatRef} // If you need to access internal methods, like calling "Stop" when user clicks stop
-            neuroSanURL={neuroSanURL} // Base URL for Neuro-san API. Must point to a valid Neuro-san server
-            currentUser="Alice" // Current user's name, used for chat attribution in API calls and display
-            setIsAwaitingLlm={setIsAwaitingLlm} // Used to set whether we're currently waiting for an LLM response,
-            // which can be used to disable input and show loading states
-            isAwaitingLlm={isAwaitingLlm} // Used to indicate whether we're currently waiting for an LLM response
-            targetAgent={selectedNetwork} // The agent we're currently chatting with in Neuro-san.
-            onChunkReceived={onChunkReceived} // Callback function that will be called with each new chunk of response
-            // from the LLM. You can use this to update your UI in real time
-            // as the response comes in.
+            currentUser="Alice"
+            selectedNetwork={selectedNetwork}
+            setSelectedNetwork={setSelectedNetwork}
+            isAwaitingLlm={isAwaitingLlm}
+            setIsAwaitingLlm={setIsAwaitingLlm}
+            onChunkReceived={(chunk) => {
+                console.log("Received chunk:", chunk)
+                return true
+            }}
         />
     )
 }
 ```
 
-### Using Controllers
+### Other components
 
-#### Test Agent Connection
+Dialogs and alerts (`MUIDialog`, `MUIAlert`, `ConfirmationModal`, `Snackbar`), chrome (`Navbar`, `Footer`,
+`NeuroAIBreadcrumbs`), loading states (`LoadingSpinner`, `PageLoader`), error handling (`ErrorBoundary`), and the
+agent flow pieces (`AgentFlow`, `Sidebar`, `AgentConversations`).
 
-Used for testing connectivity to a Neuro-san server and retrieving version information.
+## Controllers
+
+Functions for talking to a Neuro-San backend. These are plain TypeScript with no React or MUI dependency, so they
+are safe to use in a non-React context.
 
 ```typescript
-import {testConnection} from "@cognizant-ai-lab/ui-common"
+import {getAgentNetworks, testConnection} from "@cognizant-ai-lab/ui-common/controller/agent/Agent"
 
-async function checkServer() {
-    const result = await testConnection("https://api.example.com")
-
-    if (result.success) {
-        console.log(`Connected!`)
-    } else {
-        console.error(`Connection failed: ${result.statusText}`)
-    }
+const result = await testConnection("https://api.example.com")
+if (result.success) {
+    const networks = await getAgentNetworks("https://api.example.com")
+    console.log(networks)
 }
 ```
 
-### Send Chat Query
-
-Send a chat query to the Agent LLM API. If you are using `ChatCommon`, you shouldn't need to call this directly.
+`sendChatQuery` streams a reply from an agent. If you use `ChatCommon` you do not need to call it yourself.
 
 ```typescript
-import {sendChatQuery} from "@cognizant-ai-lab/ui-common"
-async function sendMessage() {
-    const controller = new AbortController()
+import {sendChatQuery} from "@cognizant-ai-lab/ui-common/controller/agent/Agent"
 
-    const response = await sendChatQuery(
-        neuroSanURL,
-        controller.signal,
-        "What is the weather in 90210 today?",
-        "weather_agent",
-        (chunk) => console.log("Received chunk:", chunk),
-        chatContext,
-        slyData,
-        currentUser
+const controller = new AbortController()
+
+await sendChatQuery(
+    neuroSanUrl,
+    controller.signal,
+    "What is the weather in 90210 today?",
+    "weather_agent",
+    (chunk) => console.log("Received chunk:", chunk),
+    chatContext,
+    slyData,
+    "Alice"
+)
+```
+
+`sendLlmRequest`, in `controller/llm/LlmChat`, is the lower-level interface used by `sendChatQuery`. It also works
+with legacy agents that accept chat messages over the LLM API rather than the Agent API.
+
+## State
+
+State is managed with [Zustand](https://zustand.docs.pmnd.rs/). Each store is a hook you can call from any
+component:
+
+```typescript
+import {useEnvironmentStore} from "@cognizant-ai-lab/ui-common/state/Environment"
+import {useSettingsStore} from "@cognizant-ai-lab/ui-common/state/Settings"
+import {useUserInfoStore} from "@cognizant-ai-lab/ui-common/state/UserInfo"
+```
+
+`Announcements`, `ChatHistory`, `IconSuggestions`, `TemporaryNetworks`, and `Tour` stores are available under the
+same `state/*` prefix.
+
+## Theming
+
+Components follow the active MUI theme, including dark mode, so wrap them in your own `ThemeProvider` as usual.
+`Theme/Theme` exports helpers such as `isDarkMode`, `isLightColor`, and `adjustBrightness`, and `Theme/Palettes`
+exports the `PALETTES` used for agent visualization.
+
+## Authentication
+
+Nothing in this package requires an authentication library. Components that show a signed-in user, such as
+`Navbar`, take that information as props, and everything works with no session at all.
+
+This applies to `ErrorBoundary` too. It hands the session details you give it to the error page it renders as a
+fallback, so wire it up with whatever your app already knows about the user:
+
+```tsx
+import {ErrorBoundary} from "@cognizant-ai-lab/ui-common/components/ErrorPage/ErrorBoundary"
+
+export default function App({children}) {
+    return (
+        <ErrorBoundary
+            id="error-boundary"
+            userInfo={{name: "Ada", image: "https://example.com/ada.png"}}
+            authenticationType="None"
+            signOut={() => endYourSession()}
+        >
+            {children}
+        </ErrorBoundary>
     )
 }
 ```
 
-#### Send LLM Request
+Two modules do use [next-auth](https://authjs.dev/): `components/Authentication/Auth`, a guard that redirects
+anonymous visitors to a login screen, and `utils/Authentication`, which reads the signed-in user and signs them out.
+Neither is re-exported from the package root, so you only pull next-auth in if you import them by subpath:
 
-Lower-level interface to send chat messages to a designated LLM and stream response tokens to the supplied callback
-function. You should not need to call this directly if you are using `ChatCommon`. It is a lower-level interface than
-`sendChatQuery` and is used by that function under the hood. This function can also be used to send messages to
-"legacy" agents, which are not built using the Agent API but still accept chat messages via the LLM API.
-
-```typescript
-import {sendLlmRequest} from "@cognizant-ai-lab/ui-common"
-import {HumanMessage} from "@langchain/core/messages"
-
-async function chatWithAgent() {
-    const controller = new AbortController()
-
-    await sendLlmRequest(
-        (token) => console.log("Received:", token),
-        controller.signal,
-        "/api/chat",
-        {temperature: 0.7},
-        "What is the weather?",
-        [new HumanMessage("Hello")],
-        "user-123"
-    )
-}
+```tsx
+import {Auth} from "@cognizant-ai-lab/ui-common/components/Authentication/Auth"
 ```
 
-### Theme Support
+`next-auth` is an optional peer dependency, needed only for those two modules:
 
-The package includes built-in theme support using MUI theming. The components will automatically respond to
-the currently active MUI theme.
+```bash
+npm install next-auth@beta
+```
 
-## Available Components
+## Troubleshooting
 
-### AgentChat
+**`ERESOLVE` or peer dependency warnings on install.** Check that you are on React 19.2.4 or newer, and on MUI 7.3.1
+or newer.
 
-- `ChatCommon` - Main chat interface component
-- `ControlButtons` - Chat control buttons (clear, scroll, etc.)
-- `LlmChatButton` - Button to initiate LLM chat
-- `SendButton` - Message send button
-- `UserQueryDisplay` - Display user queries
+**`Failed to resolve import "next-auth/react"`.** Only `components/Authentication/Auth` and `utils/Authentication`
+import next-auth. If you see this, something in your app imports one of them; either install `next-auth` or stop
+importing it. The package root does not reach either module.
 
-### Multi-Agent Accelerator
-
-- `MultiAgentAccelerator` - Main multi-agent flow component
-- `AgentFlow` - Agent flow visualization
-- `Sidebar` - Agent networks sidebar
-
-## API Controllers
-
-### Agent Controller
-
-Various functions for interacting with the Neuro-san Agent API, such as retrieving lists of
-agent networks and sending chat messages to agents.
-
-## TypeScript Support
-
-This package is written in TypeScript and includes full type definitions. All components, utilities, and API types are
-exported for use in your TypeScript projects.
+**Large bundle.** Import through subpaths rather than the package root. See [Importing](#importing).
 
 ## Development
 
-### Building from Source
+This package is part of the [Neuro-San UI](https://github.com/cognizant-ai-lab/neuro-san-ui) monorepo.
 
 ```bash
-# Install dependencies
 yarn install
-
-# Generate OpenAPI types
-yarn generate
-
-# Build the package
+yarn generate    # Regenerate the Neuro-San OpenAPI types
 yarn build
-
 ```
+
+For a real-world application built on these components, see
+[MAUI](https://github.com/cognizant-ai-lab/neuro-san-ui/tree/main/apps/main), the Multi-Agent Accelerator UI.
 
 ## Contributing
 
-This package is part of the [Neuro-san UI](https://github.com/cognizant-ai-lab/neuro-san-ui) project.
-Please refer to the main repository [contribution guidelines](https://github.com/cognizant-ai-lab/neuro-san-ui/blob/main/CONTRIBUTING.md).
-
-## License
-
-Apache License 2.0 - See LICENSE file for details
+Please refer to the
+[contribution guidelines](https://github.com/cognizant-ai-lab/neuro-san-ui/blob/main/CONTRIBUTING.md).
 
 ## Support
 
-For questions or issues, contact the Cognizant Neuro AI support team at NeuroAiSupport@cognizant.com
+For questions or issues, contact the Cognizant Neuro AI support team at NeuroAiSupport@cognizant.com.
 
-## Related Projects
+## Related projects
 
-- [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) - Neuro-san core library
-- [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio) - Neuro-san examples and studio
+- [neuro-san](https://github.com/cognizant-ai-lab/neuro-san) - Neuro-San core library
+- [neuro-san-studio](https://github.com/cognizant-ai-lab/neuro-san-studio) - Neuro-San examples and studio
+- [nsflow](https://github.com/cognizant-ai-lab/nsflow) - Agent network client
 
----
+## License
 
-For more detailed documentation and examples, visit the [GitHub repository](https://github.com/cognizant-ai-lab/neuro-san-ui).
+Copyright 2026 Cognizant Technology Solutions Corp, www.cognizant.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

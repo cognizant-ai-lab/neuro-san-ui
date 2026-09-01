@@ -16,12 +16,12 @@ limitations under the License.
 
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+import {Mock} from "vitest"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
-import {default as ErrorPage} from "../../../../packages/ui-common/components/ErrorPage/ErrorPage"
+import {default as ErrorPage, ErrorPageProps} from "../../../../packages/ui-common/components/ErrorPage/ErrorPage"
 import {LOGO} from "../../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 
 vi.mock("next/router", () => ({
     useRouter: () => ({
@@ -32,49 +32,56 @@ vi.mock("next/router", () => ({
     }),
 }))
 
-vi.mock("../../../../packages/ui-common/utils/Authentication")
-const mockSmartSignOut = vi.mocked(smartSignOut)
+const USER_INFO = {name: "mock-user", image: "mock-image-url"}
 
 describe("ErrorPage", () => {
     withStrictMocks()
 
     let user: UserEvent
+    let signOut: Mock<ErrorPageProps["signOut"]>
 
     beforeEach(() => {
         user = userEvent.setup()
-        vi.mocked(useAuthentication).mockReturnValue({
-            data: {user: {name: "mock-user", image: "mock-image-url"}},
-        })
+        signOut = vi.fn<ErrorPageProps["signOut"]>()
 
         useEnvironmentStore.getState().setEnableAuthentication(true)
     })
 
-    it("Should render correctly", async () => {
+    const renderErrorPage = (userInfo: ErrorPageProps["userInfo"]) =>
         render(
             <ErrorPage
                 id="test-error-page"
                 errorText="Error page for testing"
+                userInfo={userInfo}
+                authenticationType="NextAuth"
+                signOut={signOut}
             />
         )
+
+    it("Should render correctly", async () => {
+        renderErrorPage(USER_INFO)
+
+        await screen.findByText(new RegExp(LOGO, "u"))
+    })
+
+    it("Should render when authentication has not produced a user yet", async () => {
+        // The app derives the user from a session that may not have resolved yet, so the page still has to render
+        // without one.
+        renderErrorPage(undefined)
 
         await screen.findByText(new RegExp(LOGO, "u"))
     })
 
     it("Should handle sign out correctly", async () => {
-        render(
-            <ErrorPage
-                id="test-error-page"
-                errorText="Error page for testing"
-            />
-        )
+        renderErrorPage(USER_INFO)
 
         // Locate sign out button and click it
         const userDropdownToggle = await screen.findByRole("button", {name: "User dropdown toggle"})
         await user.click(userDropdownToggle)
 
-        const signOut = await screen.findByText("Sign out")
-        await user.click(signOut)
+        const signOutButton = await screen.findByText("Sign out")
+        await user.click(signOutButton)
 
-        await waitFor(() => expect(mockSmartSignOut).toHaveBeenCalled())
+        await waitFor(() => expect(signOut).toHaveBeenCalled())
     })
 })

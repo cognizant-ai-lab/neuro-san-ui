@@ -68,6 +68,9 @@ const APP_COMPONENT = (
 
 vi.mock("next-auth/react", () => ({
     SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
+    useSession: vi.fn(() => ({data: undefined, status: "unauthenticated"})),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
 }))
 
 vi.mock("../../../../packages/ui-common/const")
