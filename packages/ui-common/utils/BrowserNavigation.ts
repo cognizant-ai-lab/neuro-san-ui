@@ -25,7 +25,8 @@ export const navigateToUrl = (url: string): void => {
 }
 
 /**
- * @returns The current pathname, and the query string parsed into a plain object
+ * @returns The current pathname, and the query string parsed into a plain object. Repeated parameters collapse to
+ * their last value.
  */
 export const getCurrentLocation = (): {pathname: string; query: Record<string, string>} => {
     const {pathname = "", search = ""} = globalThis.location ?? {}
