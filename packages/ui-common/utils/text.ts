@@ -63,8 +63,8 @@ export const hashString = (input: string): string => {
     let acc1 = 0xdeadbeef
     let acc2 = 0x41c6ce57
 
-    for (let index = 0; index < input.length; index += 1) {
-        const code = input.codePointAt(index) ?? 0
+    for (const character of input) {
+        const code = character.codePointAt(0) ?? 0
         acc1 = Math.imul(acc1 ^ code, 2654435761)
         acc2 = Math.imul(acc2 ^ code, 1597334677)
     }
