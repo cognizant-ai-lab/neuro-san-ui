@@ -68,6 +68,29 @@ export default function App() {
 Run it with `npm run dev`. You can select an agent, chat with it, and visualize the agent network flow. The
 Neuro-San URL is editable from within the UI, so `defaultNeuroSanUrl` is only the starting value.
 
+## Features
+
+- **UI Components**: Ready-to-use React components for AI chat interfaces, navigation, dialogs, and more
+- **Multi-Agent Visualization**: Interactive flow diagrams for visualizing agent networks
+- **Authentication**: Optional next-auth components, with everything else working with no session at all
+- **State Management**: Zustand-based stores for environment, settings, and user info
+- **Theme Support**: Dark mode support with customizable, MUI-based theming
+- **Type Safety**: Full TypeScript support with generated OpenAPI types
+- **LLM Integration**: Controllers for interacting with language models and AI agents
+
+## Technologies Used
+
+Among the technologies and libraries used in this package are:
+
+- ESLint and Prettier (for code quality)
+- Vitest and React Testing Library (for testing)
+- MUI
+- next-auth (for authentication)
+- React
+- React Flow (for multi-agent visualization)
+- TypeScript
+- Zustand
+
 ## Importing
 
 Every module is available at a subpath that mirrors the source layout, and nearly the whole public surface is also
@@ -88,6 +111,29 @@ entire library, including MUI and the flow visualization, into your bundle. Impo
 subpath costs a few hundred kilobytes; importing it through the root costs several megabytes.
 
 The available subpath prefixes are `components/*`, `controller/*`, `state/*`, `utils/*`, `Theme/*`, and `const`.
+
+Subpaths mirror the source layout:
+
+```
+ui-common/
+├── components/         # React components
+│   ├── AgentChat/      # Chat interface components
+│   ├── Authentication/ # Auth components (next-auth, subpath only)
+│   ├── ChatBot/        # ChatBot components
+│   ├── Common/         # Common UI components (dialogs, navbar, etc.)
+│   ├── ErrorPage/      # Error handling components
+│   ├── Logo/           # Logo components
+│   ├── MultiAgentAccelerator/ # Agent flow visualization
+│   └── Settings/       # Settings dialog components
+├── controller/         # Backend interaction controllers
+│   ├── agent/          # Agent API controllers
+│   ├── llm/            # LLM interaction controllers
+│   └── Types/          # Shared controller types
+├── state/              # Zustand state stores
+├── Theme/              # Theming utilities
+├── utils/              # Utility functions
+└── generated/          # Auto-generated API types
+```
 
 ## Components
 
