@@ -54,7 +54,8 @@ const config: KnipConfig = {
         // Supplied internally by yarn to plugins
         "@yarnpkg/core",
 
-        // Optional peer of ui-common (NextAuthAdapter only). Remain optional so apps without next-auth can omit it.
+        // Optional peer of ui-common (components/Authentication/Auth and utils/Authentication only). Stays
+        // optional so apps without next-auth can omit it.
         "next-auth",
     ],
     workspaces: {
