@@ -44,10 +44,10 @@ describe("removeLast", () => {
 
 describe("hashString", () => {
     withStrictMocks()
-    it("should return a valid MD5 hash for a given string", () => {
+    it("should return a stable hash for a given string", () => {
         const input = "example"
         const result = hashString(input)
-        expect(result).toBe("1a79a4d60de6718e8e5b326e338ae533")
+        expect(result).toBe("11583576d173ad")
     })
 
     it("should return different hashes for different strings", () => {
@@ -68,12 +68,19 @@ describe("hashString", () => {
     it("should handle an empty string", () => {
         const input = ""
         const result = hashString(input)
-        expect(result).toBe("d41d8cd98f00b204e9800998ecf8427e")
+        expect(result).toBe("0bdcb81aee8d83")
     })
 
     it("should handle a very long string", () => {
         const input = "a".repeat(1000)
         const result = hashString(input)
-        expect(result).toBe("cabe45dcc9ae5b66ba86600cca6b8ba8")
+        expect(result).toBe("1c0002518a359e")
+    })
+
+    it("should treat a missing code point as zero", () => {
+        vi.spyOn(String.prototype, "codePointAt").mockReturnValueOnce(undefined)
+
+        // Same as hashing a null character, whose code point is 0
+        expect(hashString("a")).toBe(hashString("\0"))
     })
 })

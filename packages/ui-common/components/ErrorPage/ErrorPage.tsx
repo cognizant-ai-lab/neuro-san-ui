@@ -15,49 +15,51 @@ limitations under the License.
 */
 
 import Box from "@mui/material/Box"
-import {useRouter} from "next/router.js"
 import {FC, ReactElement} from "react"
 
 import {LOGO} from "../../const"
 import {useEnvironmentStore} from "../../state/Environment"
-import {useUserInfoStore} from "../../state/UserInfo"
-import {getAuthenticationType, smartSignOut, useAuthentication} from "../../utils/Authentication"
+import {getCurrentLocation} from "../../utils/BrowserNavigation"
 import {NeuroAIBreadcrumbs} from "../Common/Breadcrumbs"
 import {Footer} from "../Common/Footer"
-import {Navbar} from "../Common/Navbar"
+import {Navbar, NavbarProps} from "../Common/Navbar"
 
-interface ErrorPageProps {
+export interface ErrorPageProps {
     id: string
     errorText: string
+
+    // Info about the currently authenticated user, shown in the navbar
+    readonly userInfo: NavbarProps["userInfo"]
+
+    // The type of authentication in use, shown in the navbar
+    readonly authenticationType: NavbarProps["authenticationType"]
+
+    // Called when the user signs out from the navbar
+    readonly signOut: NavbarProps["signOut"]
 }
 
 /**
- * This is the page that will be shown to users when the outer error boundary is triggered
+ * This is the page that will be shown to users when the outer error boundary is triggered.
+ *
+ * The session details come in as props rather than being read from an authentication library, so that this page, and
+ * everything that reaches it from the package entry point, works in an app with no login at all.
+ *
  * @param id HTML id for the <code>div</code> for this page
  * @param errorText Error text to be displayed
+ * @param userInfo Info about the currently authenticated user
+ * @param authenticationType The type of authentication in use
+ * @param signOut Called when the user signs out
  */
-const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactElement => {
-    const {auth0ClientId, auth0Domain, enableAuthentication, logoServiceToken, supportEmailAddress} =
-        useEnvironmentStore()
+const ErrorPage: FC<ErrorPageProps> = ({
+    id,
+    errorText,
+    userInfo,
+    authenticationType,
+    signOut,
+}: ErrorPageProps): ReactElement => {
+    const {enableAuthentication, logoServiceToken, supportEmailAddress} = useEnvironmentStore()
 
-    // Access Next.js router
-    const router = useRouter()
-
-    // Access user info store
-    const {currentUser, setCurrentUser, setPicture, oidcProvider} = useUserInfoStore()
-
-    // Infer authentication type
-    const authenticationType = getAuthenticationType(enableAuthentication, currentUser, oidcProvider)
-
-    const {data: {user: userInfo} = {}} = useAuthentication()
-
-    const handleSignOut = async () => {
-        // Clear our state storage variables
-        setCurrentUser(undefined)
-        setPicture(undefined)
-
-        await smartSignOut(currentUser, auth0Domain, auth0ClientId, oidcProvider)
-    }
+    const {pathname, query} = getCurrentLocation()
 
     return (
         <>
@@ -67,9 +69,9 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
                 id="nav-bar"
                 logo={LOGO}
                 logoServiceToken={logoServiceToken}
-                pathname={router.pathname}
-                query={router.query}
-                signOut={handleSignOut}
+                pathname={pathname}
+                query={query}
+                signOut={signOut}
                 supportEmailAddress={supportEmailAddress}
                 userInfo={userInfo}
             />

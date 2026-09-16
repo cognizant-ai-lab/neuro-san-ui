@@ -102,8 +102,6 @@ let setSelectedNetwork: (network: string) => void
 let onEditNetwork: (network: string) => void
 
 // Mock dependencies
-vi.mock("next-auth/react")
-
 vi.mock("../../../controller/agent/Agent")
 vi.mock("../../../controller/agent/IconSuggestions")
 
