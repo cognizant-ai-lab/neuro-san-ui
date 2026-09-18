@@ -61,5 +61,13 @@
         "vite": "catalog:default",
         "vitest": "catalog:default",
         "vitest-fail-on-console": "catalog:default"
+    },
+    "dependencies": {
+        "@langchain/core": "^1.2.11",
+        "@langchain/langgraph": "^1.4.15",
+        "@langchain/mcp-adapters": "^1.1.4",
+        "@langchain/openai": "^1.5.13",
+        "langchain": "^1.5.11",
+        "zod": "^4.6.5"
     }
 }

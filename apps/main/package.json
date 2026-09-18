@@ -9,6 +9,7 @@
         "start": "next start"
     },
     "dependencies": {
+        "@cognizant-ai-lab/neuro-san-npm": "file:../../../neuro-san-ts-package/ts-package/package.tgz",
         "@emotion/react": "11.14.0",
         "@emotion/styled": "11.14.1",
         "@langchain/core": "catalog:default",
@@ -20,6 +21,7 @@
         "next": "catalog:default",
         "next-auth": "catalog:default",
         "notistack": "catalog:default",
+        "pythonlib": "2.0.4",
         "react": "catalog:default",
         "react-dom": "catalog:default",
         "react-markdown": "catalog:default",
