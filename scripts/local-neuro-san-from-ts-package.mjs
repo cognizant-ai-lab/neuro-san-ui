@@ -5,49 +5,20 @@
  * Usage (from neuro-san-ui):
  *   node --preserve-symlinks scripts/local-neuro-san-from-ts-package.mjs
  * Then set: NEURO_SAN_SERVER_URL=http://localhost:8080
+ *
+ * Networks: omit AGENT_MANIFEST_FILE to use registries shipped with the npm
+ * package. Set AGENT_MANIFEST_FILE (and optionally NEURO_SAN_ROOT) to override.
  */
 import http from "node:http"
-import {URL, pathToFileURL} from "node:url"
-
-if (!process.env.AGENT_MANIFEST_FILE) {
-    process.env.AGENT_MANIFEST_FILE =
-        "/Users/971999/Documents/git_repo/neuro-san/neuro_san/registries/manifest.hocon"
-}
-
-import {ConciergeSessionFactory} from "@cognizant-ai-lab/neuro-san-npm"
+import {
+    ConciergeSessionFactory,
+    DirectAgentSessionFactory,
+    ChatMessageType,
+} from "@cognizant-ai-lab/neuro-san-npm"
 
 const PORT = Number(process.env.NEURO_SAN_LOCAL_PORT ?? 8080)
 const conciergeFactory = new ConciergeSessionFactory()
-
-let agentFactoryPromise = null
-const getAgentFactory = async () => {
-    if (!agentFactoryPromise) {
-        agentFactoryPromise = import(
-            pathToFileURL(
-                new URL(
-                    "../node_modules/@cognizant-ai-lab/neuro-san-npm/dist/generated/neuro_san/client/direct_agent_session_factory.js",
-                    import.meta.url,
-                ).pathname,
-            ).href,
-        ).then((m) => new m.DirectAgentSessionFactory())
-    }
-    return agentFactoryPromise
-}
-
-let chatMessageTypePromise = null
-const getChatMessageType = async () => {
-    if (!chatMessageTypePromise) {
-        chatMessageTypePromise = import(
-            pathToFileURL(
-                new URL(
-                    "../node_modules/@cognizant-ai-lab/neuro-san-npm/dist/generated/neuro_san/message/types/chat_message_type.js",
-                    import.meta.url,
-                ).pathname,
-            ).href,
-        ).then((m) => m.ChatMessageType)
-    }
-    return chatMessageTypePromise
-}
+const agentFactory = new DirectAgentSessionFactory()
 
 // A ChatMessageType member is an IntEnum stand-in: a bare object carrying .name
 // and coercing to its proto number.
@@ -64,9 +35,9 @@ const isChatMessageTypeMember = (value) =>
 // every `chatMessage.type === ChatMessageType.AI` comparison in the UI silently fails
 // -- the chat looks empty even though the model answered. Recurse, because the
 // messages nested in chat_context.chat_histories carry a "type" too.
-const toWireTypes = (value, ChatMessageType) => {
+const toWireTypes = (value) => {
     if (Array.isArray(value)) {
-        return value.map((entry) => toWireTypes(entry, ChatMessageType))
+        return value.map((entry) => toWireTypes(entry))
     }
     if (value === null || typeof value !== "object") {
         return value
@@ -76,7 +47,7 @@ const toWireTypes = (value, ChatMessageType) => {
         converted[key] =
             key === "type" && isChatMessageTypeMember(entry)
                 ? ChatMessageType.to_string(entry)
-                : toWireTypes(entry, ChatMessageType)
+                : toWireTypes(entry)
     }
     return converted
 }
@@ -115,7 +86,11 @@ const server = http.createServer(async (req, res) => {
         const {pathname} = url
 
         if (req.method === "GET" && (pathname === "/" || pathname === "/health")) {
-            sendJson(res, 200, {status: "ok", backend: "neuro-san-npm-direct"})
+            sendJson(res, 200, {
+                status: "ok",
+                backend: "neuro-san-npm-direct",
+                agent_manifest_file: process.env.AGENT_MANIFEST_FILE ?? null,
+            })
             return
         }
 
@@ -133,7 +108,6 @@ const server = http.createServer(async (req, res) => {
 
         const agentName = decodeURIComponent(agentMatch[1])
         const action = agentMatch[2]
-        const agentFactory = await getAgentFactory()
         const session = agentFactory.create_session(agentName, false, null, null)
 
         if (action === "connectivity" && req.method === "GET") {
@@ -156,21 +130,20 @@ const server = http.createServer(async (req, res) => {
                 "Access-Control-Allow-Headers": "*",
                 "Transfer-Encoding": "chunked",
             })
-            const ChatMessageType = await getChatMessageType()
             const stream = session.streaming_chat(body)
             if (stream && typeof stream[Symbol.asyncIterator] === "function") {
                 for await (const chatResponse of stream) {
-                    res.write(`${JSON.stringify(toWireTypes(chatResponse, ChatMessageType))}\n`)
+                    res.write(`${JSON.stringify(toWireTypes(chatResponse))}\n`)
                 }
             } else if (stream && typeof stream[Symbol.iterator] === "function") {
                 for (const chatResponse of stream) {
                     const chunk = chatResponse && typeof chatResponse.then === "function"
                         ? await chatResponse
                         : chatResponse
-                    res.write(`${JSON.stringify(toWireTypes(chunk, ChatMessageType))}\n`)
+                    res.write(`${JSON.stringify(toWireTypes(chunk))}\n`)
                 }
             } else if (stream != null) {
-                res.write(`${JSON.stringify(toWireTypes(stream, ChatMessageType))}\n`)
+                res.write(`${JSON.stringify(toWireTypes(stream))}\n`)
             }
             res.end()
             return
@@ -188,5 +161,13 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
     console.log(`Local neuro-san (ts-package direct) listening on http://localhost:${PORT}`)
+    if (process.env.AGENT_MANIFEST_FILE) {
+        console.log(`AGENT_MANIFEST_FILE=${process.env.AGENT_MANIFEST_FILE}`)
+    } else {
+        console.log("AGENT_MANIFEST_FILE unset — using packaged registries")
+    }
+    if (process.env.NEURO_SAN_ROOT) {
+        console.log(`NEURO_SAN_ROOT=${process.env.NEURO_SAN_ROOT}`)
+    }
     console.log(`Set NEURO_SAN_SERVER_URL=http://localhost:${PORT} (was https://neuro-san-dev.decisionai.ml)`)
 })

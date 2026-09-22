@@ -1,6 +1,3 @@
-import process from "process"
-import { seedFile } from "./browser-stubs/builtins.js"
-
 const SHIM = "http://127.0.0.1:8080"
 
 const statusEl = document.getElementById("status")
@@ -20,32 +17,6 @@ function setStatus(msg, ok) {
 function setChatStatus(msg, ok) {
   chatStatus.textContent = msg
   chatStatus.className = ok === true ? "ok" : ok === false ? "err" : ""
-}
-
-function forceManifestEnv(path) {
-  process.env = process.env || {}
-  process.env.AGENT_MANIFEST_FILE = path
-  globalThis.process = process
-  if (!globalThis.process.env) globalThis.process.env = {}
-  globalThis.process.env.AGENT_MANIFEST_FILE = path
-}
-
-async function loadRegistriesIntoVirtualFs() {
-  const paths = [
-    "/registries/manifest.json",
-    "/registries/manifest.hocon",
-    "/registries/hello_world.hocon",
-    "/registries/music_nerd.hocon",
-  ]
-  for (const p of paths) {
-    const res = await fetch(p)
-    if (!res.ok) continue
-    const text = await res.text()
-    seedFile(p, text)
-    const base = p.split("/").pop()
-    seedFile(`registries/${base}`, text)
-    seedFile(base, text)
-  }
 }
 
 function isStubAgent(agent) {
@@ -94,16 +65,19 @@ async function runList() {
   setStatus("Loading registries + package…")
   outEl.textContent = ""
   try {
-    const manifestPath = "/registries/manifest.hocon"
-    forceManifestEnv(manifestPath)
-    await loadRegistriesIntoVirtualFs()
-
-    const { ConciergeSessionFactory } = await import("@cognizant-ai-lab/neuro-san-npm")
-    forceManifestEnv(manifestPath)
-
-    setStatus("Calling create_session('direct') + list()…")
-    const session = new ConciergeSessionFactory().create_session("direct", null, null, null, null)
-    const result = session.list({})
+    setStatus(`GET ${SHIM}/api/v1/list …`)
+    const health = await fetch(`${SHIM}/health`).then((response) => response.json()).catch(() => null)
+    if (!health) {
+      throw new Error(
+        `Shim not reachable at ${SHIM}. Start it with:\n` +
+          `node --preserve-symlinks scripts/local-neuro-san-from-ts-package.mjs`,
+      )
+    }
+    const response = await fetch(`${SHIM}/api/v1/list`)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`)
+    }
+    const result = await response.json()
     outEl.textContent = JSON.stringify(result, null, 2)
     const agents = result?.agents || []
     fillAgentSelect(agents)
@@ -111,7 +85,7 @@ async function runList() {
     const stubs = agents.filter((a) => isStubAgent(a))
     if (real.length > 0) {
       setStatus(
-        `OK — browser list() returned ${agents.length} agents (${real.length} real HOCON` +
+        `OK — Node shim list() returned ${agents.length} agents (${real.length} real HOCON` +
           (stubs.length ? `, ${stubs.length} stubs` : "") +
           `)`,
         true,
