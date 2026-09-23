@@ -174,12 +174,11 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
     console.log(`Local neuro-san (ts-package direct) listening on http://localhost:${PORT}`)
     if (process.env.AGENT_MANIFEST_FILE) {
-        console.log(`AGENT_MANIFEST_FILE=${process.env.AGENT_MANIFEST_FILE}`)
+        console.log(`AGENT_MANIFEST_FILE=${process.env.AGENT_MANIFEST_FILE} (overrides loaded)`)
     } else {
-        console.log("AGENT_MANIFEST_FILE unset — using packaged registries")
+        console.log("AGENT_MANIFEST_FILE unset (use for overrides) — using packaged registries")
     }
     if (process.env.NEURO_SAN_ROOT) {
         console.log(`NEURO_SAN_ROOT=${process.env.NEURO_SAN_ROOT}`)
     }
-    console.log(`Set NEURO_SAN_SERVER_URL=http://localhost:${PORT} (was https://neuro-san-dev.decisionai.ml)`)
 })
