@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>neuro-san-npm Node tryout</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 52rem; }
+      pre { background: #111; color: #eee; padding: 1rem; overflow: auto; max-height: 16rem; }
+      .ok { color: #0a0; }
+      .err { color: #c00; }
+      label { display: block; margin: 0.5rem 0 0.2rem; font-size: 0.9rem; }
+      input, select, textarea, button { font: inherit; }
+      input[type="text"], input[type="password"], select, textarea {
+        width: 100%; box-sizing: border-box; padding: 0.4rem 0.5rem;
+      }
+      textarea { min-height: 4rem; }
+      #chatLog {
+        background: #111; color: #eee; padding: 1rem; min-height: 12rem;
+        max-height: 22rem; overflow: auto; white-space: pre-wrap;
+      }
+      .row { display: flex; gap: 0.5rem; align-items: end; margin-top: 0.5rem; }
+      .row > * { flex: 1; }
+      .row button { flex: 0 0 auto; }
+      section { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #ccc; }
+      .hint { color: #555; font-size: 0.85rem; }
+    </style>
+  </head>
+  <body>
+    <h1>neuro-san-npm package prototype</h1>
+    <p class="hint">Local tryout only. <strong>list()</strong> and <strong>streaming_chat</strong> call the local TS-package shim at <code>http://127.0.0.1:8080</code>.</p>
+
+    <section>
+      <h2>1. List agents</h2>
+      <button id="run">Run list()</button>
+      <p id="status">Idle</p>
+      <pre id="out"></pre>
+    </section>
+
+    <section>
+      <h2>2. Chat (streaming_chat)</h2>
+      <label for="agentSelect">Agent</label>
+      <select id="agentSelect"><option value="">(run list first)</option></select>
+
+      <label for="prompt">Message</label>
+      <textarea id="prompt" placeholder="Enter your message here..."></textarea>
+
+      <div class="row">
+        <button id="send" disabled>Send</button>
+      </div>
+      <p id="chatStatus"></p>
+      <div id="chatLog"></div>
+    </section>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
