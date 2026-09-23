@@ -19,6 +19,10 @@ function setChatStatus(msg, ok) {
   chatStatus.className = ok === true ? "ok" : ok === false ? "err" : ""
 }
 
+function syncSendEnabled() {
+  sendBtn.disabled = !agentSelect.value
+}
+
 function isStubAgent(agent) {
   const d = agent?.description || ""
   const tags = agent?.tags || []
@@ -29,9 +33,13 @@ function fillAgentSelect(agents) {
   agentSelect.innerHTML = ""
   if (!agents.length) {
     agentSelect.innerHTML = '<option value="">(no agents)</option>'
-    sendBtn.disabled = true
+    syncSendEnabled()
     return
   }
+  const placeholder = document.createElement("option")
+  placeholder.value = ""
+  placeholder.textContent = "(pick an agent)"
+  agentSelect.appendChild(placeholder)
   for (const a of agents) {
     const opt = document.createElement("option")
     opt.value = a.agent_name
@@ -39,9 +47,8 @@ function fillAgentSelect(agents) {
     opt.textContent = `${a.agent_name} (${kind})`
     agentSelect.appendChild(opt)
   }
-  const names = agents.map((a) => a.agent_name)
-  if (names.includes("music_nerd")) agentSelect.value = "music_nerd"
-  sendBtn.disabled = false
+  agentSelect.value = ""
+  syncSendEnabled()
 }
 
 function extractText(chunk) {
@@ -102,6 +109,16 @@ async function runList() {
   }
 }
 
+let activeChat = null
+
+function onAgentChange() {
+  activeChat?.abort()
+  promptInput.value = ""
+  chatLog.textContent = ""
+  setChatStatus("")
+  syncSendEnabled()
+}
+
 async function runChat() {
   const agentName = agentSelect.value
   const text = (promptInput.value || "").trim()
@@ -113,6 +130,10 @@ async function runChat() {
     setChatStatus("Enter a message", false)
     return
   }
+
+  activeChat?.abort()
+  const controller = new AbortController()
+  activeChat = controller
 
   sendBtn.disabled = true
   chatLog.textContent = ""
@@ -134,6 +155,7 @@ async function runChat() {
     const res = await fetch(`${SHIM}/api/v1/${encodeURIComponent(agentName)}/streaming_chat`, {
       method: "POST",
       headers,
+      signal: controller.signal,
       body: JSON.stringify({
         user_message: { text },
         chat_filter: { chat_filter_type: "MAXIMAL" },
@@ -161,14 +183,17 @@ async function runChat() {
         try {
           chunk = JSON.parse(line)
         } catch {
-          assistant += line + "\n"
+          assistant += assistant ? `\n\n${line}` : line
           chatLog.textContent = `you: ${text}\n\nagent:\n${assistant}`
           continue
         }
         const piece = extractText(chunk)
         if (piece) {
-          assistant += piece
+          assistant += assistant ? `\n\n${piece}` : piece
           chatLog.textContent = `you: ${text}\n\nagent:\n${assistant}`
+          // Don't make taking the next message wait on the stream closing: a run
+          // that answers and then stalls should not leave the page stuck.
+          syncSendEnabled()
         } else {
           // keep raw for debugging if no text yet
           console.debug("chat chunk", chunk)
@@ -183,15 +208,20 @@ async function runChat() {
       setChatStatus("Done (via local TS-package shim :8080)", true)
     }
   } catch (e) {
+    if (controller.signal.aborted) return
     console.error(e)
     chatLog.textContent += `\n\nerror: ${e && e.stack ? e.stack : e}`
     setChatStatus("streaming_chat failed — see log", false)
   } finally {
-    sendBtn.disabled = !agentSelect.value
+    if (activeChat === controller) {
+      activeChat = null
+      syncSendEnabled()
+    }
   }
 }
 
 runBtn.addEventListener("click", runList)
+agentSelect.addEventListener("change", onAgentChange)
 sendBtn.addEventListener("click", runChat)
 promptInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runChat()

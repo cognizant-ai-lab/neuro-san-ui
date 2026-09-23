@@ -130,6 +130,18 @@ const server = http.createServer(async (req, res) => {
                 "Access-Control-Allow-Headers": "*",
                 "Transfer-Encoding": "chunked",
             })
+            // AsyncCollatingQueue.put_final_item() reads the end-marker as
+            // this.END_MESSAGE, which python resolves to the class attribute but
+            // JavaScript looks up on the instance and finds nothing. The queue
+            // therefore ends every run by pushing undefined, which the consumer
+            // skips instead of stopping on, so the response never closes and the
+            // browser waits on a stream that is already over. Put the class's own
+            // marker on the instance so the end-marker is the one it checks for.
+            const queue = session.invocation_context?.get_queue?.()
+            if (queue != null && queue.END_MESSAGE == null) {
+                queue.END_MESSAGE = queue.constructor.END_MESSAGE
+            }
+
             const stream = session.streaming_chat(body)
             if (stream && typeof stream[Symbol.asyncIterator] === "function") {
                 for await (const chatResponse of stream) {
