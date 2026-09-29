@@ -276,9 +276,10 @@ describe("SlyDataDialog", () => {
         expect(screen.queryByText(/Sent automatically with every request/u)).not.toBeInTheDocument()
     })
 
-    it("shows no schema hints and no template button when the network declares no schema", () => {
+    it("says there is nothing to fill in, with no hints or template, when the network declares no schema", () => {
         renderDialog()
 
+        screen.getByText(/doesn't list any sly data/u)
         expect(screen.queryByText(/This network expects/u)).not.toBeInTheDocument()
         expect(screen.queryByRole("button", {name: "Fill sly data template"})).not.toBeInTheDocument()
     })
@@ -301,6 +302,7 @@ describe("SlyDataDialog", () => {
         hints.getByText("y")
         hints.getByText(/The first operand/u)
         expect(hints.getAllByText(/\(float, required\)/u)).toHaveLength(2)
+        expect(screen.queryByText(/doesn't list any sly data/u)).not.toBeInTheDocument()
     })
 
     it("leaves the app-supplied keys out of the schema hints", () => {
