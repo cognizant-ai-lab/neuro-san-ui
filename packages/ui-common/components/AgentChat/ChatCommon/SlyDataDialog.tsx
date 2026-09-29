@@ -81,6 +81,10 @@ const IMAGE_PREVIEW_SIZE = 96
 const SLY_DATA_EXPLAINER =
     "Data is sent to the agent network in a private channel with each request but kept out of the LLM."
 
+// Shown in place of the schema hints when the network lists nothing for the user to supply. Worded so it stays
+// true when a network uses sly data without advertising a schema, or only declares keys the app supplies itself.
+const NO_SCHEMA_HINT = "This network doesn't list any sly data for you to fill in."
+
 //#endregion: Constants
 
 // A sly_data key name rendered as an inline code chip
@@ -319,10 +323,11 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
 
     /**
      * Lists the keys the network says it expects, so the user knows what to fill in without reading the
-     * network's source. Renders nothing when the network advertises no usable schema.
+     * network's source. When the network advertises nothing for the user to supply, says so instead of leaving
+     * an unexplained empty editor.
      */
     const getSchemaHints = () =>
-        schemaEntries.length > 0 && (
+        schemaEntries.length > 0 ? (
             <Box
                 data-testid={`${id}-schema-hints`}
                 id={`${id}-schema-hints`}
@@ -352,6 +357,14 @@ export const SlyDataDialog: FC<SlyDataDialogProps> = ({
                     ))}
                 </Box>
             </Box>
+        ) : (
+            <Typography
+                id={`${id}-no-schema-hint`}
+                sx={{display: "block", fontSize: "0.75rem", mb: 0.5}}
+                variant="caption"
+            >
+                {NO_SCHEMA_HINT}
+            </Typography>
         )
 
     const getServerUpdateAlert = () =>
