@@ -32,6 +32,7 @@ import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, use
 import {Auth} from "../../../packages/ui-common/components/Authentication/Auth"
 import {NeuroAIBreadcrumbs} from "../../../packages/ui-common/components/Common/Breadcrumbs"
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
+import {GoogleAnalytics} from "../../../packages/ui-common/components/Common/GoogleAnalytics"
 import {LoadingSpinner} from "../../../packages/ui-common/components/Common/LoadingSpinner"
 import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
@@ -358,6 +359,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     href="/cognizantfavicon.ico"
                 />
             </Head>
+            <GoogleAnalytics />
             <StrictMode>
                 <ThemeProvider
                     theme={theme}
