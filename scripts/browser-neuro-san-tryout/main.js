@@ -1,4 +1,7 @@
-const SHIM = "http://127.0.0.1:8080"
+import { ConciergeSessionFactory, DirectAgentSessionFactory, environ } from "@cognizant-ai-lab/neuro-san-npm"
+
+// The package reads its LLM key from its environ, like python's os.environ. OpenAI
+// allows calls from a page, so they go straight to it.
 
 const statusEl = document.getElementById("status")
 const outEl = document.getElementById("out")
@@ -8,6 +11,7 @@ const promptInput = document.getElementById("prompt")
 const sendBtn = document.getElementById("send")
 const chatStatus = document.getElementById("chatStatus")
 const chatLog = document.getElementById("chatLog")
+const apiKeyInput = document.getElementById("apiKey")
 
 function setStatus(msg, ok) {
   statusEl.textContent = msg
@@ -69,22 +73,11 @@ function extractText(chunk) {
 }
 
 async function runList() {
-  setStatus("Loading registries + package…")
+  setStatus("Running list()…")
   outEl.textContent = ""
   try {
-    setStatus(`GET ${SHIM}/api/v1/list …`)
-    const health = await fetch(`${SHIM}/health`).then((response) => response.json()).catch(() => null)
-    if (!health) {
-      throw new Error(
-        `Shim not reachable at ${SHIM}. Start it with:\n` +
-          `node --preserve-symlinks scripts/local-neuro-san-from-ts-package.mjs`,
-      )
-    }
-    const response = await fetch(`${SHIM}/api/v1/list`)
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${await response.text()}`)
-    }
-    const result = await response.json()
+    const concierge = new ConciergeSessionFactory().create_session("direct", null, null, null, null)
+    const result = await concierge.list({})
     outEl.textContent = JSON.stringify(result, null, 2)
     const agents = result?.agents || []
     fillAgentSelect(agents)
@@ -92,7 +85,7 @@ async function runList() {
     const stubs = agents.filter((a) => isStubAgent(a))
     if (real.length > 0) {
       setStatus(
-        `OK — Node shim list() returned ${agents.length} agents (${real.length} real HOCON` +
+        `OK: list() returned ${agents.length} agents (${real.length} real HOCON` +
           (stubs.length ? `, ${stubs.length} stubs` : "") +
           `)`,
         true,
@@ -105,7 +98,7 @@ async function runList() {
   } catch (e) {
     console.error(e)
     outEl.textContent = String(e && e.stack ? e.stack : e)
-    setStatus("Failed — see stack below", false)
+    setStatus("Failed, see stack below", false)
   }
 }
 
@@ -130,88 +123,53 @@ async function runChat() {
     setChatStatus("Enter a message", false)
     return
   }
+  const apiKey = (apiKeyInput.value || "").trim()
+  if (!apiKey) {
+    setChatStatus("Enter an OpenAI key first", false)
+    return
+  }
 
   activeChat?.abort()
   const controller = new AbortController()
   activeChat = controller
 
   sendBtn.disabled = true
-  chatLog.textContent = ""
   chatLog.textContent = `you: ${text}\n\nagent:\n`
-  setChatStatus(`POST ${SHIM}/api/v1/${agentName}/streaming_chat …`)
+  setChatStatus(`streaming_chat on ${agentName}…`)
 
   try {
-    // Health check
-    const health = await fetch(`${SHIM}/health`).then((r) => r.json()).catch(() => null)
-    if (!health) {
-      throw new Error(
-        `Shim not reachable at ${SHIM}. Start it with:\n` +
-          `node --preserve-symlinks scripts/local-neuro-san-from-ts-package.mjs`,
-      )
+    environ.OPENAI_API_KEY = apiKey
+    const session = new DirectAgentSessionFactory().create_session(agentName, false, null, null)
+    const request = {
+      user_message: { text },
+      chat_filter: { chat_filter_type: "MAXIMAL" },
     }
-
-    const headers = { "Content-Type": "application/json" }
-
-    const res = await fetch(`${SHIM}/api/v1/${encodeURIComponent(agentName)}/streaming_chat`, {
-      method: "POST",
-      headers,
-      signal: controller.signal,
-      body: JSON.stringify({
-        user_message: { text },
-        chat_filter: { chat_filter_type: "MAXIMAL" },
-      }),
-    })
-
-    if (!res.ok) {
-      const errBody = await res.text()
-      throw new Error(`HTTP ${res.status}: ${errBody}`)
-    }
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buf = ""
     let assistant = ""
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buf += decoder.decode(value, { stream: true })
-      const lines = buf.split("\n")
-      buf = lines.pop() || ""
-      for (const line of lines) {
-        if (!line.trim()) continue
-        let chunk
-        try {
-          chunk = JSON.parse(line)
-        } catch {
-          assistant += assistant ? `\n\n${line}` : line
-          chatLog.textContent = `you: ${text}\n\nagent:\n${assistant}`
-          continue
-        }
-        const piece = extractText(chunk)
-        if (piece) {
-          assistant += assistant ? `\n\n${piece}` : piece
-          chatLog.textContent = `you: ${text}\n\nagent:\n${assistant}`
-          // Don't make taking the next message wait on the stream closing: a run
-          // that answers and then stalls should not leave the page stuck.
-          syncSendEnabled()
-        } else {
-          // keep raw for debugging if no text yet
-          console.debug("chat chunk", chunk)
-        }
-        chatLog.scrollTop = chatLog.scrollHeight
+    for await (const chunk of session.streaming_chat(request)) {
+      if (controller.signal.aborted) return
+      const piece = extractText(chunk)
+      if (piece) {
+        assistant += assistant ? `\n\n${piece}` : piece
+        chatLog.textContent = `you: ${text}\n\nagent:\n${assistant}`
+        // Don't make taking the next message wait on the stream closing: a run
+        // that answers and then stalls should not leave the page stuck.
+        syncSendEnabled()
+      } else {
+        console.debug("chat chunk", chunk)
       }
+      chatLog.scrollTop = chatLog.scrollHeight
     }
 
     if (!assistant) {
-      setChatStatus("Stream finished with no text (check console / shim logs)", false)
+      setChatStatus("Stream finished with no text (check console)", false)
     } else {
-      setChatStatus("Done (via local TS-package shim :8080)", true)
+      setChatStatus("Done (in-browser neuro-san package)", true)
     }
   } catch (e) {
     if (controller.signal.aborted) return
     console.error(e)
     chatLog.textContent += `\n\nerror: ${e && e.stack ? e.stack : e}`
-    setChatStatus("streaming_chat failed — see log", false)
+    setChatStatus("streaming_chat failed, see log", false)
   } finally {
     if (activeChat === controller) {
       activeChat = null

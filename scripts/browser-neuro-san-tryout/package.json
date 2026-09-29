@@ -7,6 +7,9 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 5173"
   },
+  "dependencies": {
+    "@cognizant-ai-lab/neuro-san-npm": "file:../../../neuro-san-ts-package/ts-package/package.tgz"
+  },
   "devDependencies": {
     "vite": "5.4.11"
   }

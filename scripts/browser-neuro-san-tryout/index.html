@@ -27,7 +27,13 @@
   </head>
   <body>
     <h1>neuro-san-npm package prototype</h1>
-    <p class="hint">Local tryout only. <strong>list()</strong> and <strong>streaming_chat</strong> call the local TS-package shim at <code>http://127.0.0.1:8080</code>.</p>
+    <p class="hint">Local tryout only. <strong>list()</strong> and <strong>streaming_chat</strong> run the package's browser build in this page. Model calls go straight to OpenAI.</p>
+
+    <section>
+      <h2>0. OpenAI key</h2>
+      <label for="apiKey">API key (kept in this page only)</label>
+      <input type="password" id="apiKey" autocomplete="off" placeholder="sk-..." />
+    </section>
 
     <section>
       <h2>1. List agents</h2>
