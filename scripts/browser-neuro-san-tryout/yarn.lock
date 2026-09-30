@@ -13,17 +13,18 @@ __metadata:
   linkType: hard
 
 "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz::locator=browser-neuro-san-tryout%40workspace%3A.":
-  version: 1.0.0
-  resolution: "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz#../../../neuro-san-ts-package/ts-package/package.tgz::hash=63dd34&locator=browser-neuro-san-tryout%40workspace%3A."
+  version: 0.0.1
+  resolution: "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz#../../../neuro-san-ts-package/ts-package/package.tgz::hash=8c61c5&locator=browser-neuro-san-tryout%40workspace%3A."
   dependencies:
     "@langchain/core": "npm:1.2.11"
-    "@langchain/langgraph": "npm:1.4.15"
+    "@langchain/langgraph": "npm:1.4.16"
     "@langchain/mcp-adapters": "npm:1.1.4"
     "@langchain/openai": "npm:1.5.13"
     jsonrepair: "npm:3.15.0"
     langchain: "npm:1.5.11"
+    openai: "npm:7.19.0"
     pythonlib: "npm:2.0.4"
-  checksum: 10c0/5e671129be249347105e341c8a45863d65b445500339a728bbb089e89a9d20b5f639685583591fc902f7913a40de76dfd02727963ab11f93e4f389e17611dce8
+  checksum: 10c0/7fbbd597d526bdfae6a2f492093328217ded1326f85a819c6c058e041bfe78154a993807158eda83f4460accccd5ddbca3a9ebad72b0bffe244137d18fe2999c
   languageName: node
   linkType: hard
 
@@ -230,7 +231,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@langchain/langgraph-sdk@npm:~1.11.0":
+"@langchain/langgraph-sdk@npm:~1.11.1":
   version: 1.11.2
   resolution: "@langchain/langgraph-sdk@npm:1.11.2"
   dependencies:
@@ -272,18 +273,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@langchain/langgraph@npm:1.4.15":
-  version: 1.4.15
-  resolution: "@langchain/langgraph@npm:1.4.15"
+"@langchain/langgraph@npm:1.4.16":
+  version: 1.4.16
+  resolution: "@langchain/langgraph@npm:1.4.16"
   dependencies:
     "@langchain/langgraph-checkpoint": "npm:^1.1.5"
-    "@langchain/langgraph-sdk": "npm:~1.11.0"
+    "@langchain/langgraph-sdk": "npm:~1.11.1"
     "@langchain/protocol": "npm:^0.0.19"
     "@standard-schema/spec": "npm:1.1.0"
   peerDependencies:
     "@langchain/core": ^1.1.48
     zod: ^3.25.32 || ^4.2.0
-  checksum: 10c0/7f38fd116f51c42a76bf164174af8f93379f138cfc2c7e604ea2718ca9ecebfcd259277d990008cb71f6f44af8886df87f5a039e33ea9a81e2e38669d567e6ae
+  checksum: 10c0/5e0135406234d0db9bfc2bc46553a726b7364432662b73d74fe9d7b4ff419c4026897b899f147ccfdef073d968a0e77719ded2d760e14915187607461946d970
   languageName: node
   linkType: hard
 
@@ -1473,6 +1474,33 @@ __metadata:
   dependencies:
     wrappy: "npm:1"
   checksum: 10c0/5d48aca287dfefabd756621c5dfce5c91a549a93e9fdb7b8246bc4c4790aa2ec17b34a260530474635147aeb631a2dcc8b32c613df0675f96041cbb8244517d0
+  languageName: node
+  linkType: hard
+
+"openai@npm:7.19.0":
+  version: 7.19.0
+  resolution: "openai@npm:7.19.0"
+  peerDependencies:
+    "@aws-sdk/credential-provider-node": ">=3.972.0 <4"
+    "@smithy/hash-node": ">=4.3.0 <5"
+    "@smithy/signature-v4": ">=5.4.0 <6"
+    undici: ">=5 <9"
+    ws: ^8.21.0
+    zod: ^3.25 || ^4.0
+  peerDependenciesMeta:
+    "@aws-sdk/credential-provider-node":
+      optional: true
+    "@smithy/hash-node":
+      optional: true
+    "@smithy/signature-v4":
+      optional: true
+    undici:
+      optional: true
+    ws:
+      optional: true
+    zod:
+      optional: true
+  checksum: 10c0/027f21e9dd47bfc76f411775d18e17bb0d7c25a1f29d0bc5832a304b598509b44809b1d33ce231fa7657a9f6d38cda0304c15cd4eb7864aa8f3d50ebd4b7ed52
   languageName: node
   linkType: hard
 
