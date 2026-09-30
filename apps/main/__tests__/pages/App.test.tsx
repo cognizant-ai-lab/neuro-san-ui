@@ -177,7 +177,7 @@ describe("Main App Component", () => {
     // This is the case where we haven't yet retrieved the environment variables, so we don't know if authentication
     // is enabled or not.
     it("Should render correctly when authentication is undefined", async () => {
-        window.fetch = mockFetch(mockEnvironment(undefined))
+        window.fetch = mockFetch(mockEnvironment({enableAuthentication: undefined}))
 
         render(APP_COMPONENT)
 
