@@ -117,6 +117,11 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     const background = useSettingsStore((state) => state.settings.branding.background)
 
     const [theme, setTheme] = useState<Theme>(() => createTheme())
+
+    // For Google Analytics
+    const [enableGoogleAnalytics, setEnableGoogleAnalytics] = useState<boolean>(false)
+    const [gaMeasurementID, setGaMeasurementID] = useState<string>("")
+
     // Generate the branded theme only on the client to avoid hydration issues.
     useEffect(() => {
         setTheme(createAppTheme(primary, secondary, background))
@@ -161,6 +166,8 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             setSupportEmailAddress(data.supportEmailAddress)
             setLogoServiceToken(data.logoServiceToken)
             setEnableAuthentication(data.enableAuthentication)
+            setEnableGoogleAnalytics(data.enableGoogleAnalytics)
+            setGaMeasurementID(data.gaMeasurementID)
 
             if (data.enableAuthentication) {
                 // save Auth0 settings if authentication is enabled.
@@ -359,7 +366,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     href="/cognizantfavicon.ico"
                 />
             </Head>
-            <GoogleAnalytics />
+            {enableGoogleAnalytics && gaMeasurementID && <GoogleAnalytics gaMeasurementID={gaMeasurementID} />}
             <StrictMode>
                 <ThemeProvider
                     theme={theme}

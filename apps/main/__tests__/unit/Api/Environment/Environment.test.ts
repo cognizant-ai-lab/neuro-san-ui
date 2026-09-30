@@ -18,7 +18,7 @@ import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {enableAuthenticationEnvVar} from "../../../../Const"
+import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR} from "../../../../Const"
 import handler from "../../../../pages/api/environment"
 import {EnvironmentResponse} from "../../../../pages/api/environment/Types"
 
@@ -44,7 +44,9 @@ describe("Environment API handler", () => {
         process.env["AUTH0_DOMAIN"] = "test-domain.auth0.com"
         process.env["SUPPORT_EMAIL_ADDRESS"] = "support@example.com"
         process.env["LOGO_SERVICE_TOKEN"] = "test-logo-service-token"
-        process.env[enableAuthenticationEnvVar] = "true"
+        process.env[ENABLE_AUTHENTICATION_ENV_VAR] = "true"
+        process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = "true"
+        process.env["GA_MEASUREMENT_ID"] = "test-ga-id"
 
         const {req, res} = createMocks()
 
@@ -57,12 +59,14 @@ describe("Environment API handler", () => {
             auth0Domain: "test-domain.auth0.com",
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true,
+            enableGoogleAnalytics: true,
+            gaMeasurementID: "test-ga-id",
             logoServiceToken: "test-logo-service-token",
             supportEmailAddress: "support@example.com",
-        })
+        } satisfies EnvironmentResponse)
     })
 
-    it("returns undefined for unset environment variables", () => {
+    it("returns expected values for unset environment variables", () => {
         // Only set some environment variables
         process.env["NEURO_SAN_SERVER_URL"] = "https://api.example.com"
         // Leave others undefined
@@ -70,6 +74,9 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
         delete process.env["LOGO_SERVICE_TOKEN"]
+        delete process.env[ENABLE_AUTHENTICATION_ENV_VAR]
+        delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
+        delete process.env["GA_MEASUREMENT_ID"]
 
         const {req, res} = createMocks()
 
@@ -81,9 +88,11 @@ describe("Environment API handler", () => {
             auth0ClientId: undefined,
             auth0Domain: undefined,
             enableAuthentication: true, // defaults to true if not set
+            enableGoogleAnalytics: false, // defaults to false if not set
+            gaMeasurementID: undefined,
             supportEmailAddress: undefined,
             logoServiceToken: undefined,
-        })
+        } satisfies EnvironmentResponse)
     })
 
     it("handles empty environment variables", () => {
@@ -93,7 +102,9 @@ describe("Environment API handler", () => {
         process.env["AUTH0_DOMAIN"] = ""
         process.env["SUPPORT_EMAIL_ADDRESS"] = ""
         process.env["LOGO_SERVICE_TOKEN"] = ""
-        process.env[enableAuthenticationEnvVar] = ""
+        process.env[ENABLE_AUTHENTICATION_ENV_VAR] = ""
+        process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = ""
+        process.env["GA_MEASUREMENT_ID"] = ""
 
         const {req, res} = createMocks()
 
@@ -105,6 +116,8 @@ describe("Environment API handler", () => {
             auth0Domain: "",
             backendNeuroSanApiUrl: "",
             enableAuthentication: true, // defaults to true if not set
+            enableGoogleAnalytics: false, // defaults to false if not set
+            gaMeasurementID: "",
             logoServiceToken: "",
             supportEmailAddress: "",
         })
@@ -117,7 +130,7 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["LOGO_SERVICE_TOKEN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
-        delete process.env[enableAuthenticationEnvVar]
+        delete process.env[ENABLE_AUTHENTICATION_ENV_VAR]
 
         const {req, res} = createMocks({
             method: "POST",
@@ -132,6 +145,8 @@ describe("Environment API handler", () => {
             auth0Domain: undefined,
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true, // defaults to true if not set
+            enableGoogleAnalytics: false, // defaults to false if not set
+            gaMeasurementID: undefined,
             logoServiceToken: undefined,
             supportEmailAddress: undefined,
         })

@@ -18,29 +18,34 @@ import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
 import {EnvironmentResponse} from "./Types"
-import {enableAuthenticationEnvVar} from "../../../Const"
+import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR, GA_MEASUREMENT_ID_ENV_VAR} from "../../../Const"
 
 /**
  * This function is a handler for the .../environment endpoint. It retrieves environment settings from the
- * node server and returns them to the client. This way, the UI can be configured to point to the correct backend.
+ * node server and returns them to the client. This allows for environment variable settings on the server
+ * to be passed to the client, which is useful for settings that are not known at build time.
  * @param _req Request -- not used
  * @param res Response -- the response object. It is used to send the environment settings to the client.
  */
 const handler = (_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>) => {
     res.setHeader("Content-Type", "application/json")
 
-    const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
-    const enableAuthentication = process.env[enableAuthenticationEnvVar] !== "false"
     const auth0ClientId = process.env["AUTH0_CLIENT_ID"]
     const auth0Domain = process.env["AUTH0_DOMAIN"]
-    const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
+    const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
+    const enableAuthentication = process.env[ENABLE_AUTHENTICATION_ENV_VAR] !== "false"
+    const enableGoogleAnalytics = process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] === "true"
+    const gaMeasurementID = process.env[GA_MEASUREMENT_ID_ENV_VAR]
     const logoServiceToken = process.env["LOGO_SERVICE_TOKEN"]
+    const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
 
     res.status(httpStatus.OK).json({
         auth0ClientId,
         auth0Domain,
-        enableAuthentication,
         backendNeuroSanApiUrl,
+        enableAuthentication,
+        enableGoogleAnalytics,
+        gaMeasurementID,
         logoServiceToken,
         supportEmailAddress,
     } satisfies EnvironmentResponse)

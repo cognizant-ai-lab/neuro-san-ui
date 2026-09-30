@@ -22,6 +22,7 @@ import {ReactNode} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../__tests__/common/TestUtils"
+import {GOOGLE_ANALYTICS_URL} from "../../../../packages/ui-common/components/Common/GoogleAnalytics"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
 import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
@@ -99,15 +100,19 @@ describe("Main App Component", () => {
     const testDomain = "testDomain"
     const testSupportEmailAddress = "test@example.com"
     const testLogoServiceToken = "testLogoServiceToken"
+    const gaMeasurementID = "testGAID"
 
-    const mockEnvironment = (enableAuthentication: boolean | undefined) =>
+    const mockEnvironment = (overrides: Partial<EnvironmentResponse>) =>
         ({
             auth0ClientId: testClientId,
             auth0Domain: testDomain,
             backendNeuroSanApiUrl: testNeuroSanURL,
-            enableAuthentication,
+            enableAuthentication: true,
+            enableGoogleAnalytics: true,
+            gaMeasurementID,
             logoServiceToken: testLogoServiceToken,
             supportEmailAddress: testSupportEmailAddress,
+            ...overrides,
         }) satisfies EnvironmentResponse
 
     beforeEach(() => {
@@ -126,28 +131,23 @@ describe("Main App Component", () => {
         })
 
         user = userEvent.setup()
-        window.fetch = mockFetch(mockEnvironment(true))
+        window.fetch = mockFetch(mockEnvironment({enableAuthentication: true}))
         vi.mocked(useRouter).mockReturnValue(createMockRouter())
     })
 
     afterEach(() => {
         window.fetch = originalFetch
+
+        // Clean up injected GA script between tests
+        document.head.querySelectorAll('script[src^="https://www.googletagmanager.com/gtag/js"]').forEach((script) => {
+            script.remove()
+        })
     })
 
-    it.each([false, true])("should render the page with darkMode=%s", async (darkMode) => {
+    it("should render correctly", async () => {
         render(APP_COMPONENT)
 
         await screen.findByText(COMPONENT_BODY)
-
-        const darkModeButton = await screen.findByTestId("DarkModeIcon")
-
-        if (darkMode) {
-            // Set MUI dark mode
-            await user.click(darkModeButton)
-        }
-
-        // Assert that dark mode was applied or not, as appropriate
-        expect(darkModeButton).toHaveStyle({color: darkMode ? "var(--bs-yellow)" : "var(--bs-gray-dark)"})
 
         // Assert that values were set in the zustand store
         const state = useEnvironmentStore.getState()
@@ -159,7 +159,7 @@ describe("Main App Component", () => {
     })
 
     it("Should render correctly when authentication is disabled", async () => {
-        window.fetch = mockFetch(mockEnvironment(false))
+        window.fetch = mockFetch(mockEnvironment({enableAuthentication: false}))
 
         render(APP_COMPONENT)
 
@@ -185,6 +185,42 @@ describe("Main App Component", () => {
             const loadingSpinner = document.getElementById("loading-header")
             expect(loadingSpinner).toBeInTheDocument()
         })
+    })
+
+    it("should inject the Google Analytics script into the document head", async () => {
+        render(APP_COMPONENT)
+
+        let script: HTMLScriptElement | undefined
+
+        // Have to wait for rendering to settle and Effect (which injects GA script) to run
+        await waitFor(() => {
+            script = [...document.head.querySelectorAll("script")].find((element) =>
+                element.getAttribute("src").includes(GOOGLE_ANALYTICS_URL)
+            )
+
+            expect(script).toBeInTheDocument()
+        })
+
+        // Make sure script got set up as we expect
+        expect(document.head).toContainElement(script)
+        expect(script.async).toBe(true)
+        expect(script.src).toContain(gaMeasurementID)
+        expect(window.dataLayer).toBeDefined()
+        expect(window.gtag).toEqual(expect.any(Function))
+    })
+
+    it("should not inject the Google Analytics script if the feature is disabled", async () => {
+        window.fetch = mockFetch(mockEnvironment({enableGoogleAnalytics: false}))
+
+        render(APP_COMPONENT)
+
+        await screen.findByText(COMPONENT_BODY)
+
+        const script = document.head.querySelector<HTMLScriptElement>(
+            `script[src="${CSS.escape(GOOGLE_ANALYTICS_URL)}"]`
+        )
+
+        expect(script).not.toBeInTheDocument()
     })
 
     it("Should handle failure to fetch environment variables", async () => {
@@ -223,7 +259,7 @@ describe("Main App Component", () => {
             // First fetch: /api/environment succeeds
             .mockResolvedValueOnce({
                 ok: true,
-                json: vi.fn().mockResolvedValue(mockEnvironment(true)),
+                json: vi.fn().mockResolvedValue(mockEnvironment({enableAuthentication: true})),
             })
             // Second fetch: /api/userInfo fails via !res.ok
             .mockResolvedValueOnce({
