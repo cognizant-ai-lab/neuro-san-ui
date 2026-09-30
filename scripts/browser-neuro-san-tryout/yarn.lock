@@ -14,7 +14,7 @@ __metadata:
 
 "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz::locator=browser-neuro-san-tryout%40workspace%3A.":
   version: 0.0.1
-  resolution: "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz#../../../neuro-san-ts-package/ts-package/package.tgz::hash=061eb2&locator=browser-neuro-san-tryout%40workspace%3A."
+  resolution: "@cognizant-ai-lab/neuro-san-npm@file:../../../neuro-san-ts-package/ts-package/package.tgz#../../../neuro-san-ts-package/ts-package/package.tgz::hash=50d3d0&locator=browser-neuro-san-tryout%40workspace%3A."
   dependencies:
     "@langchain/core": "npm:1.2.11"
     "@langchain/langgraph": "npm:1.4.16"
@@ -24,7 +24,7 @@ __metadata:
     langchain: "npm:1.5.11"
     openai: "npm:7.19.0"
     pythonlib: "npm:2.0.4"
-  checksum: 10c0/f6bfe8294a1a29b71d643718695aba8afae8a135f4dc94ea540681d5585b0957068c6d218a2fb2775d1ef7aaf66cb0772a65ec2d5aa41abe6e9adc0a648c514e
+  checksum: 10c0/0418a7787aa96af6075058f688fe0c6ee161f505fc2b38312d61a948f841bfc96836411e20adfc0d55afd432af1c3f3fcc475de3c3b14963d05214d573928dcb
   languageName: node
   linkType: hard
 
