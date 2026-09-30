@@ -52,6 +52,7 @@ describe("instrumentation", () => {
 
         // Default to "Google Analytics enabled"
         process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = "true"
+        process.env[GA_MEASUREMENT_ID_ENV_VAR] = "GA_MEASUREMENT_ID-test_value"
     })
 
     const expectConsoleOutput = (
@@ -76,7 +77,7 @@ describe("instrumentation", () => {
         vi.spyOn(console, "info").mockImplementation(vi.fn())
         expect(() => register()).not.toThrow()
 
-        // Various start-up messages
+        // Check start-up messages
         expectConsoleOutput(
             true,
             true,
@@ -102,7 +103,7 @@ describe("instrumentation", () => {
     })
 
     it("Should throw if Google Analytics is enabled but measurement ID is not set", () => {
-        // Unset an environment variable that is only required for authentication
+        // Unset an environment variable that is required for Google Analytics
         delete process.env[GA_MEASUREMENT_ID_ENV_VAR]
 
         expect(() => register()).toThrow()
@@ -117,7 +118,7 @@ describe("instrumentation", () => {
 
         expect(() => register()).not.toThrow()
 
-        // Various start-up messages
+        // Check start-up messages
         expectConsoleOutput(
             false,
             true,
@@ -143,10 +144,17 @@ describe("instrumentation", () => {
         expect(() => register()).not.toThrow()
 
         OPTIONAL_ENV_VARS.forEach((envVar) => {
-            expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining(envVar))
+            expect(consoleWarnSpy).toHaveBeenCalledExactlyOnceWith(expect.stringContaining(envVar))
         })
 
-        // Various start-up messages
-        expectConsoleOutput(false, false, "not set", "not set", "not set", "NEURO_SAN_SERVER_URL-test_value")
+        // Check start-up messages
+        expectConsoleOutput(
+            false,
+            true,
+            `${GA_MEASUREMENT_ID_ENV_VAR}-test_value`,
+            "not set",
+            "not set",
+            "NEURO_SAN_SERVER_URL-test_value"
+        )
     })
 })

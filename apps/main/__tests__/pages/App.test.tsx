@@ -216,9 +216,8 @@ describe("Main App Component", () => {
 
         await screen.findByText(COMPONENT_BODY)
 
-        const script = document.head.querySelector<HTMLScriptElement>(
-            `script[src="${CSS.escape(GOOGLE_ANALYTICS_URL)}"]`
-        )
+        // Strict test: we don't expect _any_ scripts to be injected here, since GA is the only script we inject.
+        const script = document.head.querySelector<HTMLScriptElement>("script")
 
         expect(script).not.toBeInTheDocument()
     })

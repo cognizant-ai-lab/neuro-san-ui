@@ -18,7 +18,11 @@ import httpStatus from "http-status"
 import {createMocks} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR} from "../../../../Const"
+import {
+    ENABLE_AUTHENTICATION_ENV_VAR,
+    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    GA_MEASUREMENT_ID_ENV_VAR,
+} from "../../../../Const"
 import handler from "../../../../pages/api/environment"
 import {EnvironmentResponse} from "../../../../pages/api/environment/Types"
 
@@ -130,6 +134,8 @@ describe("Environment API handler", () => {
         delete process.env["AUTH0_DOMAIN"]
         delete process.env["LOGO_SERVICE_TOKEN"]
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
+        delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
+        delete process.env[GA_MEASUREMENT_ID_ENV_VAR]
         delete process.env[ENABLE_AUTHENTICATION_ENV_VAR]
 
         const {req, res} = createMocks({

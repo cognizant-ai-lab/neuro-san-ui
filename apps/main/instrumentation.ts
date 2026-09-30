@@ -42,12 +42,7 @@ export const REQUIRED_FOR_AUTH_ENV_VARS = [
  * List of environment variables that are optional. If any of these are not set, the app will log a warning but will
  * continue to run. These are typically used for optional features that have a fallback if the env var is not set.
  */
-export const OPTIONAL_ENV_VARS = [
-    "LOGO_SERVICE_TOKEN",
-    "OPENAI_API_KEY",
-    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
-    GA_MEASUREMENT_ID_ENV_VAR,
-]
+export const OPTIONAL_ENV_VARS = ["LOGO_SERVICE_TOKEN", "OPENAI_API_KEY"]
 
 /**
  * Check if an environment variable is "missing" (undefined or empty string).
@@ -81,7 +76,7 @@ export const register = () => {
         throw new Error(
             `Google Analytics is enabled (${ENABLE_GOOGLE_ANALYTICS_ENV_VAR} is true) but the ${
                 GA_MEASUREMENT_ID_ENV_VAR
-            }  environment variable is empty or undefined. ` +
+            } environment variable is empty or undefined. ` +
                 "Please set the GA_MEASUREMENT_ID environment variable to your Google Analytics Measurement ID."
         )
     }
