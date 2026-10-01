@@ -138,6 +138,9 @@ describe("instrumentation", () => {
             delete process.env[envVar]
         })
 
+        delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
+        delete process.env[GA_MEASUREMENT_ID_ENV_VAR]
+
         // Spy on console.warn to suppress output during test
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
 
@@ -148,13 +151,6 @@ describe("instrumentation", () => {
         })
 
         // Check start-up messages
-        expectConsoleOutput(
-            false,
-            true,
-            `${GA_MEASUREMENT_ID_ENV_VAR}-test_value`,
-            "not set",
-            "not set",
-            "NEURO_SAN_SERVER_URL-test_value"
-        )
+        expectConsoleOutput(false, false, "not set", "not set", "not set", "NEURO_SAN_SERVER_URL-test_value")
     })
 })
