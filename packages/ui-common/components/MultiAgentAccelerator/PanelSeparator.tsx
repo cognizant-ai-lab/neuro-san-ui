@@ -9,7 +9,7 @@ import {Separator} from "react-resizable-panels"
 export const PanelSeparator: FC = () => (
     <Separator
         style={{
-            width: "14px",
+            width: "18px",
             cursor: "col-resize",
             display: "flex",
             alignItems: "center",
@@ -19,7 +19,7 @@ export const PanelSeparator: FC = () => (
     >
         <Box
             sx={{
-                width: "14px",
+                width: "18px",
                 height: "100%",
                 display: "flex",
                 alignItems: "center",
