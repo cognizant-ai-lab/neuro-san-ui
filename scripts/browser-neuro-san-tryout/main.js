@@ -1,4 +1,4 @@
-import { ConciergeSessionFactory, DirectAgentSessionFactory, environ } from "@cognizant-ai-lab/neuro-san-npm"
+import { ConciergeSessionFactory, DirectAgentSessionFactory, environ } from "@cognizant-ai-lab/neuro-san-ts-package"
 
 // The package reads its LLM key from its environ, like python's os.environ. OpenAI
 // allows calls from a page, so they go straight to it.
