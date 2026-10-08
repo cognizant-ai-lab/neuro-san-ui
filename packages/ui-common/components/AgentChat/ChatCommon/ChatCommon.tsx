@@ -222,6 +222,9 @@ const EMPTY: Partial<Record<CombinedAgentType, string>> = {}
 // For others, it's just "whenever the stream is done".
 const MAX_AGENT_RETRIES = 3
 
+// Keep long prompts navigable without allowing the input to take over the chat window.
+const MAX_CHAT_INPUT_ROWS = 8
+
 /**
  * Extract the final answer from the response from a legacy agent
  * @param response The response from the legacy agent
@@ -1250,6 +1253,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             <Input
                 autoComplete="off"
                 id="user-input"
+                maxRows={MAX_CHAT_INPUT_ROWS}
                 multiline={true}
                 placeholder={getPlaceholder()}
                 ref={chatInputRef}
@@ -1265,6 +1269,9 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     paddingLeft: "1rem",
                     paddingRight: "1rem",
                     transition: "margin-right 0.2s",
+                    "& textarea": {
+                        overflowY: "auto",
+                    },
                 }}
                 onChange={(event) => {
                     setChatInput(event.target.value)

@@ -407,6 +407,14 @@ describe("ChatCommon", () => {
             await waitFor(() => expect(mockSendFunction).toHaveBeenCalledWith(fullStrToCheck))
         })
 
+        it("Should keep very long prompts scrollable", () => {
+            renderChatCommonComponent()
+
+            const userInput = screen.getByPlaceholderText(CHAT_WITH_MATH_GUY)
+
+            expect(userInput).toHaveStyle({overflowY: "auto"})
+        })
+
         it("Should refuse interaction when no target agent is set", async () => {
             const mockSendFunction = vi.fn()
             renderChatCommonComponent({onSend: mockSendFunction, selectedNetwork: null})
