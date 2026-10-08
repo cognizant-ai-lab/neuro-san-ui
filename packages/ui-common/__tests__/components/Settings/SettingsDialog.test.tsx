@@ -475,6 +475,86 @@ describe("SettingsDialog", () => {
             // Assert the Tooltip change
             expect(screen.getByLabelText("Hide API key")).toBeInTheDocument()
         })
+
+        it("shows unsaved changes modal when closing with unsaved API key changes", async () => {
+            const onCloseMock = vi.fn()
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                    onClose={onCloseMock}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
+
+            const closeButton = await screen.findByLabelText("close")
+            await user.click(closeButton)
+
+            expect(onCloseMock).not.toHaveBeenCalled()
+            expect(screen.getByText("Unsaved Changes")).toBeInTheDocument()
+            expect(
+                screen.getByText(
+                    "You have unsaved edits. Are you sure you want to discard your changes and close the dialog?"
+                )
+            ).toBeInTheDocument()
+        })
+
+        it("discards unsaved API key changes and closes dialog when Discard changes is clicked", async () => {
+            const onCloseMock = vi.fn()
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                    onClose={onCloseMock}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
+
+            const closeButton = await screen.findByLabelText("close")
+            await user.click(closeButton)
+
+            const discardButton = screen.getByRole("button", {name: "Discard changes"})
+            await user.click(discardButton)
+
+            expect(onCloseMock).toHaveBeenCalledTimes(1)
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
+        })
+
+        it("saves unsaved API key changes and closes dialog when Save changes is clicked", async () => {
+            const onCloseMock = vi.fn()
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                    onClose={onCloseMock}
+                />
+            )
+
+            const apiKeyInput = screen.getByTestId("settings-dialog-openai-input")
+            const inputBox = within(apiKeyInput).getByPlaceholderText("sk-...")
+
+            await user.click(inputBox)
+            await user.paste(TEST_API_KEY)
+
+            const closeButton = await screen.findByLabelText("close")
+            await user.click(closeButton)
+
+            const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
+            await user.click(saveChangesButton)
+
+            expect(onCloseMock).toHaveBeenCalledTimes(1)
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
+        })
     })
 
     it.each([
