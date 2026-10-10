@@ -2,11 +2,16 @@ import {render, screen} from "@testing-library/react"
 import {MockInstance} from "vitest"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {ErrorBoundary} from "../../../components/ErrorPage/ErrorBoundary"
+import {ErrorBoundary, ErrorBoundaryProps} from "../../../components/ErrorPage/ErrorBoundary"
 
 // Mock the ErrorPage component so tests don't need Next router or stores
 vi.mock("../../../components/ErrorPage/ErrorPage", () => ({
-    default: ({errorText}: {errorText: string}) => <div data-testid="mock-error">{errorText}</div>,
+    default: ({errorText, userInfo}: {errorText: string; userInfo: {name: string}}) => (
+        <div data-testid="mock-error">
+            <span>{errorText}</span>
+            <span>Signed in as {userInfo.name}</span>
+        </div>
+    ),
 }))
 
 // Create a component that throws when shouldThrow is true
@@ -15,6 +20,14 @@ const ErrorChild = ({shouldThrow}: {shouldThrow: boolean}) => {
         throw new Error("boom")
     }
     return <div>There was an error</div>
+}
+
+// The session details the app hands the boundary for its fallback page
+const BOUNDARY_PROPS: Omit<ErrorBoundaryProps, "children"> = {
+    authenticationType: "NextAuth",
+    id: "test-boundary",
+    signOut: () => undefined,
+    userInfo: {name: "Ada", image: "https://example.com/ada.png"},
 }
 
 describe("ErrorBoundary", () => {
@@ -28,7 +41,7 @@ describe("ErrorBoundary", () => {
 
     it("renders fallback ErrorPage when child throws", () => {
         render(
-            <ErrorBoundary id="test-boundary">
+            <ErrorBoundary {...BOUNDARY_PROPS}>
                 <ErrorChild shouldThrow={true} />
             </ErrorBoundary>
         )
@@ -42,9 +55,19 @@ describe("ErrorBoundary", () => {
         expect(messages).toMatch(/error: boom/iu)
     })
 
+    it("shows the signed-in user on the fallback page", () => {
+        render(
+            <ErrorBoundary {...BOUNDARY_PROPS}>
+                <ErrorChild shouldThrow={true} />
+            </ErrorBoundary>
+        )
+
+        screen.getByText(`Signed in as ${BOUNDARY_PROPS.userInfo.name}`)
+    })
+
     it("clears error when child no longer throws after re-render", async () => {
         const {rerender} = render(
-            <ErrorBoundary id="test-boundary">
+            <ErrorBoundary {...BOUNDARY_PROPS}>
                 <ErrorChild shouldThrow={true} />
             </ErrorBoundary>
         )
@@ -55,8 +78,8 @@ describe("ErrorBoundary", () => {
         // Remount the ErrorBoundary (change key) to reset its internal state and render child
         rerender(
             <ErrorBoundary
+                {...BOUNDARY_PROPS}
                 key="reset-1"
-                id="test-boundary"
             >
                 <ErrorChild shouldThrow={false} />
             </ErrorBoundary>

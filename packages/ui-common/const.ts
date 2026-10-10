@@ -17,7 +17,8 @@ limitations under the License.
 // Name to use for application
 export const LOGO: string = "Neuro® AI"
 
-export const NEURO_SAN_UI_VERSION = process.env["NEXT_PUBLIC_NEURO_SAN_UI_VERSION"] ?? "Unknown Version"
+// Read through globalThis: bundlers targeting the browser do not define `process`
+export const NEURO_SAN_UI_VERSION = globalThis.process?.env?.["NEXT_PUBLIC_NEURO_SAN_UI_VERSION"] ?? "Unknown Version"
 
 export const getContactUsConfirmationText = (email: string): string =>
     "Would you like to send the Cognizant Neuro AI support team an email? " +
