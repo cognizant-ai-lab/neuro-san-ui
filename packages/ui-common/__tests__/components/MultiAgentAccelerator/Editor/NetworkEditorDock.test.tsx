@@ -4,8 +4,8 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
+import {BANNER_AUTO_DISMISS_MS, STREAM_TIMEOUT_MS} from "../../../../components/MultiAgentAccelerator/Editor/Const"
 import {
-    BANNER_AUTO_DISMISS_MS,
     NetworkEditorDock,
     NetworkEditorDockProps,
 } from "../../../../components/MultiAgentAccelerator/Editor/NetworkEditorDock"
@@ -340,7 +340,7 @@ describe("NetworkEditorDock", () => {
 
         // Advance past the 120-second dock apply timeout
         act(() => {
-            vi.advanceTimersByTime(121_000)
+            vi.advanceTimersByTime(STREAM_TIMEOUT_MS + 1000)
         })
 
         // The user sees an error banner explaining the request timed out...
