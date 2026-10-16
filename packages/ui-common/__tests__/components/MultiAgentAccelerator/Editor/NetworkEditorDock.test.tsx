@@ -411,6 +411,25 @@ describe("NetworkEditorDock", () => {
         expect(screen.getByText(ELVES_PROMPT)).toBeInTheDocument()
     })
 
+    it("keeps the applying controls accessible with a long echoed prompt", async () => {
+        mockInFlightDockApply()
+        const longPrompt = "a".repeat(500)
+
+        renderNetworkEditorDock()
+
+        const instructionsField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(instructionsField)
+        await user.paste(longPrompt)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
+        expect(screen.getByText(longPrompt)).toBeVisible()
+
+        const stopButton = screen.getByRole("button", {name: STOP_BUTTON})
+        expect(stopButton).toBeVisible()
+        expect(stopButton).toBeEnabled()
+    })
+
     it("removes the applying overlay once the apply call completes", async () => {
         const release = mockInFlightDockApply()
 

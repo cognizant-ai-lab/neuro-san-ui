@@ -373,10 +373,11 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                             py: 2.5,
                             borderRadius: 2,
                             maxWidth: 480,
+                            width: "calc(100% - 32px)",
                         }}
                     >
                         <CircularProgress size={24} />
-                        <Box sx={{flex: 1}}>
+                        <Box sx={{flex: 1, minWidth: 0}}>
                             <Typography
                                 variant="body1"
                                 sx={{fontWeight: "bold"}}
@@ -387,7 +388,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                                 <Typography
                                     variant="body2"
                                     color="text.secondary"
-                                    sx={{mt: 0.25}}
+                                    sx={{mt: 0.25, overflowWrap: "anywhere"}}
                                 >
                                     {dockPrompt}
                                 </Typography>
