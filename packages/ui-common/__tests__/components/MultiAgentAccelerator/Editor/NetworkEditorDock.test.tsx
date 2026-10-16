@@ -4,7 +4,7 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
-import {BANNER_AUTO_DISMISS_MS, STREAM_TIMEOUT_MS} from "../../../../components/MultiAgentAccelerator/Editor/Const"
+import {BANNER_AUTO_DISMISS_MS} from "../../../../components/MultiAgentAccelerator/Editor/Const"
 import {
     NetworkEditorDock,
     NetworkEditorDockProps,
@@ -315,7 +315,7 @@ describe("NetworkEditorDock", () => {
         expect(screen.getByRole("button", {name: APPLY_BUTTON})).toBeEnabled()
     })
 
-    it("shows a timeout error banner that persists when the dock apply request times out", async () => {
+    it("keeps applying when a network edit takes longer than two minutes", async () => {
         vi.useFakeTimers()
 
         // Create a custom UserEvent that is synced with Vitest's fake timers
@@ -323,9 +323,16 @@ describe("NetworkEditorDock", () => {
             advanceTimers: vi.advanceTimersByTime,
         })
 
-        mockSendChatQuery.mockImplementation((_url: string, signal: AbortSignal) => {
-            return new Promise<ChatResponse>((_resolve, reject) => {
+        let releaseRequest!: () => void
+        let capturedSignal: AbortSignal | undefined
+        mockSendChatQuery.mockImplementation((_url, signal, _query, _agent, chunkCallback) => {
+            capturedSignal = signal
+            return new Promise<ChatResponse>((resolve, reject) => {
                 signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))
+                releaseRequest = () => {
+                    chunkCallback(makeDockReservationChunk(DOCK_DEFAULT_RES, DOCK_NETWORK_NAME))
+                    resolve({} satisfies ChatResponse)
+                }
             })
         })
 
@@ -338,19 +345,20 @@ describe("NetworkEditorDock", () => {
         const applyButton = screen.getByRole("button", {name: APPLY_BUTTON})
         await localUser.click(applyButton)
 
-        // Advance past the 120-second dock apply timeout
+        // Advance past the three-minute dock apply timeout previously configured here.
         act(() => {
-            vi.advanceTimersByTime(STREAM_TIMEOUT_MS + 1000)
+            vi.advanceTimersByTime(181_000)
         })
 
-        // The user sees an error banner explaining the request timed out...
-        await screen.findByText(/timed out/u)
+        expect(capturedSignal?.aborted).toBe(false)
+        expect(screen.getByText(APPLYING_TITLE)).toBeVisible()
+        expect(screen.queryByText(FAILED_BANNER)).not.toBeInTheDocument()
 
-        // ...and, unlike success/cancel banners, it does not auto-dismiss
-        act(() => {
-            vi.advanceTimersByTime(BANNER_AUTO_DISMISS_MS + 100)
+        await act(async () => {
+            releaseRequest()
         })
-        expect(screen.getByText(FAILED_BANNER)).toBeInTheDocument()
+
+        await screen.findByText(APPLIED_BANNER)
     })
 
     it("deduplicates reservations when two chunks with the same name but different expiry arrive", async () => {
