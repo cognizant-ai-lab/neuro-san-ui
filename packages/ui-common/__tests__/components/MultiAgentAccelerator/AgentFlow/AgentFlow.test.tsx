@@ -1696,6 +1696,33 @@ describe("AgentFlow", () => {
         })
     })
 
+    describe("Publishing", () => {
+        it("Should offer to publish a temporary network", async () => {
+            act(() => {
+                useTempNetworksStore
+                    .getState()
+                    .setTempNetworks([makeTempNetwork(OLD_NETWORK_ID, [], "published_network")])
+            })
+
+            renderAgentFlowComponent({
+                isTemporaryNetwork: true,
+                networkDisplayName: "Published Network",
+                networkId: OLD_NETWORK_ID,
+            })
+
+            await screen.findByRole("button", {name: "Publish"})
+        })
+
+        it("Should not offer to publish a permanent network", async () => {
+            const networkName = "Regular Net"
+            renderAgentFlowComponent({networkDisplayName: networkName})
+
+            await screen.findByText(networkName)
+
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
+        })
+    })
+
     describe("NetworkEditorDock", () => {
         it("Should show the Edit button on a temporary network and invoke onEnterEditMode when clicked", async () => {
             const networkName = "Temp Net"

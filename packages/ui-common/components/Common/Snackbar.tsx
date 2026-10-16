@@ -23,8 +23,7 @@ import {JSX as ReactJSX, Ref} from "react"
 
 // #region: Styled Components
 const IconBox = styled(Box)({
-    position: "relative",
-    bottom: "2px",
+    display: "flex",
 
     "&.success": {
         color: "var(--bs-success)",
@@ -74,23 +73,24 @@ export const Snackbar = ({
                 id={`${id}-snackbar-box`}
                 data-testid={`${id}-snackbar-box`}
                 sx={{
+                    // A single line of text centers on the icon. With a description, the icon stays at the top.
+                    alignItems: description ? "flex-start" : "center",
                     background: theme.palette.background.paper,
                     borderColor: "transparent",
                     borderRadius: "var(--bs-border-radius)",
                     borderWidth: "1px",
                     boxShadow: `0 6px 16px 0 ${alpha(shadowColor, 0.08)}, 0 3px 6px -4px ${alpha(shadowColor, 0.12)},
                                             0 9px 28px 8px ${alpha(shadowColor, 0.05)}`,
+                    display: "flex",
                     maxWidth: "450px",
                     minWidth: "250px",
                     padding: "0.9rem",
-                    paddingRight: "4rem",
+                    // Room for the close button
+                    paddingRight: "2.5rem",
                 }}
             >
                 {!hideIconVariant && (
-                    <Box
-                        id={`${id}-snackbar-icon-box-container`}
-                        sx={{display: "inline-flex", flexDirection: "column"}}
-                    >
+                    <Box id={`${id}-snackbar-icon-box-container`}>
                         <IconBox
                             className={variant}
                             data-testid={`${id}-snackbar-icon-box`}
@@ -102,20 +102,13 @@ export const Snackbar = ({
                 )}
                 <Box
                     id={`${id}-snackbar-content-box`}
-                    sx={{
-                        display: "inline-flex",
-                        flexDirection: "column",
-                        width: "88%",
-                        wordWrap: "break-word",
-                    }}
+                    sx={{flex: 1, minWidth: 0, wordWrap: "break-word"}}
                 >
                     <Box
                         id={`${id}-snackbar-message-box`}
                         sx={{
-                            display: "block",
                             // If no description, this is the only message, so reduce font size
                             fontSize: description ? "0.95rem" : "0.85rem",
-                            paddingRight: "25px",
                         }}
                     >
                         {message}

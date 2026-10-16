@@ -23,7 +23,9 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
+import {useDeploymentsStore} from "../../../state/Deployments"
 import {downloadFile} from "../../../utils/File"
+import {DeployStatusBadge} from "../Deploy/DeployStatusBadge"
 
 //#region Constants
 
@@ -117,6 +119,10 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
     const networkHocon = item?.temporaryNetworkHocon ?? null
+    const temporaryNetworkName = item?.temporaryNetworkName
+    const deploymentStatus = useDeploymentsStore((state) =>
+        temporaryNetworkName ? state.deployments[temporaryNetworkName]?.status : undefined
+    )
 
     const iconNameSuggestion = item.iconSuggestion
 
@@ -205,6 +211,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
+                                {deploymentStatus && <DeployStatusBadge deploymentStatus={deploymentStatus} />}
                                 {networkHocon && (
                                     <Tooltip title={isExpired ? "Expired" : DOWNLOAD_NETWORK_DEFINITION_LABEL}>
                                         <span>

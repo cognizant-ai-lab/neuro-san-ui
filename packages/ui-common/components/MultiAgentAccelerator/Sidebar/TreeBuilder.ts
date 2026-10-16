@@ -20,12 +20,14 @@ export interface AgentNetworkTreeItemModel extends Omit<TreeViewDefaultItemModel
     readonly tags?: readonly string[]
     readonly temporaryNetworkExpirationTime?: Date
     readonly temporaryNetworkHocon?: string | null
+    readonly temporaryNetworkName?: string
 }
 
 interface NetworkTreeItemMetadata {
     readonly iconSuggestion?: string
     readonly temporaryNetworkExpirationTime?: Date
     readonly temporaryNetworkHocon?: string | null
+    readonly temporaryNetworkName?: string
     readonly displayNameOverride?: string
 }
 
@@ -113,6 +115,7 @@ const toNetworkLeaf = (
     tags: network.tags,
     temporaryNetworkExpirationTime: metadata.temporaryNetworkExpirationTime,
     temporaryNetworkHocon: metadata.temporaryNetworkHocon,
+    temporaryNetworkName: metadata.temporaryNetworkName,
 })
 
 /**
@@ -266,6 +269,7 @@ export const buildTreeViewItems = (
             iconSuggestion: "HourglassTop",
             temporaryNetworkExpirationTime: new Date(temporaryNetwork.reservation.expiration_time_in_seconds * 1000),
             temporaryNetworkHocon: temporaryNetwork.networkHocon,
+            temporaryNetworkName: temporaryNetwork.agentNetworkName,
             displayNameOverride: temporaryNetwork.agentNetworkName,
         })
     }

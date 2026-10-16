@@ -50,6 +50,7 @@ import {
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {DeploymentStatus, useDeploymentsStore} from "../../../../state/Deployments"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
@@ -442,6 +443,27 @@ describe("SideBar", () => {
             `${TEMPORARY_NETWORK_NAME}.hocon`,
             "text/plain"
         )
+    })
+
+    it("Should show Live next to a published temporary network", async () => {
+        useDeploymentsStore.setState({
+            deployments: {
+                [TEMPORARY_NETWORK_NAME]: {
+                    log: [],
+                    publishedAt: Date.now(),
+                    status: DeploymentStatus.Live,
+                    url: "http://live.test",
+                },
+            },
+        })
+
+        renderSidebarComponent({
+            networks: [...LIST_NETWORKS_RESPONSE],
+            temporaryNetworks: [TEMPORARY_NETWORK],
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+        })
+
+        await screen.findByText("Live")
     })
 
     it("Should handle expired temporary networks correctly", async () => {

@@ -69,6 +69,7 @@ import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {DeployButton} from "../Deploy/DeployButton"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
 import {isEditableAgent} from "../TemporaryNetworks"
@@ -250,6 +251,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
+
+    const currentTempNetwork = useMemo(
+        () => (networkId ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId) : undefined),
+        [networkId, tempNetworks]
+    )
 
     // Track conversation IDs we've already processed to prevent re-adding after expiry
     const processedConversationIdsRef = useRef<Set<string>>(new Set())
@@ -447,9 +453,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (!isEditableAgent(node.data.displayAs)) return
 
             // Find the agent's existing instructions and description from the temp network definition.
-            const currentTempNetwork = networkId
-                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
-                : undefined
             const currentAgentDefinition = currentTempNetwork?.agentNetworkDefinition?.find((e) => e.origin === node.id)
 
             setSelectedAgent({
@@ -460,7 +463,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             })
             setIsPopupOpen(true)
         },
-        [tempNetworks, isTemporaryNetwork, networkId]
+        [currentTempNetwork, isTemporaryNetwork]
     )
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
@@ -823,6 +826,14 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     >
                         Edit
                     </Button>
+                )}
+                {currentTempNetwork?.agentNetworkName && !isAgentNetworkDesignerMode && !isEditingNetwork && (
+                    <Box sx={{pointerEvents: "auto"}}>
+                        <DeployButton
+                            id={`${id}-deploy-button`}
+                            networkName={currentTempNetwork.agentNetworkName}
+                        />
+                    </Box>
                 )}
             </Box>
         )
