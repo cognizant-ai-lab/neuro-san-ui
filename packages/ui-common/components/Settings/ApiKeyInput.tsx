@@ -22,6 +22,7 @@ interface ApiKeyInputProps {
     readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     readonly onSave: (key: string) => void
     readonly onTest: (key: string) => Promise<KeyValidationResult>
+    readonly onValueChange?: (vendor: LLMProvider, value: string) => void
     readonly persistedValue: string
     readonly placeholder: string
     readonly vendor: LLMProvider
@@ -37,6 +38,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     onResultChange,
     onSave,
     onTest,
+    onValueChange,
     persistedValue,
     placeholder,
     vendor,
@@ -48,9 +50,11 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     const [showKey, setShowKey] = useState<boolean>(false)
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value
         setKeyValidated(null)
         onResultChange?.(vendor, null)
-        setInputValue(e.target.value)
+        setInputValue(newValue)
+        onValueChange?.(vendor, newValue)
     }
 
     const handleOnTest = async () => {
@@ -73,12 +77,14 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
-    }, [persistedValue, vendor, onResultChange])
+        onValueChange?.(vendor, persistedValue ?? "")
+    }, [persistedValue, vendor, onResultChange, onValueChange])
 
     const handleClearInput = () => {
         setInputValue("")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
+        onValueChange?.(vendor, "")
     }
 
     return (
@@ -99,6 +105,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                     handleOk={() => {
                         setConfirmationDialogOpen(false)
                         setInputValue("")
+                        onValueChange?.(vendor, "")
                         forgetKey()
                     }}
                     okBtnLabel="Yes, forget key"

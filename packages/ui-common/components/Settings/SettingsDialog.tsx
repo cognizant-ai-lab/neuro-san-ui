@@ -29,6 +29,7 @@ import {
 
 import {ApiKeyErrorBanner, ApiKeyFailure} from "./ApiKeyErrorBanner"
 import {ApiKeyInput} from "./ApiKeyInput"
+import {ByokUnsavedChangesModal} from "./ByokUnsavedChangesModal"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
@@ -205,6 +206,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     // Failing key-test results, aggregated into the banner at the top of the API Keys section
     const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
 
+    // Draft API keys entered by user but not yet persisted
+    const [draftKeys, setDraftKeys] = useState<Partial<Record<LLMProvider, string>>>({})
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState<boolean>(false)
+
     // Native names setting
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
     const nativeNamesCheckmark = useCheckmarkFade()
@@ -363,6 +368,13 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         }))
     }, [])
 
+    const handleValueChange = useCallback((vendor: LLMProvider, value: string) => {
+        setDraftKeys((prev) => ({
+            ...prev,
+            [vendor]: value,
+        }))
+    }, [])
+
     /**
      * Used for both saving and removing keys.
      * @param vendor Vendor for this key: see the list in LLMProvider type
@@ -384,6 +396,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 },
             },
         })
+        setDraftKeys((prev) => ({
+            ...prev,
+            [vendor]: undefined,
+        }))
         checkmark.trigger()
     }
 
@@ -444,24 +460,65 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const paletteKeys: PaletteKey[] = Object.keys(availablePalettes) as PaletteKey[]
 
     // Config for API key inputs, so we can easily add new providers in the future by just adding to this array
-    const apiKeyConfigs: LLMProviderInputConfig[] = [
-        {
-            checkmark: openAIKeyCheckmark,
-            idSuffix: "openai",
-            logo: theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png",
-            onTest: isOpenAIKeyValid,
-            placeholder: "sk-...",
-            vendor: "OpenAI",
-        },
-        {
-            checkmark: anthropicKeyCheckmark,
-            idSuffix: "anthropic",
-            logo: "/claude.png",
-            onTest: isAnthropicKeyValid,
-            placeholder: "sk-ant-...",
-            vendor: "Anthropic",
-        },
-    ]
+    const apiKeyConfigs: LLMProviderInputConfig[] = useMemo(
+        () => [
+            {
+                checkmark: openAIKeyCheckmark,
+                idSuffix: "openai",
+                logo: theme.palette.mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png",
+                onTest: isOpenAIKeyValid,
+                placeholder: "sk-...",
+                vendor: "OpenAI",
+            },
+            {
+                checkmark: anthropicKeyCheckmark,
+                idSuffix: "anthropic",
+                logo: "/claude.png",
+                onTest: isAnthropicKeyValid,
+                placeholder: "sk-ant-...",
+                vendor: "Anthropic",
+            },
+        ],
+        [openAIKeyCheckmark, anthropicKeyCheckmark, theme.palette.mode]
+    )
+
+    const hasUnsavedKeys = useMemo(() => {
+        return apiKeyConfigs.some(({vendor}) => {
+            const draft = draftKeys[vendor]
+            if (draft === undefined) {
+                return false
+            }
+            const persisted = getApiKey(apiKeys, vendor) ?? ""
+            return draft !== persisted
+        })
+    }, [apiKeyConfigs, draftKeys, apiKeys])
+
+    const handleClose = () => {
+        if (hasUnsavedKeys) {
+            setShowUnsavedChangesModal(true)
+            return
+        }
+        onClose?.()
+    }
+
+    const handleDiscardUnsavedKeys = () => {
+        setDraftKeys({})
+        setShowUnsavedChangesModal(false)
+        onClose?.()
+    }
+
+    const handleSaveUnsavedKeys = () => {
+        const now = Date.now()
+        apiKeyConfigs.forEach(({checkmark, vendor}) => {
+            const draft = draftKeys[vendor]
+            if (draft !== undefined && draft !== (getApiKey(apiKeys, vendor) ?? "")) {
+                persistKey(vendor, draft, checkmark, now)
+            }
+        })
+        setDraftKeys({})
+        setShowUnsavedChangesModal(false)
+        onClose?.()
+    }
 
     const getConfirmationModal = () => (
         <ConfirmationModal
@@ -637,6 +694,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 onResultChange={handleKeyResultChange}
                                 onSave={(key) => persistKey(vendor, key, checkmark, Date.now())}
                                 onTest={onTest}
+                                onValueChange={handleValueChange}
                                 persistedValue={getApiKey(apiKeys, vendor)}
                                 placeholder={placeholder}
                                 vendor={vendor}
@@ -1096,11 +1154,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         // certain custom themes the dialog would be unreadable.
         <ThemeProvider theme={settingsTheme}>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
+            {showUnsavedChangesModal ? (
+                <ByokUnsavedChangesModal
+                    id={id}
+                    onDiscard={handleDiscardUnsavedKeys}
+                    onSave={handleSaveUnsavedKeys}
+                />
+            ) : null}
             <MUIDialog
                 id={id}
                 title={<Box sx={{fontSize: "1.5rem"}}>Settings</Box>}
                 isOpen={isOpen}
-                onClose={onClose}
+                onClose={handleClose}
                 paperProps={{
                     minWidth: "50%",
                     minHeight: "50%",
