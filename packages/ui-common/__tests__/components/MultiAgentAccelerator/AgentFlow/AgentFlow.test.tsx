@@ -31,6 +31,7 @@ import {
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
 import {findReadyDeployment} from "../../../../controller/nsDeploy/NsDeploy"
 import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
@@ -1718,6 +1719,7 @@ describe("AgentFlow", () => {
 
         beforeEach(() => {
             useSettingsStore.getState().updateSettings({nsDeploy: {serverUrl: "https://nsdeploy.test", orgName: "org"}})
+            useEnvironmentStore.getState().setEnablePublishing(true)
             vi.mocked(findReadyDeployment).mockResolvedValue(null)
         })
 

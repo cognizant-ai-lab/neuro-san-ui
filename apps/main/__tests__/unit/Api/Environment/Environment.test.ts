@@ -21,6 +21,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     ENABLE_AUTHENTICATION_ENV_VAR,
     ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
     GA_MEASUREMENT_ID_ENV_VAR,
 } from "../../../../Const"
 import handler from "../../../../pages/api/environment"
@@ -51,6 +52,7 @@ describe("Environment API handler", () => {
         process.env[ENABLE_AUTHENTICATION_ENV_VAR] = "true"
         process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = "true"
         process.env["GA_MEASUREMENT_ID"] = "test-ga-id"
+        process.env[ENABLE_PUBLISHING_ENV_VAR] = "true"
 
         const {req, res} = createMocks()
 
@@ -64,10 +66,11 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true,
             enableGoogleAnalytics: true,
+            enablePublishing: true,
             gaMeasurementID: "test-ga-id",
             logoServiceToken: "test-logo-service-token",
             supportEmailAddress: "support@example.com",
-        } satisfies EnvironmentResponse)
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("returns expected values for unset environment variables", () => {
@@ -93,10 +96,11 @@ describe("Environment API handler", () => {
             auth0Domain: undefined,
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: undefined,
             supportEmailAddress: undefined,
             logoServiceToken: undefined,
-        } satisfies EnvironmentResponse)
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("handles empty environment variables", () => {
@@ -121,10 +125,11 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "",
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: "",
             logoServiceToken: "",
             supportEmailAddress: "",
-        })
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("ignores request method and body", () => {
@@ -152,9 +157,10 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: undefined,
             logoServiceToken: undefined,
             supportEmailAddress: undefined,
-        })
+        } satisfies Required<EnvironmentResponse>)
     })
 })
