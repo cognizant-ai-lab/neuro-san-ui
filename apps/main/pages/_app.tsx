@@ -93,6 +93,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         setAuth0ClientId,
         setAuth0Domain,
         setEnableAuthentication,
+        setEnablePublishing,
         setBackendNeuroSanApiUrl,
         setLogoServiceToken,
         setSupportEmailAddress,
@@ -168,6 +169,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             setEnableAuthentication(data.enableAuthentication)
             setEnableGoogleAnalytics(data.enableGoogleAnalytics)
             setGaMeasurementID(data.gaMeasurementID)
+            setEnablePublishing(data.enablePublishing)
 
             if (data.enableAuthentication) {
                 // save Auth0 settings if authentication is enabled.
@@ -187,6 +189,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         setBackendNeuroSanApiUrl,
         setLogoServiceToken,
         setSupportEmailAddress,
+        setEnablePublishing,
     ])
 
     useEffect(() => {

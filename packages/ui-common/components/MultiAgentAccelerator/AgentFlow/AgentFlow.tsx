@@ -66,6 +66,7 @@ import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./
 import {PlasmaEdge} from "./PlasmaEdge"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
+import {useEnvironmentStore} from "../../../state/Environment"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
@@ -169,6 +170,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const {fitView} = useReactFlow()
     const flowWrapperRef = useRef<HTMLDivElement | null>(null)
     const fitViewFrameRef = useRef<number | null>(null)
+
+    const {enablePublishing} = useEnvironmentStore()
 
     const scheduleFitView = useCallback(() => {
         if (fitViewFrameRef.current !== null) {
@@ -830,7 +833,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         Edit
                     </Button>
                 )}
-                {nsDeployServerUrl &&
+                {enablePublishing &&
+                    nsDeployServerUrl &&
                     currentTempNetwork?.agentNetworkName &&
                     currentTempNetwork.networkHocon &&
                     !isAgentNetworkDesignerMode &&

@@ -48,6 +48,10 @@ interface EnvironmentStore {
     // Dev.logo token
     logoServiceToken: string
     setLogoServiceToken: (logoServiceToken: string) => void
+
+    // Publishing
+    enablePublishing: boolean | undefined
+    setEnablePublishing: (enablePublishing: boolean) => void
 }
 
 /**
@@ -71,4 +75,7 @@ export const useEnvironmentStore = create<EnvironmentStore>((set) => ({
 
     logoServiceToken: null,
     setLogoServiceToken: (logoServiceToken: string) => set(() => ({logoServiceToken})),
+
+    enablePublishing: undefined,
+    setEnablePublishing: (enablePublishing: boolean) => set(() => ({enablePublishing})),
 }))

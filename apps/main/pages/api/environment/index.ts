@@ -18,7 +18,12 @@ import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
 import {EnvironmentResponse} from "./Types"
-import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR, GA_MEASUREMENT_ID_ENV_VAR} from "../../../Const"
+import {
+    ENABLE_AUTHENTICATION_ENV_VAR,
+    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
+    GA_MEASUREMENT_ID_ENV_VAR,
+} from "../../../Const"
 
 /**
  * This function is a handler for the .../environment endpoint. It retrieves environment settings from the
@@ -35,6 +40,7 @@ const handler = (_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>
     const backendNeuroSanApiUrl = process.env["NEURO_SAN_SERVER_URL"]
     const enableAuthentication = process.env[ENABLE_AUTHENTICATION_ENV_VAR] !== "false"
     const enableGoogleAnalytics = process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] === "true"
+    const enablePublishing = process.env[ENABLE_PUBLISHING_ENV_VAR] === "true"
     const gaMeasurementID = process.env[GA_MEASUREMENT_ID_ENV_VAR]
     const logoServiceToken = process.env["LOGO_SERVICE_TOKEN"]
     const supportEmailAddress = process.env["SUPPORT_EMAIL_ADDRESS"]
@@ -45,6 +51,7 @@ const handler = (_req: NextApiRequest, res: NextApiResponse<EnvironmentResponse>
         backendNeuroSanApiUrl,
         enableAuthentication,
         enableGoogleAnalytics,
+        enablePublishing,
         gaMeasurementID,
         logoServiceToken,
         supportEmailAddress,

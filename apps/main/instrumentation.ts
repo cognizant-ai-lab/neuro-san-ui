@@ -21,7 +21,12 @@ limitations under the License.
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
-import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR, GA_MEASUREMENT_ID_ENV_VAR} from "./Const"
+import {
+    ENABLE_AUTHENTICATION_ENV_VAR,
+    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
+    GA_MEASUREMENT_ID_ENV_VAR,
+} from "./Const"
 
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
@@ -97,4 +102,5 @@ export const register = () => {
     console.info("OpenAI API key:", process.env["OPENAI_API_KEY"] ? "set" : "not set")
     console.info("Logo service token:", process.env["LOGO_SERVICE_TOKEN"] ? "set" : "not set")
     console.info("Neuro SAN server URL:", process.env["NEURO_SAN_SERVER_URL"])
+    console.info("Publishing enabled:", process.env[ENABLE_PUBLISHING_ENV_VAR] === "true")
 }

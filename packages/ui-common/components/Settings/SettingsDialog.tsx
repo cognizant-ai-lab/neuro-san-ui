@@ -127,6 +127,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const useNativeNames = useSettingsStore((state) => state.settings.appearance.useNativeNames)
     const nativeNamesCheckmark = useCheckmarkFade()
 
+    // Publishing feature switch
+    const {enablePublishing} = useEnvironmentStore()
+
     /*
         Neuro SAN URL
         This can come from three sources:
@@ -1029,7 +1032,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 {getApiKeysSection()}
                 {getBehaviorSection()}
                 {getAppearanceSection()}
-                <AdvancedSettings id={`${id}-advanced`} />
+                {enablePublishing && <AdvancedSettings id={`${id}-advanced`} />}
                 {getResetSettingsSection()}
             </MUIDialog>
         </ThemeProvider>
