@@ -18,8 +18,6 @@ limitations under the License.
  * For text processing utility functions
  */
 
-import {createHash} from "node:crypto"
-
 /**
  * Tests if input contains only whitespace (meaning, not a valid query)
  *
@@ -54,11 +52,25 @@ export const extractId = (modelId: string, modelType: "prescriptor" | "rio"): st
 }
 
 /**
- * Hashes a string using MD5. For example: for generating keys for React nodes from a longer string identifer.
+ * Hashes a string. For example: for generating keys for React nodes from a longer string identifier.
+ *
+ * Not a cryptographic hash. Do not use it for anything security related.
  *
  * @param input String to be hashed
- * @returns Hashed string
+ * @returns Hashed string, as lowercase hex
  */
 export const hashString = (input: string): string => {
-    return createHash("md5").update(input).digest("hex")
+    let acc1 = 0xdeadbeef
+    let acc2 = 0x41c6ce57
+
+    for (const character of input) {
+        const code = character.codePointAt(0) ?? 0
+        acc1 = Math.imul(acc1 ^ code, 2654435761)
+        acc2 = Math.imul(acc2 ^ code, 1597334677)
+    }
+
+    acc1 = Math.imul(acc1 ^ (acc1 >>> 16), 2246822507) ^ Math.imul(acc2 ^ (acc2 >>> 13), 3266489909)
+    acc2 = Math.imul(acc2 ^ (acc2 >>> 16), 2246822507) ^ Math.imul(acc1 ^ (acc1 >>> 13), 3266489909)
+
+    return (4294967296 * (2097151 & acc2) + (acc1 >>> 0)).toString(16).padStart(14, "0")
 }

@@ -36,7 +36,7 @@ import {GoogleAnalytics} from "../../../packages/ui-common/components/Common/Goo
 import {LoadingSpinner} from "../../../packages/ui-common/components/Common/LoadingSpinner"
 import {Navbar, NavbarProps} from "../../../packages/ui-common/components/Common/Navbar"
 import {Snackbar} from "../../../packages/ui-common/components/Common/Snackbar"
-import {ErrorBoundary} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
+import {ErrorBoundary, ErrorBoundaryProps} from "../../../packages/ui-common/components/ErrorPage/ErrorBoundary"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-common/const"
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
@@ -78,6 +78,24 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
             id="nav-bar"
             userInfo={userInfo}
             onStartTour={onStartTour}
+        />
+    )
+}
+
+/**
+ * Utility component to pass user data along to the error boundary's fallback page. This component exists for the
+ * same reason as NavbarWrapper: the useAuthentication hook should only be called once the enableAuthentication
+ * setting is known.
+ * @param props All props for ErrorBoundary except userInfo.
+ * @return ErrorBoundary with userInfo passed to it.
+ */
+const ErrorBoundaryWrapper = (props: Omit<ErrorBoundaryProps, "userInfo">): ReactElement => {
+    const {data} = useAuthentication()
+
+    return (
+        <ErrorBoundary
+            {...props}
+            userInfo={data?.user}
         />
     )
 }
@@ -313,7 +331,11 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         body = <LoadingSpinner id="loading-header" />
     } else {
         const appShell = (
-            <ErrorBoundary id="error_boundary">
+            <ErrorBoundaryWrapper
+                id="error_boundary"
+                authenticationType={authenticationType}
+                signOut={handleSignOut}
+            >
                 <NavbarWrapper
                     enableAuthentication={enableAuthentication}
                     authenticationType={authenticationType}
@@ -345,7 +367,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     logoUrl="/cognizant-logo-white.svg"
                     sx={{borderTop: "none", marginTop: 0}}
                 />
-            </ErrorBoundary>
+            </ErrorBoundaryWrapper>
         )
 
         body = enableAuthentication ? <SessionProvider>{appShell}</SessionProvider> : appShell

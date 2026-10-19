@@ -16,7 +16,7 @@ limitations under the License.
 
 import {Component, ErrorInfo, ReactNode} from "react"
 
-import {default as ErrorPage} from "./ErrorPage"
+import {default as ErrorPage, ErrorPageProps} from "./ErrorPage"
 
 /**
  * Optional properties that should be present on the Error object if it's a real JavaScript error.
@@ -40,11 +40,23 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Interface to define the incoming props for this component
+ * Interface to define the incoming props for this component.
+ *
+ * The session details are only used for the fallback page's navbar, and are passed down rather than read from an
+ * authentication library so that this component works in an app with no login at all.
  */
-interface ErrorBoundaryProps {
+export interface ErrorBoundaryProps {
     readonly id: string
     readonly children: ReactNode
+
+    // Info about the currently authenticated user, shown in the fallback page's navbar
+    readonly userInfo: ErrorPageProps["userInfo"]
+
+    // The type of authentication in use, shown in the fallback page's navbar
+    readonly authenticationType: ErrorPageProps["authenticationType"]
+
+    // Called when the user signs out from the fallback page's navbar
+    readonly signOut: ErrorPageProps["signOut"]
 }
 
 /**
@@ -109,6 +121,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 <ErrorPage
                     id={id}
                     errorText={`${message} in ${fileName} line ${lineNumber} column ${columnNumber}`}
+                    userInfo={this.props.userInfo}
+                    authenticationType={this.props.authenticationType}
+                    signOut={this.props.signOut}
                 />
             )
         }

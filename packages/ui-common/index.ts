@@ -15,7 +15,11 @@ limitations under the License.
 */
 
 /**
- * Export modules so they can be imported with simpler paths in the consumer
+ * Export modules so they can be imported with simpler paths in the consumer.
+ *
+ * `components/Authentication/Auth` and `utils/Authentication` are deliberately absent: they import `next-auth`, which
+ * is an optional peer dependency, so re-exporting them here would drag it into the module graph of every consumer,
+ * including those with no login at all. Both remain available on their own subpaths.
  */
 
 export * from "./Theme/Theme"
@@ -26,7 +30,6 @@ export * from "./components/AgentChat/ChatCommon/SyntaxHighlighterThemes"
 export * from "./components/AgentChat/Common/Types"
 export * from "./components/AgentChat/Common/Utils"
 export * from "./components/AgentChat/Common/LlmChatButton"
-export * from "./components/Authentication/Auth"
 export * from "./components/Common/Breadcrumbs"
 export * from "./components/Common/ConfirmationModal"
 export * from "./components/Common/Footer"
@@ -50,7 +53,6 @@ export * from "./generated/neuro-san/NeuroSanClient"
 export * from "./state/Environment"
 export * from "./state/Settings"
 export * from "./state/UserInfo"
-export * from "./utils/Authentication"
 export * from "./utils/File"
 export * from "./utils/text"
 export * from "./utils/title"
