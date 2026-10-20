@@ -44,8 +44,8 @@ export const ThoughtBubbles: FC<ThoughtBubblesProps> = ({currentConversations}) 
     const getBubblePositionForNode: (conversation: AgentConversation) => {leftPos: number; topPos: number} = (
         conversation: AgentConversation
     ) => {
-        // Get the target agent ID from the conversation
-        const agentId = [...conversation.agents].at(-1)
+        // Get first agent ID from the conversation
+        const agentId = [...conversation.agents].at(0)
         if (!agentId) {
             return {
                 leftPos: window.innerWidth - BUBBLE_DISTANCE_FROM_RIGHT_EDGE - BUBBLE_WIDTH,

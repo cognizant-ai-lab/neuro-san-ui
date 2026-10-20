@@ -217,10 +217,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     )
     const markAnnouncementShown = useAnnouncementsStore((state) => state.markShown)
 
-    const resetState = useCallback(() => {
-        setIsStreaming(false)
-    }, [])
-
     // Reference to the ChatCommon component to allow external stop button to call its handleStop method
     const chatRef = useRef<ChatCommonHandle | null>(null)
 
@@ -321,10 +317,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             : undefined
 
     // Handle external stop button click - stops streaming and exits zen mode
-    const handleExternalStop = useCallback(() => {
+    const handleExternalStop = () => {
         chatRef.current?.handleStop()
-        resetState()
-    }, [resetState])
+        setIsStreaming(false)
+    }
 
     /**
      * Maps an API key name to the corresponding LLM provider
@@ -567,7 +563,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             // Conversations between agents
             const result = extractConversation(chatMessage)
             if (result != null) {
-                setCurrentConversations((prevConversations) => [...prevConversations, result])
+                setCurrentConversations((prevConversations) => [result])
             }
 
             // Update agent hit counts
@@ -675,14 +671,14 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         // When streaming is complete, clean up any refs and state
         setCurrentConversations([])
         setAgentsInNetworkDesigner([])
-        resetState()
+        setIsStreaming(false)
 
         // Un-collapse outer panels for Zen mode
         if (enableZenMode) {
             leftPanelRef?.current?.expand()
             rightPanelRef?.current?.expand()
         }
-    }, [enableZenMode, leftPanelRef, resetState, rightPanelRef])
+    }, [enableZenMode, leftPanelRef, rightPanelRef, setIsStreaming])
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {

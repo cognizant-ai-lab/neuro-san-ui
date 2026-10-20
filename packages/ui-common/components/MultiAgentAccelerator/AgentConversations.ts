@@ -55,7 +55,7 @@ export const extractConversation = (chatMessage: ChatMessage): AgentConversation
 
     const agents: string[] = chatMessage.origin.map((originItem) => originItem.tool).filter(Boolean)
 
-    return agents?.length >= 2
+    return agents?.length >= 1
         ? {
               // Generate a UUID for the conversation ID
               id: `conv_${uuid()}`,
