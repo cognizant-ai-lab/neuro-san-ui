@@ -23,7 +23,7 @@ import {PublishTarget} from "./Publish"
 import {PUBLIC_ACCESS_WARNING} from "./PublishConfirmation"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
 
-export const REFRESH_THEME_LABEL = "Make a new theme"
+export const REFRESH_THEME_LABEL = "Recreate theme"
 
 interface RepublishConfirmationProps {
     readonly displayName: string
