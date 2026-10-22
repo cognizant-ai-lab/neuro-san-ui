@@ -23,6 +23,7 @@ import {FC, useState} from "react"
 
 import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
+import {RepublishConfirmation} from "./RepublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {PublishStatus, usePublishStore} from "../../../state/Publish"
 
@@ -31,38 +32,34 @@ interface PublishIconButtonProps {
     readonly displayName: string
     readonly hocon: string
     readonly id: string
-    /** An expired network can't be published, but its live site still opens */
+    /** An expired network can't be republished, but its live site still opens */
     readonly isExpired: boolean
-    readonly networkId: string
+    /** The agent network name, which it's published under */
     readonly networkName: string
 }
 
 /**
  * Small globe button for publishing a network from the sidebar. Publishes after asking, spins while publishing, and
- * turns green once the network is live, when it opens the live site instead.
+ * republishes from then on. Green while the network is live, and opens the live site once the network has expired.
  */
-export const PublishIconButton: FC<PublishIconButtonProps> = ({
-    displayName,
-    hocon,
-    id,
-    isExpired,
-    networkId,
-    networkName,
-}) => {
-    const publishStatus = usePublishStore((state) => state.networks[networkId]?.status)
+export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hocon, id, isExpired, networkName}) => {
+    const publishStatus = usePublishStore((state) => state.networks[networkName]?.status)
     const publishedUrl = usePublishStore((state) => {
-        const publishState = state.networks[networkId]
+        const publishState = state.networks[networkName]
         return publishState?.status === PublishStatus.Published ? publishState.url : null
     })
-    const target = usePublishTarget(networkId, networkName)
+    const target = usePublishTarget(networkName)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
+    const liveUrlToOpen = isExpired ? publishedUrl : null
+
     const getLabel = () => {
-        if (publishedUrl) return "View live"
         if (publishStatus === PublishStatus.Publishing) return "Publishing..."
+        if (liveUrlToOpen) return "View live"
         if (isExpired) return "Expired"
-        return target ? "Publish" : PUBLISH_SETTINGS_REQUIRED_MESSAGE
+        if (!target) return PUBLISH_SETTINGS_REQUIRED_MESSAGE
+        return publishStatus ? "Republish" : "Publish"
     }
 
     const label = getLabel()
@@ -75,12 +72,12 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                 <span>
                     <IconButton
                         aria-label={label}
-                        disabled={isPublishing || (!publishedUrl && (isExpired || !target))}
+                        disabled={isPublishing || (!liveUrlToOpen && (isExpired || !target))}
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (publishedUrl) {
-                                openInNewTab(publishedUrl)
+                            if (liveUrlToOpen) {
+                                openInNewTab(liveUrlToOpen)
                             } else {
                                 setIsConfirmOpen(true)
                             }
@@ -112,16 +109,29 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                     component="span"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <PublishConfirmation
-                        displayName={displayName}
-                        id={`${id}-confirm`}
-                        onCancel={() => setIsConfirmOpen(false)}
-                        onConfirm={() => {
-                            setIsConfirmOpen(false)
-                            void publish({id: networkId, name: networkName}, hocon, target)
-                        }}
-                        target={target}
-                    />
+                    {publishStatus ? (
+                        <RepublishConfirmation
+                            displayName={displayName}
+                            id={`${id}-republish-confirm`}
+                            onCancel={() => setIsConfirmOpen(false)}
+                            onConfirm={(refreshTheme) => {
+                                setIsConfirmOpen(false)
+                                void publish(networkName, hocon, target, refreshTheme)
+                            }}
+                            target={target}
+                        />
+                    ) : (
+                        <PublishConfirmation
+                            displayName={displayName}
+                            id={`${id}-confirm`}
+                            onCancel={() => setIsConfirmOpen(false)}
+                            onConfirm={() => {
+                                setIsConfirmOpen(false)
+                                void publish(networkName, hocon, target)
+                            }}
+                            target={target}
+                        />
+                    )}
                 </Box>
             )}
         </>

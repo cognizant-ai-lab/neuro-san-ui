@@ -33,14 +33,28 @@ interface PublishPanelProps {
 }
 
 /**
- * Details of publishing a network: progress while publishing, or the live URL once published.
+ * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
  */
 export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpublish, publishState}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
     >
-        {publishState.status === PublishStatus.Published ? (
+        {publishState.status === PublishStatus.Unpublished && (
+            <>
+                <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
+                    <StatusLight statusValue="unknown" />
+                    <Typography sx={{fontWeight: 600}}>Unpublished</Typography>
+                </Box>
+                <Typography
+                    color="text.secondary"
+                    variant="body2"
+                >
+                    Republish to put it back online.
+                </Typography>
+            </>
+        )}
+        {publishState.status === PublishStatus.Published && (
             <>
                 <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
                     <StatusLight statusValue="green" />
@@ -57,7 +71,8 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpub
                     {isUnpublishing ? "Unpublishing..." : "Unpublish"}
                 </Button>
             </>
-        ) : (
+        )}
+        {publishState.status === PublishStatus.Publishing && (
             <>
                 <Typography sx={{fontWeight: 600}}>Putting it online...</Typography>
                 <LinearProgress

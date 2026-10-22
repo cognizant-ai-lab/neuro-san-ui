@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
-import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 import PublicIcon from "@mui/icons-material/Public"
 import Button from "@mui/material/Button"
 import ButtonGroup from "@mui/material/ButtonGroup"
@@ -24,16 +23,10 @@ import Popover from "@mui/material/Popover"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
-import {
-    openInNewTab,
-    publish,
-    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
-    PublishNetwork,
-    PublishTarget,
-    unpublish,
-} from "./Publish"
+import {publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishTarget, unpublish} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {PublishPanel} from "./PublishPanel"
+import {RepublishConfirmation} from "./RepublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
@@ -45,7 +38,7 @@ interface PublishButtonProps {
     readonly displayName: string
     readonly hocon: string
     readonly id: string
-    readonly networkId: string
+    /** The agent network name, which it's published under */
     readonly networkName: string
 }
 
@@ -57,31 +50,30 @@ interface MainAction {
 }
 
 /**
- * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live". The
- * dropdown opens a panel with the progress, or the live URL and Unpublish.
+ * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "Republish" from then
+ * on, since the server keeps it even once it's unpublished. The dropdown opens a panel with the progress, or the live
+ * URL and Unpublish.
  */
-export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
-    const publishState = usePublishStore((state) => state.networks[networkId])
-    const target = usePublishTarget(networkId, networkName)
+export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkName}) => {
+    const publishState = usePublishStore((state) => state.networks[networkName])
+    const target = usePublishTarget(networkName)
 
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
-    const [isPublishConfirmOpen, setIsPublishConfirmOpen] = useState(false)
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false)
     const [isPanelOpen, setIsPanelOpen] = useState(false)
     const [isUnpublishing, setIsUnpublishing] = useState(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
-    const network: PublishNetwork = {id: networkId, name: networkName}
-
-    const handlePublish = async (publishTarget: PublishTarget) => {
+    const handlePublish = async (publishTarget: PublishTarget, refreshTheme?: boolean) => {
         setIsPanelOpen(true)
-        await publish(network, hocon, publishTarget)
+        await publish(networkName, hocon, publishTarget, refreshTheme)
         setIsPanelOpen(false)
     }
 
     const handleUnpublish = async (published: Published) => {
         setIsUnpublishing(true)
-        await unpublish(network, published)
+        await unpublish(networkName, published)
         setIsUnpublishing(false)
         setIsPanelOpen(false)
     }
@@ -101,24 +93,26 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     handleClick: () => setIsPanelOpen(true),
                 }
             case PublishStatus.Published:
+            case PublishStatus.Unpublished:
                 return {
-                    color: "success",
-                    icon: <OpenInNewIcon />,
-                    label: "View live",
-                    handleClick: () => openInNewTab(publishState.url),
+                    // Green while it's live
+                    color: publishState.status === PublishStatus.Published ? "success" : "primary",
+                    icon: <PublicIcon />,
+                    label: "Republish",
+                    handleClick: () => setIsConfirmOpen(true),
                 }
             default:
                 return {
                     color: "primary",
                     icon: <PublicIcon />,
                     label: "Publish",
-                    handleClick: () => setIsPublishConfirmOpen(true),
+                    handleClick: () => setIsConfirmOpen(true),
                 }
         }
     }
 
     const mainAction = getMainAction()
-    const isPublishBlocked = !publishState && !target
+    const isPublishBlocked = publishState?.status !== PublishStatus.Publishing && !target
 
     return (
         <>
@@ -176,14 +170,26 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     />
                 </Popover>
             )}
-            {isPublishConfirmOpen && target && (
+            {isConfirmOpen && target && !publishState && (
                 <PublishConfirmation
                     displayName={displayName}
                     id={`${id}-confirm`}
-                    onCancel={() => setIsPublishConfirmOpen(false)}
+                    onCancel={() => setIsConfirmOpen(false)}
                     onConfirm={() => {
-                        setIsPublishConfirmOpen(false)
+                        setIsConfirmOpen(false)
                         void handlePublish(target)
+                    }}
+                    target={target}
+                />
+            )}
+            {isConfirmOpen && target && publishState && (
+                <RepublishConfirmation
+                    displayName={displayName}
+                    id={`${id}-republish-confirm`}
+                    onCancel={() => setIsConfirmOpen(false)}
+                    onConfirm={(refreshTheme) => {
+                        setIsConfirmOpen(false)
+                        void handlePublish(target, refreshTheme)
                     }}
                     target={target}
                 />

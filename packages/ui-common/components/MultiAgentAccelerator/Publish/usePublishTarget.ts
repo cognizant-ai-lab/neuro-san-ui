@@ -22,17 +22,17 @@ import {useSettingsStore} from "../../../state/Settings"
 
 /**
  * Where to publish the network, or null until there's a server and an org name. Also asks the server whether the
- * network is already live, since we only remember that in memory.
+ * network has been published, since we only remember that in memory.
  */
-export const usePublishTarget = (networkId: string, networkName: string): PublishTarget | null => {
+export const usePublishTarget = (networkName: string): PublishTarget | null => {
     const serverUrl = usePublishServerUrl()
     const orgName = useSettingsStore((state) => state.settings.publish.orgName)
 
     useEffect(() => {
         if (serverUrl && orgName) {
-            void checkIfPublished({id: networkId, name: networkName}, {serverUrl, orgName})
+            void checkIfPublished(networkName, {serverUrl, orgName})
         }
-    }, [networkId, networkName, orgName, serverUrl])
+    }, [networkName, orgName, serverUrl])
 
     return serverUrl && orgName ? {serverUrl, orgName} : null
 }

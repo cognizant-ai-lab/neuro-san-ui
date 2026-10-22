@@ -655,7 +655,7 @@ describe("SideBar", () => {
         const markLive = () =>
             usePublishStore.setState({
                 networks: {
-                    [TEMPORARY_NETWORK.agentInfo.agent_name]: {
+                    [TEMPORARY_NETWORK.agentNetworkName]: {
                         publishId: "dep-123",
                         serverUrl: SERVER_URL,
                         status: PublishStatus.Published,
@@ -686,7 +686,7 @@ describe("SideBar", () => {
             const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
             await user.click(confirmButton)
 
-            await screen.findByRole("button", {name: "View live"})
+            await screen.findByRole("button", {name: "Republish"})
             expect(publishNetwork).toHaveBeenCalledWith(
                 expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
             )
@@ -709,7 +709,7 @@ describe("SideBar", () => {
 
         it("Should show a temporary network is still publishing, without offering to publish it again", async () => {
             usePublishStore.setState({
-                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Publishing}},
+                networks: {[TEMPORARY_NETWORK.agentNetworkName]: {status: PublishStatus.Publishing}},
             })
             renderWithTemporaryNetwork()
 
@@ -745,14 +745,33 @@ describe("SideBar", () => {
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
         })
 
-        it("Should open the live site once the temporary network is live", async () => {
+        it("Should ask before republishing a live temporary network, without opening the network", async () => {
             markLive()
             renderWithTemporaryNetwork()
-            const viewLiveButton = await screen.findByRole("button", {name: "View live"})
+            const republishButton = await screen.findByRole("button", {name: "Republish"})
 
-            await user.click(viewLiveButton)
+            await user.click(republishButton)
+            const confirmation = await screen.findByRole("dialog")
+            const confirmButton = within(confirmation).getByRole("button", {name: "Republish"})
+            await user.click(confirmButton)
 
-            expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+            await waitFor(() =>
+                expect(publishNetwork).toHaveBeenCalledWith(expect.objectContaining({refreshTheme: false}))
+            )
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should cancel republishing with Escape, without republishing or opening the network", async () => {
+            markLive()
+            renderWithTemporaryNetwork()
+            const republishButton = await screen.findByRole("button", {name: "Republish"})
+            await user.click(republishButton)
+            await screen.findByRole("dialog")
+
+            await user.keyboard("{Escape}")
+
+            await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+            expect(publishNetwork).not.toHaveBeenCalled()
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 

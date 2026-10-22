@@ -19,12 +19,13 @@ describe("Publish", () => {
 
     let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>
 
-    const create = () =>
+    const create = (refreshTheme?: boolean) =>
         publishNetwork({
             serverUrl: SERVER_URL,
             orgName: ORG_NAME,
             networkName: NETWORK_NAME,
             hocon: HOCON,
+            refreshTheme,
         })
 
     beforeEach(() => {
@@ -72,6 +73,16 @@ describe("Publish", () => {
         const form = fetchMock.mock.calls[0][1]?.body as FormData
         expect(form.get("theme")).toBe("true")
         expect(form.get("theme_refresh")).toBe("false")
+    })
+
+    // POST /deployments
+    it("should ask for a new theme when asked to", async () => {
+        fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
+
+        await create(true)
+
+        const form = fetchMock.mock.calls[0][1]?.body as FormData
+        expect(form.get("theme_refresh")).toBe("true")
     })
 
     // POST /deployments, then GET /deployments/{id}/wait until it's ready
@@ -130,7 +141,7 @@ describe("Publish", () => {
     })
 
     // GET /deployments
-    it("should list only our org's live networks", async () => {
+    it("should list only our org's networks, with no URL for the unpublished ones", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
@@ -157,15 +168,21 @@ describe("Publish", () => {
         const published = await listPublishedNetworks(SERVER_URL, ORG_NAME)
 
         expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(published).toEqual([{id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL}])
+        expect(published).toEqual([
+            {id: "stopped", name: NETWORK_NAME, url: null},
+            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
+        ])
     })
 
     // GET /deployments
-    it("should list nothing when our org has no live networks", async () => {
+    it("should leave out networks that are still building or failed", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
-                deployments: [{id: "stopped", name: NETWORK_NAME, org_name: ORG_NAME, status: "stopped"}],
+                deployments: [
+                    {id: "building", name: NETWORK_NAME, org_name: ORG_NAME, status: "building"},
+                    {id: "failed", name: NETWORK_NAME, org_name: ORG_NAME, status: "failed"},
+                ],
             })
         )
 

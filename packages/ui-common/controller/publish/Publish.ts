@@ -28,7 +28,8 @@ import {testConnection, TestConnectionResult} from "../agent/Agent"
 export interface PublishedNetwork {
     readonly id: string
     readonly name: string
-    readonly url: string
+    /** Null once it's unpublished, since the server keeps it stopped */
+    readonly url: string | null
 }
 
 interface PublishNetworkRequest {
@@ -36,6 +37,8 @@ interface PublishNetworkRequest {
     readonly orgName: string
     readonly networkName: string
     readonly hocon: string
+    /** Has the server make a new theme instead of keeping the one it made before */
+    readonly refreshTheme?: boolean
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -48,6 +51,8 @@ interface ServerNetwork {
     readonly url?: string | null
     readonly error?: string | null
 }
+
+type LiveNetwork = PublishedNetwork & {readonly url: string}
 
 //#endregion Types
 
@@ -86,18 +91,19 @@ export const checkHealth = (serverUrl: string): Promise<TestConnectionResult> =>
     testConnection(publishRouteUrl(serverUrl, "health"))
 
 /**
- * Lists the org's live networks.
+ * Lists the org's published networks, live or unpublished.
  */
 export const listPublishedNetworks = async (serverUrl: string, orgName: string): Promise<PublishedNetwork[]> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    return networks.flatMap((network) =>
-        network.org_name === orgName && network.status === "ready" && network.url
-            ? [{id: network.id, name: network.name, url: network.url}]
-            : []
-    )
+    return networks.flatMap((network) => {
+        if (network.org_name !== orgName) return []
+        if (network.status === "ready" && network.url) return [{id: network.id, name: network.name, url: network.url}]
+        // Unpublishing only stops it, so it can be republished
+        return network.status === "stopped" ? [{id: network.id, name: network.name, url: null}] : []
+    })
 }
 
 /**
@@ -108,14 +114,15 @@ export const publishNetwork = async ({
     orgName,
     networkName,
     hocon,
-}: PublishNetworkRequest): Promise<PublishedNetwork> => {
+    refreshTheme = false,
+}: PublishNetworkRequest): Promise<LiveNetwork> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
     form.append("org_name", orgName)
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
-    form.append("theme_refresh", "false")
+    form.append("theme_refresh", String(refreshTheme))
 
     const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
     await throwIfNotOk(createResponse, "Publishing")

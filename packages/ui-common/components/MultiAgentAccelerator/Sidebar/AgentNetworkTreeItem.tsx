@@ -218,7 +218,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         displayName={item.displayName}
                                         hocon={networkHocon}
                                         id={`${itemId}-publish`}
-                                        networkId={itemId}
                                         networkName={networkName}
                                     />
                                 )}
