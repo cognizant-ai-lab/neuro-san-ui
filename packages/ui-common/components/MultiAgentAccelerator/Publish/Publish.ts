@@ -18,6 +18,8 @@ import {listPublishedNetworks, publishNetwork, unpublishNetwork} from "../../../
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
+// How long to wait on a publish before asking whether to keep waiting, and again after each "Keep waiting"
+export const ASK_TO_KEEP_WAITING_MS = 3 * 60_000
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
     "Add a publish server and org name in Settings > External Services to publish"
 export const PUBLISHED_MESSAGE = "Published and opened in a new tab"
@@ -87,23 +89,30 @@ export const checkIfPublished = async (network: PublishNetwork, {serverUrl, orgN
 /**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
  * Tells the user how it went either way.
+ * @param signal Stops waiting, which puts the button back on Publish without an error
  */
 export const publish = async (
     network: PublishNetwork,
     hocon: string,
-    {serverUrl, orgName}: PublishTarget
+    {serverUrl, orgName}: PublishTarget,
+    signal?: AbortSignal
 ): Promise<void> => {
-    const {clearPublishState, setPublishState} = usePublishStore.getState()
+    const {clearPublishState, setPublishState, setPublishedList} = usePublishStore.getState()
     setPublishState(network.id, {status: PublishStatus.Publishing})
 
     try {
-        const ready = await publishNetwork({serverUrl, orgName, networkName: network.name, hocon})
+        const ready = await publishNetwork({serverUrl, orgName, networkName: network.name, hocon, signal})
         setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
 
         const message = openInNewTab(ready.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
         sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})
     } catch (e) {
         clearPublishState(network.id)
+        if (signal?.aborted) {
+            // The server may still finish, so the next check should ask it again
+            setPublishedList(null)
+            return
+        }
         sendNotification(NotificationType.error, `Failed to publish "${network.name}".`, String(e))
     }
 }

@@ -3,8 +3,10 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {MockInstance} from "vitest"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
 import {NotificationType, sendNotification} from "../../../../components/Common/notification"
 import {
+    ASK_TO_KEEP_WAITING_MS,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PUBLISHED_MESSAGE,
     PUBLISHED_TAB_BLOCKED_MESSAGE,
@@ -123,6 +125,10 @@ describe("PublishButton", () => {
         mockPublishNetwork.mockResolvedValue(makePublishedNetwork())
         vi.mocked(unpublishNetwork).mockResolvedValue()
         vi.mocked(listPublishedNetworks).mockResolvedValue([])
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
     })
 
     it("should offer to publish a network that isn't published", async () => {
@@ -246,6 +252,28 @@ describe("PublishButton", () => {
         releasePublish()
         await screen.findByRole("button", {name: "View live"})
         expect(screen.queryByText("Putting it online...")).not.toBeInTheDocument()
+    })
+
+    it("should go back to Publish without an error when the user stops waiting on a slow publish", async () => {
+        vi.useFakeTimers({shouldAdvanceTime: true})
+        user = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+        // Never finishes on its own, like a stuck server, but stops when the wait is stopped
+        mockPublishNetwork.mockImplementation(
+            ({signal}) =>
+                new Promise<PublishedNetwork>((_resolve, reject) => {
+                    signal?.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")))
+                })
+        )
+        renderPublishButton()
+        await clickPublishAndConfirm()
+        await screen.findByText("Putting it online...")
+
+        act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+        const stopWaitingButton = await screen.findByRole("button", {name: STOP_WAITING_LABEL})
+        await user.click(stopWaitingButton)
+
+        await screen.findByRole("button", {name: "Publish"})
+        expect(sendNotification).not.toHaveBeenCalled()
     })
 
     it("should open the live network in a new tab and say so once published", async () => {

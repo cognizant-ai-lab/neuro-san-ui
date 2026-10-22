@@ -19,12 +19,13 @@ import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
+import {ASK_TO_KEEP_WAITING_MS, openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {PublishStatus, usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {KeepWaitingPrompt} from "../../Common/KeepWaitingPrompt"
 import {ActionIconButton} from "../Sidebar/ActionIconButton"
 
 interface PublishIconButtonProps {
@@ -57,6 +58,8 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
     const target = usePublishTarget(networkId, networkName)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+    // Set while waiting on a publish started here, so the wait can be stopped
+    const [publishWait, setPublishWait] = useState<AbortController | null>(null)
 
     const getLabel = () => {
         if (publishedUrl) return "View live"
@@ -101,25 +104,37 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
                     </ActionIconButton>
                 </span>
             </Tooltip>
-            {isConfirmOpen && target && (
-                // The dialog is a portal, but its clicks still bubble up the React tree to the sidebar item, which
-                // would select the network
-                <Box
-                    component="span"
-                    onClick={(e) => e.stopPropagation()}
-                >
+            {/* The dialogs are portals, but their clicks still bubble up the React tree to the sidebar item,
+                which would select the network */}
+            <Box
+                component="span"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {isConfirmOpen && target && (
                     <PublishConfirmation
                         displayName={displayName}
                         id={`${id}-confirm`}
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={() => {
                             setIsConfirmOpen(false)
-                            void publish({id: networkId, name: networkName}, hocon, target)
+                            const wait = new AbortController()
+                            setPublishWait(wait)
+                            void publish({id: networkId, name: networkName}, hocon, target, wait.signal).finally(() =>
+                                setPublishWait(null)
+                            )
                         }}
                         target={target}
                     />
-                </Box>
-            )}
+                )}
+                {publishWait && (
+                    <KeepWaitingPrompt
+                        activity={`Publishing "${displayName}"`}
+                        askAfterMs={ASK_TO_KEEP_WAITING_MS}
+                        id={`${id}-keep-waiting`}
+                        onStopWaiting={() => publishWait.abort()}
+                    />
+                )}
+            </Box>
         </>
     )
 }

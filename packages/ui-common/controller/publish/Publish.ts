@@ -36,6 +36,8 @@ interface PublishNetworkRequest {
     readonly orgName: string
     readonly networkName: string
     readonly hocon: string
+    /** Stops waiting for the network to go live. The server isn't told and may still finish. */
+    readonly signal?: AbortSignal
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -108,22 +110,24 @@ export const publishNetwork = async ({
     orgName,
     networkName,
     hocon,
+    signal,
 }: PublishNetworkRequest): Promise<PublishedNetwork> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
     form.append("org_name", orgName)
-    // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
+    // Without theme the server makes a plain page. The publish server team asked for theme_refresh=false.
     form.append("theme", "true")
     form.append("theme_refresh", "false")
 
-    const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
+    const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form, signal})
     await throwIfNotOk(createResponse, "Publishing")
     let network: ServerNetwork = await createResponse.json()
 
     while (network.status === "queued" || network.status === "building") {
         const waitResponse = await fetch(
-            publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
+            publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)}),
+            {signal}
         )
         // A timeout means it's still building, so ask again
         if (waitResponse.status !== httpStatus.GATEWAY_TIMEOUT) {

@@ -38,7 +38,11 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
+import {
+    ASK_TO_KEEP_WAITING_MS,
+    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
+} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {
     DELETE_NETWORK_LABEL,
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
@@ -681,6 +685,10 @@ describe("SideBar", () => {
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
 
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
         it("Should publish a temporary network after asking, without opening the network", async () => {
             renderWithTemporaryNetwork()
             const publishButton = await screen.findByRole("button", {name: "Publish"})
@@ -694,6 +702,31 @@ describe("SideBar", () => {
             expect(publishNetwork).toHaveBeenCalledWith(
                 expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
             )
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should go back to Publish when the user stops waiting on a slow publish", async () => {
+            vi.useFakeTimers({shouldAdvanceTime: true})
+            user = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+            // Never finishes on its own, like a stuck server, but stops when the wait is stopped
+            vi.mocked(publishNetwork).mockImplementation(
+                ({signal}) =>
+                    new Promise((_resolve, reject) => {
+                        signal?.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")))
+                    })
+            )
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
+            const confirmation = await screen.findByRole("dialog")
+            await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
+            await screen.findByRole("button", {name: "Publishing..."})
+
+            act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+            const stopWaitingButton = await screen.findByRole("button", {name: STOP_WAITING_LABEL})
+            await user.click(stopWaitingButton)
+
+            await screen.findByRole("button", {name: "Publish"})
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 
