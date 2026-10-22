@@ -83,7 +83,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpub
                     color="text.secondary"
                     variant="body2"
                 >
-                    This can take a minute.
+                    This can take a few minutes.
                 </Typography>
             </>
         )}
