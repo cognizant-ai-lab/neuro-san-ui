@@ -40,6 +40,7 @@ import {
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {
+    DELETE_NETWORK_LABEL,
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/AgentNetworkTreeItem"
@@ -498,10 +499,10 @@ describe("SideBar", () => {
 
         const networkTreeItem = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
 
-        // Find the delete icon within the same tree item
+        // Find the delete button within the same tree item
         const treeItem = networkTreeItem.closest('[role="treeitem"]')
-        const deleteIcon = within(treeItem as HTMLElement).getByTestId("DeleteIcon")
-        await user.click(deleteIcon)
+        const deleteButton = within(treeItem as HTMLElement).getByRole("button", {name: DELETE_NETWORK_LABEL})
+        await user.click(deleteButton)
 
         // onDeleteNetwork should be called with the correct network name
         expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)

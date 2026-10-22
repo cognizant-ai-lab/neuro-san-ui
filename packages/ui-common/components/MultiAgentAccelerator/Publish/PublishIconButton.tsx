@@ -16,7 +16,6 @@ limitations under the License.
 
 import PublicIcon from "@mui/icons-material/Public"
 import Box from "@mui/material/Box"
-import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
@@ -26,6 +25,7 @@ import {usePublishTarget} from "./usePublishTarget"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {PublishStatus, usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {ActionIconButton} from "../Sidebar/ActionIconButton"
 
 interface PublishIconButtonProps {
     /** The network's name as people read it, for the confirmation */
@@ -75,7 +75,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
             <Tooltip title={label}>
                 {/* A disabled button doesn't fire the hover events the tooltip needs, so it gets a wrapper */}
                 <span>
-                    <IconButton
+                    <ActionIconButton
                         aria-label={label}
                         disabled={!publishedUrl && (isExpired || !target)}
                         id={id}
@@ -90,17 +90,15 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
                         loading={isPublishing}
                         size="small"
                         sx={{
-                            color: "var(--bs-secondary)",
-                            p: 0,
-                            "&:hover": {color: "var(--bs-secondary-dark)"},
+                            // The spinner stays fully visible, unlike a disabled icon
                             "&.Mui-disabled": {opacity: isPublishing ? 1 : 0.3},
                             // The app's global CSS keeps icons colored, so hide the globe behind the loading spinner
                             "&.MuiIconButton-loading .MuiSvgIcon-root": {visibility: "hidden"},
                         }}
                     >
                         {/* Colored on the icon itself, since the app's global CSS colors icons inside buttons */}
-                        <PublicIcon sx={{fontSize: "0.75rem", ...(publishedUrl && {color: "success.main"})}} />
-                    </IconButton>
+                        <PublicIcon sx={publishedUrl ? {color: "success.main"} : {}} />
+                    </ActionIconButton>
                 </span>
             </Tooltip>
             {isConfirmOpen && target && (
