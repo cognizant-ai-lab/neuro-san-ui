@@ -16,7 +16,6 @@ limitations under the License.
 
 import PublicIcon from "@mui/icons-material/Public"
 import Box from "@mui/material/Box"
-import CircularProgress from "@mui/material/CircularProgress"
 import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
@@ -24,31 +23,32 @@ import {FC, useState} from "react"
 import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
-import {PublishStatus, usePublishStore} from "../../../state/Publish"
+import {useEnvironmentStore} from "../../../state/Environment"
+import {PublishStatus, usePublishServerUrl, usePublishStore} from "../../../state/Publish"
+import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 
 interface PublishIconButtonProps {
     /** The network's name as people read it, for the confirmation */
     readonly displayName: string
-    readonly hocon: string
     readonly id: string
     /** An expired network can't be published, but its live site still opens */
     readonly isExpired: boolean
+    /** The temporary network's id, which its name and HOCON are looked up by */
     readonly networkId: string
-    readonly networkName: string
 }
 
 /**
  * Small globe button for publishing a network from the sidebar. Publishes after asking, spins while publishing, and
  * turns green once the network is live, when it opens the live site instead.
  */
-export const PublishIconButton: FC<PublishIconButtonProps> = ({
-    displayName,
-    hocon,
-    id,
-    isExpired,
-    networkId,
-    networkName,
-}) => {
+export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, isExpired, networkId}) => {
+    const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
+    const publishServerUrl = usePublishServerUrl()
+    const network = useTempNetworksStore((state) =>
+        state.tempNetworks.find((tempNetwork) => tempNetwork.agentInfo.agent_name === networkId)
+    )
+    const networkName = network?.agentNetworkName
+    const hocon = network?.networkHocon
     const publishStatus = usePublishStore((state) => state.networks[networkId]?.status)
     const publishedUrl = usePublishStore((state) => {
         const publishState = state.networks[networkId]
@@ -68,6 +68,8 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
     const label = getLabel()
     const isPublishing = publishStatus === PublishStatus.Publishing
 
+    if (!enablePublishing || !publishServerUrl || !networkName || !hocon) return null
+
     return (
         <>
             <Tooltip title={label}>
@@ -75,7 +77,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                 <span>
                     <IconButton
                         aria-label={label}
-                        disabled={isPublishing || (!publishedUrl && (isExpired || !target))}
+                        disabled={!publishedUrl && (isExpired || !target)}
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()
@@ -85,23 +87,19 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                                 setIsConfirmOpen(true)
                             }
                         }}
+                        loading={isPublishing}
                         size="small"
                         sx={{
                             color: "var(--bs-secondary)",
                             p: 0,
                             "&:hover": {color: "var(--bs-secondary-dark)"},
                             "&.Mui-disabled": {opacity: isPublishing ? 1 : 0.3},
+                            // The app's global CSS keeps icons colored, so hide the globe behind the loading spinner
+                            "&.MuiIconButton-loading .MuiSvgIcon-root": {visibility: "hidden"},
                         }}
                     >
-                        {isPublishing ? (
-                            <CircularProgress
-                                size="0.75rem"
-                                sx={{color: "var(--bs-secondary)"}}
-                            />
-                        ) : (
-                            // Colored on the icon itself, since the app's global CSS colors icons inside buttons
-                            <PublicIcon sx={{fontSize: "0.75rem", ...(publishedUrl && {color: "success.main"})}} />
-                        )}
+                        {/* Colored on the icon itself, since the app's global CSS colors icons inside buttons */}
+                        <PublicIcon sx={{fontSize: "0.75rem", ...(publishedUrl && {color: "success.main"})}} />
                     </IconButton>
                 </span>
             </Tooltip>

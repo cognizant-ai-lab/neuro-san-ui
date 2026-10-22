@@ -55,6 +55,7 @@ import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {PublishStatus, usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
+import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
 import {downloadFile} from "../../../../utils/File"
 
@@ -637,12 +638,14 @@ describe("SideBar", () => {
         const PUBLISHED_URL = "http://live.test/temporary_network"
         const SERVER_URL = "https://publish.test"
 
-        const renderWithTemporaryNetwork = (temporaryNetwork = TEMPORARY_NETWORK) =>
-            renderSidebarComponent({
+        const renderWithTemporaryNetwork = (temporaryNetwork = TEMPORARY_NETWORK) => {
+            useTempNetworksStore.getState().setTempNetworks([temporaryNetwork])
+            return renderSidebarComponent({
                 networks: [...LIST_NETWORKS_RESPONSE],
                 temporaryNetworks: [temporaryNetwork],
                 newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
             })
+        }
 
         const EXPIRED_TEMPORARY_NETWORK = {
             ...TEMPORARY_NETWORK,
