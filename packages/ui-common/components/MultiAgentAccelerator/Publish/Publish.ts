@@ -90,7 +90,7 @@ export const publish = async (
     networkName: string,
     hocon: string,
     target: PublishTarget,
-    refreshTheme = false
+    refreshTheme: boolean
 ): Promise<void> => {
     const {clearPublishState, networks, setPublishState, setPublishedList} = usePublishStore.getState()
     const previousState = networks[networkName]

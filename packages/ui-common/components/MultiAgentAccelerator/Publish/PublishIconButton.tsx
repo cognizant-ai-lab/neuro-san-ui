@@ -23,7 +23,6 @@ import {FC, useState} from "react"
 
 import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
-import {RepublishConfirmation} from "./RepublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {PublishStatus, usePublishStore} from "../../../state/Publish"
 
@@ -113,29 +112,17 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                     component="span"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {publishStatus ? (
-                        <RepublishConfirmation
-                            displayName={displayName}
-                            id={`${id}-republish-confirm`}
-                            onCancel={() => setIsConfirmOpen(false)}
-                            onConfirm={(refreshTheme) => {
-                                setIsConfirmOpen(false)
-                                void publish(networkName, hocon, target, refreshTheme)
-                            }}
-                            target={target}
-                        />
-                    ) : (
-                        <PublishConfirmation
-                            displayName={displayName}
-                            id={`${id}-confirm`}
-                            onCancel={() => setIsConfirmOpen(false)}
-                            onConfirm={() => {
-                                setIsConfirmOpen(false)
-                                void publish(networkName, hocon, target)
-                            }}
-                            target={target}
-                        />
-                    )}
+                    <PublishConfirmation
+                        displayName={displayName}
+                        id={`${id}-confirm`}
+                        isRepublish={Boolean(publishStatus)}
+                        onCancel={() => setIsConfirmOpen(false)}
+                        onConfirm={(refreshTheme) => {
+                            setIsConfirmOpen(false)
+                            void publish(networkName, hocon, target, refreshTheme)
+                        }}
+                        target={target}
+                    />
                 </Box>
             )}
         </>

@@ -10,8 +10,10 @@ import {
     PUBLISHED_TAB_BLOCKED_MESSAGE,
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
-import {PUBLIC_ACCESS_WARNING} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
-import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/RepublishConfirmation"
+import {
+    PUBLIC_ACCESS_WARNING,
+    REFRESH_THEME_LABEL,
+} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
     listPublishedNetworks,
     PublishedNetwork,
@@ -196,6 +198,15 @@ describe("PublishButton", () => {
         expect(confirmation).toHaveTextContent(`under the org "${ORG_NAME}"`)
         expect(confirmation).toHaveTextContent(PUBLIC_ACCESS_WARNING)
         expect(mockPublishNetwork).not.toHaveBeenCalled()
+    })
+
+    it("should not offer to recreate the theme on a first publish", async () => {
+        renderPublishButton()
+
+        await clickPublish()
+
+        const confirmation = await screen.findByRole("dialog")
+        expect(within(confirmation).queryByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeInTheDocument()
     })
 
     it("should not publish when the confirmation is cancelled", async () => {

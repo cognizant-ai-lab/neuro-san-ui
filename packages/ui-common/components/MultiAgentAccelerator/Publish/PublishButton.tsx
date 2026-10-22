@@ -26,7 +26,6 @@ import {FC, ReactNode, useState} from "react"
 import {publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishTarget, unpublish} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {PublishPanel} from "./PublishPanel"
-import {RepublishConfirmation} from "./RepublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
@@ -64,7 +63,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
-    const handlePublish = async (publishTarget: PublishTarget, refreshTheme?: boolean) => {
+    const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
         setIsPanelOpen(true)
         await publish(networkName, hocon, publishTarget, refreshTheme)
         setIsPanelOpen(false)
@@ -167,22 +166,11 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     />
                 </Popover>
             )}
-            {isConfirmOpen && target && !publishState && (
+            {isConfirmOpen && target && (
                 <PublishConfirmation
                     displayName={displayName}
                     id={`${id}-confirm`}
-                    onCancel={() => setIsConfirmOpen(false)}
-                    onConfirm={() => {
-                        setIsConfirmOpen(false)
-                        void handlePublish(target)
-                    }}
-                    target={target}
-                />
-            )}
-            {isConfirmOpen && target && publishState && (
-                <RepublishConfirmation
-                    displayName={displayName}
-                    id={`${id}-republish-confirm`}
+                    isRepublish={Boolean(publishState)}
                     onCancel={() => setIsConfirmOpen(false)}
                     onConfirm={(refreshTheme) => {
                         setIsConfirmOpen(false)
