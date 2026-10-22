@@ -285,7 +285,7 @@ describe("PublishButton", () => {
         )
     })
 
-    it("should point to View live when the browser blocks the new tab", async () => {
+    it("should point to the publish details when the browser blocks the new tab", async () => {
         openSpy.mockReturnValue(null)
         renderPublishButton()
 
