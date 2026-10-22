@@ -18,12 +18,32 @@ import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
 import LinearProgress from "@mui/material/LinearProgress"
+import {styled} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 
 import {PublishedNetworkUrl} from "./PublishedNetworkUrl"
 import {Published, PublishState, PublishStatus} from "../../../state/Publish"
 import {StatusLight} from "../../Common/StatusLight"
+
+// #region: Styled Components
+
+const PanelNote = styled(Typography)(({theme}) => ({
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
+}))
+
+const PanelTitle = styled(Typography)({
+    fontWeight: 600,
+})
+
+const StatusRow = styled(Box)(({theme}) => ({
+    alignItems: "center",
+    display: "flex",
+    gap: theme.spacing(1),
+}))
+
+// #endregion: Styled Components
 
 interface PublishPanelProps {
     readonly publishState: PublishState
@@ -41,24 +61,19 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onUnpublish, publishSta
     >
         {publishState.status === PublishStatus.Unpublished && (
             <>
-                <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
+                <StatusRow>
                     <StatusLight statusValue="unknown" />
-                    <Typography sx={{fontWeight: 600}}>Unpublished</Typography>
-                </Box>
-                <Typography
-                    color="text.secondary"
-                    variant="body2"
-                >
-                    Republish to put it back online.
-                </Typography>
+                    <PanelTitle>Unpublished</PanelTitle>
+                </StatusRow>
+                <PanelNote>Republish to put it back online.</PanelNote>
             </>
         )}
         {publishState.status === PublishStatus.Published && (
             <>
-                <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
+                <StatusRow>
                     <StatusLight statusValue="green" />
-                    <Typography sx={{fontWeight: 600}}>Live</Typography>
-                </Box>
+                    <PanelTitle>Live</PanelTitle>
+                </StatusRow>
                 <PublishedNetworkUrl url={publishState.url} />
                 <Divider />
                 <Button
@@ -73,17 +88,12 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onUnpublish, publishSta
         )}
         {publishState.status === PublishStatus.Publishing && (
             <>
-                <Typography sx={{fontWeight: 600}}>Putting it online...</Typography>
+                <PanelTitle>Putting it online...</PanelTitle>
                 <LinearProgress
                     aria-label="Publishing progress"
                     sx={{"& .MuiLinearProgress-bar": {backgroundColor: "var(--bs-secondary)"}}}
                 />
-                <Typography
-                    color="text.secondary"
-                    variant="body2"
-                >
-                    This can take a few minutes.
-                </Typography>
+                <PanelNote>This can take a few minutes.</PanelNote>
             </>
         )}
     </Box>

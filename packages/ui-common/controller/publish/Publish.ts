@@ -98,14 +98,15 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    return networks.flatMap((network) => {
-        if (network.org_name !== orgName) return []
-        if (network.status === "ready" && network.url) return [{id: network.id, name: network.name, url: network.url}]
-        // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
-        return network.status === "stopped" || network.status === "failed"
-            ? [{id: network.id, name: network.name, url: null}]
-            : []
-    })
+    // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
+    const isListed = (network: ServerNetwork) =>
+        (network.status === "ready" && Boolean(network.url)) ||
+        network.status === "stopped" ||
+        network.status === "failed"
+
+    return networks
+        .filter((network) => network.org_name === orgName && isListed(network))
+        .map((network) => ({id: network.id, name: network.name, url: network.status === "ready" ? network.url : null}))
 }
 
 /**

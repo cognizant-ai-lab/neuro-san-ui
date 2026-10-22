@@ -75,35 +75,26 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     }
 
     const getMainAction = (): MainAction => {
-        switch (publishState?.status) {
-            case PublishStatus.Publishing:
-                return {
-                    color: "primary",
-                    icon: (
-                        <CircularProgress
-                            color="inherit"
-                            size="1rem"
-                        />
-                    ),
-                    label: "Publishing...",
-                    handleClick: () => setIsPanelOpen(true),
-                }
-            case PublishStatus.Published:
-            case PublishStatus.Unpublished:
-                return {
-                    // Green while it's live
-                    color: publishState.status === PublishStatus.Published ? "success" : "primary",
-                    icon: <PublicIcon />,
-                    label: "Republish",
-                    handleClick: () => setIsConfirmOpen(true),
-                }
-            default:
-                return {
-                    color: "primary",
-                    icon: <PublicIcon />,
-                    label: "Publish",
-                    handleClick: () => setIsConfirmOpen(true),
-                }
+        if (publishState?.status === PublishStatus.Publishing) {
+            return {
+                color: "primary",
+                icon: (
+                    <CircularProgress
+                        color="inherit"
+                        size="1rem"
+                    />
+                ),
+                label: "Publishing...",
+                handleClick: () => setIsPanelOpen(true),
+            }
+        }
+
+        return {
+            // Green while it's live
+            color: publishState?.status === PublishStatus.Published ? "success" : "primary",
+            icon: <PublicIcon />,
+            label: publishState ? "Republish" : "Publish",
+            handleClick: () => setIsConfirmOpen(true),
         }
     }
 

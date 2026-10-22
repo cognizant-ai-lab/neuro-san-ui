@@ -107,10 +107,13 @@ describe("PublishButton", () => {
         await waitFor(() => expect(mockPublishNetwork).toHaveBeenCalledTimes(2))
     }
 
-    const openDetails = async () => {
-        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
+    /**
+     * Opens the details panel, once the panel isn't already open or closing, and waits for the given status in it.
+     */
+    const openDetails = async (expectedStatus: "Live" | "Unpublished" = "Live") => {
+        const detailsButton = await screen.findByRole("button", {name: SHOW_DETAILS_LABEL})
         await user.click(detailsButton)
-        await screen.findByText("Live")
+        await screen.findByText(expectedStatus)
     }
 
     const clickUnpublish = async () => {
@@ -347,11 +350,9 @@ describe("PublishButton", () => {
         vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
         renderPublishButton()
         await screen.findByRole("button", {name: "Republish"})
-        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
 
-        await user.click(detailsButton)
+        await openDetails("Unpublished")
 
-        await screen.findByText("Unpublished")
         expect(screen.queryByRole("button", {name: "Unpublish"})).not.toBeInTheDocument()
     })
 
@@ -450,10 +451,7 @@ describe("PublishButton", () => {
 
         finishUnpublish()
         // Unpublishing closes the panel, so reopen it to see the result
-        await waitFor(() => expect(screen.queryByText("Unpublishing...")).not.toBeInTheDocument())
-        const detailsButton = await screen.findByRole("button", {name: SHOW_DETAILS_LABEL})
-        await user.click(detailsButton)
-        await screen.findByText("Unpublished")
+        await openDetails("Unpublished")
     })
 
     it("should not allow republishing while unpublishing", async () => {
@@ -534,10 +532,7 @@ describe("PublishButton", () => {
         await confirmRepublish(confirmation)
 
         await waitFor(() => expect(warnSpy).toHaveBeenCalled())
-        await waitFor(() => expect(screen.queryByText("Putting it online...")).not.toBeInTheDocument())
-        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
-        await user.click(detailsButton)
-        await screen.findByText("Unpublished")
+        await openDetails("Unpublished")
     })
 
     it("should show a network as live when the server lists it both live and unpublished", async () => {
@@ -563,9 +558,6 @@ describe("PublishButton", () => {
         await confirmRepublish(confirmation)
 
         await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalledTimes(2))
-        await waitFor(() => expect(screen.queryByText("Putting it online...")).not.toBeInTheDocument())
-        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
-        await user.click(detailsButton)
-        await screen.findByText("Unpublished")
+        await openDetails("Unpublished")
     })
 })

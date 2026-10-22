@@ -42,15 +42,10 @@ interface PublishIconButtonProps {
  * republishes from then on. Green while the network is live, and opens the live site once the network has expired.
  */
 export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hocon, id, isExpired, networkName}) => {
-    const publishStatus = usePublishStore((state) => state.networks[networkName]?.status)
-    const isUnpublishing = usePublishStore((state) => {
-        const publishState = state.networks[networkName]
-        return publishState?.status === PublishStatus.Published && publishState.isUnpublishing
-    })
-    const publishedUrl = usePublishStore((state) => {
-        const publishState = state.networks[networkName]
-        return publishState?.status === PublishStatus.Published ? publishState.url : null
-    })
+    const publishState = usePublishStore((state) => state.networks[networkName])
+    const publishStatus = publishState?.status
+    const published = publishState?.status === PublishStatus.Published ? publishState : null
+    const publishedUrl = published?.url
     const target = usePublishTarget(networkName)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
@@ -62,7 +57,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
         if (liveUrlToOpen) return "View live"
         if (isExpired) return "Expired"
         if (!target) return PUBLISH_SETTINGS_REQUIRED_MESSAGE
-        return publishStatus ? "Republish" : "Publish"
+        return publishState ? "Republish" : "Publish"
     }
 
     const label = getLabel()
@@ -75,7 +70,9 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                 <span>
                     <IconButton
                         aria-label={label}
-                        disabled={isPublishing || isUnpublishing || (!liveUrlToOpen && (isExpired || !target))}
+                        disabled={
+                            isPublishing || published?.isUnpublishing || (!liveUrlToOpen && (isExpired || !target))
+                        }
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()
@@ -115,7 +112,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                     <PublishConfirmation
                         displayName={displayName}
                         id={`${id}-confirm`}
-                        isRepublish={Boolean(publishStatus)}
+                        isRepublish={Boolean(publishState)}
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)
