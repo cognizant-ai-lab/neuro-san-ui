@@ -101,8 +101,10 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
     return networks.flatMap((network) => {
         if (network.org_name !== orgName) return []
         if (network.status === "ready" && network.url) return [{id: network.id, name: network.name, url: network.url}]
-        // Unpublishing only stops it, so it can be republished
-        return network.status === "stopped" ? [{id: network.id, name: network.name, url: null}] : []
+        // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
+        return network.status === "stopped" || network.status === "failed"
+            ? [{id: network.id, name: network.name, url: null}]
+            : []
     })
 }
 

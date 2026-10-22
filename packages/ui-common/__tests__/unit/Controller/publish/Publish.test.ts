@@ -175,14 +175,24 @@ describe("Publish", () => {
     })
 
     // GET /deployments
-    it("should leave out networks that are still building or failed", async () => {
+    it("should list a network whose publish failed as unpublished", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
-                deployments: [
-                    {id: "building", name: NETWORK_NAME, org_name: ORG_NAME, status: "building"},
-                    {id: "failed", name: NETWORK_NAME, org_name: ORG_NAME, status: "failed"},
-                ],
+                deployments: [{id: "failed", name: NETWORK_NAME, org_name: ORG_NAME, status: "failed"}],
+            })
+        )
+
+        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
+            {id: "failed", name: NETWORK_NAME, url: null},
+        ])
+    })
+
+    it("should leave out networks that are still building", async () => {
+        fetchMock.mockResolvedValue(
+            Response.json({
+                capacity: {},
+                deployments: [{id: "building", name: NETWORK_NAME, org_name: ORG_NAME, status: "building"}],
             })
         )
 
