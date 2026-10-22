@@ -66,7 +66,7 @@ describe("PublishPanel", () => {
     })
 
     it("should not offer to unpublish while still publishing", () => {
-        renderPanel({status: PublishStatus.Publishing})
+        renderPanel({status: PublishStatus.Publishing, displayName: "Cailville Bakery", waiting: new AbortController()})
 
         expect(screen.queryByRole("button", {name: "Unpublish"})).not.toBeInTheDocument()
     })

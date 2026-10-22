@@ -13,6 +13,7 @@ import {
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
 import {PUBLIC_ACCESS_WARNING} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
+import {PublishWaitPrompts} from "../../../../components/MultiAgentAccelerator/Publish/PublishWaitPrompts"
 import {
     listPublishedNetworks,
     PublishedNetwork,
@@ -265,6 +266,7 @@ describe("PublishButton", () => {
                 })
         )
         renderPublishButton()
+        render(<PublishWaitPrompts />)
         await clickPublishAndConfirm()
         await screen.findByText("Putting it online...")
 
@@ -274,6 +276,65 @@ describe("PublishButton", () => {
 
         await screen.findByRole("button", {name: "Publish"})
         expect(sendNotification).not.toHaveBeenCalled()
+    })
+
+    it("should keep asking about the network that's publishing after another network is selected", async () => {
+        vi.useFakeTimers({shouldAdvanceTime: true})
+        user = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+        mockPublishNetwork.mockImplementation(
+            ({signal}) =>
+                new Promise<PublishedNetwork>((_resolve, reject) => {
+                    signal?.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")))
+                })
+        )
+        const {rerender} = render(
+            <>
+                <PublishButton
+                    displayName={DISPLAY_NAME}
+                    hocon={HOCON}
+                    id="publish-button"
+                    networkId={NETWORK_ID}
+                    networkName={NETWORK_NAME}
+                />
+                <PublishWaitPrompts />
+            </>
+        )
+        await clickPublishAndConfirm()
+        await screen.findByText("Putting it online...")
+        await user.keyboard("{Escape}")
+
+        // The title bar's button now shows another network
+        rerender(
+            <>
+                <PublishButton
+                    displayName="Other Network"
+                    hocon={HOCON}
+                    id="publish-button"
+                    networkId="other-network-id"
+                    networkName="other_network"
+                />
+                <PublishWaitPrompts />
+            </>
+        )
+        act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+        const keepWaitingPrompt = await screen.findByRole("dialog")
+        const stopWaitingButton = within(keepWaitingPrompt).getByRole("button", {name: STOP_WAITING_LABEL})
+
+        expect(keepWaitingPrompt).toHaveTextContent(`Publishing "${DISPLAY_NAME}" is still in progress.`)
+        await user.click(stopWaitingButton)
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+
+        // Back on the first network, it's no longer publishing
+        rerender(
+            <PublishButton
+                displayName={DISPLAY_NAME}
+                hocon={HOCON}
+                id="publish-button"
+                networkId={NETWORK_ID}
+                networkName={NETWORK_NAME}
+            />
+        )
+        await screen.findByRole("button", {name: "Publish"})
     })
 
     it("should open the live network in a new tab and say so once published", async () => {

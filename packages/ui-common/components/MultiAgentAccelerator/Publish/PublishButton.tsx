@@ -25,7 +25,6 @@ import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
 import {
-    ASK_TO_KEEP_WAITING_MS,
     openInNewTab,
     publish,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
@@ -38,7 +37,6 @@ import {PublishPanel} from "./PublishPanel"
 import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
-import {KeepWaitingPrompt} from "../../Common/KeepWaitingPrompt"
 
 export const SHOW_DETAILS_LABEL = "Show publish details"
 
@@ -72,18 +70,13 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const [isUnpublishing, setIsUnpublishing] = useState(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
-    // Set while waiting on a publish started here, so the wait can be stopped
-    const [publishWait, setPublishWait] = useState<AbortController | null>(null)
 
     const network: PublishNetwork = {id: networkId, name: networkName}
 
     const handlePublish = async (publishTarget: PublishTarget) => {
-        const wait = new AbortController()
-        setPublishWait(wait)
         setIsPanelOpen(true)
-        await publish(network, hocon, publishTarget, wait.signal)
+        await publish(network, displayName, hocon, publishTarget)
         setIsPanelOpen(false)
-        setPublishWait(null)
     }
 
     const handleUnpublish = async (published: Published) => {
@@ -182,14 +175,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                         onUnpublish={setNetworkToUnpublish}
                     />
                 </Popover>
-            )}
-            {publishWait && (
-                <KeepWaitingPrompt
-                    activity={`Publishing "${displayName}"`}
-                    askAfterMs={ASK_TO_KEEP_WAITING_MS}
-                    id={`${id}-keep-waiting`}
-                    onStopWaiting={() => publishWait.abort()}
-                />
             )}
             {isPublishConfirmOpen && target && (
                 <PublishConfirmation

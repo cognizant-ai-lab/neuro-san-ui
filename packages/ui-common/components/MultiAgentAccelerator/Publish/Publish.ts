@@ -88,27 +88,35 @@ export const checkIfPublished = async (network: PublishNetwork, {serverUrl, orgN
 
 /**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
- * Tells the user how it went either way.
- * @param signal Stops waiting, which puts the button back on Publish without an error
+ * Tells the user how it went either way. While it waits, the store holds what's needed to stop waiting, which puts
+ * the button back on Publish without an error.
+ * @param displayName The network's name as people read it, for asking whether to keep waiting
  */
 export const publish = async (
     network: PublishNetwork,
+    displayName: string,
     hocon: string,
-    {serverUrl, orgName}: PublishTarget,
-    signal?: AbortSignal
+    {serverUrl, orgName}: PublishTarget
 ): Promise<void> => {
     const {clearPublishState, setPublishState, setPublishedList} = usePublishStore.getState()
-    setPublishState(network.id, {status: PublishStatus.Publishing})
+    const waiting = new AbortController()
+    setPublishState(network.id, {status: PublishStatus.Publishing, displayName, waiting})
 
     try {
-        const ready = await publishNetwork({serverUrl, orgName, networkName: network.name, hocon, signal})
+        const ready = await publishNetwork({
+            serverUrl,
+            orgName,
+            networkName: network.name,
+            hocon,
+            signal: waiting.signal,
+        })
         setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
 
         const message = openInNewTab(ready.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
         sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})
     } catch (e) {
         clearPublishState(network.id)
-        if (signal?.aborted) {
+        if (waiting.signal.aborted) {
             // The server may still finish, so the next check should ask it again
             setPublishedList(null)
             return

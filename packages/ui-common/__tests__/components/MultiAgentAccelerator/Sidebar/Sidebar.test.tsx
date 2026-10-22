@@ -43,6 +43,7 @@ import {
     ASK_TO_KEEP_WAITING_MS,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {PublishWaitPrompts} from "../../../../components/MultiAgentAccelerator/Publish/PublishWaitPrompts"
 import {
     DELETE_NETWORK_LABEL,
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
@@ -716,6 +717,7 @@ describe("SideBar", () => {
                     })
             )
             renderWithTemporaryNetwork()
+            render(<PublishWaitPrompts />)
             const publishButton = await screen.findByRole("button", {name: "Publish"})
             await user.click(publishButton)
             const confirmation = await screen.findByRole("dialog")
@@ -728,6 +730,16 @@ describe("SideBar", () => {
 
             await screen.findByRole("button", {name: "Publish"})
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should not ask the publish server about a temporary network while publishing is off", async () => {
+            useEnvironmentStore.getState().setEnablePublishing(false)
+            renderWithTemporaryNetwork()
+
+            // First proves the temporary network, where the button would appear, is on screen
+            await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
+            expect(listPublishedNetworks).not.toHaveBeenCalled()
         })
 
         it("Should cancel publishing with Escape, without publishing or opening the network", async () => {
@@ -746,7 +758,13 @@ describe("SideBar", () => {
 
         it("Should show a temporary network is still publishing, without offering to publish it again", async () => {
             usePublishStore.setState({
-                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Publishing}},
+                networks: {
+                    [TEMPORARY_NETWORK.agentInfo.agent_name]: {
+                        status: PublishStatus.Publishing,
+                        displayName: "Temporary Network",
+                        waiting: new AbortController(),
+                    },
+                },
             })
             renderWithTemporaryNetwork()
 

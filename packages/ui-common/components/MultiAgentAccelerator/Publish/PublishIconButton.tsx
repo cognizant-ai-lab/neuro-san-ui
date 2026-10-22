@@ -19,13 +19,12 @@ import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {ASK_TO_KEEP_WAITING_MS, openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {PublishStatus, usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
-import {KeepWaitingPrompt} from "../../Common/KeepWaitingPrompt"
 import {ActionIconButton} from "../Sidebar/ActionIconButton"
 
 interface PublishIconButtonProps {
@@ -50,16 +49,16 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
     )
     const networkName = network?.agentNetworkName
     const hocon = network?.networkHocon
+    const canPublish = enablePublishing && Boolean(publishServerUrl) && Boolean(networkName) && Boolean(hocon)
     const publishStatus = usePublishStore((state) => state.networks[networkId]?.status)
     const publishedUrl = usePublishStore((state) => {
         const publishState = state.networks[networkId]
         return publishState?.status === PublishStatus.Published ? publishState.url : null
     })
-    const target = usePublishTarget(networkId, networkName)
+    // Without a name the hook doesn't ask the server, which it shouldn't while publishing isn't available
+    const target = usePublishTarget(networkId, canPublish ? networkName : undefined)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-    // Set while waiting on a publish started here, so the wait can be stopped
-    const [publishWait, setPublishWait] = useState<AbortController | null>(null)
 
     const getLabel = () => {
         if (publishedUrl) return "View live"
@@ -71,7 +70,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
     const label = getLabel()
     const isPublishing = publishStatus === PublishStatus.Publishing
 
-    if (!enablePublishing || !publishServerUrl || !networkName || !hocon) return null
+    if (!canPublish) return null
 
     return (
         <>
@@ -104,7 +103,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
                     </ActionIconButton>
                 </span>
             </Tooltip>
-            {/* The dialogs are portals, but their clicks still bubble up the React tree to the sidebar item,
+            {/* The dialog is a portal, but its clicks still bubble up the React tree to the sidebar item,
                 which would select the network */}
             <Box
                 component="span"
@@ -117,21 +116,9 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={() => {
                             setIsConfirmOpen(false)
-                            const wait = new AbortController()
-                            setPublishWait(wait)
-                            void publish({id: networkId, name: networkName}, hocon, target, wait.signal).finally(() =>
-                                setPublishWait(null)
-                            )
+                            void publish({id: networkId, name: networkName}, displayName, hocon, target)
                         }}
                         target={target}
-                    />
-                )}
-                {publishWait && (
-                    <KeepWaitingPrompt
-                        activity={`Publishing "${displayName}"`}
-                        askAfterMs={ASK_TO_KEEP_WAITING_MS}
-                        id={`${id}-keep-waiting`}
-                        onStopWaiting={() => publishWait.abort()}
                     />
                 )}
             </Box>
