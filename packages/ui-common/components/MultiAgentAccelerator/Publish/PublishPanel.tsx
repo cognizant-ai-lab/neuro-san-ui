@@ -28,14 +28,13 @@ import {StatusLight} from "../../Common/StatusLight"
 interface PublishPanelProps {
     readonly publishState: PublishState
     readonly id: string
-    readonly isUnpublishing: boolean
     readonly onUnpublish: (published: Published) => void
 }
 
 /**
  * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
  */
-export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpublish, publishState}) => (
+export const PublishPanel: FC<PublishPanelProps> = ({id, onUnpublish, publishState}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
@@ -63,12 +62,12 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpub
                 <PublishedNetworkUrl url={publishState.url} />
                 <Divider />
                 <Button
-                    disabled={isUnpublishing}
+                    disabled={publishState.isUnpublishing}
                     onClick={() => onUnpublish(publishState)}
                     size="small"
                     sx={{alignSelf: "flex-start", color: "error.light", minWidth: 0, p: 0, textTransform: "none"}}
                 >
-                    {isUnpublishing ? "Unpublishing..." : "Unpublish"}
+                    {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}
                 </Button>
             </>
         )}

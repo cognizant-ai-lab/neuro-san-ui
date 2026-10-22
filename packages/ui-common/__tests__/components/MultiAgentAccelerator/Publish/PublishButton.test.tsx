@@ -438,7 +438,23 @@ describe("PublishButton", () => {
         expect(screen.getByRole("button", {name: "Unpublishing..."})).toBeDisabled()
 
         finishUnpublish()
+        // Unpublishing closes the panel, so reopen it to see the result
+        await waitFor(() => expect(screen.queryByText("Unpublishing...")).not.toBeInTheDocument())
+        const detailsButton = await screen.findByRole("button", {name: SHOW_DETAILS_LABEL})
+        await user.click(detailsButton)
         await screen.findByText("Unpublished")
+    })
+
+    it("should not allow republishing while unpublishing", async () => {
+        vi.mocked(unpublishNetwork).mockImplementation(() => new Promise<void>(vi.fn()))
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickUnpublishAndConfirm()
+
+        // The open panel is modal, which hides the button beneath it from the accessibility tree
+        const republishButton = screen.getByRole("button", {name: "Republish", hidden: true})
+        expect(republishButton).toBeDisabled()
     })
 
     it("should report the error and stay live when unpublishing fails", async () => {
@@ -494,6 +510,36 @@ describe("PublishButton", () => {
         )
         await screen.findByRole("button", {name: "Publish"})
         expect(openSpy).not.toHaveBeenCalled()
+    })
+
+    it("should keep offering to republish when republishing fails and the server can't be asked", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
+        vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
+        const confirmation = await clickRepublish()
+
+        await confirmRepublish(confirmation)
+
+        await waitFor(() => expect(warnSpy).toHaveBeenCalled())
+        await waitFor(() => expect(screen.queryByText("Putting it online...")).not.toBeInTheDocument())
+        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
+        await user.click(detailsButton)
+        await screen.findByText("Unpublished")
+    })
+
+    it("should show a network as live when the server lists it both live and unpublished", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([
+            {id: "stopped", name: NETWORK_NAME, url: null},
+            makePublishedNetwork(),
+        ])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "Republish"})
+
+        await openDetails()
+
+        screen.getByText(PUBLISHED_URL)
     })
 
     it("should ask the server again when republishing fails, and show what it says", async () => {

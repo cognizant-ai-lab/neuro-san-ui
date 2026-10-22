@@ -60,7 +60,8 @@ export const checkIfPublished = async (networkName: string, {serverUrl, orgName}
     }
 
     try {
-        const published = (await request).find((candidate) => candidate.name === networkName)
+        const candidates = (await request).filter((candidate) => candidate.name === networkName)
+        const published = candidates.find((candidate) => candidate.url) ?? candidates[0]
 
         // Don't overwrite a publish the user started while we were asking
         if (!published || usePublishStore.getState().networks[networkName]) return
@@ -91,7 +92,8 @@ export const publish = async (
     target: PublishTarget,
     refreshTheme = false
 ): Promise<void> => {
-    const {clearPublishState, setPublishState, setPublishedList} = usePublishStore.getState()
+    const {clearPublishState, networks, setPublishState, setPublishedList} = usePublishStore.getState()
+    const previousState = networks[networkName]
     setPublishState(networkName, {status: PublishStatus.Publishing})
 
     try {
@@ -107,6 +109,11 @@ export const publish = async (
         clearPublishState(networkName)
         setPublishedList(null)
         await checkIfPublished(networkName, target)
+
+        // If the server couldn't be asked either, it was still published before, so keep offering Republish
+        if (previousState && !usePublishStore.getState().networks[networkName]) {
+            setPublishState(networkName, {status: PublishStatus.Unpublished})
+        }
     }
 }
 
@@ -114,13 +121,16 @@ export const publish = async (
  * Takes a live network offline, on the server it was published to. The server keeps it, so it can be republished.
  */
 export const unpublish = async (networkName: string, published: Published): Promise<void> => {
+    const {setPublishState, setPublishedList} = usePublishStore.getState()
+    setPublishState(networkName, {...published, isUnpublishing: true})
+
     try {
         await unpublishNetwork(published.serverUrl, published.publishId)
-        // The shared list still has it as live, so drop the list too
-        const {setPublishState, setPublishedList} = usePublishStore.getState()
         setPublishState(networkName, {status: PublishStatus.Unpublished})
+        // The shared list still has it as live, so drop the list too
         setPublishedList(null)
     } catch (e) {
+        setPublishState(networkName, {...published, isUnpublishing: false})
         sendNotification(NotificationType.error, `Failed to unpublish "${networkName}".`, String(e))
     }
 }

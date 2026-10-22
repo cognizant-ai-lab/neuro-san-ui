@@ -61,7 +61,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
     const [isPanelOpen, setIsPanelOpen] = useState(false)
-    const [isUnpublishing, setIsUnpublishing] = useState(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
@@ -72,9 +71,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     }
 
     const handleUnpublish = async (published: Published) => {
-        setIsUnpublishing(true)
         await unpublish(networkName, published)
-        setIsUnpublishing(false)
         setIsPanelOpen(false)
     }
 
@@ -113,6 +110,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const mainAction = getMainAction()
     const isPublishBlocked = publishState?.status !== PublishStatus.Publishing && !target
+    const isUnpublishing = publishState?.status === PublishStatus.Published && publishState.isUnpublishing
 
     return (
         <>
@@ -132,7 +130,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     {/* A disabled button doesn't fire the hover events the tooltip needs, so it gets a wrapper */}
                     <span>
                         <Button
-                            disabled={isPublishBlocked}
+                            disabled={isPublishBlocked || isUnpublishing}
                             id={`${id}-main`}
                             onClick={mainAction.handleClick}
                             startIcon={mainAction.icon}
@@ -165,7 +163,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     <PublishPanel
                         publishState={publishState}
                         id={`${id}-panel`}
-                        isUnpublishing={isUnpublishing}
                         onUnpublish={setNetworkToUnpublish}
                     />
                 </Popover>

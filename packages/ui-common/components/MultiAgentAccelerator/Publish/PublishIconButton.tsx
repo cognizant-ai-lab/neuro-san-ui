@@ -44,6 +44,10 @@ interface PublishIconButtonProps {
  */
 export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hocon, id, isExpired, networkName}) => {
     const publishStatus = usePublishStore((state) => state.networks[networkName]?.status)
+    const isUnpublishing = usePublishStore((state) => {
+        const publishState = state.networks[networkName]
+        return publishState?.status === PublishStatus.Published && publishState.isUnpublishing
+    })
     const publishedUrl = usePublishStore((state) => {
         const publishState = state.networks[networkName]
         return publishState?.status === PublishStatus.Published ? publishState.url : null
@@ -72,7 +76,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                 <span>
                     <IconButton
                         aria-label={label}
-                        disabled={isPublishing || (!liveUrlToOpen && (isExpired || !target))}
+                        disabled={isPublishing || isUnpublishing || (!liveUrlToOpen && (isExpired || !target))}
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()

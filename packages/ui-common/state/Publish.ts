@@ -37,6 +37,8 @@ export interface Published {
     /** The server's id for it, needed to unpublish */
     readonly publishId: string
     readonly url: string
+    /** Set while it's being unpublished, when it can't be republished */
+    readonly isUnpublishing?: boolean
 }
 
 /** Published before and since unpublished. The server keeps it stopped, so it can be republished. */
