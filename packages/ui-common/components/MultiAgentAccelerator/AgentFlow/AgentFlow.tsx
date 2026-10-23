@@ -85,6 +85,10 @@ export interface AgentFlowProps {
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly currentUser?: string
+    /**
+     * Extra sly_data entries to merge into each outgoing request. For example, API keys for BYOK.
+     */
+    readonly extraSlyData?: Record<string, unknown>
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
@@ -151,6 +155,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentsInNetwork,
     currentConversations,
     currentUser,
+    extraSlyData,
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
@@ -930,6 +935,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             {isTemporaryNetwork && !isAwaitingLlm && (
                 <NetworkEditorDock
                     currentUser={currentUser}
+                    extraSlyData={extraSlyData}
                     id={`${id}-network-editor-dock`}
                     isEditingNetwork={isEditingNetwork}
                     networkId={networkId}
@@ -945,7 +951,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     agentName={selectedAgent.agentName}
                     initialInstructions={selectedAgent.initialInstructions}
                     initialDescription={selectedAgent.initialDescription}
-
                     isOpen={isPopupOpen}
                     networkId={networkId}
                     onSaveAgent={onSaveAgent}

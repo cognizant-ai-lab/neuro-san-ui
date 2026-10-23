@@ -278,7 +278,8 @@ export const sendNetworkDesignerRequest = async (
     updated: AgentNetworkDefinitionEntry[],
     agentNetworkName: string | undefined,
     currentUser: string,
-    onChunk: (chunk: string) => void
+    onChunk: (chunk: string) => void,
+    extraSlyData: Record<string, unknown> = {}
 ): Promise<void> => {
     await sendChatQuery(
         url,
@@ -289,6 +290,7 @@ export const sendNetworkDesignerRequest = async (
         onChunk,
         null,
         {
+            ...extraSlyData,
             [AGENT_NETWORK_DEFINITION_KEY]: updated,
             // Use the backend's canonical name, not the local UUID-based key.
             ...(agentNetworkName ? {[AGENT_NETWORK_NAME_KEY]: agentNetworkName} : {}),
