@@ -82,6 +82,22 @@ describe("Publish", () => {
     })
 
     // POST /deployments
+    it("should send the org name in lowercase", async () => {
+        fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
+
+        await publishNetwork({
+            serverUrl: SERVER_URL,
+            orgName: "Cailville-Stage",
+            networkName: NETWORK_NAME,
+            hocon: HOCON,
+            refreshTheme: false,
+        })
+
+        const form = fetchMock.mock.calls[0][1]?.body as FormData
+        expect(form.get("org_name")).toBe("cailville-stage")
+    })
+
+    // POST /deployments
     it("should ask for a themed site that keeps its existing theme", async () => {
         fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
 

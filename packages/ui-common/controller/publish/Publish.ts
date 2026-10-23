@@ -112,8 +112,8 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
     // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
-    // The server files a publish under an existing org whose name differs only in case, and lists it with that org's
-    // spelling, so "darren" comes back as "Darren"
+    // Compared in lowercase: the server files a publish under an existing org whose name differs only in case, and
+    // lists it with that org's spelling, so "darren" can come back as "Darren"
     const isOurOrg = (network: ServerNetwork) => network.org_name.toLowerCase() === orgName.toLowerCase()
     const isListed = (network: ServerNetwork) =>
         (network.status === "ready" && Boolean(network.url)) ||
@@ -138,7 +138,8 @@ export const publishNetwork = async ({
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
-    form.append("org_name", orgName)
+    // Lowercase, like the org names we look for when listing
+    form.append("org_name", orgName.toLowerCase())
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
     form.append("theme_refresh", String(refreshTheme))
