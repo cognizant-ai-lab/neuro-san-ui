@@ -198,13 +198,23 @@ export const streamNetworkDesignerUpsert = async (
     frontman: string,
     networkDef: AgentNetworkDefinitionEntry[],
     agentNetworkName: string | undefined,
-    username: string
+    username: string,
+    extraSlyData: Record<string, unknown> = {}
 ): Promise<TemporaryNetwork[]> => {
     let newNetworks: TemporaryNetwork[] = []
-    await sendNetworkDesignerRequest(neuroSanURL, signal, frontman, networkDef, agentNetworkName, username, (chunk) => {
-        // There is only one network. The designer echoes it across streamed chunks. Merge by name so the
-        // repeated echoes collapse into that single entry rather than appending duplicates.
-        newNetworks = collectNetworkFromChunk(chunk, networkDef, newNetworks)
-    })
+    await sendNetworkDesignerRequest(
+        neuroSanURL,
+        signal,
+        frontman,
+        networkDef,
+        agentNetworkName,
+        username,
+        (chunk) => {
+            // There is only one network. The designer echoes it across streamed chunks. Merge by name so the
+            // repeated echoes collapse into that single entry rather than appending duplicates.
+            newNetworks = collectNetworkFromChunk(chunk, networkDef, newNetworks)
+        },
+        extraSlyData
+    )
     return newNetworks
 }
