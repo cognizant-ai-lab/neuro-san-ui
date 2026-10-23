@@ -19,7 +19,7 @@ import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
-    "Add a publish server and org name in Settings > External Services to publish"
+    "Add a publishing server and org name in Settings > External Services to publish"
 export const PUBLISHED_MESSAGE = "Published and opened in a new tab"
 export const PUBLISHED_TAB_BLOCKED_MESSAGE =
     "Published. Your browser blocked the new tab, so open it from the arrow next to Republish."
