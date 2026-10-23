@@ -22,6 +22,10 @@ import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
 
+// Longer than the 60 seconds the publish client asks /wait to hold open, so only a server that stops answering
+// times out
+const UPSTREAM_TIMEOUT_MS = 90_000
+
 const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> => {
     const chunks: Buffer[] = []
     for await (const chunk of req) {
@@ -86,6 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ...(contentType ? {"Content-Type": contentType} : {}),
             },
             body: req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req),
+            signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         })
 
         const upstreamContentType = upstream.headers.get("content-type")
@@ -94,6 +99,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         res.status(upstream.status).send(Buffer.from(await upstream.arrayBuffer()))
     } catch (e) {
-        res.status(httpStatus.BAD_GATEWAY).json({detail: `Couldn't reach the publish server: ${String(e)}`})
+        // We're a gateway to the publish server, so failing to reach it is a 502, and it not answering in time a 504
+        if (e instanceof DOMException && e.name === "TimeoutError") {
+            res.status(httpStatus.GATEWAY_TIMEOUT).json({detail: "The publish server didn't answer in time"})
+        } else {
+            res.status(httpStatus.BAD_GATEWAY).json({detail: `Couldn't reach the publish server: ${String(e)}`})
+        }
     }
 }

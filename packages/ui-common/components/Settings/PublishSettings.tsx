@@ -75,8 +75,7 @@ export const PublishSettings: FC<PublishSettingsProps> = ({id}) => {
     }
 
     const handleTest = async () => {
-        const result = await checkHealth(serverUrl)
-        setIsServerReachable(result.success)
+        setIsServerReachable(await checkHealth(serverUrl))
     }
 
     const handleDefault = () => {

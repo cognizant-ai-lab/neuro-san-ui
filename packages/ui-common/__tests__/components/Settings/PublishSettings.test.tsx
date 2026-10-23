@@ -63,7 +63,7 @@ describe("PublishSettings", () => {
         })
 
         it("should test the default server shown in the field", async () => {
-            vi.mocked(checkHealth).mockResolvedValue({success: true})
+            vi.mocked(checkHealth).mockResolvedValue(true)
             renderSettings()
             const testButton = screen.getByRole("button", {name: TEST_PUBLISH_SERVER_LABEL})
 
@@ -148,7 +148,7 @@ describe("PublishSettings", () => {
         {desc: "a green status light when the server is up", success: true, expected: "green"},
         {desc: "a red status light when it isn't", success: false, expected: "red"},
     ])("should show $desc", async ({success, expected}) => {
-        vi.mocked(checkHealth).mockResolvedValue({success})
+        vi.mocked(checkHealth).mockResolvedValue(success)
         renderSettings()
         await typeInto(PUBLISH_SERVER_HOST_LABEL, SERVER_HOST)
         const testButton = screen.getByRole("button", {name: TEST_PUBLISH_SERVER_LABEL})

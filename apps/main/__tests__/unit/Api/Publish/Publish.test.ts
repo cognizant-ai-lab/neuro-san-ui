@@ -117,5 +117,13 @@ describe("Publish API route", () => {
             expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
             expect(res._getJSONData().detail).toContain("getaddrinfo ENOTFOUND")
         })
+
+        it("should say so when the server doesn't answer in time", async () => {
+            fetchMock.mockRejectedValue(new DOMException("The operation timed out.", "TimeoutError"))
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.GATEWAY_TIMEOUT)
+        })
     })
 })

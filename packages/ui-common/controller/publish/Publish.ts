@@ -21,8 +21,6 @@ limitations under the License.
 
 import httpStatus from "http-status"
 
-import {testConnection, TestConnectionResult} from "../agent/Agent"
-
 //#region Types
 
 export interface PublishedNetwork {
@@ -58,6 +56,9 @@ type LiveNetwork = PublishedNetwork & {readonly url: string}
 
 //#region Constants
 
+// How long the Settings test waits for the server to answer
+const HEALTH_TIMEOUT_MS = 5_000
+
 // How long each /wait request holds open waiting for the build to finish
 const WAIT_TIMEOUT_SECONDS = 60
 
@@ -85,10 +86,22 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
 }
 
 /**
- * Checks that a publish server is up.
+ * Checks that a publishing server is up by asking its /health endpoint.
+ * @returns Whether it answered that it's healthy. False if it couldn't be reached, didn't answer in time, or isn't OK.
  */
-export const checkHealth = (serverUrl: string): Promise<TestConnectionResult> =>
-    testConnection(publishRouteUrl(serverUrl, "health"))
+export const checkHealth = async (serverUrl: string): Promise<boolean> => {
+    try {
+        const response = await fetch(publishRouteUrl(serverUrl, "health"), {
+            signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+        })
+        if (!response.ok) return false
+
+        const health: {status?: string} = await response.json()
+        return health.status === "ok"
+    } catch {
+        return false
+    }
+}
 
 /**
  * Lists the org's published networks, live or unpublished.

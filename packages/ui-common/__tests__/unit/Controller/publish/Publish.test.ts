@@ -1,3 +1,5 @@
+import httpStatus from "http-status"
+
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     checkHealth,
@@ -38,13 +40,28 @@ describe("Publish", () => {
     })
 
     // GET /health
-    it("should check the server's health through our /api/publish route", async () => {
+    it("should check the server's health endpoint through our /api/publish route", async () => {
         fetchMock.mockResolvedValue(Response.json({status: "ok"}))
 
-        const result = await checkHealth(SERVER_URL)
+        const isHealthy = await checkHealth(SERVER_URL)
 
-        expect(result.success).toBe(true)
+        expect(isHealthy).toBe(true)
         expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`)
+    })
+
+    // GET /health
+    it.each([
+        {desc: "it can't be reached", response: Response.json({detail: "x"}, {status: httpStatus.BAD_GATEWAY})},
+        {desc: "it isn't OK", response: Response.json({status: "degraded"})},
+        {desc: "the request fails", response: new TypeError("Failed to fetch")},
+    ])("should report an unhealthy server when $desc", async ({response}) => {
+        if (response instanceof Response) {
+            fetchMock.mockResolvedValue(response)
+        } else {
+            fetchMock.mockRejectedValue(response)
+        }
+
+        await expect(checkHealth(SERVER_URL)).resolves.toBe(false)
     })
 
     // POST /deployments
