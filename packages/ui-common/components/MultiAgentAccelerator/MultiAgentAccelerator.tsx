@@ -263,26 +263,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         : undefined
 
     /**
-     * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
-     * by the currently selected network. Only includes keys for providers that are required.
-     */
-    const apiKeysSlyData = useMemo<{llm_config: Partial<Record<ByokKeyField, string>>}>(
-        () => ({
-            llm_config: Object.fromEntries(
-                [...supportedByokProviders]
-                    .map((provider): [ByokKeyField, string | undefined] => [
-                        LLM_PROVIDER_API_KEY_FIELD[provider],
-                        getApiKey(apiKeys, provider),
-                    ])
-                    .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
-                        Boolean(entry[1])
-                    )
-            ),
-        }),
-        [apiKeys, supportedByokProviders]
-    )
-
-    /**
      * Builds the extraSlyData object to be sent with each request, including information for Agent Network Designer
      * and (if required) API keys for LLM providers.
      */
@@ -320,16 +300,31 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const baseExtraSlyData = buildExtraSlyData()
 
     // Add API keys to extraSlyData if needed, merging with baseExtraSlyData if it exists
-    const extraSlyData: Record<string, unknown> | undefined = useMemo(
-        () =>
-            anyApiKeysRequired || baseExtraSlyData
-                ? {
-                      ...baseExtraSlyData,
-                      ...(anyApiKeysRequired ? apiKeysSlyData : {}),
-                  }
-                : undefined,
-        [anyApiKeysRequired, baseExtraSlyData, apiKeysSlyData]
-    )
+    const extraSlyData: Record<string, unknown> | undefined = useMemo(() => {
+        /**
+         * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
+         * by the currently selected network. Only includes keys for providers that are required.
+         */
+        const apiKeysSlyData = {
+            llm_config: Object.fromEntries(
+                [...supportedByokProviders]
+                    .map((provider): [ByokKeyField, string | undefined] => [
+                        LLM_PROVIDER_API_KEY_FIELD[provider],
+                        getApiKey(apiKeys, provider),
+                    ])
+                    .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
+                        Boolean(entry[1])
+                    )
+            ),
+        }
+
+        return anyApiKeysRequired || baseExtraSlyData
+            ? {
+                  ...baseExtraSlyData,
+                  ...(anyApiKeysRequired ? apiKeysSlyData : {}),
+              }
+            : undefined
+    }, [anyApiKeysRequired, apiKeys, baseExtraSlyData, supportedByokProviders])
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
