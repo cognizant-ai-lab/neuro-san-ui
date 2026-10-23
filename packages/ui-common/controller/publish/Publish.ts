@@ -60,7 +60,7 @@ type LiveNetwork = PublishedNetwork & {readonly url: string}
 const HEALTH_TIMEOUT_MS = 5_000
 
 // How long each /wait request holds open waiting for the build to finish
-const WAIT_TIMEOUT_SECONDS = 60
+export const WAIT_TIMEOUT_SECONDS = 60
 
 //#endregion Constants
 

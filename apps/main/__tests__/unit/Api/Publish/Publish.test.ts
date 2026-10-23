@@ -29,7 +29,7 @@ describe("Publish API route", () => {
 
     let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>
 
-    const callProxy = async (method: RequestMethod, query: Record<string, string | string[]>, body?: string) => {
+    const callRoute = async (method: RequestMethod, query: Record<string, string | string[]>, body?: string) => {
         const {req, res} = createMocks({method, query, headers: body ? {"content-type": "text/plain"} : {}})
         const handled = handler(req, res)
         if (method !== "GET") {
@@ -55,7 +55,7 @@ describe("Publish API route", () => {
     it("should forward to the server path with the query and the bearer token from the environment", async () => {
         fetchMock.mockResolvedValue(Response.json({id: "dep-1", status: "ready"}))
 
-        const res = await callProxy("GET", {path: ["deployments", "dep-1", "wait"], server: SERVER_URL, timeout: "60"})
+        const res = await callRoute("GET", {path: ["deployments", "dep-1", "wait"], server: SERVER_URL, timeout: "60"})
 
         const [target, init] = fetchMock.mock.calls[0]
         expect(String(target)).toBe(`${SERVER_URL}/deployments/dep-1/wait?timeout=60`)
@@ -68,7 +68,7 @@ describe("Publish API route", () => {
     it("should pass the upload body and its content type through unchanged", async () => {
         fetchMock.mockResolvedValue(Response.json({id: "dep-1"}, {status: httpStatus.ACCEPTED}))
 
-        const res = await callProxy("POST", {path: ["deployments"], server: SERVER_URL}, "hocon contents")
+        const res = await callRoute("POST", {path: ["deployments"], server: SERVER_URL}, "hocon contents")
 
         const init = fetchMock.mock.calls[0][1]
         expect(init?.method).toBe("POST")
@@ -81,7 +81,7 @@ describe("Publish API route", () => {
     it("should forward to a server URL that ends in a slash and relay an empty response", async () => {
         fetchMock.mockResolvedValue(new Response(null, {status: httpStatus.NO_CONTENT}))
 
-        const res = await callProxy("DELETE", {path: ["deployments", "dep-1"], server: `${SERVER_URL}/`})
+        const res = await callRoute("DELETE", {path: ["deployments", "dep-1"], server: `${SERVER_URL}/`})
 
         expect(String(fetchMock.mock.calls[0][0])).toBe(`${SERVER_URL}/deployments/dep-1`)
         expect(res._getStatusCode()).toBe(httpStatus.NO_CONTENT)
@@ -92,7 +92,7 @@ describe("Publish API route", () => {
         it("should not exist while publishing is disabled", async () => {
             vi.stubEnv(ENABLE_PUBLISHING_ENV_VAR, "false")
 
-            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+            const res = await callRoute("GET", {path: ["health"], server: SERVER_URL})
 
             expect(res._getStatusCode()).toBe(httpStatus.NOT_FOUND)
             expect(fetchMock).not.toHaveBeenCalled()
@@ -103,7 +103,7 @@ describe("Publish API route", () => {
             {desc: "not a URL", server: "not a url"},
             {desc: "not http(s)", server: "file:///etc/passwd"},
         ])("should refuse a server URL that's $desc", async ({server}) => {
-            const res = await callProxy("GET", {path: ["health"], ...(server ? {server} : {})})
+            const res = await callRoute("GET", {path: ["health"], ...(server ? {server} : {})})
 
             expect(res._getStatusCode()).toBe(httpStatus.BAD_REQUEST)
             expect(fetchMock).not.toHaveBeenCalled()
@@ -113,16 +113,16 @@ describe("Publish API route", () => {
             // What fetch throws for a host that doesn't exist or a refused connection
             fetchMock.mockRejectedValue(new TypeError("fetch failed"))
 
-            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+            const res = await callRoute("GET", {path: ["health"], server: SERVER_URL})
 
             expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
-            expect(res._getJSONData().detail).toBe(`Couldn't reach the publish server at ${SERVER_URL}`)
+            expect(res._getJSONData().detail).toBe(`Couldn't reach the publishing server at ${SERVER_URL}`)
         })
 
         it("should not report its own errors as the server being unreachable", async () => {
             fetchMock.mockRejectedValue(new RangeError("Something else went wrong"))
 
-            await expect(callProxy("GET", {path: ["health"], server: SERVER_URL})).rejects.toThrow(
+            await expect(callRoute("GET", {path: ["health"], server: SERVER_URL})).rejects.toThrow(
                 "Something else went wrong"
             )
         })
@@ -130,7 +130,7 @@ describe("Publish API route", () => {
         it("should say so when the server doesn't answer in time", async () => {
             fetchMock.mockRejectedValue(new DOMException("The operation timed out.", "TimeoutError"))
 
-            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+            const res = await callRoute("GET", {path: ["health"], server: SERVER_URL})
 
             expect(res._getStatusCode()).toBe(httpStatus.GATEWAY_TIMEOUT)
         })
