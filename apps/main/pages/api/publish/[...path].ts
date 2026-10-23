@@ -22,8 +22,8 @@ import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
 
-// Longer than the 60 seconds the publish client asks /wait to hold open, so only a server that stops answering
-// times out
+// How long to wait for the publish server. While a network builds, the publish client asks the server to hold each
+// /wait request open for up to 60 seconds (WAIT_TIMEOUT_SECONDS), so this has to be longer than that.
 const UPSTREAM_TIMEOUT_MS = 90_000
 
 const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> => {
