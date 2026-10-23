@@ -110,12 +110,21 @@ describe("Publish API route", () => {
         })
 
         it("should explain when the server can't be reached", async () => {
-            fetchMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"))
+            // What fetch throws for a host that doesn't exist or a refused connection
+            fetchMock.mockRejectedValue(new TypeError("fetch failed"))
 
             const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
 
             expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
-            expect(res._getJSONData().detail).toContain("getaddrinfo ENOTFOUND")
+            expect(res._getJSONData().detail).toBe(`Couldn't reach the publish server at ${SERVER_URL}`)
+        })
+
+        it("should not report its own errors as the server being unreachable", async () => {
+            fetchMock.mockRejectedValue(new RangeError("Something else went wrong"))
+
+            await expect(callProxy("GET", {path: ["health"], server: SERVER_URL})).rejects.toThrow(
+                "Something else went wrong"
+            )
         })
 
         it("should say so when the server doesn't answer in time", async () => {

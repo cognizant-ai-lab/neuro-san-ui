@@ -81,29 +81,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const contentType = req.headers["content-type"]
+    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req)
 
+    // Only the exchange with the publish server is caught, so a bug of ours still surfaces as a 500
+    let upstream: Response
+    let upstreamBody: Buffer
     try {
-        const upstream = await fetch(target, {
+        upstream = await fetch(target, {
             method: req.method,
             headers: {
                 Authorization: `Bearer ${token}`,
                 ...(contentType ? {"Content-Type": contentType} : {}),
             },
-            body: req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req),
+            body,
             signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         })
-
-        const upstreamContentType = upstream.headers.get("content-type")
-        if (upstreamContentType) {
-            res.setHeader("Content-Type", upstreamContentType)
-        }
-        res.status(upstream.status).send(Buffer.from(await upstream.arrayBuffer()))
+        upstreamBody = Buffer.from(await upstream.arrayBuffer())
     } catch (e) {
-        // We're a gateway to the publish server, so failing to reach it is a 502, and it not answering in time a 504
+        // fetch fails with a TypeError when it can't connect, for example to a host that doesn't exist
+        if (e instanceof TypeError) {
+            res.status(httpStatus.BAD_GATEWAY).json({
+                detail: `Couldn't reach the publish server at ${serverUrl.origin}`,
+            })
+            return
+        }
         if (e instanceof DOMException && e.name === "TimeoutError") {
             res.status(httpStatus.GATEWAY_TIMEOUT).json({detail: "The publish server didn't answer in time"})
-        } else {
-            res.status(httpStatus.BAD_GATEWAY).json({detail: `Couldn't reach the publish server: ${String(e)}`})
+            return
         }
+        throw e
     }
+
+    const upstreamContentType = upstream.headers.get("content-type")
+    if (upstreamContentType) {
+        res.setHeader("Content-Type", upstreamContentType)
+    }
+    res.status(upstream.status).send(upstreamBody)
 }
