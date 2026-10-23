@@ -75,7 +75,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const handlePublish = async (publishTarget: PublishTarget) => {
         setIsPanelOpen(true)
-        await publish(network, hocon, publishTarget)
+        await publish(network, displayName, hocon, publishTarget)
         setIsPanelOpen(false)
     }
 

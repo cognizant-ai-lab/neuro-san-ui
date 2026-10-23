@@ -52,7 +52,7 @@ const parseServerUrl = (server: string | string[] | undefined): URL | null => {
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (process.env[ENABLE_PUBLISHING_ENV_VAR] !== "true") {
-        res.status(httpStatus.NOT_FOUND).json({detail: "Publishing is not enabled"})
+        res.status(httpStatus.SERVICE_UNAVAILABLE).json({detail: "Publishing is not enabled"})
         return
     }
 

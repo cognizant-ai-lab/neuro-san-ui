@@ -89,12 +89,12 @@ describe("Publish API route", () => {
 
     // GET /health - Health Check. The route doesn't look at the path, so these use the simplest endpoint.
     describe("Health check", () => {
-        it("should not exist while publishing is disabled", async () => {
+        it("should be unavailable while publishing is disabled", async () => {
             vi.stubEnv(ENABLE_PUBLISHING_ENV_VAR, "false")
 
             const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
 
-            expect(res._getStatusCode()).toBe(httpStatus.NOT_FOUND)
+            expect(res._getStatusCode()).toBe(httpStatus.SERVICE_UNAVAILABLE)
             expect(fetchMock).not.toHaveBeenCalled()
         })
 

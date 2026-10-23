@@ -25,8 +25,12 @@ export enum PublishStatus {
     Published = "Published",
 }
 
-interface Publishing {
+export interface Publishing {
     readonly status: PublishStatus.Publishing
+    /** The network's name as people read it, for asking whether to keep waiting */
+    readonly displayName: string
+    /** Stops waiting for this publish */
+    readonly waiting: AbortController
 }
 
 export interface Published {

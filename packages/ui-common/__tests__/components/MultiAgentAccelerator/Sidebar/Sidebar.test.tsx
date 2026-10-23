@@ -38,8 +38,14 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
 import {
+    ASK_TO_KEEP_WAITING_MS,
+    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
+} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {PublishWaitPrompts} from "../../../../components/MultiAgentAccelerator/Publish/PublishWaitPrompts"
+import {
+    DELETE_NETWORK_LABEL,
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/AgentNetworkTreeItem"
@@ -55,6 +61,7 @@ import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
 import {PublishStatus, usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
+import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
 import {downloadFile} from "../../../../utils/File"
 
@@ -497,10 +504,10 @@ describe("SideBar", () => {
 
         const networkTreeItem = await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
 
-        // Find the delete icon within the same tree item
+        // Find the delete button within the same tree item
         const treeItem = networkTreeItem.closest('[role="treeitem"]')
-        const deleteIcon = within(treeItem as HTMLElement).getByTestId("DeleteIcon")
-        await user.click(deleteIcon)
+        const deleteButton = within(treeItem as HTMLElement).getByRole("button", {name: DELETE_NETWORK_LABEL})
+        await user.click(deleteButton)
 
         // onDeleteNetwork should be called with the correct network name
         expect(onDeleteNetworkMock).toHaveBeenCalledWith(TEMPORARY_NETWORK.agentInfo.agent_name, false)
@@ -637,12 +644,14 @@ describe("SideBar", () => {
         const PUBLISHED_URL = "http://live.test/temporary_network"
         const SERVER_URL = "https://publish.test"
 
-        const renderWithTemporaryNetwork = (temporaryNetwork = TEMPORARY_NETWORK) =>
-            renderSidebarComponent({
+        const renderWithTemporaryNetwork = (temporaryNetwork = TEMPORARY_NETWORK) => {
+            useTempNetworksStore.getState().setTempNetworks([temporaryNetwork])
+            return renderSidebarComponent({
                 networks: [...LIST_NETWORKS_RESPONSE],
                 temporaryNetworks: [temporaryNetwork],
                 newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
             })
+        }
 
         const EXPIRED_TEMPORARY_NETWORK = {
             ...TEMPORARY_NETWORK,
@@ -677,6 +686,10 @@ describe("SideBar", () => {
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
 
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
         it("Should publish a temporary network after asking, without opening the network", async () => {
             renderWithTemporaryNetwork()
             const publishButton = await screen.findByRole("button", {name: "Publish"})
@@ -691,6 +704,42 @@ describe("SideBar", () => {
                 expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
             )
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should go back to Publish when the user stops waiting on a slow publish", async () => {
+            vi.useFakeTimers({shouldAdvanceTime: true})
+            user = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+            // Never finishes on its own, like a stuck server, but stops when the wait is stopped
+            vi.mocked(publishNetwork).mockImplementation(
+                ({signal}) =>
+                    new Promise((_resolve, reject) => {
+                        signal?.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")))
+                    })
+            )
+            renderWithTemporaryNetwork()
+            render(<PublishWaitPrompts />)
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
+            const confirmation = await screen.findByRole("dialog")
+            await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
+            await screen.findByRole("button", {name: "Publishing..."})
+
+            act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+            const stopWaitingButton = await screen.findByRole("button", {name: STOP_WAITING_LABEL})
+            await user.click(stopWaitingButton)
+
+            await screen.findByRole("button", {name: "Publish"})
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should not ask the publish server about a temporary network while publishing is off", async () => {
+            useEnvironmentStore.getState().setEnablePublishing(false)
+            renderWithTemporaryNetwork()
+
+            // First proves the temporary network, where the button would appear, is on screen
+            await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
+            expect(listPublishedNetworks).not.toHaveBeenCalled()
         })
 
         it("Should cancel publishing with Escape, without publishing or opening the network", async () => {
@@ -709,7 +758,13 @@ describe("SideBar", () => {
 
         it("Should show a temporary network is still publishing, without offering to publish it again", async () => {
             usePublishStore.setState({
-                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Publishing}},
+                networks: {
+                    [TEMPORARY_NETWORK.agentInfo.agent_name]: {
+                        status: PublishStatus.Publishing,
+                        displayName: "Temporary Network",
+                        waiting: new AbortController(),
+                    },
+                },
             })
             renderWithTemporaryNetwork()
 
