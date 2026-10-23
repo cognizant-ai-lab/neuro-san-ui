@@ -205,6 +205,28 @@ describe("Publish", () => {
         ])
     })
 
+    // GET /deployments
+    it("should list our org's networks when the server spells the org name with different case", async () => {
+        fetchMock.mockResolvedValue(
+            Response.json({
+                capacity: {},
+                deployments: [
+                    {
+                        id: PUBLISH_ID,
+                        name: NETWORK_NAME,
+                        org_name: ORG_NAME.toUpperCase(),
+                        status: "ready",
+                        url: PUBLISHED_URL,
+                    },
+                ],
+            })
+        )
+
+        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
+            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
+        ])
+    })
+
     it("should leave out networks that are still building", async () => {
         fetchMock.mockResolvedValue(
             Response.json({

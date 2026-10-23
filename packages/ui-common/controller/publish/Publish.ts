@@ -112,13 +112,16 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
     // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
+    // The server files a publish under an existing org whose name differs only in case, and lists it with that org's
+    // spelling, so "darren" comes back as "Darren"
+    const isOurOrg = (network: ServerNetwork) => network.org_name.toLowerCase() === orgName.toLowerCase()
     const isListed = (network: ServerNetwork) =>
         (network.status === "ready" && Boolean(network.url)) ||
         network.status === "stopped" ||
         network.status === "failed"
 
     return networks
-        .filter((network) => network.org_name === orgName && isListed(network))
+        .filter((network) => isOurOrg(network) && isListed(network))
         .map((network) => ({id: network.id, name: network.name, url: network.status === "ready" ? network.url : null}))
 }
 
