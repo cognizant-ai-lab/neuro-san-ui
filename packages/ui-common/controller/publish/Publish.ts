@@ -86,18 +86,24 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
 }
 
 /**
- * Checks that a publishing server is up by asking its /health endpoint.
- * @returns Whether it answered that it's healthy. False if it couldn't be reached, didn't answer in time, or isn't OK.
+ * Checks that a publishing server is up and accepts our token.
+ * @returns Whether it's a healthy publishing server that accepts the token. False if it couldn't be reached, didn't
+ * answer in time, isn't a publishing server, isn't OK, or turned the token down.
  */
 export const checkHealth = async (serverUrl: string): Promise<boolean> => {
     try {
-        const response = await fetch(publishRouteUrl(serverUrl, "health"), {
-            signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
-        })
-        if (!response.ok) return false
+        const signal = AbortSignal.timeout(HEALTH_TIMEOUT_MS)
 
-        const health: {status?: string} = await response.json()
-        return health.status === "ok"
+        const healthResponse = await fetch(publishRouteUrl(serverUrl, "health"), {signal})
+        if (!healthResponse.ok) return false
+
+        // Other servers can answer "ok" too, but only a publishing server reports its port pool
+        const health: {status?: string; port_pool?: unknown} = await healthResponse.json()
+        if (health.status !== "ok" || !health.port_pool) return false
+
+        // /health doesn't need the token, so also ask for something that does
+        const listResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {signal})
+        return listResponse.ok
     } catch {
         return false
     }

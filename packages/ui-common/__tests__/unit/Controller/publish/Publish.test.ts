@@ -39,27 +39,44 @@ describe("Publish", () => {
         vi.unstubAllGlobals()
     })
 
-    // GET /health
-    it("should check the server's health endpoint through our /api/publish route", async () => {
-        fetchMock.mockResolvedValue(Response.json({status: "ok"}))
+    // GET /health, then GET /deployments
+    it("should check the server's health, then that it accepts our token, through our /api/publish route", async () => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({status: "ok", port_pool: {capacity: 20}}))
+            .mockResolvedValueOnce(Response.json({deployments: []}))
 
         const isHealthy = await checkHealth(SERVER_URL)
 
         expect(isHealthy).toBe(true)
-        expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`)
+        expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+            `/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`,
+            `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`,
+        ])
+    })
+
+    // GET /health, then GET /deployments
+    it.each([
+        {desc: "it can't be reached", responses: [Response.json({detail: "x"}, {status: httpStatus.BAD_GATEWAY})]},
+        {desc: "it isn't OK", responses: [Response.json({status: "degraded", port_pool: {}})]},
+        {desc: "it isn't a publishing server", responses: [Response.json({status: "ok"})]},
+        {
+            desc: "it turns down our token",
+            responses: [
+                Response.json({status: "ok", port_pool: {}}),
+                Response.json({detail: "Unauthorized"}, {status: httpStatus.UNAUTHORIZED}),
+            ],
+        },
+    ])("should report an unhealthy server when $desc", async ({responses}) => {
+        for (const response of responses) {
+            fetchMock.mockResolvedValueOnce(response)
+        }
+
+        await expect(checkHealth(SERVER_URL)).resolves.toBe(false)
     })
 
     // GET /health
-    it.each([
-        {desc: "it can't be reached", response: Response.json({detail: "x"}, {status: httpStatus.BAD_GATEWAY})},
-        {desc: "it isn't OK", response: Response.json({status: "degraded"})},
-        {desc: "the request fails", response: new TypeError("Failed to fetch")},
-    ])("should report an unhealthy server when $desc", async ({response}) => {
-        if (response instanceof Response) {
-            fetchMock.mockResolvedValue(response)
-        } else {
-            fetchMock.mockRejectedValue(response)
-        }
+    it("should report an unhealthy server when the request fails", async () => {
+        fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
 
         await expect(checkHealth(SERVER_URL)).resolves.toBe(false)
     })
