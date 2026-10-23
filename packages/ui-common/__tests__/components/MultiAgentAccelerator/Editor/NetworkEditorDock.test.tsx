@@ -12,7 +12,6 @@ import {
 import {sendChatQuery} from "../../../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType, ChatResponse} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
-
 //#region Constants
 
 const ABORT_TITLE = "Abort changes?"
@@ -127,6 +126,11 @@ describe("NetworkEditorDock", () => {
 
     const defaultProps: NetworkEditorDockProps = {
         currentUser: "test-user",
+        extraSlyData: {
+            llm_config: {
+                openai_api_key: "test_open_api_key",
+            },
+        },
         id: "test-dock-id",
         isEditingNetwork: true,
         networkId: DOCK_NETWORK_ID,
@@ -134,7 +138,7 @@ describe("NetworkEditorDock", () => {
         setIsEditingNetwork: vi.fn(),
         setSelectedNetwork: vi.fn(),
         tempNetworks: [makeTempNetwork(DOCK_NETWORK_ID, [{origin: AGENT_1, tools: []}], DOCK_NETWORK_NAME)],
-    }
+    } satisfies Required<NetworkEditorDockProps>
 
     const renderNetworkEditorDock = (overrides: Partial<NetworkEditorDockProps> = {}) => {
         const props = {...defaultProps, ...overrides}
@@ -269,6 +273,61 @@ describe("NetworkEditorDock", () => {
         // The user sees an error banner explaining no reservation came back
         expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
         expect(screen.getByText(/did not return a reservation/iu)).toBeInTheDocument()
+    })
+
+    it("forwards extra_sly_data to the host when present", async () => {
+        renderNetworkEditorDock()
+
+        const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(promptField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        // Make sure sly_data (BYOK in this case) was included in output request
+        expect(mockSendChatQuery).toHaveBeenCalledExactlyOnceWith(
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            null,
+            expect.objectContaining(defaultProps.extraSlyData),
+            expect.anything(),
+            expect.anything()
+        )
+    })
+
+    it("succeeds when optional extra_sly_data is absent", async () => {
+        const {extraSlyData: _extraSlyData, ...propsWithoutExtraSlyData} = defaultProps
+
+        render(<NetworkEditorDock {...propsWithoutExtraSlyData} />)
+
+        const promptField = screen.getByPlaceholderText(PROMPT_PLACEHOLDER)
+        await user.click(promptField)
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
+
+        expect(mockSendChatQuery).toHaveBeenCalledExactlyOnceWith(
+            defaultProps.neuroSanURL,
+            expect.any(AbortSignal),
+            EDIT_PROMPT,
+            "agent_network_designer",
+            expect.any(Function),
+            null,
+            {
+                agent_network_definition: [
+                    {
+                        origin: AGENT_1,
+                        tools: [],
+                    },
+                ],
+                agent_network_name: DOCK_NETWORK_NAME,
+            },
+            defaultProps.currentUser,
+            1
+        )
     })
 
     it("shows an error banner when dock apply returns a reservation that does not match the network", async () => {

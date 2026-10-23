@@ -48,13 +48,14 @@ const renderPopup = (overrides: Partial<AgentNodeEditorProps> = {}) => {
     const props: AgentNodeEditorProps = {
         agentId: AGENT_ID,
         agentName: AGENT_NAME,
+        initialDescription: "",
         initialInstructions: INITIAL_INSTRUCTIONS,
         isOpen: true,
         networkId: NETWORK_ID,
         onSaveAgent: vi.fn<AgentNodeEditorProps["onSaveAgent"]>().mockResolvedValue(undefined),
         setIsPopupOpen: vi.fn(),
         ...overrides,
-    }
+    } satisfies Required<AgentNodeEditorProps>
 
     render(<AgentNodeEditor {...props} />)
 

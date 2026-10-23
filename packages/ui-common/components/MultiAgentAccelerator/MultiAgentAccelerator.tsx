@@ -266,18 +266,21 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
      * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
      * by the currently selected network. Only includes keys for providers that are required.
      */
-    const getApiKeys = (): {llm_config: Partial<Record<ByokKeyField, string>>} => ({
-        llm_config: Object.fromEntries(
-            [...supportedByokProviders]
-                .map((provider): [ByokKeyField, string | undefined] => [
-                    LLM_PROVIDER_API_KEY_FIELD[provider],
-                    getApiKey(apiKeys, provider),
-                ])
-                .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
-                    Boolean(entry[1])
-                )
-        ),
-    })
+    const apiKeysSlyData = useMemo<{llm_config: Partial<Record<ByokKeyField, string>>}>(
+        () => ({
+            llm_config: Object.fromEntries(
+                [...supportedByokProviders]
+                    .map((provider): [ByokKeyField, string | undefined] => [
+                        LLM_PROVIDER_API_KEY_FIELD[provider],
+                        getApiKey(apiKeys, provider),
+                    ])
+                    .filter((entry: [ByokKeyField, string | undefined]): entry is [ByokKeyField, string] =>
+                        Boolean(entry[1])
+                    )
+            ),
+        }),
+        [apiKeys, supportedByokProviders]
+    )
 
     /**
      * Builds the extraSlyData object to be sent with each request, including information for Agent Network Designer
@@ -317,13 +320,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const baseExtraSlyData = buildExtraSlyData()
 
     // Add API keys to extraSlyData if needed, merging with baseExtraSlyData if it exists
-    const extraSlyData: Record<string, unknown> | undefined =
-        anyApiKeysRequired || baseExtraSlyData
-            ? {
-                  ...baseExtraSlyData,
-                  ...(anyApiKeysRequired ? getApiKeys() : {}),
-              }
-            : undefined
+    const extraSlyData: Record<string, unknown> | undefined = useMemo(
+        () =>
+            anyApiKeysRequired || baseExtraSlyData
+                ? {
+                      ...baseExtraSlyData,
+                      ...(anyApiKeysRequired ? apiKeysSlyData : {}),
+                  }
+                : undefined,
+        [anyApiKeysRequired, baseExtraSlyData, apiKeysSlyData]
+    )
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {
@@ -620,7 +626,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     agentName,
                     updated,
                     agentNetworkName,
-                    username
+                    username,
+                    extraSlyData
                 )
 
                 if (newNetworks.length === 0) {
@@ -652,7 +659,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 notifySaveError(agentName, e)
             }
         },
-        [neuroSanURL, username, selectedNetwork]
+        [neuroSanURL, username, extraSlyData, selectedNetwork]
     )
 
     const onStreamingStarted = useCallback((): void => {
@@ -813,6 +820,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         agentCounts={agentCounts}
                         agentsInNetwork={agentsInNetwork}
                         agentIconSuggestions={agentIconSuggestions}
+                        extraSlyData={extraSlyData}
                         id="multi-agent-accelerator-agent-flow"
                         key="multi-agent-accelerator-agent-flow"
                         currentConversations={currentConversations}
