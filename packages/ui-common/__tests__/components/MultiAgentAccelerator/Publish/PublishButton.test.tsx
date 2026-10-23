@@ -160,6 +160,20 @@ describe("PublishButton", () => {
         expect(mockPublishNetwork).not.toHaveBeenCalled()
     })
 
+    it("should ask the server again when the org name in Settings changes", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "Republish"})
+        vi.mocked(listPublishedNetworks).mockResolvedValue([])
+
+        act(() => {
+            useSettingsStore.getState().updateSettings({publish: {orgName: "another-org"}})
+        })
+
+        await screen.findByRole("button", {name: "Publish"})
+        expect(listPublishedNetworks).toHaveBeenLastCalledWith(SERVER_URL, "another-org")
+    })
+
     it("should stay on Publish when the server can't be asked whether the network is live", async () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
         vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
@@ -483,16 +497,17 @@ describe("PublishButton", () => {
         await openDetails()
     })
 
-    it("should unpublish from the server it was published to, even if Settings changed since", async () => {
+    it("should ask the new server when the publish server in Settings changes", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
+        vi.mocked(listPublishedNetworks).mockClear()
+
         act(() => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: "https://other-publish.test"}})
         })
 
-        await clickUnpublishAndConfirm()
-
-        expect(unpublishNetwork).toHaveBeenCalledWith(SERVER_URL, PUBLISH_ID)
+        await screen.findByRole("button", {name: "Publish"})
+        expect(listPublishedNetworks).toHaveBeenCalledWith("https://other-publish.test", ORG_NAME)
     })
 
     it("should offer to republish after unpublishing", async () => {

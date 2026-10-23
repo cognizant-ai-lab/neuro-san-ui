@@ -80,6 +80,19 @@ export const usePublishStore = create<PublishStore>()((set) => ({
         }),
 }))
 
+// What we know about published networks is for the publish server and org in Settings, so forget it when either
+// changes and let each network ask the server again. Networks that are publishing keep their state until they finish.
+useSettingsStore.subscribe(({settings: {publish}}, {settings: {publish: previous}}) => {
+    if (publish.serverUrl === previous.serverUrl && publish.orgName === previous.orgName) return
+
+    usePublishStore.setState(({networks}) => ({
+        networks: Object.fromEntries(
+            Object.entries(networks).filter(([, publishState]) => publishState.status === PublishStatus.Publishing)
+        ),
+        publishedList: null,
+    }))
+})
+
 /**
  * The publish server to use: the one set in Settings, otherwise the default from the environment.
  */
