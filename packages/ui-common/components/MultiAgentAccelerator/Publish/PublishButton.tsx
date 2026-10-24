@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown"
+import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 import PublicIcon from "@mui/icons-material/Public"
 import Button from "@mui/material/Button"
 import ButtonGroup from "@mui/material/ButtonGroup"
@@ -23,7 +24,7 @@ import Popover from "@mui/material/Popover"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
-import {publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishTarget, unpublish} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishTarget, unpublish} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {PublishPanel} from "./PublishPanel"
 import {usePublishTarget} from "./usePublishTarget"
@@ -49,9 +50,9 @@ interface MainAction {
 }
 
 /**
- * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "Republish" from then
- * on, since the server keeps it even once it's unpublished. The dropdown opens a panel with the progress, or the live
- * URL and Unpublish.
+ * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live". Once
+ * it's unpublished it says "Republish", since the server keeps it. The dropdown opens a panel with the progress, or the
+ * live URL with Republish and Unpublish.
  */
 export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkName])
@@ -89,9 +90,17 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
             }
         }
 
+        if (publishState?.status === PublishStatus.Published) {
+            return {
+                color: "success",
+                icon: <OpenInNewIcon />,
+                label: "View live",
+                handleClick: () => openInNewTab(publishState.url),
+            }
+        }
+
         return {
-            // Green while it's live
-            color: publishState?.status === PublishStatus.Published ? "success" : "primary",
+            color: "primary",
             icon: <PublicIcon />,
             label: publishState ? "Republish" : "Publish",
             handleClick: () => setIsConfirmOpen(true),
@@ -100,7 +109,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const mainAction = getMainAction()
     const isPublishBlocked = publishState?.status !== PublishStatus.Publishing && !target
-    const isUnpublishing = publishState?.status === PublishStatus.Published && publishState.isUnpublishing
 
     return (
         <>
@@ -120,7 +128,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     {/* A disabled button doesn't fire the hover events the tooltip needs, so it gets a wrapper */}
                     <span>
                         <Button
-                            disabled={isPublishBlocked || isUnpublishing}
+                            disabled={isPublishBlocked}
                             id={`${id}-main`}
                             onClick={mainAction.handleClick}
                             startIcon={mainAction.icon}
@@ -153,6 +161,10 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     <PublishPanel
                         publishState={publishState}
                         id={`${id}-panel`}
+                        onRepublish={() => {
+                            setIsPanelOpen(false)
+                            setIsConfirmOpen(true)
+                        }}
                         onUnpublish={setNetworkToUnpublish}
                     />
                 </Popover>

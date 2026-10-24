@@ -92,13 +92,7 @@ describe("PublishButton", () => {
 
     const publishAndWaitUntilLive = async () => {
         await clickPublishAndConfirm()
-        await screen.findByRole("button", {name: "Republish"})
-    }
-
-    const clickRepublish = async () => {
-        const republishButton = screen.getByRole("button", {name: "Republish"})
-        await user.click(republishButton)
-        return screen.findByRole("dialog")
+        await screen.findByRole("button", {name: "View live"})
     }
 
     const confirmRepublish = async (confirmation: HTMLElement) => {
@@ -114,6 +108,14 @@ describe("PublishButton", () => {
         const detailsButton = await screen.findByRole("button", {name: SHOW_DETAILS_LABEL})
         await user.click(detailsButton)
         await screen.findByText(expectedStatus)
+    }
+
+    // While it's live, Republish is in the details panel
+    const clickRepublish = async () => {
+        await openDetails()
+        const republishButton = screen.getByRole("button", {name: "Republish"})
+        await user.click(republishButton)
+        return screen.findByRole("dialog")
     }
 
     const clickUnpublish = async () => {
@@ -153,7 +155,7 @@ describe("PublishButton", () => {
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
         renderPublishButton()
 
-        await screen.findByRole("button", {name: "Republish"})
+        await screen.findByRole("button", {name: "View live"})
         await openDetails()
 
         screen.getByText(PUBLISHED_URL)
@@ -163,7 +165,7 @@ describe("PublishButton", () => {
     it("should ask the server again when the org name in Settings changes", async () => {
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
         renderPublishButton()
-        await screen.findByRole("button", {name: "Republish"})
+        await screen.findByRole("button", {name: "View live"})
         vi.mocked(listPublishedNetworks).mockResolvedValue([])
 
         act(() => {
@@ -281,7 +283,7 @@ describe("PublishButton", () => {
         screen.getByRole("progressbar", {name: "Publishing progress"})
 
         releasePublish()
-        await screen.findByRole("button", {name: "Republish"})
+        await screen.findByRole("button", {name: "View live"})
         expect(screen.queryByText("Putting it online...")).not.toBeInTheDocument()
     })
 
@@ -299,7 +301,7 @@ describe("PublishButton", () => {
         )
     })
 
-    it("should point to the publish details when the browser blocks the new tab", async () => {
+    it("should point to View live when the browser blocks the new tab", async () => {
         openSpy.mockReturnValue(null)
         renderPublishButton()
 
@@ -394,7 +396,18 @@ describe("PublishButton", () => {
         const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
         await user.click(confirmButton)
 
-        await waitFor(() => expect(screen.getAllByRole("button", {name: "Republish"})).toHaveLength(2))
+        await waitFor(() => expect(screen.getAllByRole("button", {name: "View live"})).toHaveLength(2))
+    })
+
+    it("should open the live network again when View live is clicked", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        openSpy.mockClear()
+        const viewLiveButton = screen.getByRole("button", {name: "View live"})
+
+        await user.click(viewLiveButton)
+
+        expect(openSpy).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
     })
 
     it("should show the live URL in the details", async () => {
@@ -420,7 +433,7 @@ describe("PublishButton", () => {
         await screen.findByText("Putting it online...")
 
         releasePublish()
-        await screen.findByRole("button", {name: "Republish"})
+        await screen.findByRole("button", {name: "View live"})
     })
 
     it("should ask before unpublishing, naming the live URL", async () => {
@@ -475,8 +488,7 @@ describe("PublishButton", () => {
 
         await clickUnpublishAndConfirm()
 
-        // The open panel is modal, which hides the button beneath it from the accessibility tree
-        const republishButton = screen.getByRole("button", {name: "Republish", hidden: true})
+        const republishButton = screen.getByRole("button", {name: "Republish"})
         expect(republishButton).toBeDisabled()
     })
 
@@ -556,7 +568,7 @@ describe("PublishButton", () => {
             makePublishedNetwork(),
         ])
         renderPublishButton()
-        await screen.findByRole("button", {name: "Republish"})
+        await screen.findByRole("button", {name: "View live"})
 
         await openDetails()
 

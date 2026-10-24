@@ -38,23 +38,20 @@ interface PublishIconButtonProps {
 }
 
 /**
- * Small globe button for publishing a network from the sidebar. Publishes after asking, spins while publishing, and
- * republishes from then on. Green while the network is live, and opens the live site once the network has expired.
+ * Small globe button for publishing a network from the sidebar. Publishes after asking and spins while publishing.
+ * Once the network is live it turns green and opens the live site, and once it's unpublished it republishes.
  */
 export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hocon, id, isExpired, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkName])
     const publishStatus = publishState?.status
-    const published = publishState?.status === PublishStatus.Published ? publishState : null
-    const publishedUrl = published?.url
+    const publishedUrl = publishState?.status === PublishStatus.Published ? publishState.url : null
     const target = usePublishTarget(networkName)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-    const liveUrlToOpen = isExpired ? publishedUrl : null
-
     const getLabel = () => {
         if (publishStatus === PublishStatus.Publishing) return "Publishing..."
-        if (liveUrlToOpen) return "View live"
+        if (publishedUrl) return "View live"
         if (isExpired) return "Expired"
         if (!target) return PUBLISH_SETTINGS_REQUIRED_MESSAGE
         return publishState ? "Republish" : "Publish"
@@ -70,14 +67,12 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                 <span>
                     <IconButton
                         aria-label={label}
-                        disabled={
-                            isPublishing || published?.isUnpublishing || (!liveUrlToOpen && (isExpired || !target))
-                        }
+                        disabled={isPublishing || (!publishedUrl && (isExpired || !target))}
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()
-                            if (liveUrlToOpen) {
-                                openInNewTab(liveUrlToOpen)
+                            if (publishedUrl) {
+                                openInNewTab(publishedUrl)
                             } else {
                                 setIsConfirmOpen(true)
                             }

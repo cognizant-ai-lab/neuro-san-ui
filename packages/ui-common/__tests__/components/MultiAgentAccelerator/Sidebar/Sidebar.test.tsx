@@ -652,6 +652,11 @@ describe("SideBar", () => {
             },
         }
 
+        const markUnpublished = () =>
+            usePublishStore.setState({
+                networks: {[TEMPORARY_NETWORK.agentNetworkName]: {status: PublishStatus.Unpublished}},
+            })
+
         const markLive = () =>
             usePublishStore.setState({
                 networks: {
@@ -686,7 +691,7 @@ describe("SideBar", () => {
             const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
             await user.click(confirmButton)
 
-            await screen.findByRole("button", {name: "Republish"})
+            await screen.findByRole("button", {name: "View live"})
             expect(publishNetwork).toHaveBeenCalledWith(
                 expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
             )
@@ -745,8 +750,19 @@ describe("SideBar", () => {
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
         })
 
-        it("Should ask before republishing a live temporary network, without opening the network", async () => {
+        it("Should open the live site once the temporary network is live, without opening the network", async () => {
             markLive()
+            renderWithTemporaryNetwork()
+            const viewLiveButton = await screen.findByRole("button", {name: "View live"})
+
+            await user.click(viewLiveButton)
+
+            expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should ask before republishing an unpublished temporary network, without opening the network", async () => {
+            markUnpublished()
             renderWithTemporaryNetwork()
             const republishButton = await screen.findByRole("button", {name: "Republish"})
 
@@ -762,7 +778,7 @@ describe("SideBar", () => {
         })
 
         it("Should cancel republishing with Escape, without republishing or opening the network", async () => {
-            markLive()
+            markUnpublished()
             renderWithTemporaryNetwork()
             const republishButton = await screen.findByRole("button", {name: "Republish"})
             await user.click(republishButton)

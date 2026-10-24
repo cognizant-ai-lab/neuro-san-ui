@@ -28,6 +28,18 @@ import {StatusLight} from "../../Common/StatusLight"
 
 // #region: Styled Components
 
+// A small text button for the panel's actions
+const PanelAction = styled(Button)({
+    minWidth: 0,
+    padding: 0,
+    textTransform: "none",
+})
+
+const PanelActions = styled(Box)(({theme}) => ({
+    display: "flex",
+    gap: theme.spacing(3),
+}))
+
 const PanelNote = styled(Typography)(({theme}) => ({
     ...theme.typography.body2,
     color: theme.palette.text.secondary,
@@ -48,13 +60,14 @@ const StatusRow = styled(Box)(({theme}) => ({
 interface PublishPanelProps {
     readonly publishState: PublishState
     readonly id: string
+    readonly onRepublish: () => void
     readonly onUnpublish: (published: Published) => void
 }
 
 /**
  * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
  */
-export const PublishPanel: FC<PublishPanelProps> = ({id, onUnpublish, publishState}) => (
+export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublish, publishState}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
@@ -76,14 +89,24 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onUnpublish, publishSta
                 </StatusRow>
                 <PublishedNetworkUrl url={publishState.url} />
                 <Divider />
-                <Button
-                    disabled={publishState.isUnpublishing}
-                    onClick={() => onUnpublish(publishState)}
-                    size="small"
-                    sx={{alignSelf: "flex-start", color: "error.light", minWidth: 0, p: 0, textTransform: "none"}}
-                >
-                    {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}
-                </Button>
+                <PanelActions>
+                    <PanelAction
+                        disabled={publishState.isUnpublishing}
+                        onClick={onRepublish}
+                        size="small"
+                        sx={{color: "var(--bs-secondary)"}}
+                    >
+                        Republish
+                    </PanelAction>
+                    <PanelAction
+                        disabled={publishState.isUnpublishing}
+                        onClick={() => onUnpublish(publishState)}
+                        size="small"
+                        sx={{color: "error.light"}}
+                    >
+                        {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}
+                    </PanelAction>
+                </PanelActions>
             </>
         )}
         {publishState.status === PublishStatus.Publishing && (
