@@ -21,6 +21,9 @@ const HTTP_PROTOCOL_REGEX = /^http:\/\//iu
 
 export const stripProtocol = (value: string) => (value ?? "").replace(URL_PROTOCOL_REGEX, "")
 
+/** Treat a server base URL with or without its optional trailing slash as the same server. */
+export const stripTrailingSlash = (value: string): string => value.replace(/\/$/u, "")
+
 /**
  * Normalize a server URL input by stripping the protocol and determining the protocol to use.
  * @param value The input URL value to normalize.

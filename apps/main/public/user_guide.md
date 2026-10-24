@@ -42,6 +42,13 @@ Networks created using the **Agent Network Designer** are temporary and expire a
 
 Unlike permanent networks, which are read-only, temporary networks can be edited. Edits can happen both at the node level (an individual agent's description and instructions), by clicking on a node and making updates in that popup, and at the network level (its overall structure), by clicking "Edit" next to the network title (or in the sidebar), and making updates in the Network Editor.
 
+### Managing Published Networks
+
+Publishing creates a live site that remains available after its temporary network expires or is deleted.
+Select **Published networks** in the sidebar to manage live sites for the publishing server and organization
+configured in **Settings > External Services**, even when their source networks are gone. You can copy or open
+a site's URL, or select **Unpublish** and confirm to take it offline. Use **Refresh** to reload the list.
+
 ### Using a Downloaded Network in neuro-san and neuro-san-studio
 
 The download icon saves a network as a HOCON file. HOCON is the format that the neuro-san frameworks use to define agent networks (think JSON, with comments and a few conveniences), so a network you build in MAUI can run directly in either framework.
