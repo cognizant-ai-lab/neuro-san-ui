@@ -18,6 +18,7 @@ import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
 import LinearProgress from "@mui/material/LinearProgress"
+import {styled} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 
@@ -25,51 +26,97 @@ import {PublishedNetworkUrl} from "./PublishedNetworkUrl"
 import {Published, PublishState, PublishStatus} from "../../../state/Publish"
 import {StatusLight} from "../../Common/StatusLight"
 
+// #region: Styled Components
+
+// A small text button for the panel's actions
+const PanelAction = styled(Button)({
+    minWidth: 0,
+    padding: 0,
+    textTransform: "none",
+})
+
+const PanelActions = styled(Box)(({theme}) => ({
+    display: "flex",
+    gap: theme.spacing(3),
+}))
+
+const PanelNote = styled(Typography)(({theme}) => ({
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
+}))
+
+const PanelTitle = styled(Typography)({
+    fontWeight: 600,
+})
+
+const StatusRow = styled(Box)(({theme}) => ({
+    alignItems: "center",
+    display: "flex",
+    gap: theme.spacing(1),
+}))
+
+// #endregion: Styled Components
+
 interface PublishPanelProps {
     readonly publishState: PublishState
     readonly id: string
-    readonly isUnpublishing: boolean
+    readonly onRepublish: () => void
     readonly onUnpublish: (published: Published) => void
 }
 
 /**
- * Details of publishing a network: progress while publishing, or the live URL once published.
+ * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
  */
-export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpublish, publishState}) => (
+export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublish, publishState}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
     >
-        {publishState.status === PublishStatus.Published ? (
+        {publishState.status === PublishStatus.Unpublished && (
             <>
-                <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
+                <StatusRow>
+                    <StatusLight statusValue="unknown" />
+                    <PanelTitle>Unpublished</PanelTitle>
+                </StatusRow>
+                <PanelNote>Republish to put it back online.</PanelNote>
+            </>
+        )}
+        {publishState.status === PublishStatus.Published && (
+            <>
+                <StatusRow>
                     <StatusLight statusValue="green" />
-                    <Typography sx={{fontWeight: 600}}>Live</Typography>
-                </Box>
+                    <PanelTitle>Live</PanelTitle>
+                </StatusRow>
                 <PublishedNetworkUrl url={publishState.url} />
                 <Divider />
-                <Button
-                    disabled={isUnpublishing}
-                    onClick={() => onUnpublish(publishState)}
-                    size="small"
-                    sx={{alignSelf: "flex-start", color: "error.light", minWidth: 0, p: 0, textTransform: "none"}}
-                >
-                    {isUnpublishing ? "Unpublishing..." : "Unpublish"}
-                </Button>
+                <PanelActions>
+                    <PanelAction
+                        disabled={publishState.isUnpublishing}
+                        onClick={onRepublish}
+                        size="small"
+                        sx={{color: "var(--bs-secondary)"}}
+                    >
+                        Republish
+                    </PanelAction>
+                    <PanelAction
+                        disabled={publishState.isUnpublishing}
+                        onClick={() => onUnpublish(publishState)}
+                        size="small"
+                        sx={{color: "error.light"}}
+                    >
+                        {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}
+                    </PanelAction>
+                </PanelActions>
             </>
-        ) : (
+        )}
+        {publishState.status === PublishStatus.Publishing && (
             <>
-                <Typography sx={{fontWeight: 600}}>Putting it online...</Typography>
+                <PanelTitle>Putting it online...</PanelTitle>
                 <LinearProgress
                     aria-label="Publishing progress"
                     sx={{"& .MuiLinearProgress-bar": {backgroundColor: "var(--bs-secondary)"}}}
                 />
-                <Typography
-                    color="text.secondary"
-                    variant="body2"
-                >
-                    This can take a minute.
-                </Typography>
+                <PanelNote>This can take a few minutes.</PanelNote>
             </>
         )}
     </Box>

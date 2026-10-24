@@ -10,7 +10,10 @@ import {
     PUBLISHED_TAB_BLOCKED_MESSAGE,
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
-import {PUBLIC_ACCESS_WARNING} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
+import {
+    PUBLIC_ACCESS_WARNING,
+    REFRESH_THEME_LABEL,
+} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
     listPublishedNetworks,
     PublishedNetwork,
@@ -26,7 +29,6 @@ const PUBLISH_ID = "dep-123"
 const DISPLAY_NAME = "Cailville Bakery"
 const HOCON = "{ tools: [] }"
 const PUBLISHED_URL = "http://live.test/cailville_bakery"
-const NETWORK_ID = "cailville_bakery-1f2e3d4c"
 const NETWORK_NAME = "cailville_bakery"
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
@@ -72,7 +74,6 @@ describe("PublishButton", () => {
                 displayName={DISPLAY_NAME}
                 hocon={HOCON}
                 id="publish-button"
-                networkId={NETWORK_ID}
                 networkName={NETWORK_NAME}
             />
         )
@@ -94,10 +95,27 @@ describe("PublishButton", () => {
         await screen.findByRole("button", {name: "View live"})
     }
 
-    const openDetails = async () => {
-        const detailsButton = screen.getByRole("button", {name: SHOW_DETAILS_LABEL})
+    const confirmRepublish = async (confirmation: HTMLElement) => {
+        const confirmButton = within(confirmation).getByRole("button", {name: "Republish"})
+        await user.click(confirmButton)
+        await waitFor(() => expect(mockPublishNetwork).toHaveBeenCalledTimes(2))
+    }
+
+    /**
+     * Opens the details panel, once the panel isn't already open or closing, and waits for the given status in it.
+     */
+    const openDetails = async (expectedStatus: "Live" | "Unpublished" = "Live") => {
+        const detailsButton = await screen.findByRole("button", {name: SHOW_DETAILS_LABEL})
         await user.click(detailsButton)
-        await screen.findByText("Live")
+        await screen.findByText(expectedStatus)
+    }
+
+    // While it's live, Republish is in the details panel
+    const clickRepublish = async () => {
+        await openDetails()
+        const republishButton = screen.getByRole("button", {name: "Republish"})
+        await user.click(republishButton)
+        return screen.findByRole("dialog")
     }
 
     const clickUnpublish = async () => {
@@ -133,7 +151,7 @@ describe("PublishButton", () => {
         expect(screen.queryByRole("button", {name: SHOW_DETAILS_LABEL})).not.toBeInTheDocument()
     })
 
-    it("should show View live for a network the server already has live, without publishing again", async () => {
+    it("should offer to republish a network the server already has live, without publishing again", async () => {
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
         renderPublishButton()
 
@@ -142,6 +160,20 @@ describe("PublishButton", () => {
 
         screen.getByText(PUBLISHED_URL)
         expect(mockPublishNetwork).not.toHaveBeenCalled()
+    })
+
+    it("should ask the server again when the org name in Settings changes", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "View live"})
+        vi.mocked(listPublishedNetworks).mockResolvedValue([])
+
+        act(() => {
+            useSettingsStore.getState().updateSettings({publish: {orgName: "another-org"}})
+        })
+
+        await screen.findByRole("button", {name: "Publish"})
+        expect(listPublishedNetworks).toHaveBeenLastCalledWith(SERVER_URL, "another-org")
     })
 
     it("should stay on Publish when the server can't be asked whether the network is live", async () => {
@@ -160,14 +192,12 @@ describe("PublishButton", () => {
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="first-publish-button"
-                    networkId="first-network-id"
                     networkName="first_network"
                 />
                 <PublishButton
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="second-publish-button"
-                    networkId="second-network-id"
                     networkName="second_network"
                 />
             </>
@@ -187,6 +217,15 @@ describe("PublishButton", () => {
         expect(confirmation).toHaveTextContent(`under the org "${ORG_NAME}"`)
         expect(confirmation).toHaveTextContent(PUBLIC_ACCESS_WARNING)
         expect(mockPublishNetwork).not.toHaveBeenCalled()
+    })
+
+    it("should not offer to recreate the theme on a first publish", async () => {
+        renderPublishButton()
+
+        await clickPublish()
+
+        const confirmation = await screen.findByRole("dialog")
+        expect(within(confirmation).queryByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeInTheDocument()
     })
 
     it("should not publish when the confirmation is cancelled", async () => {
@@ -276,6 +315,90 @@ describe("PublishButton", () => {
         )
     })
 
+    it("should ask before republishing, saying it replaces the published version", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        const confirmation = await clickRepublish()
+
+        expect(confirmation).toHaveTextContent(`The published version of "${DISPLAY_NAME}" on ${SERVER_URL}`)
+        expect(confirmation).toHaveTextContent("will be replaced with this one")
+        expect(within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeChecked()
+    })
+
+    it("should republish the network's HOCON and keep its theme", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        const confirmation = await clickRepublish()
+
+        await confirmRepublish(confirmation)
+
+        expect(mockPublishNetwork).toHaveBeenLastCalledWith(
+            expect.objectContaining({networkName: NETWORK_NAME, hocon: HOCON, refreshTheme: false})
+        )
+    })
+
+    it("should not republish when the confirmation is cancelled", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        const confirmation = await clickRepublish()
+        const cancelButton = within(confirmation).getByRole("button", {name: "Cancel"})
+
+        await user.click(cancelButton)
+
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+        expect(mockPublishNetwork).toHaveBeenCalledTimes(1)
+    })
+
+    it("should republish with a new theme when asked to", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        const confirmation = await clickRepublish()
+        const refreshThemeCheckbox = within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})
+
+        await user.click(refreshThemeCheckbox)
+        await confirmRepublish(confirmation)
+
+        expect(mockPublishNetwork).toHaveBeenLastCalledWith(expect.objectContaining({refreshTheme: true}))
+    })
+
+    it("should offer to republish a network the server has unpublished", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "Republish"})
+
+        await openDetails("Unpublished")
+
+        expect(screen.queryByRole("button", {name: "Unpublish"})).not.toBeInTheDocument()
+    })
+
+    it("should show an edited copy of a published network as published too", async () => {
+        render(
+            <>
+                <PublishButton
+                    displayName={DISPLAY_NAME}
+                    hocon={HOCON}
+                    id="original-publish-button"
+                    networkName={NETWORK_NAME}
+                />
+                <PublishButton
+                    displayName={DISPLAY_NAME}
+                    hocon="{ tools: [], edited: true }"
+                    id="edited-publish-button"
+                    networkName={NETWORK_NAME}
+                />
+            </>
+        )
+        const [originalPublishButton] = await screen.findAllByRole("button", {name: "Publish"})
+
+        await user.click(originalPublishButton)
+        const confirmation = await screen.findByRole("dialog")
+        const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
+        await user.click(confirmButton)
+
+        await waitFor(() => expect(screen.getAllByRole("button", {name: "View live"})).toHaveLength(2))
+    })
+
     it("should open the live network again when View live is clicked", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
@@ -335,7 +458,7 @@ describe("PublishButton", () => {
 
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
         expect(unpublishNetwork).not.toHaveBeenCalled()
-        screen.getByText("View live")
+        screen.getByText("Live")
     })
 
     it("should not allow a second unpublish while the first is still running", async () => {
@@ -354,7 +477,19 @@ describe("PublishButton", () => {
         expect(screen.getByRole("button", {name: "Unpublishing..."})).toBeDisabled()
 
         finishUnpublish()
-        await screen.findByRole("button", {name: "Publish"})
+        // Unpublishing closes the panel, so reopen it to see the result
+        await openDetails("Unpublished")
+    })
+
+    it("should not allow republishing while unpublishing", async () => {
+        vi.mocked(unpublishNetwork).mockImplementation(() => new Promise<void>(vi.fn()))
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickUnpublishAndConfirm()
+
+        const republishButton = screen.getByRole("button", {name: "Republish"})
+        expect(republishButton).toBeDisabled()
     })
 
     it("should report the error and stay live when unpublishing fails", async () => {
@@ -371,29 +506,29 @@ describe("PublishButton", () => {
                 expect.stringContaining(SERVER_ERROR)
             )
         )
-        // The panel stays open, and it's modal, which hides the button beneath it from the accessibility tree
-        screen.getByText("View live")
+        await openDetails()
     })
 
-    it("should unpublish from the server it was published to, even if Settings changed since", async () => {
+    it("should ask the new server when the publish server in Settings changes", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
+        vi.mocked(listPublishedNetworks).mockClear()
+
         act(() => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: "https://other-publish.test"}})
         })
 
-        await clickUnpublishAndConfirm()
-
-        expect(unpublishNetwork).toHaveBeenCalledWith(SERVER_URL, PUBLISH_ID)
+        await screen.findByRole("button", {name: "Publish"})
+        expect(listPublishedNetworks).toHaveBeenCalledWith("https://other-publish.test", ORG_NAME)
     })
 
-    it("should offer to publish again after unpublishing", async () => {
+    it("should offer to republish after unpublishing", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
 
         await clickUnpublishAndConfirm()
 
-        await screen.findByRole("button", {name: "Publish"})
+        await screen.findByRole("button", {name: "Republish"})
     })
 
     it("should report the error and offer to publish again when publishing fails", async () => {
@@ -411,5 +546,45 @@ describe("PublishButton", () => {
         )
         await screen.findByRole("button", {name: "Publish"})
         expect(openSpy).not.toHaveBeenCalled()
+    })
+
+    it("should keep offering to republish when republishing fails and the server can't be asked", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
+        vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
+        const confirmation = await clickRepublish()
+
+        await confirmRepublish(confirmation)
+
+        await waitFor(() => expect(warnSpy).toHaveBeenCalled())
+        await openDetails("Unpublished")
+    })
+
+    it("should show a network as live when the server lists it both live and unpublished", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([
+            {id: "stopped", name: NETWORK_NAME, url: null},
+            makePublishedNetwork(),
+        ])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "View live"})
+
+        await openDetails()
+
+        screen.getByText(PUBLISHED_URL)
+    })
+
+    it("should ask the server again when republishing fails, and show what it says", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        const confirmation = await clickRepublish()
+
+        await confirmRepublish(confirmation)
+
+        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalledTimes(2))
+        await openDetails("Unpublished")
     })
 })

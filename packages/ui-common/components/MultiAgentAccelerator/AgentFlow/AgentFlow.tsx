@@ -780,10 +780,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         if (!networkDisplayName) return null
 
         const isPublishingSetUp = enablePublishing && Boolean(publishServerUrl)
-        const isViewingNetwork = !isAgentNetworkDesignerMode && !isEditingNetwork
         const hoconToPublish = currentTempNetwork?.networkHocon
         const showPublishButton =
-            isPublishingSetUp && isViewingNetwork && currentTempNetwork?.agentNetworkName && hoconToPublish
+            isPublishingSetUp && !isAgentNetworkDesignerMode && currentTempNetwork?.agentNetworkName && hoconToPublish
 
         return (
             <Box
@@ -850,7 +849,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             displayName={networkDisplayName}
                             hocon={hoconToPublish}
                             id={`${id}-publish-button`}
-                            networkId={currentTempNetwork.agentInfo.agent_name}
                             networkName={currentTempNetwork.agentNetworkName}
                         />
                     </Box>

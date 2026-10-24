@@ -17,10 +17,15 @@ limitations under the License.
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
+import {WAIT_TIMEOUT_SECONDS} from "../../../../../packages/ui-common/controller/publish/Publish"
 import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../Const"
 
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
+
+// How long to wait for the publish server. While a network builds, the publish client asks the server to hold each
+// /wait request open for up to WAIT_TIMEOUT_SECONDS, so this allows that plus some slack.
+const UPSTREAM_TIMEOUT_MS = (WAIT_TIMEOUT_SECONDS + 30) * 1000
 
 const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> => {
     const chunks: Buffer[] = []
@@ -65,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const serverUrl = parseServerUrl(server)
     if (!serverUrl) {
-        res.status(httpStatus.BAD_REQUEST).json({detail: "Missing or invalid publish server URL"})
+        res.status(httpStatus.BAD_REQUEST).json({detail: "Missing or invalid publishing server URL"})
         return
     }
 
@@ -77,23 +82,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const contentType = req.headers["content-type"]
+    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req)
 
+    // Only the exchange with the publish server is caught, so a bug of ours still surfaces as a 500
+    let upstream: Response
+    let upstreamBody: Buffer
     try {
-        const upstream = await fetch(target, {
+        upstream = await fetch(target, {
             method: req.method,
             headers: {
                 Authorization: `Bearer ${token}`,
                 ...(contentType ? {"Content-Type": contentType} : {}),
             },
-            body: req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req),
+            body,
+            signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         })
-
-        const upstreamContentType = upstream.headers.get("content-type")
-        if (upstreamContentType) {
-            res.setHeader("Content-Type", upstreamContentType)
-        }
-        res.status(upstream.status).send(Buffer.from(await upstream.arrayBuffer()))
+        upstreamBody = Buffer.from(await upstream.arrayBuffer())
     } catch (e) {
-        res.status(httpStatus.BAD_GATEWAY).json({detail: `Couldn't reach the publish server: ${String(e)}`})
+        // fetch fails with a TypeError when it can't connect, for example to a host that doesn't exist
+        if (e instanceof TypeError) {
+            res.status(httpStatus.BAD_GATEWAY).json({
+                detail: `Couldn't reach the publishing server at ${serverUrl.origin}`,
+            })
+            return
+        }
+        if (e instanceof DOMException && e.name === "TimeoutError") {
+            res.status(httpStatus.GATEWAY_TIMEOUT).json({detail: "The publishing server didn't answer in time"})
+            return
+        }
+        throw e
     }
+
+    const upstreamContentType = upstream.headers.get("content-type")
+    if (upstreamContentType) {
+        res.setHeader("Content-Type", upstreamContentType)
+    }
+    res.status(upstream.status).send(upstreamBody)
 }

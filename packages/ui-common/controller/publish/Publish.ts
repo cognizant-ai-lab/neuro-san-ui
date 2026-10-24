@@ -21,14 +21,13 @@ limitations under the License.
 
 import httpStatus from "http-status"
 
-import {testConnection, TestConnectionResult} from "../agent/Agent"
-
 //#region Types
 
 export interface PublishedNetwork {
     readonly id: string
     readonly name: string
-    readonly url: string
+    /** Null once it's unpublished, since the server keeps it stopped */
+    readonly url: string | null
 }
 
 interface PublishNetworkRequest {
@@ -36,6 +35,8 @@ interface PublishNetworkRequest {
     readonly orgName: string
     readonly networkName: string
     readonly hocon: string
+    /** Has the server make a new theme instead of keeping the one it made before */
+    readonly refreshTheme?: boolean
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -49,12 +50,17 @@ interface ServerNetwork {
     readonly error?: string | null
 }
 
+type LiveNetwork = PublishedNetwork & {readonly url: string}
+
 //#endregion Types
 
 //#region Constants
 
+// How long the Settings test waits for the server to answer
+const HEALTH_TIMEOUT_MS = 5_000
+
 // How long each /wait request holds open waiting for the build to finish
-const WAIT_TIMEOUT_SECONDS = 60
+export const WAIT_TIMEOUT_SECONDS = 60
 
 //#endregion Constants
 
@@ -80,24 +86,49 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
 }
 
 /**
- * Checks that a publish server is up.
+ * Checks that a publishing server is up and accepts our token.
+ * @returns Whether it's a healthy publishing server that accepts the token. False if it couldn't be reached, didn't
+ * answer in time, isn't a publishing server, isn't OK, or turned the token down.
  */
-export const checkHealth = (serverUrl: string): Promise<TestConnectionResult> =>
-    testConnection(publishRouteUrl(serverUrl, "health"))
+export const checkHealth = async (serverUrl: string): Promise<boolean> => {
+    try {
+        const signal = AbortSignal.timeout(HEALTH_TIMEOUT_MS)
+
+        const healthResponse = await fetch(publishRouteUrl(serverUrl, "health"), {signal})
+        if (!healthResponse.ok) return false
+
+        // Other servers can answer "ok" too, but only a publishing server reports its port pool
+        const health: {status?: string; port_pool?: unknown} = await healthResponse.json()
+        if (health.status !== "ok" || !health.port_pool) return false
+
+        // /health doesn't need the token, so also ask for something that does
+        const listResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {signal})
+        return listResponse.ok
+    } catch {
+        return false
+    }
+}
 
 /**
- * Lists the org's live networks.
+ * Lists the org's published networks, live or unpublished.
  */
 export const listPublishedNetworks = async (serverUrl: string, orgName: string): Promise<PublishedNetwork[]> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    return networks.flatMap((network) =>
-        network.org_name === orgName && network.status === "ready" && network.url
-            ? [{id: network.id, name: network.name, url: network.url}]
-            : []
-    )
+    // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
+    // Compared in lowercase: the server files a publish under an existing org whose name differs only in case, and
+    // lists it with that org's spelling, so "darren" can come back as "Darren"
+    const isOurOrg = (network: ServerNetwork) => network.org_name.toLowerCase() === orgName.toLowerCase()
+    const isListed = (network: ServerNetwork) =>
+        (network.status === "ready" && Boolean(network.url)) ||
+        network.status === "stopped" ||
+        network.status === "failed"
+
+    return networks
+        .filter((network) => isOurOrg(network) && isListed(network))
+        .map((network) => ({id: network.id, name: network.name, url: network.status === "ready" ? network.url : null}))
 }
 
 /**
@@ -108,14 +139,16 @@ export const publishNetwork = async ({
     orgName,
     networkName,
     hocon,
-}: PublishNetworkRequest): Promise<PublishedNetwork> => {
+    refreshTheme = false,
+}: PublishNetworkRequest): Promise<LiveNetwork> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
-    form.append("org_name", orgName)
+    // Lowercase, like the org names we look for when listing
+    form.append("org_name", orgName.toLowerCase())
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
-    form.append("theme_refresh", "false")
+    form.append("theme_refresh", String(refreshTheme))
 
     const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
     await throwIfNotOk(createResponse, "Publishing")
