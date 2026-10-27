@@ -47,7 +47,7 @@ const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
         vendor: "OpenAI",
     },
     {
-        getLogo: () => "/Anthropic.png",
+        getLogo: () => "/claude.png",
         idSuffix: "anthropic",
         onTest: isAnthropicKeyValid,
         placeholder: "sk-ant-...",

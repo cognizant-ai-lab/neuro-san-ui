@@ -21,7 +21,14 @@ limitations under the License.
  * @see https://nextjs.org/docs/app/guides/instrumentation
  */
 
-import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR, GA_MEASUREMENT_ID_ENV_VAR} from "./Const"
+import {
+    ENABLE_AUTHENTICATION_ENV_VAR,
+    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
+    GA_MEASUREMENT_ID_ENV_VAR,
+    PUBLISH_BEARER_TOKEN_ENV_VAR,
+    PUBLISH_SERVER_URL_ENV_VAR,
+} from "./Const"
 
 /**
  * List of environment variables that are required for the app to run. If any of these are not set, the app will
@@ -81,6 +88,16 @@ export const register = () => {
         )
     }
 
+    // Publishing sends every request to the publish server with this token
+    const enablePublishing = process.env[ENABLE_PUBLISHING_ENV_VAR] === "true"
+    if (enablePublishing && isMissing(PUBLISH_BEARER_TOKEN_ENV_VAR)) {
+        throw new Error(
+            `Publishing is enabled (${ENABLE_PUBLISHING_ENV_VAR} is true) but the ${
+                PUBLISH_BEARER_TOKEN_ENV_VAR
+            } environment variable is empty or undefined.`
+        )
+    }
+
     // Optional env vars
     const missingOptionalEnvVars = OPTIONAL_ENV_VARS.filter((envVar) => isMissing(envVar))
     if (missingOptionalEnvVars.length > 0) {
@@ -97,4 +114,7 @@ export const register = () => {
     console.info("OpenAI API key:", process.env["OPENAI_API_KEY"] ? "set" : "not set")
     console.info("Logo service token:", process.env["LOGO_SERVICE_TOKEN"] ? "set" : "not set")
     console.info("Neuro SAN server URL:", process.env["NEURO_SAN_SERVER_URL"])
+    console.info("Publishing enabled:", enablePublishing)
+    console.info("Publish server URL:", process.env[PUBLISH_SERVER_URL_ENV_VAR] || "not set")
+    console.info("Publish bearer token:", process.env[PUBLISH_BEARER_TOKEN_ENV_VAR] ? "set" : "not set")
 }

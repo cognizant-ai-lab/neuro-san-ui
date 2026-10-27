@@ -20,8 +20,10 @@ export interface EnvironmentResponse {
     readonly auth0Domain?: string
     readonly backendNeuroSanApiUrl?: string
     readonly enableAuthentication?: boolean
+    readonly enablePublishing?: boolean
     readonly enableGoogleAnalytics?: boolean
     readonly gaMeasurementID?: string
     readonly logoServiceToken?: string
+    readonly publishServerUrl?: string
     readonly supportEmailAddress?: string
 }

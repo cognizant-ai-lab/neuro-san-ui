@@ -19,7 +19,14 @@ Tests for instrumentation.ts Next.js startup file.
  */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {ENABLE_AUTHENTICATION_ENV_VAR, ENABLE_GOOGLE_ANALYTICS_ENV_VAR, GA_MEASUREMENT_ID_ENV_VAR} from "../../../Const"
+import {
+    ENABLE_AUTHENTICATION_ENV_VAR,
+    ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
+    GA_MEASUREMENT_ID_ENV_VAR,
+    PUBLISH_BEARER_TOKEN_ENV_VAR,
+    PUBLISH_SERVER_URL_ENV_VAR,
+} from "../../../Const"
 import {OPTIONAL_ENV_VARS, register, REQUIRED_ENV_VARS, REQUIRED_FOR_AUTH_ENV_VARS} from "../../../instrumentation"
 
 vi.mock("../../../../../packages/ui-common/const")
@@ -53,17 +60,25 @@ describe("instrumentation", () => {
         // Default to "Google Analytics enabled"
         process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = "true"
         process.env[GA_MEASUREMENT_ID_ENV_VAR] = "GA_MEASUREMENT_ID-test_value"
+
+        // Default to "Publishing enabled"
+        process.env[ENABLE_PUBLISHING_ENV_VAR] = "true"
+        process.env[PUBLISH_BEARER_TOKEN_ENV_VAR] = "PUBLISH_BEARER_TOKEN-test_value"
+        process.env[PUBLISH_SERVER_URL_ENV_VAR] = "PUBLISH_SERVER_URL-test_value"
     })
 
     const expectConsoleOutput = (
         enableAuthentication: boolean,
         enableGoogleAnalytics: boolean,
+        enablePublishing: boolean,
         gaMeasurementID: string,
         openAIKeySet: string,
         logoServiceTokenSet: string,
-        neuroSanServerURL: string
+        neuroSanServerURL: string,
+        publishServerURL: string,
+        bearerTokenSet: string
     ) => {
-        expect(console.info).toHaveBeenCalledTimes(7)
+        expect(console.info).toHaveBeenCalledTimes(10)
         expect(console.info).toHaveBeenCalledWith("Start-up: Environment variables checked successfully.")
         expect(console.info).toHaveBeenCalledWith("Authentication enabled:", enableAuthentication)
         expect(console.info).toHaveBeenCalledWith("Google Analytics enabled:", enableGoogleAnalytics)
@@ -71,6 +86,9 @@ describe("instrumentation", () => {
         expect(console.info).toHaveBeenCalledWith("OpenAI API key:", openAIKeySet)
         expect(console.info).toHaveBeenCalledWith("Logo service token:", logoServiceTokenSet)
         expect(console.info).toHaveBeenCalledWith("Neuro SAN server URL:", neuroSanServerURL)
+        expect(console.info).toHaveBeenCalledWith("Publishing enabled:", enablePublishing)
+        expect(console.info).toHaveBeenCalledWith("Publish server URL:", publishServerURL)
+        expect(console.info).toHaveBeenCalledWith("Publish bearer token:", bearerTokenSet)
     }
 
     it("should not throw if env vars are all set", () => {
@@ -81,10 +99,13 @@ describe("instrumentation", () => {
         expectConsoleOutput(
             true,
             true,
+            true,
             `${GA_MEASUREMENT_ID_ENV_VAR}-test_value`,
             "set",
             "set",
-            "NEURO_SAN_SERVER_URL-test_value"
+            "NEURO_SAN_SERVER_URL-test_value",
+            "PUBLISH_SERVER_URL-test_value",
+            "set"
         )
     })
 
@@ -109,6 +130,20 @@ describe("instrumentation", () => {
         expect(() => register()).toThrow()
     })
 
+    it("Should throw if publishing is enabled but the Publish bearer token is not set", () => {
+        delete process.env[PUBLISH_BEARER_TOKEN_ENV_VAR]
+
+        expect(() => register()).toThrow(PUBLISH_BEARER_TOKEN_ENV_VAR)
+    })
+
+    it("Should not throw if publishing is disabled and the Publish bearer token is not set", () => {
+        vi.spyOn(console, "info").mockImplementation(vi.fn())
+        process.env[ENABLE_PUBLISHING_ENV_VAR] = "false"
+        delete process.env[PUBLISH_BEARER_TOKEN_ENV_VAR]
+
+        expect(() => register()).not.toThrow()
+    })
+
     it("Should not throw if authentication is disabled and required variable is not set", () => {
         vi.spyOn(console, "info").mockImplementation(vi.fn())
         process.env[ENABLE_AUTHENTICATION_ENV_VAR] = "false"
@@ -122,10 +157,13 @@ describe("instrumentation", () => {
         expectConsoleOutput(
             false,
             true,
+            true,
             `${GA_MEASUREMENT_ID_ENV_VAR}-test_value`,
             "set",
             "set",
-            "NEURO_SAN_SERVER_URL-test_value"
+            "NEURO_SAN_SERVER_URL-test_value",
+            "PUBLISH_SERVER_URL-test_value",
+            "set"
         )
     })
 
@@ -140,6 +178,9 @@ describe("instrumentation", () => {
 
         delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
         delete process.env[GA_MEASUREMENT_ID_ENV_VAR]
+        delete process.env[ENABLE_PUBLISHING_ENV_VAR]
+        delete process.env[PUBLISH_BEARER_TOKEN_ENV_VAR]
+        delete process.env[PUBLISH_SERVER_URL_ENV_VAR]
 
         // Spy on console.warn to suppress output during test
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
@@ -151,6 +192,16 @@ describe("instrumentation", () => {
         })
 
         // Check start-up messages
-        expectConsoleOutput(false, false, "not set", "not set", "not set", "NEURO_SAN_SERVER_URL-test_value")
+        expectConsoleOutput(
+            false,
+            false,
+            false,
+            "not set",
+            "not set",
+            "not set",
+            "NEURO_SAN_SERVER_URL-test_value",
+            "not set",
+            "not set"
+        )
     })
 })

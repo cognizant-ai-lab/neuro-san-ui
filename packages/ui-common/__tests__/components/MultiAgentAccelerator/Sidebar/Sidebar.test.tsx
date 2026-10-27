@@ -38,6 +38,7 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
@@ -48,9 +49,11 @@ import {
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
+import {listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
+import {PublishStatus, usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
 import {cleanUpAgentName} from "../../../../utils/AgentName"
 import {downloadFile} from "../../../../utils/File"
@@ -82,6 +85,8 @@ vi.mock("@mui/x-tree-view/RichTreeView", async (importOriginal) => {
 })
 
 vi.mock("../../../../controller/agent/Agent")
+vi.mock("../../../../controller/publish/Publish")
+vi.mock("../../../../components/Common/notification")
 vi.mock("../../../../utils/File", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../../utils/File")>()
 
@@ -162,6 +167,7 @@ describe("SideBar", () => {
 
         // Reset settings store
         useSettingsStore.getState().resetSettings()
+        useEnvironmentStore.getState().setEnablePublishing(false)
     })
 
     it("should render correctly", async () => {
@@ -625,5 +631,138 @@ describe("SideBar", () => {
         })
 
         await waitFor(() => expect(screen.queryByRole("treeitem")).not.toBeInTheDocument())
+    })
+
+    describe("Publishing from the sidebar", () => {
+        const PUBLISHED_URL = "http://live.test/temporary_network"
+        const SERVER_URL = "https://publish.test"
+
+        const renderWithTemporaryNetwork = (temporaryNetwork = TEMPORARY_NETWORK) =>
+            renderSidebarComponent({
+                networks: [...LIST_NETWORKS_RESPONSE],
+                temporaryNetworks: [temporaryNetwork],
+                newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            })
+
+        const EXPIRED_TEMPORARY_NETWORK = {
+            ...TEMPORARY_NETWORK,
+            reservation: {
+                ...TEMPORARY_NETWORK.reservation,
+                expiration_time_in_seconds: Math.floor(Date.now() / 1000) - 3600,
+            },
+        }
+
+        const markLive = () =>
+            usePublishStore.setState({
+                networks: {
+                    [TEMPORARY_NETWORK.agentInfo.agent_name]: {
+                        publishId: "dep-123",
+                        serverUrl: SERVER_URL,
+                        status: PublishStatus.Published,
+                        url: PUBLISHED_URL,
+                    },
+                },
+            })
+
+        beforeEach(() => {
+            useEnvironmentStore.getState().setEnablePublishing(true)
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: "cailville"}})
+            usePublishStore.setState(usePublishStore.getInitialState())
+            vi.mocked(listPublishedNetworks).mockResolvedValue([])
+            vi.mocked(publishNetwork).mockResolvedValue({
+                id: "dep-123",
+                name: TEMPORARY_NETWORK.agentNetworkName,
+                url: PUBLISHED_URL,
+            })
+            vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
+        })
+
+        it("Should publish a temporary network after asking, without opening the network", async () => {
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+            const confirmation = await screen.findByRole("dialog")
+            const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
+            await user.click(confirmButton)
+
+            await screen.findByRole("button", {name: "View live"})
+            expect(publishNetwork).toHaveBeenCalledWith(
+                expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
+            )
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should cancel publishing with Escape, without publishing or opening the network", async () => {
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
+            await screen.findByRole("dialog")
+
+            await user.keyboard("{Escape}")
+
+            await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+            screen.getByRole("button", {name: "Publish"})
+            expect(publishNetwork).not.toHaveBeenCalled()
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should show a temporary network is still publishing, without offering to publish it again", async () => {
+            usePublishStore.setState({
+                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Publishing}},
+            })
+            renderWithTemporaryNetwork()
+
+            const publishingButton = await screen.findByRole("button", {name: "Publishing..."})
+
+            expect(publishingButton).toBeDisabled()
+        })
+
+        it("Should ask for an org name before publishing", async () => {
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: null}})
+            renderWithTemporaryNetwork()
+
+            const publishButton = await screen.findByRole("button", {name: PUBLISH_SETTINGS_REQUIRED_MESSAGE})
+
+            expect(publishButton).toBeDisabled()
+        })
+
+        it("Should not offer to publish an expired temporary network", async () => {
+            renderWithTemporaryNetwork(EXPIRED_TEMPORARY_NETWORK)
+
+            const expiredButton = await screen.findByRole("button", {name: "Expired"})
+
+            expect(expiredButton).toBeDisabled()
+        })
+
+        it("Should still open the live site of an expired temporary network", async () => {
+            markLive()
+            renderWithTemporaryNetwork(EXPIRED_TEMPORARY_NETWORK)
+            const viewLiveButton = await screen.findByRole("button", {name: "View live"})
+
+            await user.click(viewLiveButton)
+
+            expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+        })
+
+        it("Should open the live site once the temporary network is live", async () => {
+            markLive()
+            renderWithTemporaryNetwork()
+            const viewLiveButton = await screen.findByRole("button", {name: "View live"})
+
+            await user.click(viewLiveButton)
+
+            expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should not offer to publish until a publishing server is set", async () => {
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: null, orgName: null}})
+            renderWithTemporaryNetwork()
+
+            // First proves the temporary network, where the button would appear, is on screen
+            await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
+        })
     })
 })

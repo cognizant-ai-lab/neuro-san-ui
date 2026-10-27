@@ -21,7 +21,9 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     ENABLE_AUTHENTICATION_ENV_VAR,
     ENABLE_GOOGLE_ANALYTICS_ENV_VAR,
+    ENABLE_PUBLISHING_ENV_VAR,
     GA_MEASUREMENT_ID_ENV_VAR,
+    PUBLISH_SERVER_URL_ENV_VAR,
 } from "../../../../Const"
 import handler from "../../../../pages/api/environment"
 import {EnvironmentResponse} from "../../../../pages/api/environment/Types"
@@ -51,6 +53,8 @@ describe("Environment API handler", () => {
         process.env[ENABLE_AUTHENTICATION_ENV_VAR] = "true"
         process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = "true"
         process.env["GA_MEASUREMENT_ID"] = "test-ga-id"
+        process.env[ENABLE_PUBLISHING_ENV_VAR] = "true"
+        process.env[PUBLISH_SERVER_URL_ENV_VAR] = "https://publish.example.com"
 
         const {req, res} = createMocks()
 
@@ -64,10 +68,12 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true,
             enableGoogleAnalytics: true,
+            enablePublishing: true,
             gaMeasurementID: "test-ga-id",
             logoServiceToken: "test-logo-service-token",
+            publishServerUrl: "https://publish.example.com",
             supportEmailAddress: "support@example.com",
-        } satisfies EnvironmentResponse)
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("returns expected values for unset environment variables", () => {
@@ -79,6 +85,7 @@ describe("Environment API handler", () => {
         delete process.env["SUPPORT_EMAIL_ADDRESS"]
         delete process.env["LOGO_SERVICE_TOKEN"]
         delete process.env[ENABLE_AUTHENTICATION_ENV_VAR]
+        delete process.env[PUBLISH_SERVER_URL_ENV_VAR]
         delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
         delete process.env["GA_MEASUREMENT_ID"]
 
@@ -93,10 +100,12 @@ describe("Environment API handler", () => {
             auth0Domain: undefined,
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: undefined,
             supportEmailAddress: undefined,
             logoServiceToken: undefined,
-        } satisfies EnvironmentResponse)
+            publishServerUrl: undefined,
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("handles empty environment variables", () => {
@@ -109,6 +118,7 @@ describe("Environment API handler", () => {
         process.env[ENABLE_AUTHENTICATION_ENV_VAR] = ""
         process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR] = ""
         process.env["GA_MEASUREMENT_ID"] = ""
+        process.env[PUBLISH_SERVER_URL_ENV_VAR] = ""
 
         const {req, res} = createMocks()
 
@@ -121,10 +131,12 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "",
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: "",
             logoServiceToken: "",
+            publishServerUrl: "",
             supportEmailAddress: "",
-        })
+        } satisfies Required<EnvironmentResponse>)
     })
 
     it("ignores request method and body", () => {
@@ -137,6 +149,7 @@ describe("Environment API handler", () => {
         delete process.env[ENABLE_GOOGLE_ANALYTICS_ENV_VAR]
         delete process.env[GA_MEASUREMENT_ID_ENV_VAR]
         delete process.env[ENABLE_AUTHENTICATION_ENV_VAR]
+        delete process.env[PUBLISH_SERVER_URL_ENV_VAR]
 
         const {req, res} = createMocks({
             method: "POST",
@@ -152,9 +165,11 @@ describe("Environment API handler", () => {
             backendNeuroSanApiUrl: "https://api.example.com",
             enableAuthentication: true, // defaults to true if not set
             enableGoogleAnalytics: false, // defaults to false if not set
+            enablePublishing: false, // defaults to false if not set
             gaMeasurementID: undefined,
             logoServiceToken: undefined,
+            publishServerUrl: undefined,
             supportEmailAddress: undefined,
-        })
+        } satisfies Required<EnvironmentResponse>)
     })
 })

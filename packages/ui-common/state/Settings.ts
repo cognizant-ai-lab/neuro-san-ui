@@ -85,6 +85,12 @@ interface Settings {
     readonly externalServices: {
         neuroSanUrl: string | null
     }
+    readonly publish: {
+        /** Publish server that networks are published to. Overrides the default from the environment when set. */
+        readonly serverUrl: string | null
+        /** Sent as org_name with every publish. Required to publish. */
+        readonly orgName: string | null
+    }
 }
 
 /**
@@ -139,6 +145,10 @@ export const DEFAULT_SETTINGS: Settings = {
     externalServices: {
         neuroSanUrl: null,
     },
+    publish: {
+        serverUrl: null,
+        orgName: null,
+    },
 }
 
 // Name for key where main app settings are saved
@@ -149,7 +159,7 @@ export const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
 
 // TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
 // This is a backstop for cases where users rarely close their browser or tabs
-export const API_KEYS_TTL_MS = 2 * 24 * 60 * 60 * 1000 // 2 days
+export const API_KEYS_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 //#endregion Constants
 

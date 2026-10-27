@@ -47,10 +47,13 @@ import {PlasmaEdge} from "./PlasmaEdge"
 import {Title} from "./Title"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../../state/Settings"
+import {useEnvironmentStore} from "../../../state/Environment"
+import {usePublishServerUrl} from "../../../state/Publish"
+import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
+import {PublishButton} from "../Publish/PublishButton"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbles} from "../ThoughtBubbles/ThoughtBubbles"
 
@@ -61,6 +64,10 @@ export interface AgentFlowProps {
     readonly agentsInNetwork: ConnectivityInfo[]
     readonly currentConversations?: AgentConversation[] | null
     readonly currentUser?: string
+    /**
+     * Extra sly_data entries to merge into each outgoing request. For example, API keys for BYOK.
+     */
+    readonly extraSlyData?: Record<string, unknown>
     readonly id: string
     readonly isAwaitingLlm?: boolean
     readonly isAgentNetworkDesignerMode?: boolean
@@ -117,6 +124,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     agentsInNetwork,
     currentConversations,
     currentUser,
+    extraSlyData,
     id,
     isAgentNetworkDesignerMode,
     isAwaitingLlm,
@@ -139,6 +147,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     const {fitView} = useReactFlow()
     const flowWrapperRef = useRef<HTMLDivElement | null>(null)
     const fitViewFrameRef = useRef<number | null>(null)
+
+    const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
 
     const scheduleFitView = useCallback(() => {
         if (fitViewFrameRef.current !== null) {
@@ -190,6 +200,22 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Read temporary networks to find agent_network_definition for the currently selected network.
     const tempNetworks = useTempNetworksStore((state) => state.tempNetworks)
+
+    const publishServerUrl = usePublishServerUrl()
+
+    const currentTempNetwork = useMemo(
+        () => (networkId ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId) : undefined),
+        [networkId, tempNetworks]
+    )
+
+    // Track conversation IDs we've already processed to prevent re-adding after expiry
+    const processedConversationIdsRef = useRef<Set<string>>(new Set())
+
+    // Track which bubble is currently being hovered
+    const hoveredBubbleIdRef = useRef<string | null>(null)
+    const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
+        hoveredBubbleIdRef.current = bubbleId
+    }, [])
 
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
@@ -270,9 +296,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             if (!isEditableAgent(node.data.displayAs)) return
 
             // Find the agent's existing instructions and description from the temp network definition.
-            const currentTempNetwork = networkId
-                ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId)
-                : undefined
             const currentAgentDefinition = currentTempNetwork?.agentNetworkDefinition?.find((e) => e.origin === node.id)
 
             setSelectedAgent({
@@ -283,7 +306,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             })
             setIsPopupOpen(true)
         },
-        [tempNetworks, isTemporaryNetwork, networkId]
+        [currentTempNetwork, isTemporaryNetwork]
     )
 
     const handleNodeClick: NodeMouseHandler<RFNode<AgentNodeProps>> = useCallback(
@@ -476,6 +499,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             {isTemporaryNetwork && !isAwaitingLlm && (
                 <NetworkEditorDock
                     currentUser={currentUser}
+                    extraSlyData={extraSlyData}
                     id={`${id}-network-editor-dock`}
                     isEditingNetwork={isEditingNetwork}
                     networkId={networkId}
@@ -491,7 +515,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     agentName={selectedAgent.agentName}
                     initialInstructions={selectedAgent.initialInstructions}
                     initialDescription={selectedAgent.initialDescription}
-
                     isOpen={isPopupOpen}
                     networkId={networkId}
                     onSaveAgent={onSaveAgent}

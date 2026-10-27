@@ -29,7 +29,9 @@ import {
     filterNodeEvents,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentFlow"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
+import {listPublishedNetworks} from "../../../../controller/publish/Publish"
 import {ChatMessageType, ConnectivityInfo} from "../../../../generated/neuro-san/NeuroSanClient"
+import {useEnvironmentStore} from "../../../../state/Environment"
 import {useSettingsStore} from "../../../../state/Settings"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {PALETTES} from "../../../../Theme/Palettes"
@@ -99,6 +101,9 @@ type ThoughtBubbleOverlayProps = {
 //#region Mocks
 
 vi.mock("../../../../controller/agent/Agent")
+
+// The Publish button asks the publish server whether the network is already live
+vi.mock("../../../../controller/publish/Publish")
 
 vi.mock("notistack", async (importOriginal) => {
     const actual = await importOriginal<typeof import("notistack")>()
@@ -1693,6 +1698,64 @@ describe("AgentFlow", () => {
             } else {
                 expect(screen.queryByRole("button", {name: SAVE_BUTTON})).not.toBeInTheDocument()
             }
+        })
+    })
+
+    describe("Publishing", () => {
+        const PUBLISHABLE_NETWORK_NAME = "Published Network"
+
+        const renderPublishableNetwork = () => {
+            useTempNetworksStore
+                .getState()
+                .setTempNetworks([
+                    {...makeTempNetwork(OLD_NETWORK_ID, [], "published_network"), networkHocon: "{ tools: [] }"},
+                ])
+            renderAgentFlowComponent({
+                isTemporaryNetwork: true,
+                networkDisplayName: PUBLISHABLE_NETWORK_NAME,
+                networkId: OLD_NETWORK_ID,
+            })
+        }
+
+        beforeEach(() => {
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: "https://publish.test", orgName: "org"}})
+            useEnvironmentStore.getState().setEnablePublishing(true)
+            useEnvironmentStore.setState({publishServerUrl: null})
+            vi.mocked(listPublishedNetworks).mockResolvedValue([])
+        })
+
+        it("Should offer to publish a temporary network", async () => {
+            renderPublishableNetwork()
+
+            await screen.findByRole("button", {name: "Publish"})
+        })
+
+        it("Should offer to publish with the default publish server when none is set in Settings", async () => {
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: null}})
+            useEnvironmentStore.setState({publishServerUrl: "https://default-publish.test"})
+            renderPublishableNetwork()
+
+            await screen.findByRole("button", {name: "Publish"})
+        })
+
+        it("Should not offer to publish until there's a publish server", () => {
+            useSettingsStore.getState().updateSettings({publish: {serverUrl: null}})
+            renderPublishableNetwork()
+
+            // First proves the bar, where the button would appear, is on screen
+            screen.getByText(PUBLISHABLE_NETWORK_NAME)
+
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
+        })
+
+        it("Should not offer to publish a permanent network", () => {
+            const networkName = "Regular Net"
+            renderAgentFlowComponent({networkDisplayName: networkName})
+
+            // First proves the bar, where the button would appear, is on screen
+            screen.getByText(networkName)
+
+            expect(screen.queryByRole("button", {name: "Publish"})).not.toBeInTheDocument()
         })
     })
 
