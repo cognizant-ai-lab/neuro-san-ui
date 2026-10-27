@@ -22,20 +22,33 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC} from "react"
 
+import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
+import {PublishButton} from "../Publish/PublishButton"
 
 //#region: Types
 
 export interface TitleProps {
+    readonly currentTempNetwork: TemporaryNetwork
+    readonly hoconToPublish: string
     readonly id: string
     readonly networkDisplayName: string
     readonly setIsEditingNetwork: (isEditing: boolean) => void
     readonly showEditButton: boolean
+    readonly showPublishButton: boolean
 }
 
 //#endregion: Types
 
-export const Title: FC<TitleProps> = ({id, networkDisplayName, setIsEditingNetwork, showEditButton}) => {
+export const Title: FC<TitleProps> = ({
+    currentTempNetwork,
+    hoconToPublish,
+    id,
+    networkDisplayName,
+    setIsEditingNetwork,
+    showEditButton,
+    showPublishButton,
+}) => {
     const theme = useTheme()
 
     if (!networkDisplayName) return null
@@ -98,6 +111,17 @@ export const Title: FC<TitleProps> = ({id, networkDisplayName, setIsEditingNetwo
                 >
                     Edit
                 </Button>
+            )}
+            {showPublishButton && (
+                <Box sx={{pointerEvents: "auto"}}>
+                    <PublishButton
+                        displayName={networkDisplayName}
+                        hocon={hoconToPublish}
+                        id={`${id}-publish-button`}
+                        networkId={currentTempNetwork.agentInfo.agent_name}
+                        networkName={currentTempNetwork.agentNetworkName}
+                    />
+                </Box>
             )}
         </Box>
     )

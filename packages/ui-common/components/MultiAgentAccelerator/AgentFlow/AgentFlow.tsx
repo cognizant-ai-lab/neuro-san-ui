@@ -49,11 +49,10 @@ import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestio
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {usePublishServerUrl} from "../../../state/Publish"
-import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
+import {useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
-import {PublishButton} from "../Publish/PublishButton"
 import {isEditableAgent} from "../TemporaryNetworks"
 import {ThoughtBubbles} from "../ThoughtBubbles/ThoughtBubbles"
 
@@ -207,15 +206,6 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         () => (networkId ? tempNetworks.find((n) => n.agentInfo.agent_name === networkId) : undefined),
         [networkId, tempNetworks]
     )
-
-    // Track conversation IDs we've already processed to prevent re-adding after expiry
-    const processedConversationIdsRef = useRef<Set<string>>(new Set())
-
-    // Track which bubble is currently being hovered
-    const hoveredBubbleIdRef = useRef<string | null>(null)
-    const handleBubbleHoverChange = useCallback((bubbleId: string | null) => {
-        hoveredBubbleIdRef.current = bubbleId
-    }, [])
 
     // Ref for isStreaming, read inside the cleanup interval.
     const isStreamingRef = useRef<boolean | undefined>(isStreaming)
@@ -417,6 +407,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     // We hide the legend in certain situations
     const shouldShowLegend = agentsInNetwork.length > 0 && !isAgentNetworkDesignerMode && !isEditingNetwork
 
+    const isPublishingSetUp = enablePublishing && Boolean(publishServerUrl)
+    const isViewingNetwork = !isAgentNetworkDesignerMode && !isEditingNetwork
+    const hoconToPublish = currentTempNetwork?.networkHocon
+    const showPublishButton =
+        isPublishingSetUp &&
+        isViewingNetwork &&
+        Boolean(currentTempNetwork?.agentNetworkName) &&
+        Boolean(hoconToPublish)
+
     return (
         <Box
             id={`${id}-outer-box`}
@@ -464,6 +463,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     networkDisplayName={networkDisplayName}
                     setIsEditingNetwork={setIsEditingNetwork}
                     showEditButton={showEditButton}
+                    showPublishButton={showPublishButton}
+                    currentTempNetwork={currentTempNetwork}
+                    hoconToPublish={hoconToPublish}
                 />
                 <ReactFlow
                     connectionMode={ConnectionMode.Loose}
