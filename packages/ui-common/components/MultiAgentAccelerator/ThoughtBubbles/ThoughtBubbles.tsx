@@ -89,14 +89,11 @@ export const ThoughtBubbles: FC<ThoughtBubblesProps> = ({currentConversations}) 
 
                 return (
                     <ThoughtBubble
-                        backgroundColor="#EEF2FF"
-                        color="#6366F1"
                         data-bubble-id={id}
                         height={BUBBLE_HEIGHT}
                         key={id}
                         style={{left: leftPos, pointerEvents: "auto", position: "fixed", top: topPos}}
                         text={`${text}${structure ? `: ${structure}` : ""}`}
-                        textColor="var(--bs-red)"
                         width={BUBBLE_WIDTH}
                     />
                 )

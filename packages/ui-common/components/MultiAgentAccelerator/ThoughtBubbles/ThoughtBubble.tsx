@@ -3,10 +3,7 @@ import Typography from "@mui/material/Typography"
 import {SVGProps} from "react"
 
 export interface ThoughtBubbleProps extends SVGProps<SVGSVGElement> {
-    readonly backgroundColor?: string
-    readonly color?: string
     readonly text?: string
-    readonly textColor?: string
 }
 
 const bubbleFillPath =
@@ -20,17 +17,10 @@ const bubbleOutlinePath =
 /**
  * A single thought bubble.
  */
-export const ThoughtBubble = ({
-    backgroundColor,
-    className,
-    color,
-    height,
-    style,
-    text,
-    textColor,
-    width,
-}: ThoughtBubbleProps) => (
-    <svg
+export const ThoughtBubble = ({className, height, style, text, width, ...svgProps}: ThoughtBubbleProps) => (
+    <Box
+        component="svg"
+        {...svgProps}
         xmlns="http://www.w3.org/2000/svg"
         width={width}
         height={height}
@@ -39,16 +29,25 @@ export const ThoughtBubble = ({
         role="img"
         aria-label="Thought bubble"
         style={style}
+        sx={(theme) => ({
+            "& .thought-bubble-fill": {
+                fill: theme.palette.background.paper,
+            },
+
+            "& .thought-bubble-outline": {
+                fill: theme.palette.divider,
+            },
+        })}
     >
         <g transform="matrix(0.9486962,0,0,0.9486962,2.4834364,1.8361818)">
             <path
+                className="thought-bubble-fill"
                 d={bubbleFillPath}
-                fill={backgroundColor}
             />
 
             <path
+                className="thought-bubble-outline"
                 d={bubbleOutlinePath}
-                fill={color}
             />
         </g>
 
@@ -73,7 +72,7 @@ export const ThoughtBubble = ({
                     sx={{
                         WebkitBoxOrient: "vertical",
                         WebkitLineClamp: 4,
-                        color: textColor,
+                        color: "text.primary",
                         display: "-webkit-box",
                         fontSize: "7px",
                         fontWeight: 700,
@@ -90,5 +89,5 @@ export const ThoughtBubble = ({
                 </Typography>
             </Box>
         </foreignObject>
-    </svg>
+    </Box>
 )
