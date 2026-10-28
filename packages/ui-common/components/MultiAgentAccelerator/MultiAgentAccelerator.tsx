@@ -86,6 +86,15 @@ export interface MultiAgentAcceleratorProps {
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
 
 /**
+ * Maps an API key name to the corresponding LLM provider
+ */
+const API_KEY_TO_PROVIDER = {
+    openai_api_key: "OpenAI",
+    anthropic_api_key: "Anthropic",
+    google_api_key: "Google",
+} as const satisfies Record<ByokKeyField, LLMProvider>
+
+/**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
  * @param backendNeuroSanApiUrl Initial URL of the backend Neuro-San API. User can change this in the UI.
  * @param username Identifier to use for interactions with the backend (for personalization and tracking).
@@ -333,25 +342,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     }, [resetState])
 
     /**
-     * Maps an API key name to the corresponding LLM provider
-     */
-    const apiKeyToProvider = useCallback((key: string): LLMProvider | null => {
-        switch (key) {
-            case "openai_api_key":
-                return "OpenAI"
-            case "anthropic_api_key":
-                return "Anthropic"
-            default:
-                return null
-        }
-    }, [])
-
-    /**
      * Given a SlyData schema, returns the set of LLM providers that are supported by the agent network.
      * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers
      */
     const getSupportedLlmProviders = useCallback(
         (schema: unknown): ReadonlySet<LLMProvider> => {
+            const isByokKeyField = (key: string): key is ByokKeyField => Object.hasOwn(API_KEY_TO_PROVIDER, key)
+
             const parsed = BYOK.safeParse(schema)
 
             if (!parsed.success || !parsed.data.required?.includes("llm_config")) {
@@ -359,13 +356,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             }
 
             const providerKeys = Object.keys(parsed.data.properties?.llm_config?.properties ?? {})
-            return new Set(
-                providerKeys
-                    .map((key) => apiKeyToProvider(key))
-                    .filter((provider): provider is LLMProvider => provider !== null)
-            )
+
+            return new Set(providerKeys.filter(isByokKeyField).map((key) => API_KEY_TO_PROVIDER[key]))
         },
-        [apiKeyToProvider]
+        [API_KEY_TO_PROVIDER]
     )
 
     useEffect(() => {

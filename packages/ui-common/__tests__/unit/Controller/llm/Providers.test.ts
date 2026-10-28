@@ -20,6 +20,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {
     isAnthropicKeyValid,
+    isGoogleKeyValid,
     isKeyValidationFailure,
     isOpenAIKeyValid,
     KeyValidationResult,
@@ -27,10 +28,10 @@ import {
 import {LLMProvider} from "../../../../state/Settings"
 
 interface FailedResponseCase {
-    vendor: LLMProvider
-    validate: typeof isOpenAIKeyValid
-    body: Record<string, unknown>
-    expectedMessage: string
+    readonly vendor: LLMProvider
+    readonly validate: typeof isOpenAIKeyValid
+    readonly body: Record<string, unknown>
+    readonly expectedMessage: string
 }
 
 const FAKE_KEY = "fake-key"
@@ -47,6 +48,7 @@ describe("Providers controller", () => {
         const success = {ok: true}
         expect(await isOpenAIKeyValid(FAKE_KEY)).toEqual(success)
         expect(await isAnthropicKeyValid(FAKE_KEY)).toEqual(success)
+        expect(await isGoogleKeyValid(FAKE_KEY)).toEqual(success)
     })
 
     it.each<FailedResponseCase>([
@@ -63,6 +65,19 @@ describe("Providers controller", () => {
             validate: isAnthropicKeyValid,
             body: {type: "error", error: {type: "authentication_error", message: "invalid x-api-key"}},
             expectedMessage: "invalid x-api-key",
+        },
+        // Google shape: top-level type plus a nested error
+        {
+            vendor: "Google",
+            validate: isGoogleKeyValid,
+            body: {
+                error: {
+                    code: 400,
+                    type: "authentication_error",
+                    message: "API key not valid. Please pass a valid API key.",
+                },
+            },
+            expectedMessage: "API key not valid. Please pass a valid API key.",
         },
     ])(
         "should surface the status and error message from a failed $vendor response",

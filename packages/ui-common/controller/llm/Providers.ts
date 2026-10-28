@@ -78,3 +78,9 @@ export const isAnthropicKeyValid = (key: string): Promise<KeyValidationResult> =
         // https://simonwillison.net/2024/Aug/23/anthropic-dangerous-direct-browser-access/
         "anthropic-dangerous-direct-browser-access": "true",
     })
+
+export const isGoogleKeyValid = (key: string): Promise<KeyValidationResult> =>
+    validateKey("https://generativelanguage.googleapis.com/v1beta/models", {
+        Accept: "application/json",
+        "x-goog-api-key": key,
+    })
