@@ -95,6 +95,26 @@ const API_KEY_TO_PROVIDER = {
 } as const satisfies Record<ByokKeyField, LLMProvider>
 
 /**
+ * Given a SlyData schema, returns the set of LLM providers that are supported by the agent network.
+ * @param agentLlmConfig The `llm_config` property of the SlyData schema, if any.
+ * @returns A Set of LLM providers for which BYOK keys are supported by the current network. Empty if none.
+ * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers
+ */
+const getSupportedLlmProviders = (agentLlmConfig: unknown): ReadonlySet<LLMProvider> => {
+    const isByokKeyField = (key: string): key is ByokKeyField => Object.hasOwn(API_KEY_TO_PROVIDER, key)
+
+    const parsedAgentLlmConfig = BYOK.safeParse(agentLlmConfig)
+
+    if (!parsedAgentLlmConfig.success || !parsedAgentLlmConfig.data.required?.includes("llm_config")) {
+        return new Set()
+    }
+
+    const providerKeys = Object.keys(parsedAgentLlmConfig.data.properties?.llm_config?.properties ?? {})
+
+    return new Set(providerKeys.filter(isByokKeyField).map((key) => API_KEY_TO_PROVIDER[key]))
+}
+
+/**
  * Main Multi-Agent Accelerator component that contains the sidebar, agent flow, and chat components.
  * @param backendNeuroSanApiUrl Initial URL of the backend Neuro-San API. User can change this in the UI.
  * @param username Identifier to use for interactions with the backend (for personalization and tracking).
@@ -341,27 +361,6 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         resetState()
     }, [resetState])
 
-    /**
-     * Given a SlyData schema, returns the set of LLM providers that are supported by the agent network.
-     * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers
-     */
-    const getSupportedLlmProviders = useCallback(
-        (schema: unknown): ReadonlySet<LLMProvider> => {
-            const isByokKeyField = (key: string): key is ByokKeyField => Object.hasOwn(API_KEY_TO_PROVIDER, key)
-
-            const parsed = BYOK.safeParse(schema)
-
-            if (!parsed.success || !parsed.data.required?.includes("llm_config")) {
-                return new Set()
-            }
-
-            const providerKeys = Object.keys(parsed.data.properties?.llm_config?.properties ?? {})
-
-            return new Set(providerKeys.filter(isByokKeyField).map((key) => API_KEY_TO_PROVIDER[key]))
-        },
-        [API_KEY_TO_PROVIDER]
-    )
-
     useEffect(() => {
         ;(async () => {
             try {
@@ -394,9 +393,10 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 const agentFunction = await getAgentFunction(neuroSanURL, selectedNetwork, username)
                 setNetworkDescription(agentFunction?.function?.description || "")
 
-                const schema = agentFunction?.function?.sly_data_schema
-                setSupportedByokProviders(getSupportedLlmProviders(schema))
-                setSlyDataSchema(schema)
+                const slyDataSchemaTemp = agentFunction?.function?.sly_data_schema
+                const supportedLlmProviders = getSupportedLlmProviders(slyDataSchemaTemp)
+                setSupportedByokProviders(supportedLlmProviders)
+                setSlyDataSchema(slyDataSchemaTemp)
             } catch (e) {
                 console.warn(`Unable to get agent details for network ${selectedNetwork}:`, e)
             }
@@ -407,7 +407,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         if (selectedNetwork && !isLegacyAgentType(selectedNetwork)) {
             void fetchAgentDetails()
         }
-    }, [getSupportedLlmProviders, neuroSanURL, selectedNetwork, username])
+    }, [neuroSanURL, selectedNetwork, username])
 
     useEffect(() => {
         ;(async () => {
