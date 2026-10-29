@@ -16,6 +16,7 @@ limitations under the License.
 
 import {listPublishedNetworks, publishNetwork, unpublishNetwork} from "../../../controller/publish/Publish"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
+import {stripTrailingSlash} from "../../../utils/Url"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
@@ -69,8 +70,9 @@ export const checkIfPublished = async (network: PublishNetwork, {serverUrl, orgN
     try {
         const published = (await request).find((candidate) => candidate.name === network.name)
 
-        // Don't overwrite a publish the user started while we were asking
-        if (!published || usePublishStore.getState().networks[network.id]) return
+        // Ignore invalidated lookups and don't overwrite a publish started while we were asking.
+        const current = usePublishStore.getState()
+        if (current.publishedList?.request !== request || !published || current.networks[network.id]) return
 
         usePublishStore.getState().setPublishState(network.id, {
             status: PublishStatus.Published,
@@ -79,6 +81,7 @@ export const checkIfPublished = async (network: PublishNetwork, {serverUrl, orgN
             url: published.url,
         })
     } catch (e) {
+        if (usePublishStore.getState().publishedList?.request !== request) return
         setPublishedList(null)
         console.warn(`Unable to check whether "${network.name}" is published:`, e)
     }
@@ -93,11 +96,17 @@ export const publish = async (
     hocon: string,
     {serverUrl, orgName}: PublishTarget
 ): Promise<void> => {
-    const {clearPublishState, setPublishState} = usePublishStore.getState()
+    const {clearPublishState, setPublishState, publishedListRevision: startedAtRevision} = usePublishStore.getState()
     setPublishState(network.id, {status: PublishStatus.Publishing})
 
     try {
         const ready = await publishNetwork({serverUrl, orgName, networkName: network.name, hocon})
+        const deletedAtRevision =
+            usePublishStore.getState().unpublishedDeployments[JSON.stringify([stripTrailingSlash(serverUrl), ready.id])]
+        if (deletedAtRevision > startedAtRevision) {
+            clearPublishState(network.id)
+            return
+        }
         setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
 
         const message = openInNewTab(ready.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
@@ -111,14 +120,24 @@ export const publish = async (
 /**
  * Takes a live network offline, on the server it was published to.
  */
-export const unpublish = async (network: PublishNetwork, published: Published): Promise<void> => {
+export const unpublish = async (network: PublishNetwork, published: Published): Promise<boolean> => {
     try {
         await unpublishNetwork(published.serverUrl, published.publishId)
         // The shared list still has it as live, so drop the list too
-        const {clearPublishState, setPublishedList} = usePublishStore.getState()
-        clearPublishState(network.id)
-        setPublishedList(null)
+        const {networks, clearPublishState, recordUnpublishedDeployment} = usePublishStore.getState()
+        for (const [id, state] of Object.entries(networks)) {
+            if (
+                state.status === PublishStatus.Published &&
+                stripTrailingSlash(state.serverUrl) === stripTrailingSlash(published.serverUrl) &&
+                state.publishId === published.publishId
+            ) {
+                clearPublishState(id)
+            }
+        }
+        recordUnpublishedDeployment(published.serverUrl, published.publishId)
+        return true
     } catch (e) {
         sendNotification(NotificationType.error, `Failed to unpublish "${network.name}".`, String(e))
+        return false
     }
 }
