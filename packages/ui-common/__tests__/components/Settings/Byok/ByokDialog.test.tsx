@@ -358,7 +358,7 @@ describe("ByokDialog", () => {
         await user.click(input)
         await user.paste("sk-proj-second")
         await act(async () => {
-            resolveRequest(new Response(JSON.stringify({error: {message: "Old key rejected"}}), {status: 401}))
+            resolveRequest(Response.json({error: {message: "Old key rejected"}}, {status: 401}))
         })
         await waitFor(() => expect(within(row).getByRole("button", {name: "Test"})).toBeEnabled())
         expect(screen.queryByText("Old key rejected")).not.toBeInTheDocument()
