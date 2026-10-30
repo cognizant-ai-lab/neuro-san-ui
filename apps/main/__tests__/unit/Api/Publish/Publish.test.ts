@@ -95,6 +95,17 @@ describe("Publish API route", () => {
     })
 
     describe("Trusted publish servers", () => {
+        it("should refuse requests when no trusted destinations are configured", async () => {
+            vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, undefined)
+            vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, undefined)
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+            expect(res._getJSONData()).toEqual({detail: "Publish server is not allowed"})
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
         it("should refuse a malformed destination path", async () => {
             const res = await callProxy("GET", {path: "https://[invalid/health", server: SERVER_URL})
 
