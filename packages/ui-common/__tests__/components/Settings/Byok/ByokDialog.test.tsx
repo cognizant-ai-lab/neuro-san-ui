@@ -321,6 +321,80 @@ describe("ByokDialog", () => {
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 
+    it.each([
+        ["anthropic", "sk-ant-...", "sk-ant-firstsk-ant-second"],
+        ["google", "AQ....", "google-example-key"],
+    ])("checks %s keys when saving", async (provider, placeholder, key) => {
+        global.fetch = mockFetch({}, true)
+        render(<ByokDialog id="provider-key" />)
+        const row = screen.getByTestId(`provider-key-${provider}-input`)
+        await user.click(within(row).getByPlaceholderText(placeholder))
+        await user.paste(key)
+        await user.click(within(row).getByRole("button", {name: "Save"}))
+        if (provider === "anthropic") {
+            expect(await screen.findByText(/multiple API keys pasted together/u)).toBeVisible()
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Anthropic")).toBeFalsy()
+        } else {
+            await waitFor(() => expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled())
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Google")).toBe(key)
+        }
+    })
+
+    it("ignores a test result after the user changes the key", async () => {
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        render(<ByokDialog id="stale-test" />)
+        const row = screen.getByTestId("stale-test-openai-input")
+        const input = within(row).getByPlaceholderText("sk-...")
+        await user.click(input)
+        await user.paste("sk-proj-first")
+        await user.click(within(row).getByRole("button", {name: "Test"}))
+        await user.clear(input)
+        await user.click(input)
+        await user.paste("sk-proj-second")
+        await act(async () => {
+            resolveRequest(new Response(JSON.stringify({error: {message: "Old key rejected"}}), {status: 401}))
+        })
+        await waitFor(() => expect(within(row).getByRole("button", {name: "Test"})).toBeEnabled())
+        expect(screen.queryByText("Old key rejected")).not.toBeInTheDocument()
+        expect(input).toHaveValue("sk-proj-second")
+    })
+
+    it("does not repeat a pending save when closing and saving changes", async () => {
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        const onClose = vi.fn()
+        render(
+            <ByokDialog
+                id="duplicate-save"
+                onClose={onClose}
+            />
+        )
+        const row = screen.getByTestId("duplicate-save-openai-input")
+        await user.click(within(row).getByPlaceholderText("sk-..."))
+        await user.paste("sk-proj-example")
+        await user.click(within(row).getByRole("button", {name: "Save"}))
+        await user.click(screen.getByRole("button", {name: "close"}))
+        await user.click(screen.getByRole("button", {name: "Save changes"}))
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(onClose).not.toHaveBeenCalled()
+        await act(async () => {
+            resolveRequest(new Response("{}", {status: 200}))
+        })
+        await waitFor(() => expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled())
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe("sk-proj-example")
+    })
+
     it("renders dark mode logo when theme mode is dark", () => {
         const darkTheme = createTheme({palette: {mode: "dark"}})
         render(
