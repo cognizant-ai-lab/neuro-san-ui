@@ -15,11 +15,12 @@ limitations under the License.
 */
 
 import {useTheme} from "@mui/material/styles"
-import {useCallback, useMemo, useState} from "react"
+import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {
     isAnthropicKeyValid,
     isGoogleKeyValid,
+    isKeyValidationFailure,
     isOpenAIKeyValid,
     KeyValidationFailure,
     KeyValidationResult,
@@ -97,13 +98,13 @@ export interface UseByokKeyManagerReturn {
     /** Handler for updating validation failure results for a vendor. */
     readonly handleKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     /** Handler for saving all unsaved changes and closing the dialog. */
-    readonly handleSave: () => void
+    readonly handleSave: () => Promise<void>
     /** Handler for updating draft key values when inputs change. */
     readonly handleValueChange: (vendor: LLMProvider, value: string) => void
     /** Current validation failures for active providers. */
     readonly keyFailures: readonly ApiKeyFailure[]
     /** Persists a single API key to settings store. */
-    readonly persistKey: (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => void
+    readonly persistKey: (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => Promise<boolean>
     /** Whether the unsaved changes confirmation modal is currently visible. */
     readonly showUnsavedChangesModal: boolean
 }
@@ -127,8 +128,17 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const updateSettings = useSettingsStore((state) => state.updateSettings)
 
     const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
+    const currentDrafts = useRef<Record<string, string>>({})
+    const savingKeys = useRef(new Set<LLMProvider>())
     const [draftKeys, setDraftKeys] = useState<Record<string, string>>({})
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState<boolean>(false)
+
+    useEffect(
+        () => () => {
+            currentDrafts.current = {}
+        },
+        []
+    )
 
     const checkmarks = useMemo(
         (): Record<LLMProvider, CheckmarkFade> => ({
@@ -160,7 +170,38 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     )
 
     const persistKey = useCallback(
-        (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => {
+        async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => {
+            if (savingKeys.current.has(vendor)) {
+                return false
+            }
+            if (key) {
+                savingKeys.current.add(vendor)
+                const prefix = vendor === "OpenAI" ? "sk-" : vendor === "Anthropic" ? "sk-ant-" : null
+                try {
+                    const result: KeyValidationResult =
+                        prefix && key.split(prefix).length > 2
+                            ? {
+                                  ok: false,
+                                  message:
+                                      "This looks like multiple API keys pasted together. " +
+                                      "Clear the field and paste one key.",
+                              }
+                            : await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
+                    // An edit or discard while testing invalidates this save.
+                    if (currentDrafts.current[vendor] !== key) {
+                        return false
+                    }
+                    setKeyTestResults((prev) => ({
+                        ...prev,
+                        [vendor]: isKeyValidationFailure(result) ? {vendor, result} : null,
+                    }))
+                    if (!result.ok) {
+                        return false
+                    }
+                } finally {
+                    savingKeys.current.delete(vendor)
+                }
+            }
             updateSettings({
                 apiKeys: {
                     [vendor]: {
@@ -169,16 +210,20 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     },
                 },
             })
+            const {[vendor]: _savedDraft, ...remainingDrafts} = currentDrafts.current
+            currentDrafts.current = remainingDrafts
             checkmark.trigger()
             setDraftKeys((prev) => {
                 const {[vendor]: _, ...rest} = prev
                 return rest
             })
+            return true
         },
         [updateSettings]
     )
 
     const handleValueChange = useCallback((vendor: LLMProvider, value: string) => {
+        currentDrafts.current[vendor] = value
         setDraftKeys((prev) => ({...prev, [vendor]: value}))
     }, [])
 
@@ -216,20 +261,32 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     }, [getDirtyDrafts, onClose])
 
     const handleDiscard = useCallback(() => {
+        currentDrafts.current = {}
         setDraftKeys({})
         setShowUnsavedChangesModal(false)
         onClose?.()
     }, [onClose])
 
-    const handleSave = useCallback(() => {
+    const handleSave = useCallback(async () => {
         const now = Date.now()
-        getDirtyDrafts().forEach(({checkmark, vendor}) => {
-            persistKey(vendor, draftKeys[vendor], checkmark, now)
-        })
-        setDraftKeys({})
+        const drafts = getDirtyDrafts().map(({checkmark, vendor}) => ({checkmark, vendor, key: draftKeys[vendor]}))
         setShowUnsavedChangesModal(false)
-        onClose?.()
-    }, [getDirtyDrafts, draftKeys, persistKey, onClose])
+        const saved = await Promise.all(
+            drafts.map(({checkmark, vendor, key}) => persistKey(vendor, key, checkmark, now))
+        )
+        if (
+            saved.every(Boolean) &&
+            activeConfigs.every(
+                ({vendor}) =>
+                    currentDrafts.current[vendor] === undefined ||
+                    currentDrafts.current[vendor] ===
+                        (getApiKey(useSettingsStore.getState().settings.apiKeys, vendor) ?? "")
+            )
+        ) {
+            setDraftKeys({})
+            onClose?.()
+        }
+    }, [activeConfigs, getDirtyDrafts, draftKeys, persistKey, onClose])
 
     return {
         activeConfigs,

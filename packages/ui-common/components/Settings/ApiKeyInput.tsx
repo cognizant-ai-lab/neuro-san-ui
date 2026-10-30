@@ -8,7 +8,7 @@ import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
-import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
+import {FC, ChangeEvent as ReactChangeEvent, useEffect, useRef, useState} from "react"
 
 import {isKeyValidationFailure, KeyValidationFailure, KeyValidationResult} from "../../controller/llm/Providers"
 import {LLMProvider} from "../../state/Settings"
@@ -20,7 +20,7 @@ interface ApiKeyInputProps {
     readonly id: string
     readonly logo: string
     readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
-    readonly onSave: (key: string) => void
+    readonly onSave: (key: string) => Promise<boolean>
     readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly onValueChange?: (vendor: LLMProvider, value: string) => void
     readonly persistedValue: string
@@ -43,6 +43,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     placeholder,
     vendor,
 }) => {
+    const currentValue = useRef(persistedValue ?? "")
     const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
@@ -51,6 +52,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
+        currentValue.current = newValue
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         setInputValue(newValue)
@@ -61,8 +63,12 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setIsValidating(true)
         setKeyValidated(null)
         onResultChange?.(vendor, null)
+        const testedValue = inputValue
         try {
-            const result = await onTest(inputValue)
+            const result = await onTest(testedValue)
+            if (currentValue.current !== testedValue) {
+                return
+            }
             setKeyValidated(result.ok)
             onResultChange?.(vendor, isKeyValidationFailure(result) ? result : null)
         } finally {
@@ -74,6 +80,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     // Sync with persisted value changes - if the persisted value changes from outside
     useEffect(() => {
+        currentValue.current = persistedValue ?? ""
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
@@ -81,6 +88,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     }, [persistedValue, vendor, onResultChange, onValueChange])
 
     const handleClearInput = () => {
+        currentValue.current = ""
         setInputValue("")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
@@ -196,7 +204,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 Test
             </Button>
             <Button
-                onClick={() => onSave(inputValue)}
+                loading={isValidating}
+                onClick={async () => {
+                    setIsValidating(true)
+                    try {
+                        await onSave(inputValue)
+                    } finally {
+                        setIsValidating(false)
+                    }
+                }}
                 size="small"
                 variant="contained"
                 disabled={disableActions}

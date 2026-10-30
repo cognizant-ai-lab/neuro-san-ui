@@ -1,5 +1,5 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
-import {fireEvent, render, screen, within} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 
@@ -529,6 +529,7 @@ describe("SettingsDialog", () => {
         })
 
         it("saves unsaved API key changes and closes dialog when Save changes is clicked", async () => {
+            global.fetch = mockFetch({}, true)
             const onCloseMock = vi.fn()
             render(
                 <SettingsDialog
@@ -550,7 +551,7 @@ describe("SettingsDialog", () => {
             const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
             await user.click(saveChangesButton)
 
-            expect(onCloseMock).toHaveBeenCalledTimes(1)
+            await waitFor(() => expect(onCloseMock).toHaveBeenCalledTimes(1))
             expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
         })
     })
