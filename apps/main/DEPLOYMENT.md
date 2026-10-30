@@ -45,6 +45,20 @@ environment variables must be supplied as described in the script. See `.env.sam
 
 Deploying image to a cloud service provider is outside the scope of this document.
 
+## Publishing
+
+Set `ENABLE_PUBLISHING=true` and supply `PUBLISH_BEARER_TOKEN` to enable publishing. Set `PUBLISH_SERVER_URL` to
+the default publish server. Its origin is automatically trusted to receive the token.
+
+To let users select additional publish servers in Settings, set `PUBLISH_ALLOWED_ORIGINS` to a comma-separated list
+of trusted origins, for example `https://publish.example.com,https://staging.example.com:8443`.
+All approved servers receive the same token. Only include servers you trust with that credential.
+
+Origins match exactly by scheme, hostname, and port; wildcards and subdomain matching are not supported. Paths do
+not restrict trust within an origin. Invalid entries are ignored. With no valid configured destinations, publishing
+requests are refused. Requests to other origins return `403`, including connection tests from Settings.
+Publish servers must accept requests directly: the proxy does not follow redirects.
+
 ## Authentication
 
 The process described above results in a deployment of the UI that is not protected by any authentication mechanism.

@@ -18,7 +18,12 @@ import httpStatus from "http-status"
 import {createMocks, RequestMethod} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../../Const"
+import {
+    ENABLE_PUBLISHING_ENV_VAR,
+    PUBLISH_ALLOWED_ORIGINS_ENV_VAR,
+    PUBLISH_BEARER_TOKEN_ENV_VAR,
+    PUBLISH_SERVER_URL_ENV_VAR,
+} from "../../../../Const"
 import handler from "../../../../pages/api/publish/[...path]"
 
 const SERVER_URL = "https://publish.test"
@@ -44,6 +49,8 @@ describe("Publish API route", () => {
         vi.stubGlobal("fetch", fetchMock)
         vi.stubEnv(ENABLE_PUBLISHING_ENV_VAR, "true")
         vi.stubEnv(PUBLISH_BEARER_TOKEN_ENV_VAR, "test-token")
+        vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, SERVER_URL)
+        vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, "")
     })
 
     afterEach(() => {
@@ -87,7 +94,103 @@ describe("Publish API route", () => {
         expect(res._getStatusCode()).toBe(httpStatus.NO_CONTENT)
     })
 
-    // GET /health - Health Check. The route doesn't look at the path, so these use the simplest endpoint.
+    describe("Trusted publish servers", () => {
+        it("should refuse requests when no trusted destinations are configured", async () => {
+            vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, undefined)
+            vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, undefined)
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+            expect(res._getJSONData()).toEqual({detail: "Publish server is not allowed"})
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
+        it("should refuse a malformed destination path", async () => {
+            const res = await callProxy("GET", {path: "https://[invalid/health", server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.BAD_REQUEST)
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
+        it.each([
+            "https://other.test",
+            "https://publish.test.other.test",
+            "https://sub.publish.test",
+            "https://publish.test:8443",
+            "http://publish.test",
+        ])("should refuse an unapproved server %s", async (server) => {
+            const res = await callProxy("POST", {path: ["deployments"], server}, "hocon contents")
+
+            expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+            expect(res._getJSONData()).toEqual({detail: "Publish server is not allowed"})
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
+        it.each(["https://other.test/health", "//other.test/health", "https://user:password@publish.test/health"])(
+            "should refuse a path that changes the destination or adds credentials: %s",
+            async (path) => {
+                const res = await callProxy("GET", {path, server: SERVER_URL})
+
+                expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+                expect(fetchMock).not.toHaveBeenCalled()
+            }
+        )
+
+        it.each(["", "not a url", "file:///tmp/publish", "https://user:password@publish.test"])(
+            "should refuse requests without valid trusted destinations: %s",
+            async (configuredServer) => {
+                vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, configuredServer)
+                vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, configuredServer)
+
+                const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+                expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+                expect(fetchMock).not.toHaveBeenCalled()
+            }
+        )
+
+        it.each(["https://second.test:8443", "HTTPS://PUBLISH.TEST:443/", `${SERVER_URL}/api`])(
+            "should forward requests to a trusted origin: %s",
+            async (server) => {
+                vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, " https://second.test:8443, https://third.test, ")
+                fetchMock.mockResolvedValue(Response.json({status: "ok"}))
+
+                const res = await callProxy("GET", {path: ["health"], server})
+
+                expect(res._getStatusCode()).toBe(httpStatus.OK)
+                expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+                    new URL("health", `${server.replace(/\/$/u, "")}/`),
+                    expect.objectContaining({headers: {Authorization: "Bearer test-token"}, redirect: "error"})
+                )
+            }
+        )
+
+        it("should use the explicit allowlist without a default server", async () => {
+            vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, "")
+            vi.stubEnv(PUBLISH_ALLOWED_ORIGINS_ENV_VAR, SERVER_URL)
+            fetchMock.mockResolvedValue(Response.json({status: "ok"}))
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.OK)
+            expect(fetchMock).toHaveBeenCalledTimes(1)
+        })
+
+        it("should report a rejected redirect as an upstream failure", async () => {
+            fetchMock.mockRejectedValue(new TypeError("fetch failed: unexpected redirect"))
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
+            expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+                new URL(`${SERVER_URL}/health`),
+                expect.objectContaining({redirect: "error"})
+            )
+        })
+    })
+
+    // GET /health - Health Check.
     describe("Health check", () => {
         it("should not exist while publishing is disabled", async () => {
             vi.stubEnv(ENABLE_PUBLISHING_ENV_VAR, "false")
@@ -102,6 +205,7 @@ describe("Publish API route", () => {
             {desc: "missing", server: undefined},
             {desc: "not a URL", server: "not a url"},
             {desc: "not http(s)", server: "file:///etc/passwd"},
+            {desc: "using embedded credentials", server: "https://user:password@publish.test"},
         ])("should refuse a server URL that's $desc", async ({server}) => {
             const res = await callProxy("GET", {path: ["health"], ...(server ? {server} : {})})
 

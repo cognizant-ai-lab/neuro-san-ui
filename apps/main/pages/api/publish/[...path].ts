@@ -17,7 +17,12 @@ limitations under the License.
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../Const"
+import {
+    ENABLE_PUBLISHING_ENV_VAR,
+    PUBLISH_ALLOWED_ORIGINS_ENV_VAR,
+    PUBLISH_BEARER_TOKEN_ENV_VAR,
+    PUBLISH_SERVER_URL_ENV_VAR,
+} from "../../../Const"
 
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
@@ -39,7 +44,7 @@ const parseServerUrl = (server: string | string[] | undefined): URL | null => {
 
     try {
         const url = new URL(server.endsWith("/") ? server : `${server}/`)
-        return url.protocol === "http:" || url.protocol === "https:" ? url : null
+        return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password ? url : null
     } catch {
         return null
     }
@@ -57,8 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Startup refuses to run with publishing enabled and no token, so it's always set here.
-    // WARNING: this sends the token to whatever publish server URL the user enters in Settings, so anyone who can use
-    // the app can have it sent to a server they control. Consider only forwarding to an allowed host.
     const token = process.env[PUBLISH_BEARER_TOKEN_ENV_VAR]
 
     const {path, server, ...query} = req.query
@@ -69,7 +72,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return
     }
 
-    const target = new URL([path].flat().join("/"), serverUrl)
+    let target: URL
+    try {
+        target = new URL([path].flat().join("/"), serverUrl)
+    } catch {
+        res.status(httpStatus.BAD_REQUEST).json({detail: "Invalid publish server path"})
+        return
+    }
+    // Trust only destinations configured by the operator, including the default publish server.
+    const allowedOrigins = [
+        process.env[PUBLISH_SERVER_URL_ENV_VAR],
+        ...(process.env[PUBLISH_ALLOWED_ORIGINS_ENV_VAR] ?? "").split(","),
+    ].flatMap((configuredServer) => {
+        const url = parseServerUrl(configuredServer?.trim())
+        return url ? [url.origin] : []
+    })
+    if (
+        !allowedOrigins.includes(serverUrl.origin) ||
+        target.origin !== serverUrl.origin ||
+        target.username ||
+        target.password
+    ) {
+        res.status(httpStatus.FORBIDDEN).json({detail: "Publish server is not allowed"})
+        return
+    }
+
     for (const [param, value] of Object.entries(query)) {
         for (const item of [value].flat()) {
             target.searchParams.append(param, item)
@@ -80,6 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         const upstream = await fetch(target, {
+            redirect: "error",
             method: req.method,
             headers: {
                 Authorization: `Bearer ${token}`,
