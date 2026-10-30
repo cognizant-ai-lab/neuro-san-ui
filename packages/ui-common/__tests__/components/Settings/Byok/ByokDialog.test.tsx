@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {createTheme, ThemeProvider} from "@mui/material/styles"
-import {render, screen, within} from "@testing-library/react"
+import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -173,7 +173,7 @@ describe("ByokDialog", () => {
         const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
         await user.click(saveChangesButton)
 
-        expect(onCloseMock).toHaveBeenCalledTimes(1)
+        await waitFor(() => expect(onCloseMock).toHaveBeenCalledTimes(1))
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
     })
 
@@ -241,6 +241,84 @@ describe("ByokDialog", () => {
 
         expect(screen.getByRole("alert")).toBeInTheDocument()
         expect(screen.getByText("Invalid API key")).toBeInTheDocument()
+    })
+
+    it.each(["Save", "Save changes"])("rejects joined keys through %s", async (action) => {
+        global.fetch = vi.fn()
+        const onClose = vi.fn()
+        render(
+            <ByokDialog
+                id="joined-keys"
+                onClose={onClose}
+            />
+        )
+        const row = screen.getByTestId("joined-keys-openai-input")
+        await user.click(within(row).getByPlaceholderText("sk-..."))
+        await user.paste("sk-proj-firstsk-proj-second")
+        if (action === "Save changes") {
+            await user.click(screen.getByRole("button", {name: "close"}))
+            await user.click(screen.getByRole("button", {name: action}))
+        } else {
+            await user.click(within(row).getByRole("button", {name: action}))
+        }
+        expect(await screen.findByText(/multiple API keys pasted together/u)).toBeVisible()
+        expect(global.fetch).not.toHaveBeenCalled()
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
+        expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it.each(["Save", "Save changes"])("retains a saved key when %s validation fails", async (action) => {
+        useSettingsStore
+            .getState()
+            .updateSettings({apiKeys: {OpenAI: {value: "old-key", expiresAt: Date.now() + 60000}}})
+        global.fetch = mockFetch({error: {message: "Invalid replacement key"}}, false, 401)
+        const onClose = vi.fn()
+        render(
+            <ByokDialog
+                id="invalid-key"
+                onClose={onClose}
+            />
+        )
+        const row = screen.getByTestId("invalid-key-openai-input")
+        const input = within(row).getByPlaceholderText("sk-...")
+        await user.clear(input)
+        await user.click(input)
+        await user.paste("sk-proj-invalid")
+        if (action === "Save changes") {
+            await user.click(screen.getByRole("button", {name: "close"}))
+            await user.click(screen.getByRole("button", {name: action}))
+        } else {
+            await user.click(within(row).getByRole("button", {name: action}))
+        }
+        expect(await screen.findByText("Invalid replacement key")).toBeVisible()
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe("old-key")
+        expect(input).toHaveValue("sk-proj-invalid")
+        expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it("does not save a draft changed while validation is pending", async () => {
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        render(<ByokDialog id="pending-key" />)
+        const row = screen.getByTestId("pending-key-openai-input")
+        const input = within(row).getByPlaceholderText("sk-...")
+        await user.click(input)
+        await user.paste("sk-proj-first")
+        await user.click(within(row).getByRole("button", {name: "Save"}))
+        await user.clear(input)
+        await user.click(input)
+        await user.paste("sk-proj-second")
+        await act(async () => {
+            resolveRequest(new Response("{}", {status: 200}))
+        })
+        await waitFor(() => expect(within(row).getByRole("button", {name: "Save"})).toBeEnabled())
+        expect(input).toHaveValue("sk-proj-second")
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 
     it("renders dark mode logo when theme mode is dark", () => {
