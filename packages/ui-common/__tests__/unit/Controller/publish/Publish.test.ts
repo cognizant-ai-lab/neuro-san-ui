@@ -271,14 +271,26 @@ describe("Publish", () => {
         await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([])
     })
 
-    // DELETE /deployments/{id}
-    it("should unpublish the network", async () => {
+    // POST /deployments/{id}/unpublish, then DELETE /deployments/{id}
+    it("should take the network off the map, then stop it", async () => {
         fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "stopped"}))
 
         await unpublishNetwork(SERVER_URL, PUBLISH_ID)
 
-        const [url, init] = fetchMock.mock.calls[0]
-        expect(url).toBe(`/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(init?.method).toBe("DELETE")
+        const requests = fetchMock.mock.calls.map(([url, init]) => [url, init?.method])
+        expect(requests).toEqual([
+            [`/api/publish/deployments/${PUBLISH_ID}/unpublish?server=${encodeURIComponent(SERVER_URL)}`, "POST"],
+            [`/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`, "DELETE"],
+        ])
+    })
+
+    // POST /deployments/{id}/unpublish rejected
+    it("should leave the network running when it can't be taken off the map", async () => {
+        fetchMock.mockResolvedValue(Response.json({detail: "Not found"}, {status: 404}))
+
+        await expect(unpublishNetwork(SERVER_URL, PUBLISH_ID)).rejects.toThrow(
+            "Taking it off the map failed (404): Not found"
+        )
+        expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 })

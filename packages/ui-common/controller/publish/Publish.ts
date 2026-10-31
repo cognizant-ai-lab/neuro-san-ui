@@ -132,7 +132,8 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
 }
 
 /**
- * Uploads the HOCON and waits until the network is live.
+ * Uploads the HOCON and waits until the network is live. The server puts it on the map, including after it was
+ * unpublished.
  */
 export const publishNetwork = async ({
     serverUrl,
@@ -173,9 +174,14 @@ export const publishNetwork = async ({
 }
 
 /**
- * Takes a published network offline.
+ * Takes a published network off the map, then stops it. The server keeps it, so it can be republished.
  */
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
-    const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
-    await throwIfNotOk(response, "Unpublishing")
+    const mapResponse = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}/unpublish`), {
+        method: "POST",
+    })
+    await throwIfNotOk(mapResponse, "Taking it off the map")
+
+    const stopResponse = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
+    await throwIfNotOk(stopResponse, "Unpublishing")
 }
