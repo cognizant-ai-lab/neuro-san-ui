@@ -117,7 +117,7 @@ export const listPublishedNetworks = async (serverUrl: string, orgName: string):
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    // Unpublishing only stops it, and a failed publish leaves it failed. Either can be republished.
+    // Unpublishing stops it, and a failed publish leaves it failed. The server keeps both, so both can be republished.
     // Compared in lowercase: the server files a publish under an existing org whose name differs only in case, and
     // lists it with that org's spelling, so "darren" can come back as "Darren"
     const isOurOrg = (network: ServerNetwork) => network.org_name.toLowerCase() === orgName.toLowerCase()

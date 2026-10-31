@@ -118,7 +118,8 @@ export const publish = async (
 }
 
 /**
- * Takes a live network offline, on the server it was published to. The server keeps it, so it can be republished.
+ * Takes a live network off the map and offline, on the server it was published to. The server keeps it, so it can be
+ * republished.
  */
 export const unpublish = async (networkName: string, published: Published): Promise<void> => {
     const {setPublishState, setPublishedList} = usePublishStore.getState()
