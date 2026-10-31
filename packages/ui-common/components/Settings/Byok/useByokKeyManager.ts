@@ -19,6 +19,7 @@ import {useCallback, useMemo, useState} from "react"
 
 import {
     isAnthropicKeyValid,
+    isGoogleKeyValid,
     isOpenAIKeyValid,
     KeyValidationFailure,
     KeyValidationResult,
@@ -47,11 +48,18 @@ const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
         vendor: "OpenAI",
     },
     {
-        getLogo: () => "/Anthropic.png",
+        getLogo: () => "/claude.png",
         idSuffix: "anthropic",
         onTest: isAnthropicKeyValid,
         placeholder: "sk-ant-...",
         vendor: "Anthropic",
+    },
+    {
+        getLogo: () => "/gemini.svg",
+        idSuffix: "google",
+        onTest: isGoogleKeyValid,
+        placeholder: "AQ....",
+        vendor: "Google",
     },
 ]
 
@@ -113,6 +121,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const theme = useTheme()
     const openAIKeyCheckmark = useCheckmarkFade()
     const anthropicKeyCheckmark = useCheckmarkFade()
+    const googleCheckmark = useCheckmarkFade()
 
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
     const updateSettings = useSettingsStore((state) => state.updateSettings)
@@ -125,8 +134,9 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         (): Record<LLMProvider, CheckmarkFade> => ({
             Anthropic: anthropicKeyCheckmark,
             OpenAI: openAIKeyCheckmark,
+            Google: googleCheckmark,
         }),
-        [anthropicKeyCheckmark, openAIKeyCheckmark]
+        [anthropicKeyCheckmark, googleCheckmark, openAIKeyCheckmark]
     )
 
     const isDarkMode = theme.palette.mode === "dark"

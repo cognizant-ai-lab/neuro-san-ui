@@ -92,7 +92,7 @@ RUN yarn build:app
 
 
 # Production image, copy all the files and run next
-FROM gcr.io/distroless/nodejs${NODEJS_VERSION}-debian13@sha256:9a6a9948617c228fbce197b132a7793d23846a3666907eb35185eb1db23b2966 AS runner
+FROM gcr.io/distroless/nodejs${NODEJS_VERSION}-debian13@sha256:e6ffd0e0ddbbcad0231684befb2c421591c2be46baa71da7d9065294c17efc0d AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production

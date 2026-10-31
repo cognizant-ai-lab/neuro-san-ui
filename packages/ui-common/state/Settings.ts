@@ -32,7 +32,7 @@ type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
 
-export type LLMProvider = "OpenAI" | "Anthropic"
+export type LLMProvider = "OpenAI" | "Anthropic" | "Google"
 
 export type LogoSource = "none" | "generic" | "auto"
 
@@ -110,6 +110,7 @@ interface SettingsStore {
 export const LLM_PROVIDER_API_KEY_FIELD = {
     OpenAI: "openai_api_key",
     Anthropic: "anthropic_api_key",
+    Google: "google_api_key",
 } as const satisfies Record<LLMProvider, string>
 
 /**
@@ -171,7 +172,7 @@ const hasPersistedSettings = (state: unknown): state is {settings: DeepPartial<S
     state.settings !== null
 
 /**
- * Purges any persisted API keys from localStorage. This cleans up from previous versions of the cdoe.
+ * Purges any persisted API keys from localStorage. This cleans up from previous versions of the code.
  * Once we are "reasonably sure" that no users are on old versions, we can remove this function.
  */
 const purgePersistedApiKeys = () => {
