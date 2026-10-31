@@ -46,6 +46,7 @@ import {
 } from "./const"
 import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
 import {PanelSeparator} from "./PanelSeparator"
+import {PublishWaitPrompts} from "./Publish/PublishWaitPrompts"
 import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
@@ -1130,6 +1131,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {getTourModal()}
             {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
+            <PublishWaitPrompts />
 
             <Box
                 id="multi-agent-accelerator-container"
