@@ -1539,6 +1539,7 @@ describe("MultiAgentAccelerator", () => {
                 expectedMissing: false,
             },
             {required: [LLM_PROVIDER_API_KEY_FIELD["Anthropic"]], expectedMissing: false},
+            {required: [LLM_PROVIDER_API_KEY_FIELD["Google"]], expectedMissing: false},
             {required: [badProvider as ByokKeyField], expectedMissing: false},
             {required: [], expectedMissing: false},
             {required: undefined, expectedMissing: false},
