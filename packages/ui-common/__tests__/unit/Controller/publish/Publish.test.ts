@@ -1,3 +1,5 @@
+import httpStatus from "http-status"
+
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     checkHealth,
@@ -19,12 +21,13 @@ describe("Publish", () => {
 
     let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>
 
-    const create = () =>
+    const create = (refreshTheme?: boolean) =>
         publishNetwork({
             serverUrl: SERVER_URL,
             orgName: ORG_NAME,
             networkName: NETWORK_NAME,
             hocon: HOCON,
+            refreshTheme,
         })
 
     beforeEach(() => {
@@ -36,14 +39,46 @@ describe("Publish", () => {
         vi.unstubAllGlobals()
     })
 
+    // GET /health, then GET /deployments
+    it("should check the server's health, then that it accepts our token, through our /api/publish route", async () => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({status: "ok", port_pool: {capacity: 20}}))
+            .mockResolvedValueOnce(Response.json({deployments: []}))
+
+        const isHealthy = await checkHealth(SERVER_URL)
+
+        expect(isHealthy).toBe(true)
+        expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+            `/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`,
+            `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`,
+        ])
+    })
+
+    // GET /health, then GET /deployments
+    it.each([
+        {desc: "it can't be reached", responses: [Response.json({detail: "x"}, {status: httpStatus.BAD_GATEWAY})]},
+        {desc: "it isn't OK", responses: [Response.json({status: "degraded", port_pool: {}})]},
+        {desc: "it isn't a publishing server", responses: [Response.json({status: "ok"})]},
+        {
+            desc: "it turns down our token",
+            responses: [
+                Response.json({status: "ok", port_pool: {}}),
+                Response.json({detail: "Unauthorized"}, {status: httpStatus.UNAUTHORIZED}),
+            ],
+        },
+    ])("should report an unhealthy server when $desc", async ({responses}) => {
+        for (const response of responses) {
+            fetchMock.mockResolvedValueOnce(response)
+        }
+
+        await expect(checkHealth(SERVER_URL)).resolves.toBe(false)
+    })
+
     // GET /health
-    it("should check the server's health through our /api/publish route", async () => {
-        fetchMock.mockResolvedValue(Response.json({status: "ok"}))
+    it("should report an unhealthy server when the request fails", async () => {
+        fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
 
-        const result = await checkHealth(SERVER_URL)
-
-        expect(result.success).toBe(true)
-        expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`)
+        await expect(checkHealth(SERVER_URL)).resolves.toBe(false)
     })
 
     // POST /deployments
@@ -64,6 +99,22 @@ describe("Publish", () => {
     })
 
     // POST /deployments
+    it("should send the org name in lowercase", async () => {
+        fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
+
+        await publishNetwork({
+            serverUrl: SERVER_URL,
+            orgName: "Cailville-Stage",
+            networkName: NETWORK_NAME,
+            hocon: HOCON,
+            refreshTheme: false,
+        })
+
+        const form = fetchMock.mock.calls[0][1]?.body as FormData
+        expect(form.get("org_name")).toBe("cailville-stage")
+    })
+
+    // POST /deployments
     it("should ask for a themed site that keeps its existing theme", async () => {
         fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
 
@@ -72,6 +123,16 @@ describe("Publish", () => {
         const form = fetchMock.mock.calls[0][1]?.body as FormData
         expect(form.get("theme")).toBe("true")
         expect(form.get("theme_refresh")).toBe("false")
+    })
+
+    // POST /deployments
+    it("should ask for a new theme when asked to", async () => {
+        fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "ready", url: PUBLISHED_URL}, {status: 202}))
+
+        await create(true)
+
+        const form = fetchMock.mock.calls[0][1]?.body as FormData
+        expect(form.get("theme_refresh")).toBe("true")
     })
 
     // POST /deployments, then GET /deployments/{id}/wait until it's ready
@@ -130,7 +191,7 @@ describe("Publish", () => {
     })
 
     // GET /deployments
-    it("should list only our org's live networks", async () => {
+    it("should list only our org's networks, with no URL for the unpublished ones", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
@@ -157,29 +218,79 @@ describe("Publish", () => {
         const published = await listPublishedNetworks(SERVER_URL, ORG_NAME)
 
         expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(published).toEqual([{id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL}])
+        expect(published).toEqual([
+            {id: "stopped", name: NETWORK_NAME, url: null},
+            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
+        ])
     })
 
     // GET /deployments
-    it("should list nothing when our org has no live networks", async () => {
+    it("should list a network whose publish failed as unpublished", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
-                deployments: [{id: "stopped", name: NETWORK_NAME, org_name: ORG_NAME, status: "stopped"}],
+                deployments: [{id: "failed", name: NETWORK_NAME, org_name: ORG_NAME, status: "failed"}],
+            })
+        )
+
+        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
+            {id: "failed", name: NETWORK_NAME, url: null},
+        ])
+    })
+
+    // GET /deployments
+    it("should list our org's networks when the server spells the org name with different case", async () => {
+        fetchMock.mockResolvedValue(
+            Response.json({
+                capacity: {},
+                deployments: [
+                    {
+                        id: PUBLISH_ID,
+                        name: NETWORK_NAME,
+                        org_name: ORG_NAME.toUpperCase(),
+                        status: "ready",
+                        url: PUBLISHED_URL,
+                    },
+                ],
+            })
+        )
+
+        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
+            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
+        ])
+    })
+
+    it("should leave out networks that are still building", async () => {
+        fetchMock.mockResolvedValue(
+            Response.json({
+                capacity: {},
+                deployments: [{id: "building", name: NETWORK_NAME, org_name: ORG_NAME, status: "building"}],
             })
         )
 
         await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([])
     })
 
-    // DELETE /deployments/{id}
-    it("should unpublish the network", async () => {
+    // POST /deployments/{id}/unpublish, then DELETE /deployments/{id}
+    it("should take the network off the map, then stop it", async () => {
         fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "stopped"}))
 
         await unpublishNetwork(SERVER_URL, PUBLISH_ID)
 
-        const [url, init] = fetchMock.mock.calls[0]
-        expect(url).toBe(`/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(init?.method).toBe("DELETE")
+        const requests = fetchMock.mock.calls.map(([url, init]) => [url, init?.method])
+        expect(requests).toEqual([
+            [`/api/publish/deployments/${PUBLISH_ID}/unpublish?server=${encodeURIComponent(SERVER_URL)}`, "POST"],
+            [`/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`, "DELETE"],
+        ])
+    })
+
+    // POST /deployments/{id}/unpublish rejected
+    it("should leave the network running when it can't be taken off the map", async () => {
+        fetchMock.mockResolvedValue(Response.json({detail: "Not found"}, {status: 404}))
+
+        await expect(unpublishNetwork(SERVER_URL, PUBLISH_ID)).rejects.toThrow(
+            "Taking it off the map failed (404): Not found"
+        )
+        expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 })

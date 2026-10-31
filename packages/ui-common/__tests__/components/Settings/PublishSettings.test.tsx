@@ -1,4 +1,4 @@
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -27,6 +27,9 @@ describe("PublishSettings", () => {
     const getPublishSettings = () => useSettingsStore.getState().settings.publish
 
     const renderSettings = () => render(<PublishSettings id="publishing" />)
+
+    // The status light has no text, so it's found by its id, like the Neuro SAN one in SettingsDialog's tests
+    const getStatusLight = () => screen.getByTestId("publishing-status-light")
 
     const typeInto = async (label: string, text: string) => {
         const field = screen.getByRole("textbox", {name: label})
@@ -60,14 +63,14 @@ describe("PublishSettings", () => {
         })
 
         it("should test the default server shown in the field", async () => {
-            vi.mocked(checkHealth).mockResolvedValue({success: true})
+            vi.mocked(checkHealth).mockResolvedValue(true)
             renderSettings()
             const testButton = screen.getByRole("button", {name: TEST_PUBLISH_SERVER_LABEL})
 
             await user.click(testButton)
 
             expect(checkHealth).toHaveBeenCalledWith(`https://${DEFAULT_SERVER_HOST}`)
-            screen.getByText("Connected")
+            await waitFor(() => expect(getStatusLight()).toHaveAttribute("data-status", "green"))
         })
 
         it("should put the default server back when Default is clicked", async () => {
@@ -105,7 +108,7 @@ describe("PublishSettings", () => {
 
     it("should save an http server when http is chosen", async () => {
         renderSettings()
-        const protocolSelect = screen.getByRole("combobox", {name: "Publish server protocol"})
+        const protocolSelect = screen.getByRole("combobox", {name: "Publishing server protocol"})
         await user.click(protocolSelect)
         await user.click(screen.getByRole("option", {name: "http://"}))
         await typeInto(PUBLISH_SERVER_HOST_LABEL, SERVER_HOST)
@@ -120,28 +123,32 @@ describe("PublishSettings", () => {
 
         renderSettings()
 
-        expect(screen.getByRole("combobox", {name: "Publish server protocol"})).toHaveTextContent("http://")
+        expect(screen.getByRole("combobox", {name: "Publishing server protocol"})).toHaveTextContent("http://")
         expect(screen.getByRole("textbox", {name: PUBLISH_SERVER_HOST_LABEL})).toHaveValue(SERVER_HOST)
     })
 
-    it("should turn publishing off when the server is cleared and saved", async () => {
+    it("should save no server when the server is cleared", async () => {
         useSettingsStore.getState().updateSettings({publish: {serverUrl: `https://${SERVER_HOST}`, orgName: ORG_NAME}})
         renderSettings()
-        screen.getByText("On")
-        const clearButton = screen.getByRole("button", {name: "Clear publish server"})
+        const clearButton = screen.getByRole("button", {name: "Clear publishing server"})
         await user.click(clearButton)
 
         await save()
 
         expect(getPublishSettings().serverUrl).toBeNull()
-        screen.getByText("Off")
+    })
+
+    it("should show a gray status light before the server is tested", () => {
+        renderSettings()
+
+        expect(getStatusLight()).toHaveAttribute("data-status", "unknown")
     })
 
     it.each([
-        {desc: "Connected when the server is up", success: true, expected: "Connected"},
-        {desc: "Couldn't connect when it isn't", success: false, expected: "Couldn't connect"},
-    ])("should say $desc", async ({success, expected}) => {
-        vi.mocked(checkHealth).mockResolvedValue({success})
+        {desc: "a green status light when the server is up", success: true, expected: "green"},
+        {desc: "a red status light when it isn't", success: false, expected: "red"},
+    ])("should show $desc", async ({success, expected}) => {
+        vi.mocked(checkHealth).mockResolvedValue(success)
         renderSettings()
         await typeInto(PUBLISH_SERVER_HOST_LABEL, SERVER_HOST)
         const testButton = screen.getByRole("button", {name: TEST_PUBLISH_SERVER_LABEL})
@@ -149,7 +156,7 @@ describe("PublishSettings", () => {
         await user.click(testButton)
 
         expect(checkHealth).toHaveBeenCalledWith(`https://${SERVER_HOST}`)
-        screen.getByText(expected)
+        await waitFor(() => expect(getStatusLight()).toHaveAttribute("data-status", expected))
     })
 
     it("should not offer to save when nothing has changed", async () => {

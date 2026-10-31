@@ -13,7 +13,7 @@ const renderPanel = (publishState: PublishState) =>
         <PublishPanel
             publishState={publishState}
             id="publish-panel"
-            isUnpublishing={false}
+            onRepublish={vi.fn()}
             onUnpublish={vi.fn()}
         />
     )

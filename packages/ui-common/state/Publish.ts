@@ -23,6 +23,7 @@ import {PublishedNetwork} from "../controller/publish/Publish"
 export enum PublishStatus {
     Publishing = "Publishing",
     Published = "Published",
+    Unpublished = "Unpublished",
 }
 
 interface Publishing {
@@ -36,9 +37,16 @@ export interface Published {
     /** The server's id for it, needed to unpublish */
     readonly publishId: string
     readonly url: string
+    /** Set while it's being unpublished, when it can't be republished */
+    readonly isUnpublishing?: boolean
 }
 
-export type PublishState = Publishing | Published
+/** Published before and since unpublished. The server keeps it stopped, so it can be republished. */
+interface Unpublished {
+    readonly status: PublishStatus.Unpublished
+}
+
+export type PublishState = Publishing | Published | Unpublished
 
 /** The org's published networks on a server, as one request every network can share */
 interface PublishedList {
@@ -48,12 +56,13 @@ interface PublishedList {
 }
 
 /**
- * Zustand state store for networks that are publishing or live, keyed by network id. Kept in memory only.
+ * Zustand state store for networks that have been published, keyed by agent network name, which is how the server
+ * knows them. Editing a network keeps its name, so the edited copy shares the state. Kept in memory only.
  */
 interface PublishStore {
     readonly networks: Readonly<Record<string, PublishState>>
-    readonly setPublishState: (networkId: string, publishState: PublishState) => void
-    readonly clearPublishState: (networkId: string) => void
+    readonly setPublishState: (networkName: string, publishState: PublishState) => void
+    readonly clearPublishState: (networkName: string) => void
     readonly publishedList: PublishedList | null
     readonly setPublishedList: (publishedList: PublishedList | null) => void
 }
@@ -62,14 +71,27 @@ export const usePublishStore = create<PublishStore>()((set) => ({
     networks: {},
     publishedList: null,
     setPublishedList: (publishedList) => set({publishedList}),
-    setPublishState: (networkId, publishState) =>
-        set(({networks}) => ({networks: {...networks, [networkId]: publishState}})),
-    clearPublishState: (networkId) =>
+    setPublishState: (networkName, publishState) =>
+        set(({networks}) => ({networks: {...networks, [networkName]: publishState}})),
+    clearPublishState: (networkName) =>
         set(({networks}) => {
-            const {[networkId]: _removed, ...rest} = networks
+            const {[networkName]: _removed, ...rest} = networks
             return {networks: rest}
         }),
 }))
+
+// What we know about published networks is for the publish server and org in Settings, so forget it when either
+// changes and let each network ask the server again. Networks that are publishing keep their state until they finish.
+useSettingsStore.subscribe(({settings: {publish}}, {settings: {publish: previous}}) => {
+    if (publish.serverUrl === previous.serverUrl && publish.orgName === previous.orgName) return
+
+    usePublishStore.setState(({networks}) => ({
+        networks: Object.fromEntries(
+            Object.entries(networks).filter(([, publishState]) => publishState.status === PublishStatus.Publishing)
+        ),
+        publishedList: null,
+    }))
+})
 
 /**
  * The publish server to use: the one set in Settings, otherwise the default from the environment.
