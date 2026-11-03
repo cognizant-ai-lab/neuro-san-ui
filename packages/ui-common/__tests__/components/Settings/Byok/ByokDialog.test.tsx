@@ -304,7 +304,13 @@ describe("ByokDialog", () => {
                     resolveRequest = resolve
                 })
         )
-        render(<ByokDialog id="pending-key" />)
+        const onClose = vi.fn()
+        render(
+            <ByokDialog
+                id="pending-key"
+                onClose={onClose}
+            />
+        )
         const row = screen.getByTestId("pending-key-openai-input")
         const input = within(row).getByPlaceholderText("sk-...")
         await user.click(input)
@@ -313,10 +319,14 @@ describe("ByokDialog", () => {
         await user.clear(input)
         await user.click(input)
         await user.paste("sk-proj-second")
+        await user.click(screen.getByRole("button", {name: "close"}))
+        await user.click(screen.getByRole("button", {name: "Save changes"}))
         await act(async () => {
             resolveRequest(new Response("{}", {status: 200}))
         })
         await waitFor(() => expect(within(row).getByRole("button", {name: "Save"})).toBeEnabled())
+        expect(onClose).not.toHaveBeenCalled()
+        expect(global.fetch).toHaveBeenCalledTimes(1)
         expect(input).toHaveValue("sk-proj-second")
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
