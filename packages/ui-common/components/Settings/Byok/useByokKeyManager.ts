@@ -129,7 +129,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
 
     const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
     const currentDrafts = useRef<Record<string, string>>({})
-    const savingKeys = useRef(new Set<LLMProvider>())
+    const savingKeys = useRef(new Map<LLMProvider, {id: symbol; key: string; result: Promise<boolean>}>())
     const [draftKeys, setDraftKeys] = useState<Record<string, string>>({})
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState<boolean>(false)
 
@@ -171,13 +171,10 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
 
     const persistKey = useCallback(
         async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => {
-            if (savingKeys.current.has(vendor)) {
-                return false
-            }
-            if (key) {
-                savingKeys.current.add(vendor)
-                const prefix = vendor === "OpenAI" ? "sk-" : vendor === "Anthropic" ? "sk-ant-" : null
-                try {
+            const id = Symbol("BYOK save")
+            const save = async (): Promise<boolean> => {
+                if (key) {
+                    const prefix = vendor === "OpenAI" ? "sk-" : vendor === "Anthropic" ? "sk-ant-" : null
                     const result: KeyValidationResult =
                         prefix && key.split(prefix).length > 2
                             ? {
@@ -188,7 +185,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                               }
                             : await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
                     // An edit or discard while testing invalidates this save.
-                    if (currentDrafts.current[vendor] !== key) {
+                    if (savingKeys.current.get(vendor)?.id !== id || currentDrafts.current[vendor] !== key) {
                         return false
                     }
                     setKeyTestResults((prev) => ({
@@ -198,26 +195,44 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     if (!result.ok) {
                         return false
                     }
-                } finally {
+                }
+                updateSettings({
+                    apiKeys: {
+                        [vendor]: {
+                            value: key,
+                            expiresAt: key ? now + API_KEYS_TTL_MS : 0,
+                        },
+                    },
+                })
+                const {[vendor]: _savedDraft, ...remainingDrafts} = currentDrafts.current
+                currentDrafts.current = remainingDrafts
+                checkmark.trigger()
+                setDraftKeys((prev) => {
+                    const {[vendor]: _, ...rest} = prev
+                    return rest
+                })
+                return true
+            }
+
+            if (!key) {
+                savingKeys.current.delete(vendor)
+                return save()
+            }
+
+            const existing = savingKeys.current.get(vendor)
+            if (existing) {
+                return existing.key === key ? existing.result : false
+            }
+
+            const pending = {id, key, result: Promise.resolve().then(save)}
+            savingKeys.current.set(vendor, pending)
+            try {
+                return await pending.result
+            } finally {
+                if (savingKeys.current.get(vendor) === pending) {
                     savingKeys.current.delete(vendor)
                 }
             }
-            updateSettings({
-                apiKeys: {
-                    [vendor]: {
-                        value: key,
-                        expiresAt: key ? now + API_KEYS_TTL_MS : 0,
-                    },
-                },
-            })
-            const {[vendor]: _savedDraft, ...remainingDrafts} = currentDrafts.current
-            currentDrafts.current = remainingDrafts
-            checkmark.trigger()
-            setDraftKeys((prev) => {
-                const {[vendor]: _, ...rest} = prev
-                return rest
-            })
-            return true
         },
         [updateSettings]
     )

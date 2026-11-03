@@ -365,7 +365,7 @@ describe("ByokDialog", () => {
         expect(input).toHaveValue("sk-proj-second")
     })
 
-    it("does not repeat a pending save when closing and saving changes", async () => {
+    it("closes after reusing a pending save without another request", async () => {
         let resolveRequest: (response: Response) => void
         global.fetch = vi.fn(
             () =>
@@ -391,8 +391,38 @@ describe("ByokDialog", () => {
         await act(async () => {
             resolveRequest(new Response("{}", {status: 200}))
         })
-        await waitFor(() => expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled())
+        await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+        expect(global.fetch).toHaveBeenCalledTimes(1)
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe("sk-proj-example")
+    })
+
+    it("forgets the saved key while a replacement is being validated", async () => {
+        useSettingsStore.getState().updateSettings({
+            apiKeys: {OpenAI: {value: "old-key", expiresAt: Date.now() + 60000}},
+        })
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        render(<ByokDialog id="forget-pending" />)
+        const row = screen.getByTestId("forget-pending-openai-input")
+        const input = within(row).getByPlaceholderText("sk-...")
+        await user.clear(input)
+        await user.click(input)
+        await user.paste("sk-proj-replacement")
+        await user.click(screen.getByRole("button", {name: "close"}))
+        await user.click(screen.getByRole("button", {name: "Save changes"}))
+        await user.click(await within(row).findByRole("button", {name: "Forget"}))
+        await user.click(screen.getByRole("button", {name: "Yes, forget key"}))
+        expect(within(row).getByRole("button", {name: "Forget"})).toBeDisabled()
+        await act(async () => {
+            resolveRequest(Response.json({}))
+        })
+        expect(input).toHaveValue("")
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 
     it("renders dark mode logo when theme mode is dark", () => {
