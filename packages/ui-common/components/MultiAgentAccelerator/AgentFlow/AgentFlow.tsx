@@ -849,6 +849,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                             displayName={networkDisplayName}
                             hocon={hoconToPublish}
                             id={`${id}-publish-button`}
+                            networkId={currentTempNetwork.agentInfo.agent_name}
                             networkName={currentTempNetwork.agentNetworkName}
                         />
                     </Box>

@@ -654,13 +654,13 @@ describe("SideBar", () => {
 
         const markUnpublished = () =>
             usePublishStore.setState({
-                networks: {[TEMPORARY_NETWORK.agentNetworkName]: {status: PublishStatus.Unpublished}},
+                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Unpublished}},
             })
 
         const markLive = () =>
             usePublishStore.setState({
                 networks: {
-                    [TEMPORARY_NETWORK.agentNetworkName]: {
+                    [TEMPORARY_NETWORK.agentInfo.agent_name]: {
                         publishId: "dep-123",
                         serverUrl: SERVER_URL,
                         status: PublishStatus.Published,
@@ -714,7 +714,7 @@ describe("SideBar", () => {
 
         it("Should show a temporary network is still publishing, without offering to publish it again", async () => {
             usePublishStore.setState({
-                networks: {[TEMPORARY_NETWORK.agentNetworkName]: {status: PublishStatus.Publishing}},
+                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Publishing}},
             })
             renderWithTemporaryNetwork()
 

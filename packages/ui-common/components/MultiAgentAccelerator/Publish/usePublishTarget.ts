@@ -21,18 +21,18 @@ import {usePublishServerUrl} from "../../../state/Publish"
 import {useSettingsStore} from "../../../state/Settings"
 
 /**
- * Where to publish the network, or null until there's a server and an org name. Also asks the server whether the
- * network has been published, since we only remember that in memory.
+ * Where to publish the network, or null until there's a server and an org name. Also asks the server how the network
+ * is doing if this browser published it, since its publish state is only kept in memory.
  */
-export const usePublishTarget = (networkName: string): PublishTarget | null => {
+export const usePublishTarget = (networkId: string, networkName: string): PublishTarget | null => {
     const serverUrl = usePublishServerUrl()
     const orgName = useSettingsStore((state) => state.settings.publish.orgName)
 
     useEffect(() => {
         if (serverUrl && orgName) {
-            void checkIfPublished(networkName, {serverUrl, orgName})
+            void checkIfPublished({id: networkId, name: networkName}, {serverUrl, orgName})
         }
-    }, [networkName, orgName, serverUrl])
+    }, [networkId, networkName, orgName, serverUrl])
 
     return serverUrl && orgName ? {serverUrl, orgName} : null
 }

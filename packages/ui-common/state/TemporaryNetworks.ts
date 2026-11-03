@@ -27,6 +27,14 @@ type AgentReservation = {
     readonly expiration_time_in_seconds: number
 }
 
+/** Where a network was published from this browser, so it's found on the publishing server by its id */
+export type PublishedDeployment = {
+    readonly serverUrl: string
+    readonly orgName: string
+    /** The publishing server's id for it */
+    readonly deploymentId: string
+}
+
 export type TemporaryNetwork = {
     readonly reservation: AgentReservation
     readonly agentInfo: AgentInfo
@@ -34,6 +42,7 @@ export type TemporaryNetwork = {
     readonly agentNetworkName: string
     readonly networkHocon?: string | null
     readonly agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
+    readonly published?: PublishedDeployment
 }
 
 /**
@@ -46,14 +55,15 @@ interface TempNetworksStore {
      * Upsert new networks into the store. Networks are matched by the UUID-stripped portion of
      * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), or, just
      * `agentNetworkName` which is the same as having the UUID-stripped. If an incoming network
-     * matches an existing one, the existing entry is replaced. Returns the final list of upserted
-     * networks (those that were added or replaced).
+     * matches an existing one, the existing entry is replaced, keeping where it was published. Returns the final list
+     * of upserted networks (those that were added or replaced).
      */
     readonly upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
     readonly updateTempNetworkDefinition: (
         networkName: string,
         agentNetworkDefinition: AgentNetworkDefinitionEntry[]
     ) => void
+    readonly setTempNetworkPublished: (networkId: string, published: PublishedDeployment) => void
 }
 
 /**
@@ -65,20 +75,31 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
             tempNetworks: [] as TemporaryNetwork[],
             setTempNetworks: (tempNetworks: TemporaryNetwork[]) => set({tempNetworks}),
             upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
-                set((state) => ({
-                    // Key both sides by name and let incoming win; existing entries keep their position,
-                    // new ones are appended.
-                    tempNetworks: Object.values({
-                        ...keyBy(state.tempNetworks, "agentNetworkName"),
-                        ...keyBy(incomingNetworks, "agentNetworkName"),
-                    }),
-                }))
+                set((state) => {
+                    const existing = keyBy(state.tempNetworks, "agentNetworkName")
+                    // An edit replaces the network, so the replacement keeps where the original was published
+                    const incoming = incomingNetworks.map((network) => ({
+                        published: existing[network.agentNetworkName]?.published,
+                        ...network,
+                    }))
+                    return {
+                        // Key both sides by name and let incoming win; existing entries keep their position,
+                        // new ones are appended.
+                        tempNetworks: Object.values({...existing, ...keyBy(incoming, "agentNetworkName")}),
+                    }
+                })
                 return incomingNetworks
             },
             updateTempNetworkDefinition: (networkName: string, agentNetworkDefinition: AgentNetworkDefinitionEntry[]) =>
                 set(({tempNetworks}) => ({
                     tempNetworks: tempNetworks.map((network) =>
                         network.agentInfo.agent_name === networkName ? {...network, agentNetworkDefinition} : network
+                    ),
+                })),
+            setTempNetworkPublished: (networkId: string, published: PublishedDeployment) =>
+                set(({tempNetworks}) => ({
+                    tempNetworks: tempNetworks.map((network) =>
+                        network.agentInfo.agent_name === networkId ? {...network, published} : network
                     ),
                 })),
         }),

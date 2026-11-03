@@ -11,6 +11,7 @@ import {
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
 import {
+    OTHER_PUBLISHED_WARNING,
     PUBLIC_ACCESS_WARNING,
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
@@ -22,6 +23,7 @@ import {
 } from "../../../../controller/publish/Publish"
 import {usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
+import {TemporaryNetwork, useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 
 //#region Constants
 
@@ -29,6 +31,7 @@ const PUBLISH_ID = "dep-123"
 const DISPLAY_NAME = "Cailville Bakery"
 const HOCON = "{ tools: [] }"
 const PUBLISHED_URL = "http://live.test/cailville_bakery"
+const NETWORK_ID = "temporary/cailville_bakery-1"
 const NETWORK_NAME = "cailville_bakery"
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
@@ -53,14 +56,27 @@ describe("PublishButton", () => {
 
     const makePublishedNetwork = (): PublishedNetwork => ({id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL})
 
+    const makeTempNetwork = (id: string, networkName: string, deploymentId?: string): TemporaryNetwork => ({
+        reservation: {reservation_id: id, lifetime_in_seconds: 300, expiration_time_in_seconds: 0},
+        agentInfo: {agent_name: id},
+        agentNetworkName: networkName,
+        ...(deploymentId && {published: {serverUrl: SERVER_URL, orgName: ORG_NAME, deploymentId}}),
+    })
+
+    /** As if this browser published the network before, for example before a reload */
+    const setPublishedBefore = (deploymentId = PUBLISH_ID) => {
+        useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(NETWORK_ID, NETWORK_NAME, deploymentId)])
+    }
+
     /**
      * Keeps the publish in flight until the returned `release()` is called, which then succeeds.
      */
     const mockInFlightPublish = () => {
         let release!: () => void
         mockPublishNetwork.mockImplementation(
-            () =>
+            ({onAccepted}) =>
                 new Promise<PublishedNetwork>((resolve) => {
+                    onAccepted?.(PUBLISH_ID)
                     release = () => resolve(makePublishedNetwork())
                 })
         )
@@ -74,6 +90,7 @@ describe("PublishButton", () => {
                 displayName={DISPLAY_NAME}
                 hocon={HOCON}
                 id="publish-button"
+                networkId={NETWORK_ID}
                 networkName={NETWORK_NAME}
             />
         )
@@ -135,23 +152,29 @@ describe("PublishButton", () => {
         user = userEvent.setup()
         openSpy = vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         usePublishStore.setState(usePublishStore.getInitialState())
+        useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(NETWORK_ID, NETWORK_NAME)])
         useSettingsStore.getState().resetSettings()
         useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: ORG_NAME}})
 
-        mockPublishNetwork.mockResolvedValue(makePublishedNetwork())
+        // Like the server, it reports the network's id once it accepts it
+        mockPublishNetwork.mockImplementation(async ({onAccepted}) => {
+            onAccepted?.(PUBLISH_ID)
+            return makePublishedNetwork()
+        })
         vi.mocked(unpublishNetwork).mockResolvedValue()
         vi.mocked(listPublishedNetworks).mockResolvedValue([])
     })
 
-    it("should offer to publish a network that isn't published", async () => {
+    it("should offer to publish a network this browser hasn't published, without asking the server", async () => {
         renderPublishButton()
 
-        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalledWith(SERVER_URL, ORG_NAME))
         screen.getByRole("button", {name: "Publish"})
         expect(screen.queryByRole("button", {name: SHOW_DETAILS_LABEL})).not.toBeInTheDocument()
+        expect(listPublishedNetworks).not.toHaveBeenCalled()
     })
 
-    it("should offer to republish a network the server already has live, without publishing again", async () => {
+    it("should show View live for a network this browser published that's still live", async () => {
+        setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
         renderPublishButton()
 
@@ -162,22 +185,64 @@ describe("PublishButton", () => {
         expect(mockPublishNetwork).not.toHaveBeenCalled()
     })
 
-    it("should ask the server again when the org name in Settings changes", async () => {
+    it("should offer to publish when someone else has a network with the same name published", async () => {
+        setPublishedBefore("their-dep")
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+
+        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalled())
+        screen.getByRole("button", {name: "Publish"})
+    })
+
+    it("should find the network by its id when another with the same name is live", async () => {
+        setPublishedBefore()
+        vi.mocked(listPublishedNetworks).mockResolvedValue([
+            {id: "their-dep", name: NETWORK_NAME, url: "http://live.test/theirs"},
+            {id: PUBLISH_ID, name: NETWORK_NAME, url: null},
+        ])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "Republish"})
+
+        await openDetails("Unpublished")
+    })
+
+    it.each([
+        {setting: "org name", publish: {orgName: "another-org"}},
+        {setting: "publishing server", publish: {serverUrl: "https://other-publish.test"}},
+    ])("should offer to publish after the $setting in Settings changes", async ({publish}) => {
+        setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
         renderPublishButton()
         await screen.findByRole("button", {name: "View live"})
-        vi.mocked(listPublishedNetworks).mockResolvedValue([])
 
+        act(() => {
+            useSettingsStore.getState().updateSettings({publish})
+        })
+
+        // This browser hasn't published it there
+        await screen.findByRole("button", {name: "Publish"})
+    })
+
+    it("should show it as published again after changing the org name back", async () => {
+        setPublishedBefore()
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "View live"})
         act(() => {
             useSettingsStore.getState().updateSettings({publish: {orgName: "another-org"}})
         })
-
         await screen.findByRole("button", {name: "Publish"})
-        expect(listPublishedNetworks).toHaveBeenLastCalledWith(SERVER_URL, "another-org")
+
+        act(() => {
+            useSettingsStore.getState().updateSettings({publish: {orgName: ORG_NAME}})
+        })
+
+        await screen.findByRole("button", {name: "View live"})
     })
 
     it("should stay on Publish when the server can't be asked whether the network is live", async () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
         renderPublishButton()
 
@@ -186,23 +251,32 @@ describe("PublishButton", () => {
     })
 
     it("should ask the server once when several networks check whether they're live", async () => {
+        useTempNetworksStore
+            .getState()
+            .setTempNetworks([
+                makeTempNetwork("temporary/first", "first_network", "first-dep"),
+                makeTempNetwork("temporary/second", "second_network", "second-dep"),
+            ])
         render(
             <>
                 <PublishButton
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="first-publish-button"
+                    networkId="temporary/first"
                     networkName="first_network"
                 />
                 <PublishButton
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="second-publish-button"
+                    networkId="temporary/second"
                     networkName="second_network"
                 />
             </>
         )
 
+        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalled())
         await waitFor(() => expect(screen.getAllByRole("button", {name: "Publish"})).toHaveLength(2))
         expect(listPublishedNetworks).toHaveBeenCalledTimes(1)
     })
@@ -226,6 +300,41 @@ describe("PublishButton", () => {
 
         const confirmation = await screen.findByRole("dialog")
         expect(within(confirmation).queryByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeInTheDocument()
+    })
+
+    it("should warn before publishing over a network with the same name that this browser didn't publish", async () => {
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+
+        await clickPublish()
+
+        const confirmation = await screen.findByRole("dialog")
+        expect(confirmation).toHaveTextContent(
+            `A network named "${NETWORK_NAME}" is already published under the org "${ORG_NAME}" at ${PUBLISHED_URL}`
+        )
+        expect(confirmation).toHaveTextContent(OTHER_PUBLISHED_WARNING)
+    })
+
+    it("should not warn when republishing a network this browser published", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+
+        const confirmation = await clickRepublish()
+
+        expect(confirmation).not.toHaveTextContent(OTHER_PUBLISHED_WARNING)
+    })
+
+    it("should still ask before publishing when the server can't say whether the name is taken", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
+        renderPublishButton()
+
+        await clickPublish()
+
+        const confirmation = await screen.findByRole("dialog")
+        expect(confirmation).not.toHaveTextContent(OTHER_PUBLISHED_WARNING)
+        expect(warnSpy).toHaveBeenCalled()
     })
 
     it("should not publish when the confirmation is cancelled", async () => {
@@ -363,6 +472,7 @@ describe("PublishButton", () => {
     })
 
     it("should offer to republish a network the server has unpublished", async () => {
+        setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
         renderPublishButton()
         await screen.findByRole("button", {name: "Republish"})
@@ -372,29 +482,63 @@ describe("PublishButton", () => {
         expect(screen.queryByRole("button", {name: "Unpublish"})).not.toBeInTheDocument()
     })
 
-    it("should show an edited copy of a published network as published too", async () => {
-        render(
-            <>
-                <PublishButton
-                    displayName={DISPLAY_NAME}
-                    hocon={HOCON}
-                    id="original-publish-button"
-                    networkName={NETWORK_NAME}
-                />
-                <PublishButton
-                    displayName={DISPLAY_NAME}
-                    hocon="{ tools: [], edited: true }"
-                    id="edited-publish-button"
-                    networkName={NETWORK_NAME}
-                />
-            </>
+    it("should finish publishing on the edited network when it's edited while publishing", async () => {
+        const editedId = "temporary/cailville_bakery-2"
+        let finishPublish!: () => void
+        // The server only accepts it after the edit, which is the latest it can
+        mockPublishNetwork.mockImplementation(
+            ({onAccepted}) =>
+                new Promise<PublishedNetwork>((resolve) => {
+                    finishPublish = () => {
+                        onAccepted?.(PUBLISH_ID)
+                        resolve(makePublishedNetwork())
+                    }
+                })
         )
-        const [originalPublishButton] = await screen.findAllByRole("button", {name: "Publish"})
+        const {unmount} = renderPublishButton()
+        await clickPublishAndConfirm()
+        await screen.findByText("Putting it online...")
+        unmount()
 
-        await user.click(originalPublishButton)
-        const confirmation = await screen.findByRole("dialog")
-        const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
-        await user.click(confirmButton)
+        // Editing replaces the network with one under a new id, and the title bar shows that one
+        act(() => {
+            useTempNetworksStore.getState().upsertTempNetworks([makeTempNetwork(editedId, NETWORK_NAME)])
+            usePublishStore.getState().replaceNetwork(NETWORK_ID, editedId)
+        })
+        render(
+            <PublishButton
+                displayName={DISPLAY_NAME}
+                hocon="{ tools: [], edited: true }"
+                id="edited-publish-button"
+                networkId={editedId}
+                networkName={NETWORK_NAME}
+            />
+        )
+        screen.getByRole("button", {name: "Publishing..."})
+
+        act(() => finishPublish())
+
+        await screen.findByRole("button", {name: "View live"})
+        expect(useTempNetworksStore.getState().tempNetworks[0].published?.deploymentId).toBe(PUBLISH_ID)
+    })
+
+    it("should show a published network as published after it's edited", async () => {
+        const editedId = "temporary/cailville_bakery-2"
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+
+        // Editing replaces the network with one under a new id
+        useTempNetworksStore.getState().upsertTempNetworks([makeTempNetwork(editedId, NETWORK_NAME)])
+        render(
+            <PublishButton
+                displayName={DISPLAY_NAME}
+                hocon="{ tools: [], edited: true }"
+                id="edited-publish-button"
+                networkId={editedId}
+                networkName={NETWORK_NAME}
+            />
+        )
 
         await waitFor(() => expect(screen.getAllByRole("button", {name: "View live"})).toHaveLength(2))
     })
@@ -509,19 +653,6 @@ describe("PublishButton", () => {
         await openDetails()
     })
 
-    it("should ask the new server when the publish server in Settings changes", async () => {
-        renderPublishButton()
-        await publishAndWaitUntilLive()
-        vi.mocked(listPublishedNetworks).mockClear()
-
-        act(() => {
-            useSettingsStore.getState().updateSettings({publish: {serverUrl: "https://other-publish.test"}})
-        })
-
-        await screen.findByRole("button", {name: "Publish"})
-        expect(listPublishedNetworks).toHaveBeenCalledWith("https://other-publish.test", ORG_NAME)
-    })
-
     it("should offer to republish after unpublishing", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
@@ -548,6 +679,19 @@ describe("PublishButton", () => {
         expect(openSpy).not.toHaveBeenCalled()
     })
 
+    it("should offer to republish when the server took the network but it failed to go live", async () => {
+        mockPublishNetwork.mockImplementation(async ({onAccepted}) => {
+            onAccepted?.(PUBLISH_ID)
+            throw new Error(SERVER_ERROR)
+        })
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        renderPublishButton()
+
+        await clickPublishAndConfirm()
+
+        await screen.findByRole("button", {name: "Republish"})
+    })
+
     it("should keep offering to republish when republishing fails and the server can't be asked", async () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
         renderPublishButton()
@@ -562,29 +706,17 @@ describe("PublishButton", () => {
         await openDetails("Unpublished")
     })
 
-    it("should show a network as live when the server lists it both live and unpublished", async () => {
-        vi.mocked(listPublishedNetworks).mockResolvedValue([
-            {id: "stopped", name: NETWORK_NAME, url: null},
-            makePublishedNetwork(),
-        ])
-        renderPublishButton()
-        await screen.findByRole("button", {name: "View live"})
-
-        await openDetails()
-
-        screen.getByText(PUBLISHED_URL)
-    })
-
     it("should ask the server again when republishing fails, and show what it says", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
         mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
         vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
         const confirmation = await clickRepublish()
+        vi.mocked(listPublishedNetworks).mockClear()
 
         await confirmRepublish(confirmation)
 
-        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalledTimes(2))
+        await waitFor(() => expect(listPublishedNetworks).toHaveBeenCalledTimes(1))
         await openDetails("Unpublished")
     })
 })

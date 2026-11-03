@@ -14,6 +14,7 @@ import {FC, useCallback, useEffect, useRef, useState} from "react"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {StreamingUnit} from "../../../controller/llm/LlmChat"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {usePublishStore} from "../../../state/Publish"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../../AgentChat/Common/Utils"
@@ -164,6 +165,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
                 if (networkId) {
                     useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
+                    usePublishStore.getState().replaceNetwork(networkId, replacement.agentInfo.agent_name)
                     setSelectedNetwork(replacement.agentInfo.agent_name)
                 }
                 return true

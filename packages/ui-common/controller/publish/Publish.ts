@@ -37,6 +37,8 @@ interface PublishNetworkRequest {
     readonly hocon: string
     /** Has the server make a new theme instead of keeping the one it made before */
     readonly refreshTheme?: boolean
+    /** Called with the server's id for it as soon as the server accepts it, before it's live */
+    readonly onAccepted?: (id: string) => void
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -141,6 +143,7 @@ export const publishNetwork = async ({
     networkName,
     hocon,
     refreshTheme = false,
+    onAccepted,
 }: PublishNetworkRequest): Promise<LiveNetwork> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
@@ -154,6 +157,7 @@ export const publishNetwork = async ({
     const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
     await throwIfNotOk(createResponse, "Publishing")
     let network: ServerNetwork = await createResponse.json()
+    onAccepted?.(network.id)
 
     while (network.status === "queued" || network.status === "building") {
         const waitResponse = await fetch(

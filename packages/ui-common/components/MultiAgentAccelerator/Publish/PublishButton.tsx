@@ -24,7 +24,14 @@ import Popover from "@mui/material/Popover"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishTarget, unpublish} from "./Publish"
+import {
+    openInNewTab,
+    publish,
+    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
+    PublishNetwork,
+    PublishTarget,
+    unpublish,
+} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {PublishPanel} from "./PublishPanel"
 import {usePublishTarget} from "./usePublishTarget"
@@ -38,6 +45,8 @@ interface PublishButtonProps {
     readonly displayName: string
     readonly hocon: string
     readonly id: string
+    /** The network's id in the app, which its publish state is kept under */
+    readonly networkId: string
     /** The agent network name, which it's published under */
     readonly networkName: string
 }
@@ -54,9 +63,9 @@ interface MainAction {
  * it's unpublished it says "Republish", since the server keeps it. The dropdown opens a panel with the progress, or the
  * live URL with Republish and Unpublish.
  */
-export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkName}) => {
-    const publishState = usePublishStore((state) => state.networks[networkName])
-    const target = usePublishTarget(networkName)
+export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
+    const publishState = usePublishStore((state) => state.networks[networkId])
+    const target = usePublishTarget(networkId, networkName)
 
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
@@ -64,14 +73,16 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
+    const network: PublishNetwork = {id: networkId, name: networkName}
+
     const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
         setIsPanelOpen(true)
-        await publish(networkName, hocon, publishTarget, refreshTheme)
+        await publish(network, hocon, publishTarget, refreshTheme)
         setIsPanelOpen(false)
     }
 
     const handleUnpublish = async (published: Published) => {
-        await unpublish(networkName, published)
+        await unpublish(network, published)
         setIsPanelOpen(false)
     }
 
@@ -174,6 +185,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     displayName={displayName}
                     id={`${id}-confirm`}
                     isRepublish={Boolean(publishState)}
+                    network={network}
                     onCancel={() => setIsConfirmOpen(false)}
                     onConfirm={(refreshTheme) => {
                         setIsConfirmOpen(false)

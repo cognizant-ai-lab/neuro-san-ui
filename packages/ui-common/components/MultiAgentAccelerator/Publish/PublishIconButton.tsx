@@ -21,7 +21,7 @@ import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishNetwork} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {PublishStatus, usePublishStore} from "../../../state/Publish"
@@ -33,6 +33,8 @@ interface PublishIconButtonProps {
     readonly id: string
     /** An expired network can't be republished, but its live site still opens */
     readonly isExpired: boolean
+    /** The network's id in the app, which its publish state is kept under */
+    readonly networkId: string
     /** The agent network name, which it's published under */
     readonly networkName: string
 }
@@ -41,13 +43,22 @@ interface PublishIconButtonProps {
  * Small globe button for publishing a network from the sidebar. Publishes after asking and spins while publishing.
  * Once the network is live it turns green and opens the live site, and once it's unpublished it republishes.
  */
-export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hocon, id, isExpired, networkName}) => {
-    const publishState = usePublishStore((state) => state.networks[networkName])
+export const PublishIconButton: FC<PublishIconButtonProps> = ({
+    displayName,
+    hocon,
+    id,
+    isExpired,
+    networkId,
+    networkName,
+}) => {
+    const publishState = usePublishStore((state) => state.networks[networkId])
     const publishStatus = publishState?.status
     const publishedUrl = publishState?.status === PublishStatus.Published ? publishState.url : null
-    const target = usePublishTarget(networkName)
+    const target = usePublishTarget(networkId, networkName)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+
+    const network: PublishNetwork = {id: networkId, name: networkName}
 
     const getLabel = () => {
         if (publishStatus === PublishStatus.Publishing) return "Publishing..."
@@ -108,10 +119,11 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, hoco
                         displayName={displayName}
                         id={`${id}-confirm`}
                         isRepublish={Boolean(publishState)}
+                        network={network}
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)
-                            void publish(networkName, hocon, target, refreshTheme)
+                            void publish(network, hocon, target, refreshTheme)
                         }}
                         target={target}
                     />

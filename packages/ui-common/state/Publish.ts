@@ -56,29 +56,60 @@ interface PublishedList {
 }
 
 /**
- * Zustand state store for networks that have been published, keyed by agent network name, which is how the server
- * knows them. Editing a network keeps its name, so the edited copy shares the state. Kept in memory only.
+ * Zustand state store for networks that have been published, keyed by network id. Kept in memory only, since each
+ * network asks the server for it by the id of its deployment.
  */
 interface PublishStore {
     readonly networks: Readonly<Record<string, PublishState>>
-    readonly setPublishState: (networkName: string, publishState: PublishState) => void
-    readonly clearPublishState: (networkName: string) => void
+    readonly setPublishState: (networkId: string, publishState: PublishState) => void
+    readonly clearPublishState: (networkId: string) => void
+    /** Which network an edit replaced each one with, so a publish still finishing reaches the one there now */
+    readonly replacedBy: Readonly<Record<string, string>>
+    /** Moves a network's publish state to the network an edit replaced it with */
+    readonly replaceNetwork: (fromId: string, toId: string) => void
     readonly publishedList: PublishedList | null
     readonly setPublishedList: (publishedList: PublishedList | null) => void
+}
+
+// Follows a network through any edits that replaced it
+const followReplacements = (replacedBy: PublishStore["replacedBy"], networkId: string): string => {
+    let currentId = networkId
+    while (replacedBy[currentId]) currentId = replacedBy[currentId]
+    return currentId
 }
 
 export const usePublishStore = create<PublishStore>()((set) => ({
     networks: {},
     publishedList: null,
+    replacedBy: {},
     setPublishedList: (publishedList) => set({publishedList}),
-    setPublishState: (networkName, publishState) =>
-        set(({networks}) => ({networks: {...networks, [networkName]: publishState}})),
-    clearPublishState: (networkName) =>
-        set(({networks}) => {
-            const {[networkName]: _removed, ...rest} = networks
+    setPublishState: (networkId, publishState) =>
+        set(({networks, replacedBy}) => ({
+            networks: {...networks, [followReplacements(replacedBy, networkId)]: publishState},
+        })),
+    clearPublishState: (networkId) =>
+        set(({networks, replacedBy}) => {
+            const {[followReplacements(replacedBy, networkId)]: _removed, ...rest} = networks
             return {networks: rest}
         }),
+    replaceNetwork: (fromId, toId) =>
+        set(({networks, replacedBy}) => {
+            // A save that kept the id replaced nothing, and recording it would point the network at itself
+            if (fromId === toId) return {}
+
+            const {[fromId]: publishState, ...rest} = networks
+            return {
+                networks: publishState ? {...rest, [toId]: publishState} : rest,
+                replacedBy: {...replacedBy, [fromId]: toId},
+            }
+        }),
 }))
+
+/**
+ * The network that's there now for one that may have been replaced by edits since
+ */
+export const resolveNetworkId = (networkId: string): string =>
+    followReplacements(usePublishStore.getState().replacedBy, networkId)
 
 // What we know about published networks is for the publish server and org in Settings, so forget it when either
 // changes and let each network ask the server again. Networks that are publishing keep their state until they finish.
