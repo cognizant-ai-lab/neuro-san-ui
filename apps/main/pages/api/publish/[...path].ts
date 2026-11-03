@@ -88,7 +88,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let upstream: Response
     let upstreamBody: Buffer
     try {
-        // Only the request to the publishing server is in here, so anything caught is about reaching it
+        // Send the request to the publishing server.
+        // The catch is for when it can't be reached or doesn't answer in time.
         upstream = await fetch(target, {
             method: req.method,
             headers: {
