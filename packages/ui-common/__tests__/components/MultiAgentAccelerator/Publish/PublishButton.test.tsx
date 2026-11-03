@@ -458,7 +458,7 @@ describe("PublishButton", () => {
 
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
         expect(unpublishNetwork).not.toHaveBeenCalled()
-        screen.getByText("Live")
+        screen.getByText("View live")
     })
 
     it("should not allow a second unpublish while the first is still running", async () => {
