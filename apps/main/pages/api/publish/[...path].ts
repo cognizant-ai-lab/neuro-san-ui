@@ -82,12 +82,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const contentType = req.headers["content-type"]
+    // Outside the try, so an error here, like the browser dropping the upload, isn't blamed on the publishing server
     const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req)
 
-    // Only the exchange with the publish server is caught, so a bug of ours still surfaces as a 500
     let upstream: Response
     let upstreamBody: Buffer
     try {
+        // Only the request to the publishing server is in here, so anything caught is about reaching it
         upstream = await fetch(target, {
             method: req.method,
             headers: {
