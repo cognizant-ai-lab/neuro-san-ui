@@ -119,7 +119,7 @@ describe("Publish API route", () => {
             expect(res._getJSONData().detail).toBe(`Couldn't reach the publishing server at ${SERVER_URL}`)
         })
 
-        it("should not report its own errors as the server being unreachable", async () => {
+        it("should rethrow an unexpected error instead of saying the server couldn't be reached", async () => {
             fetchMock.mockRejectedValue(new RangeError("Something else went wrong"))
 
             await expect(callProxy("GET", {path: ["health"], server: SERVER_URL})).rejects.toThrow(
