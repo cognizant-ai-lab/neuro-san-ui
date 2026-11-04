@@ -119,7 +119,6 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                         displayName={displayName}
                         id={`${id}-confirm`}
                         isRepublish={Boolean(publishState)}
-                        network={network}
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)

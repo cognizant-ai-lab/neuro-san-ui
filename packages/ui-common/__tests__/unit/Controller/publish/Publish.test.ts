@@ -160,6 +160,71 @@ describe("Publish", () => {
         await expect(create()).rejects.toThrow("pip install failed")
     })
 
+    // POST /deployments
+    it("should report the server's id for the network as soon as the server accepts it", async () => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "failed", error: "pip install failed"}))
+        const onAccepted = vi.fn()
+
+        await expect(
+            publishNetwork({
+                serverUrl: SERVER_URL,
+                orgName: ORG_NAME,
+                networkName: NETWORK_NAME,
+                hocon: HOCON,
+                onAccepted,
+            })
+        ).rejects.toThrow("pip install failed")
+
+        expect(onAccepted).toHaveBeenCalledWith(PUBLISH_ID)
+    })
+
+    // POST /deployments, then POST /deployments/{id}/theme-spec while it builds
+    it("should set the site's brand while it builds", async () => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
+            .mockResolvedValueOnce(Response.json({applied_live: false}))
+            .mockResolvedValueOnce(
+                Response.json({id: PUBLISH_ID, name: NETWORK_NAME, status: "ready", url: PUBLISHED_URL})
+            )
+
+        await publishNetwork({
+            serverUrl: SERVER_URL,
+            orgName: ORG_NAME,
+            networkName: NETWORK_NAME,
+            hocon: HOCON,
+            brand: "Cailville Bakery",
+        })
+
+        const [url, init] = fetchMock.mock.calls[1]
+        expect(url).toBe(`/api/publish/deployments/${PUBLISH_ID}/theme-spec?server=${encodeURIComponent(SERVER_URL)}`)
+        expect(init?.method).toBe("POST")
+        expect(JSON.parse(init?.body as string)).toEqual({brand: "Cailville Bakery"})
+    })
+
+    // POST /deployments/{id}/theme-spec rejected
+    it("should still publish when the site's brand can't be set", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        fetchMock
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
+            .mockResolvedValueOnce(Response.json({detail: "Not found"}, {status: 404}))
+            .mockResolvedValueOnce(
+                Response.json({id: PUBLISH_ID, name: NETWORK_NAME, status: "ready", url: PUBLISHED_URL})
+            )
+
+        const ready = await publishNetwork({
+            serverUrl: SERVER_URL,
+            orgName: ORG_NAME,
+            networkName: NETWORK_NAME,
+            hocon: HOCON,
+            brand: "Cailville Bakery",
+        })
+
+        expect(ready.url).toBe(PUBLISHED_URL)
+        expect(warnSpy).toHaveBeenCalled()
+    })
+
     // POST /deployments rejected
     it("should fail with the server's explanation when it rejects the upload", async () => {
         fetchMock.mockResolvedValue(Response.json({detail: "Invalid token"}, {status: 401}))

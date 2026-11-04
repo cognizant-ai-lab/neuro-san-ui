@@ -17,7 +17,12 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {PublishedDeployment, TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 
-const PUBLISHED: PublishedDeployment = {serverUrl: "https://publish.test", orgName: "cailville", deploymentId: "dep-1"}
+const PUBLISHED: PublishedDeployment = {
+    serverUrl: "https://publish.test",
+    orgName: "cailville",
+    deploymentId: "dep-1",
+    name: "network_alpha_1a2b3c4d",
+}
 
 const makeNetwork = (reservationId: string, agentNetworkName?: string): TemporaryNetwork => ({
     reservation: {

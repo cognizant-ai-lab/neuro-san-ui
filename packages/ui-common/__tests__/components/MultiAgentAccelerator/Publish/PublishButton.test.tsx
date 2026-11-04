@@ -11,7 +11,6 @@ import {
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
 import {
-    OTHER_PUBLISHED_WARNING,
     PUBLIC_ACCESS_WARNING,
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
@@ -33,6 +32,8 @@ const HOCON = "{ tools: [] }"
 const PUBLISHED_URL = "http://live.test/cailville_bakery"
 const NETWORK_ID = "temporary/cailville_bakery-1"
 const NETWORK_NAME = "cailville_bakery"
+// What a network published before was published under, with the id MAUI added to its name
+const PUBLISH_NAME = `${NETWORK_NAME}_1a2b3c4d`
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
 const SERVER_URL = "https://publish.test"
@@ -60,7 +61,9 @@ describe("PublishButton", () => {
         reservation: {reservation_id: id, lifetime_in_seconds: 300, expiration_time_in_seconds: 0},
         agentInfo: {agent_name: id},
         agentNetworkName: networkName,
-        ...(deploymentId && {published: {serverUrl: SERVER_URL, orgName: ORG_NAME, deploymentId}}),
+        ...(deploymentId && {
+            published: {serverUrl: SERVER_URL, orgName: ORG_NAME, deploymentId, name: `${networkName}_1a2b3c4d`},
+        }),
     })
 
     /** As if this browser published the network before, for example before a reload */
@@ -302,41 +305,6 @@ describe("PublishButton", () => {
         expect(within(confirmation).queryByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeInTheDocument()
     })
 
-    it("should warn before publishing over a network with the same name that this browser didn't publish", async () => {
-        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
-        renderPublishButton()
-
-        await clickPublish()
-
-        const confirmation = await screen.findByRole("dialog")
-        expect(confirmation).toHaveTextContent(
-            `A network named "${NETWORK_NAME}" is already published under the org "${ORG_NAME}" at ${PUBLISHED_URL}`
-        )
-        expect(confirmation).toHaveTextContent(OTHER_PUBLISHED_WARNING)
-    })
-
-    it("should not warn when republishing a network this browser published", async () => {
-        renderPublishButton()
-        await publishAndWaitUntilLive()
-        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
-
-        const confirmation = await clickRepublish()
-
-        expect(confirmation).not.toHaveTextContent(OTHER_PUBLISHED_WARNING)
-    })
-
-    it("should still ask before publishing when the server can't say whether the name is taken", async () => {
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
-        vi.mocked(listPublishedNetworks).mockRejectedValue(new Error(SERVER_ERROR))
-        renderPublishButton()
-
-        await clickPublish()
-
-        const confirmation = await screen.findByRole("dialog")
-        expect(confirmation).not.toHaveTextContent(OTHER_PUBLISHED_WARNING)
-        expect(warnSpy).toHaveBeenCalled()
-    })
-
     it("should not publish when the confirmation is cancelled", async () => {
         renderPublishButton()
         await clickPublish()
@@ -356,13 +324,28 @@ describe("PublishButton", () => {
         await publishAndWaitUntilLive()
 
         expect(mockPublishNetwork).toHaveBeenCalledWith(
+            expect.objectContaining({serverUrl: SERVER_URL, orgName: ORG_NAME, hocon: HOCON})
+        )
+    })
+
+    it("should publish under the network's name with an id of its own, so it can't replace another", async () => {
+        renderPublishButton()
+
+        await publishAndWaitUntilLive()
+
+        expect(mockPublishNetwork).toHaveBeenCalledWith(
             expect.objectContaining({
-                serverUrl: SERVER_URL,
-                orgName: ORG_NAME,
-                networkName: NETWORK_NAME,
-                hocon: HOCON,
+                networkName: expect.stringMatching(new RegExp(`^${NETWORK_NAME}_[0-9a-f]{8}$`, "u")),
             })
         )
+    })
+
+    it("should give the site the network's name as its brand, without the id", async () => {
+        renderPublishButton()
+
+        await publishAndWaitUntilLive()
+
+        expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({brand: "Cailville Bakery"}))
     })
 
     it.each([
@@ -442,8 +425,24 @@ describe("PublishButton", () => {
 
         await confirmRepublish(confirmation)
 
+        const [[{networkName: firstPublishName}]] = mockPublishNetwork.mock.calls
         expect(mockPublishNetwork).toHaveBeenLastCalledWith(
-            expect.objectContaining({networkName: NETWORK_NAME, hocon: HOCON, refreshTheme: false})
+            expect.objectContaining({networkName: firstPublishName, hocon: HOCON, refreshTheme: false})
+        )
+    })
+
+    it("should republish under the name it was first published under after a reload", async () => {
+        setPublishedBefore()
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "View live"})
+        const confirmation = await clickRepublish()
+
+        const confirmButton = within(confirmation).getByRole("button", {name: "Republish"})
+        await user.click(confirmButton)
+
+        await waitFor(() =>
+            expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: PUBLISH_NAME}))
         )
     })
 

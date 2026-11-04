@@ -693,7 +693,11 @@ describe("SideBar", () => {
 
             await screen.findByRole("button", {name: "View live"})
             expect(publishNetwork).toHaveBeenCalledWith(
-                expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
+                expect.objectContaining({
+                    networkName: expect.stringMatching(
+                        new RegExp(`^${TEMPORARY_NETWORK.agentNetworkName}_[0-9a-f]{8}$`, "u")
+                    ),
+                })
             )
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })

@@ -14,12 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-    listPublishedNetworks,
-    PublishedNetwork,
-    publishNetwork,
-    unpublishNetwork,
-} from "../../../controller/publish/Publish"
+import {v4 as uuid} from "uuid"
+
+import {listPublishedNetworks, publishNetwork, unpublishNetwork} from "../../../controller/publish/Publish"
 import {Published, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
 import {PublishedDeployment, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {NotificationType, sendNotification} from "../../Common/notification"
@@ -106,24 +103,18 @@ export const checkIfPublished = async (network: PublishNetwork, target: PublishT
 }
 
 /**
- * Finds a network published under the same name and org that this browser didn't publish, which publishing would
- * replace, since the server knows networks by name and org. It may be someone else's.
- * @returns The other network, or null if there's none or the server couldn't be asked
+ * A name to publish the network under for the first time. The server replaces a network with the same name and org,
+ * which may be someone else's, so it ends in an id of its own.
  */
-export const findOtherPublished = async (
-    network: PublishNetwork,
-    target: PublishTarget
-): Promise<PublishedNetwork | null> => {
-    const deployment = getPublishedDeployment(network.id, target)
-    try {
-        // Asked fresh rather than from the shared list, since someone may have published it since
-        const networks = await listPublishedNetworks(target.serverUrl, target.orgName)
-        return networks.find((other) => other.name === network.name && other.id !== deployment?.deploymentId) ?? null
-    } catch (e) {
-        console.warn(`Unable to check whether "${network.name}" is already published:`, e)
-        return null
-    }
-}
+const makePublishName = (networkName: string): string => `${networkName}_${uuid().slice(0, 8)}`
+
+/**
+ * The brand the server would make from the network's name, without the id at the end of the name it's published under
+ */
+const makeBrand = (networkName: string): string =>
+    networkName
+        .replaceAll("_", " ")
+        .replaceAll(/[a-z]+/giu, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
 
 /**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
@@ -143,18 +134,24 @@ export const publish = async (
 
     try {
         const {serverUrl, orgName} = target
+        // Republishing goes to the same deployment, under the name it was first published under
+        const publishName = getPublishedDeployment(network.id, target)?.name ?? makePublishName(network.name)
         const ready = await publishNetwork({
             serverUrl,
             orgName,
-            networkName: network.name,
+            networkName: publishName,
             hocon,
             refreshTheme,
+            brand: makeBrand(network.name),
             // Remembered as soon as the server has it, so a publish that fails can still be republished. On the
             // network that's there now, in case it was edited while publishing.
             onAccepted: (deploymentId) =>
-                useTempNetworksStore
-                    .getState()
-                    .setTempNetworkPublished(resolveNetworkId(network.id), {serverUrl, orgName, deploymentId}),
+                useTempNetworksStore.getState().setTempNetworkPublished(resolveNetworkId(network.id), {
+                    serverUrl,
+                    orgName,
+                    deploymentId,
+                    name: publishName,
+                }),
         })
         setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
 

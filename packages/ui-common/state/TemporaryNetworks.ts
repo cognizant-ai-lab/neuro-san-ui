@@ -33,6 +33,8 @@ export type PublishedDeployment = {
     readonly orgName: string
     /** The publishing server's id for it */
     readonly deploymentId: string
+    /** What it's published under, which is unique to this network, since the server replaces by name and org */
+    readonly name: string
 }
 
 export type TemporaryNetwork = {
