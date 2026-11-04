@@ -45,7 +45,13 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     placeholder,
     vendor,
 }) => {
-    const currentValue = useRef(persistedValue ?? "")
+    const currentValue = useRef<string | null>(persistedValue ?? "")
+    useEffect(
+        () => () => {
+            currentValue.current = null
+        },
+        []
+    )
     const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
