@@ -13,6 +13,7 @@ interface ApiKeyErrorBannerProps {
 }
 
 export interface ApiKeyFailure {
+    readonly canSaveUnverified?: boolean
     readonly vendor: LLMProvider
     readonly result: KeyValidationFailure
 }
@@ -38,6 +39,12 @@ const FailureRow: FC<{id: string; failure: ApiKeyFailure}> = ({id, failure}) => 
             >
                 {errorTitle(failure)}
             </Typography>
+            {failure.canSaveUnverified ? (
+                <Typography variant="body2">
+                    OpenAI denied access to the model list. This key may still work for chat, but its access is
+                    unverified.
+                </Typography>
+            ) : null}
             {/* The error messages from the provider, if present in the response body. */}
             {message ? (
                 <Typography
