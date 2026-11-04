@@ -50,7 +50,7 @@ import {
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
-import {listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
+import {isPublishNameTaken, listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
@@ -675,6 +675,7 @@ describe("SideBar", () => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: "cailville"}})
             usePublishStore.setState(usePublishStore.getInitialState())
             vi.mocked(listPublishedNetworks).mockResolvedValue([])
+            vi.mocked(isPublishNameTaken).mockResolvedValue(false)
             vi.mocked(publishNetwork).mockResolvedValue({id: "dep-123", url: PUBLISHED_URL})
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
@@ -690,11 +691,7 @@ describe("SideBar", () => {
 
             await screen.findByRole("button", {name: "View live"})
             expect(publishNetwork).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    networkName: expect.stringMatching(
-                        new RegExp(`^${TEMPORARY_NETWORK.agentNetworkName}_[0-9a-f]{8}$`, "u")
-                    ),
-                })
+                expect.objectContaining({networkName: TEMPORARY_NETWORK.agentNetworkName})
             )
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })

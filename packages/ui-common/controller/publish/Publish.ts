@@ -43,6 +43,8 @@ interface PublishNetworkRequest {
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
 interface ServerNetwork {
     readonly id: string
+    readonly name: string
+    readonly org_name: string
     readonly status: "queued" | "building" | "ready" | "failed" | "stopped"
     /** Set once status is ready */
     readonly url?: string | null
@@ -126,6 +128,21 @@ export const listPublishedNetworks = async (serverUrl: string): Promise<Publishe
     return networks
         .filter((network) => isListed(network))
         .map((network) => ({id: network.id, url: network.status === "ready" ? network.url : null}))
+}
+
+/**
+ * Checks whether the org already has a network published under the name, live or not. Publishing under it would
+ * replace that network.
+ */
+export const isPublishNameTaken = async (serverUrl: string, orgName: string, networkName: string): Promise<boolean> => {
+    const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
+    await throwIfNotOk(response, "Listing published networks")
+    const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
+
+    // The server files an org under the spelling it first saw, whatever the case
+    return networks.some(
+        (network) => network.name === networkName && network.org_name.toLowerCase() === orgName.toLowerCase()
+    )
 }
 
 /**

@@ -3,6 +3,7 @@ import httpStatus from "http-status"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     checkHealth,
+    isPublishNameTaken,
     listPublishedNetworks,
     publishNetwork,
     unpublishNetwork,
@@ -266,6 +267,33 @@ describe("Publish", () => {
         )
 
         await expect(listPublishedNetworks(SERVER_URL)).resolves.toEqual([])
+    })
+
+    // GET /deployments
+    it.each([
+        {desc: "is live", network: {name: NETWORK_NAME, org_name: ORG_NAME, status: "ready"}, isTaken: true},
+        {desc: "is stopped", network: {name: NETWORK_NAME, org_name: ORG_NAME, status: "stopped"}, isTaken: true},
+        {
+            desc: "is in the org spelled another way",
+            network: {name: NETWORK_NAME, org_name: "Cailville"},
+            isTaken: true,
+        },
+        {desc: "is in another org", network: {name: NETWORK_NAME, org_name: "someone-else"}, isTaken: false},
+        {desc: "has another name", network: {name: "cailville_bakery_2", org_name: ORG_NAME}, isTaken: false},
+    ])("should say whether the name is taken when a network by it $desc", async ({network, isTaken}) => {
+        fetchMock.mockResolvedValue(Response.json({capacity: {}, deployments: [{id: "x", ...network}]}))
+
+        await expect(isPublishNameTaken(SERVER_URL, ORG_NAME, NETWORK_NAME)).resolves.toBe(isTaken)
+        expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
+    })
+
+    // GET /deployments rejected
+    it("should fail with the server's explanation when it can't list networks to check the name", async () => {
+        fetchMock.mockResolvedValue(Response.json({detail: "Invalid token"}, {status: 401}))
+
+        await expect(isPublishNameTaken(SERVER_URL, ORG_NAME, NETWORK_NAME)).rejects.toThrow(
+            "Listing published networks failed (401): Invalid token"
+        )
     })
 
     // POST /deployments/{id}/unpublish, then DELETE /deployments/{id}

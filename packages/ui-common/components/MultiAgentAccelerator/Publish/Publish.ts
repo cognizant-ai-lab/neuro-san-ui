@@ -16,7 +16,12 @@ limitations under the License.
 
 import {v4 as uuid} from "uuid"
 
-import {listPublishedNetworks, publishNetwork, unpublishNetwork} from "../../../controller/publish/Publish"
+import {
+    isPublishNameTaken,
+    listPublishedNetworks,
+    publishNetwork,
+    unpublishNetwork,
+} from "../../../controller/publish/Publish"
 import {Published, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
 import {PublishedDeployment, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {NotificationType, sendNotification} from "../../Common/notification"
@@ -103,10 +108,11 @@ export const checkIfPublished = async (network: PublishNetwork, target: PublishT
 }
 
 /**
- * A name to publish the network under for the first time. The server replaces a network with the same name and org,
- * which may be someone else's, so it ends in an id of its own.
+ * A name to publish the network under for the first time: its own name, unless the org already has a network under
+ * it. The server would replace that network, which may be someone else's, so then it ends in an id of its own.
  */
-const makePublishName = (networkName: string): string => `${networkName}_${uuid().slice(0, 8)}`
+const makePublishName = async (networkName: string, {serverUrl, orgName}: PublishTarget): Promise<string> =>
+    (await isPublishNameTaken(serverUrl, orgName, networkName)) ? `${networkName}_${uuid().slice(0, 8)}` : networkName
 
 /**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
@@ -127,7 +133,8 @@ export const publish = async (
     try {
         const {serverUrl, orgName} = target
         // Publishing again goes to the same deployment, under the name it was first published under
-        const publishName = getPublishedDeployment(network.id, target)?.name ?? makePublishName(network.name)
+        const publishName =
+            getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(network.name, target))
         const ready = await publishNetwork({
             serverUrl,
             orgName,

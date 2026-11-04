@@ -15,6 +15,7 @@ import {
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
+    isPublishNameTaken,
     listPublishedNetworks,
     PublishedNetwork,
     publishNetwork,
@@ -158,6 +159,7 @@ describe("PublishButton", () => {
         useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(NETWORK_ID, NETWORK_NAME)])
         useSettingsStore.getState().resetSettings()
         useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: ORG_NAME}})
+        vi.mocked(isPublishNameTaken).mockResolvedValue(false)
 
         // Like the server, it reports the network's id once it accepts it
         mockPublishNetwork.mockImplementation(async ({onAccepted}) => {
@@ -329,7 +331,17 @@ describe("PublishButton", () => {
         )
     })
 
-    it("should publish under the network's name with an id of its own, so it can't replace another", async () => {
+    it("should publish under the network's own name when the org has no network by that name", async () => {
+        renderPublishButton()
+
+        await publishAndWaitUntilLive()
+
+        expect(isPublishNameTaken).toHaveBeenCalledWith(SERVER_URL, ORG_NAME, NETWORK_NAME)
+        expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: NETWORK_NAME}))
+    })
+
+    it("should add an id of its own to the name when the org already has a network by that name", async () => {
+        vi.mocked(isPublishNameTaken).mockResolvedValue(true)
         renderPublishButton()
 
         await publishAndWaitUntilLive()
@@ -339,6 +351,22 @@ describe("PublishButton", () => {
                 networkName: expect.stringMatching(new RegExp(`^${NETWORK_NAME}_[0-9a-f]{8}$`, "u")),
             })
         )
+    })
+
+    it("should report the error without publishing when the server can't say whether the name is taken", async () => {
+        vi.mocked(isPublishNameTaken).mockRejectedValue(new Error(SERVER_ERROR))
+        renderPublishButton()
+
+        await clickPublishAndConfirm()
+
+        await waitFor(() =>
+            expect(sendNotification).toHaveBeenCalledWith(
+                NotificationType.error,
+                `Failed to publish "${NETWORK_NAME}".`,
+                expect.stringContaining(SERVER_ERROR)
+            )
+        )
+        expect(mockPublishNetwork).not.toHaveBeenCalled()
     })
 
     it.each([
