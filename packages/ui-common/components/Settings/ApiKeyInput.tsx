@@ -106,7 +106,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     return (
         <Box
             data-testid={`${id}-input`}
-            sx={{display: "flex", alignItems: "center", width: "100%", gap: 2}}
+            sx={{display: "flex", flexWrap: "wrap", alignItems: "center", width: "100%", gap: 2}}
         >
             {confirmationDialogOpen ? (
                 <ConfirmationModal
@@ -227,15 +227,6 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 Save
             </Button>
-            {onSaveUnverified && !disableActions ? (
-                <Button
-                    onClick={() => onSaveUnverified(inputValue)}
-                    size="small"
-                    variant="outlined"
-                >
-                    Save without verification
-                </Button>
-            ) : null}
             <Button
                 onClick={() => setConfirmationDialogOpen(true)}
                 size="small"
@@ -244,6 +235,23 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 Forget
             </Button>
+            {onSaveUnverified && !disableActions ? (
+                <Box sx={{display: "flex", gap: 1, width: "100%", justifyContent: "flex-end"}}>
+                    <Button
+                        onClick={() => onResultChange?.(vendor, null)}
+                        size="small"
+                    >
+                        Keep editing
+                    </Button>
+                    <Button
+                        onClick={() => onSaveUnverified(inputValue)}
+                        size="small"
+                        variant="outlined"
+                    >
+                        Save anyway
+                    </Button>
+                </Box>
+            ) : null}
         </Box>
     )
 }
