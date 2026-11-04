@@ -18,7 +18,7 @@ import httpStatus from "http-status"
 import {createMocks, RequestMethod} from "node-mocks-http"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../../Const"
+import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR, PUBLISH_SERVER_URL_ENV_VAR} from "../../../../Const"
 import handler from "../../../../pages/api/publish/[...path]"
 
 const SERVER_URL = "https://publish.test"
@@ -44,6 +44,7 @@ describe("Publish API route", () => {
         vi.stubGlobal("fetch", fetchMock)
         vi.stubEnv(ENABLE_PUBLISHING_ENV_VAR, "true")
         vi.stubEnv(PUBLISH_BEARER_TOKEN_ENV_VAR, "test-token")
+        vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, SERVER_URL)
     })
 
     afterEach(() => {
@@ -109,6 +110,34 @@ describe("Publish API route", () => {
             expect(fetchMock).not.toHaveBeenCalled()
         })
 
+        it.each([
+            {desc: "another server", server: "https://attacker.test"},
+            {desc: "a path on the server", server: `${SERVER_URL}/other`},
+        ])("should refuse $desc, so the token only goes to the configured server", async ({server}) => {
+            const res = await callProxy("GET", {path: ["health"], server})
+
+            expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
+        it("should refuse every server while no publish server is configured", async () => {
+            vi.stubEnv(PUBLISH_SERVER_URL_ENV_VAR, "")
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+            expect(fetchMock).not.toHaveBeenCalled()
+        })
+
+        it("should not follow redirects, so the token can't be sent anywhere else", async () => {
+            fetchMock.mockRejectedValue(new TypeError("fetch failed", {cause: new Error("unexpected redirect")}))
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(fetchMock.mock.calls[0][1]?.redirect).toBe("error")
+            expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
+        })
+
         it("should explain when the server can't be reached", async () => {
             fetchMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"))
 
@@ -117,5 +146,20 @@ describe("Publish API route", () => {
             expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
             expect(res._getJSONData().detail).toContain("getaddrinfo ENOTFOUND")
         })
+    })
+
+    // Endpoints the UI doesn't use, such as POST /settings, which can replace the server's token and keys
+    it.each([
+        {method: "GET", path: ["settings"]},
+        {method: "POST", path: ["settings"]},
+        {method: "GET", path: ["orgs"]},
+        {method: "POST", path: ["deployments", "dep-1", "restart"]},
+        {method: "DELETE", path: ["deployments"]},
+        {method: "GET", path: ["deployments", "..", "settings"]},
+    ] as {method: RequestMethod; path: string[]}[])("should refuse $method /$path", async ({method, path}) => {
+        const res = await callProxy(method, {path, server: SERVER_URL})
+
+        expect(res._getStatusCode()).toBe(httpStatus.FORBIDDEN)
+        expect(fetchMock).not.toHaveBeenCalled()
     })
 })
