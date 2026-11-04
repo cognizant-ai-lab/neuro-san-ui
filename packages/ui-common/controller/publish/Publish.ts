@@ -23,7 +23,7 @@ limitations under the License.
 
 export interface PublishedNetwork {
     readonly id: string
-    /** Null once it's unpublished, since the server keeps it stopped */
+    /** Null when it isn't live, since the server keeps unpublished and failed networks */
     readonly url: string | null
 }
 

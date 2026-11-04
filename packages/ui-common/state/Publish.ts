@@ -41,7 +41,7 @@ export interface Published {
     readonly isUnpublishing?: boolean
 }
 
-/** Published before and since unpublished. The server keeps it stopped, so it can be published again. */
+/** Published before and now unpublished, or its publish failed. The server keeps it, so it can be published again. */
 interface Unpublished {
     readonly status: PublishStatus.Unpublished
 }

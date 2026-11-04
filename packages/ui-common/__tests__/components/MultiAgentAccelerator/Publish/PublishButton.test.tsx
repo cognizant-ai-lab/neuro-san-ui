@@ -33,7 +33,7 @@ const HOCON = "{ tools: [] }"
 const PUBLISHED_URL = "http://live.test/cailville_bakery"
 const NETWORK_ID = "temporary/cailville_bakery-1"
 const NETWORK_NAME = "cailville_bakery"
-// What a network published before was published under, with the id MAUI added to its name
+// What a network published before was published under, with the id MAUI adds when the org already has the name
 const PUBLISH_NAME = `${NETWORK_NAME}_1a2b3c4d`
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
