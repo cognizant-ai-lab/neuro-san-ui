@@ -224,21 +224,19 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                 return true
             }
 
-            if (
-                allowUnverified &&
-                (!keyTestResults[vendor]?.canSaveUnverified || currentDrafts.current[vendor] !== key)
-            ) {
-                return false
-            }
-
             if (!key) {
                 savingKeys.current.delete(vendor)
                 return save()
             }
 
             const existing = savingKeys.current.get(vendor)
-            if (existing) {
-                return existing.key === key ? existing.result : false
+            if (existing?.key === key) {
+                return existing.result
+            }
+
+            const canSaveUnverified = keyTestResults[vendor]?.canSaveUnverified && currentDrafts.current[vendor] === key
+            if (existing || (allowUnverified && !canSaveUnverified)) {
+                return false
             }
 
             const pending = {id, key, result: Promise.resolve().then(save)}
