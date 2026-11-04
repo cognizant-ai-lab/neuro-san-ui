@@ -25,6 +25,7 @@ import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
 import {
+    downloadBundle,
     openInNewTab,
     publish,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
@@ -60,8 +61,8 @@ interface MainAction {
 
 /**
  * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live", and
- * "Publish" again once it's unpublished. The dropdown opens a panel with the progress, or the live URL with Republish
- * and Unpublish.
+ * "Publish" again once it's unpublished. The dropdown opens a panel with the progress, or the live URL with Download
+ * Bundle, Republish and Unpublish.
  */
 export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkId])
@@ -72,6 +73,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const [isPanelOpen, setIsPanelOpen] = useState(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
+    const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
 
     const network: PublishNetwork = {id: networkId, name: networkName}
 
@@ -84,6 +86,12 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const handleUnpublish = async (published: Published) => {
         await unpublish(network, published)
         setIsPanelOpen(false)
+    }
+
+    const handleDownloadBundle = async (published: Published) => {
+        setIsDownloadingBundle(true)
+        await downloadBundle(network, published)
+        setIsDownloadingBundle(false)
     }
 
     const getMainAction = (): MainAction => {
@@ -172,6 +180,8 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     <PublishPanel
                         publishState={publishState}
                         id={`${id}-panel`}
+                        isDownloadingBundle={isDownloadingBundle}
+                        onDownloadBundle={(published) => void handleDownloadBundle(published)}
                         onRepublish={() => {
                             setIsPanelOpen(false)
                             setIsConfirmOpen(true)

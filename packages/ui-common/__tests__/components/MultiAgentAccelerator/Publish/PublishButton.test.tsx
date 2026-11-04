@@ -15,6 +15,7 @@ import {
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
+    fetchBundle,
     isPublishNameTaken,
     listPublishedNetworks,
     PublishedNetwork,
@@ -24,6 +25,7 @@ import {
 import {usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../../state/TemporaryNetworks"
+import {downloadFile} from "../../../../utils/File"
 
 //#region Constants
 
@@ -38,6 +40,7 @@ const PUBLISH_NAME = `${NETWORK_NAME}_1a2b3c4d`
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
 const SERVER_URL = "https://publish.test"
+const BUNDLE_FILE_NAME = "cailville_bakery.tar.gz"
 
 //#endregion Constants
 
@@ -45,6 +48,7 @@ const SERVER_URL = "https://publish.test"
 
 vi.mock("../../../../controller/publish/Publish")
 vi.mock("../../../../components/Common/notification")
+vi.mock("../../../../utils/File")
 
 const mockPublishNetwork = vi.mocked(publishNetwork)
 
@@ -145,6 +149,12 @@ describe("PublishButton", () => {
         await user.click(unpublishButton)
     }
 
+    const clickDownloadBundle = async () => {
+        await openDetails()
+        const downloadButton = screen.getByRole("button", {name: "Download Bundle"})
+        await user.click(downloadButton)
+    }
+
     const clickUnpublishAndConfirm = async () => {
         await clickUnpublish()
         const confirmation = await screen.findByRole("dialog")
@@ -168,6 +178,7 @@ describe("PublishButton", () => {
         })
         vi.mocked(unpublishNetwork).mockResolvedValue()
         vi.mocked(listPublishedNetworks).mockResolvedValue([])
+        vi.mocked(fetchBundle).mockResolvedValue({archive: new Uint8Array([31, 139]), fileName: BUNDLE_FILE_NAME})
     })
 
     it("should offer to publish a network this browser hasn't published, without asking the server", async () => {
@@ -670,6 +681,65 @@ describe("PublishButton", () => {
             )
         )
         await openDetails()
+    })
+
+    it("should download a bundle of the live network under the name the server gave it", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickDownloadBundle()
+
+        await waitFor(() =>
+            expect(downloadFile).toHaveBeenCalledWith(new Uint8Array([31, 139]), BUNDLE_FILE_NAME, "application/gzip")
+        )
+        expect(fetchBundle).toHaveBeenCalledWith(SERVER_URL, PUBLISH_ID)
+    })
+
+    it("should not allow a second bundle download while the first is still building", async () => {
+        let finishBundle!: () => void
+        vi.mocked(fetchBundle).mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    finishBundle = () => resolve({archive: new Uint8Array(), fileName: BUNDLE_FILE_NAME})
+                })
+        )
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickDownloadBundle()
+
+        expect(screen.getByRole("button", {name: "Downloading..."})).toBeDisabled()
+
+        finishBundle()
+        await screen.findByRole("button", {name: "Download Bundle"})
+    })
+
+    it("should not allow downloading a bundle while unpublishing", async () => {
+        vi.mocked(unpublishNetwork).mockImplementation(() => new Promise<void>(vi.fn()))
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickUnpublishAndConfirm()
+
+        const downloadButton = screen.getByRole("button", {name: "Download Bundle"})
+        expect(downloadButton).toBeDisabled()
+    })
+
+    it("should report the error when the bundle can't be built", async () => {
+        vi.mocked(fetchBundle).mockRejectedValue(new Error(SERVER_ERROR))
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickDownloadBundle()
+
+        await waitFor(() =>
+            expect(sendNotification).toHaveBeenCalledWith(
+                NotificationType.error,
+                `Failed to download a bundle of "${NETWORK_NAME}".`,
+                expect.stringContaining(SERVER_ERROR)
+            )
+        )
+        expect(downloadFile).not.toHaveBeenCalled()
     })
 
     it("should offer to publish again after unpublishing", async () => {

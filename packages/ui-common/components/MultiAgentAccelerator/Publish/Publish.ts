@@ -17,6 +17,7 @@ limitations under the License.
 import {v4 as uuid} from "uuid"
 
 import {
+    fetchBundle,
     isPublishNameTaken,
     listPublishedNetworks,
     publishNetwork,
@@ -24,6 +25,7 @@ import {
 } from "../../../controller/publish/Publish"
 import {Published, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
 import {PublishedDeployment, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {downloadFile} from "../../../utils/File"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
@@ -185,5 +187,17 @@ export const unpublish = async (network: PublishNetwork, published: Published): 
     } catch (e) {
         setPublishState(network.id, {...published, isUnpublishing: false})
         sendNotification(NotificationType.error, `Failed to unpublish "${network.name}".`, String(e))
+    }
+}
+
+/**
+ * Downloads a static bundle of a live network, which can be hosted without the publish server.
+ */
+export const downloadBundle = async (network: PublishNetwork, published: Published): Promise<void> => {
+    try {
+        const {archive, fileName} = await fetchBundle(published.serverUrl, published.publishId)
+        downloadFile(archive, fileName, "application/gzip")
+    } catch (e) {
+        sendNotification(NotificationType.error, `Failed to download a bundle of "${network.name}".`, String(e))
     }
 }

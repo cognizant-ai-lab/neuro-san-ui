@@ -60,14 +60,25 @@ const StatusRow = styled(Box)(({theme}) => ({
 interface PublishPanelProps {
     readonly publishState: PublishState
     readonly id: string
+    /** Set while a bundle of it is being built, when another can't be asked for */
+    readonly isDownloadingBundle: boolean
+    readonly onDownloadBundle: (published: Published) => void
     readonly onRepublish: () => void
     readonly onUnpublish: (published: Published) => void
 }
 
 /**
- * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
+ * Details of publishing a network: progress while publishing, the live URL and a bundle to download once published,
+ * or that it's unpublished.
  */
-export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublish, publishState}) => (
+export const PublishPanel: FC<PublishPanelProps> = ({
+    id,
+    isDownloadingBundle,
+    onDownloadBundle,
+    onRepublish,
+    onUnpublish,
+    publishState,
+}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
@@ -90,6 +101,14 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublis
                 <PublishedNetworkUrl url={publishState.url} />
                 <Divider />
                 <PanelActions>
+                    <PanelAction
+                        disabled={publishState.isUnpublishing || isDownloadingBundle}
+                        onClick={() => onDownloadBundle(publishState)}
+                        size="small"
+                        sx={{color: "var(--bs-secondary)"}}
+                    >
+                        {isDownloadingBundle ? "Downloading..." : "Download Bundle"}
+                    </PanelAction>
                     <PanelAction
                         disabled={publishState.isUnpublishing}
                         onClick={onRepublish}
