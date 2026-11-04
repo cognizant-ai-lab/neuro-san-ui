@@ -17,10 +17,20 @@ limitations under the License.
 import httpStatus from "http-status"
 import {NextApiRequest, NextApiResponse} from "next"
 
-import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../Const"
+import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR, PUBLISH_SERVER_URL_ENV_VAR} from "../../../Const"
 
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
+
+// The publish server endpoints the UI uses (see ui-common's controller/publish/Publish.ts). The token allows every
+// endpoint, including ones that change the server's settings, so nothing else is forwarded.
+const ALLOWED_REQUESTS: readonly {readonly method: string; readonly path: RegExp}[] = [
+    {method: "GET", path: /^health$/u},
+    {method: "GET", path: /^deployments$/u},
+    {method: "POST", path: /^deployments$/u},
+    {method: "GET", path: /^deployments\/[\w-]+\/wait$/u},
+    {method: "DELETE", path: /^deployments\/[\w-]+$/u},
+]
 
 const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> => {
     const chunks: Buffer[] = []
@@ -45,10 +55,14 @@ const parseServerUrl = (server: string | string[] | undefined): URL | null => {
     }
 }
 
+const isAllowedRequest = (method: string | undefined, path: string): boolean =>
+    ALLOWED_REQUESTS.some((allowed) => allowed.method === method && allowed.path.test(path))
+
 /**
  * Forwards requests to the publish server, which doesn't allow requests from browsers (no CORS headers).
  * `/api/publish/<path>?server=<server URL>&<query>` is sent to `<server URL>/<path>?<query>` with the bearer token
- * added. The route only exists while publishing is enabled.
+ * added. The route only exists while publishing is enabled. It forwards only to the configured publish server, and
+ * only the requests the UI makes, so callers can't send the token elsewhere or use it for other endpoints.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (process.env[ENABLE_PUBLISHING_ENV_VAR] !== "true") {
@@ -57,8 +71,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Startup refuses to run with publishing enabled and no token, so it's always set here.
-    // WARNING: this sends the token to whatever publish server URL the user enters in Settings, so anyone who can use
-    // the app can have it sent to a server they control. Consider only forwarding to an allowed host.
     const token = process.env[PUBLISH_BEARER_TOKEN_ENV_VAR]
 
     const {path, server, ...query} = req.query
@@ -69,7 +81,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return
     }
 
-    const target = new URL([path].flat().join("/"), serverUrl)
+    const allowedServerUrl = parseServerUrl(process.env[PUBLISH_SERVER_URL_ENV_VAR])
+    if (serverUrl.href !== allowedServerUrl?.href) {
+        res.status(httpStatus.FORBIDDEN).json({
+            detail: `Publishing is only allowed to ${allowedServerUrl?.href ?? "the configured publish server"}`,
+        })
+        return
+    }
+
+    const serverPath = [path].flat().join("/")
+    if (!isAllowedRequest(req.method, serverPath)) {
+        res.status(httpStatus.FORBIDDEN).json({detail: `${req.method} /${serverPath} isn't a publishing request`})
+        return
+    }
+
+    const target = new URL(serverPath, serverUrl)
     for (const [param, value] of Object.entries(query)) {
         for (const item of [value].flat()) {
             target.searchParams.append(param, item)
