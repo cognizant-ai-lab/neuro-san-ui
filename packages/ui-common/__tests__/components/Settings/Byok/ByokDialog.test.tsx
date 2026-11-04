@@ -243,30 +243,6 @@ describe("ByokDialog", () => {
         expect(screen.getByText("Invalid API key")).toBeInTheDocument()
     })
 
-    it.each(["Save", "Save changes"])("rejects joined keys through %s", async (action) => {
-        global.fetch = vi.fn()
-        const onClose = vi.fn()
-        render(
-            <ByokDialog
-                id="joined-keys"
-                onClose={onClose}
-            />
-        )
-        const row = screen.getByTestId("joined-keys-openai-input")
-        await user.click(within(row).getByPlaceholderText("sk-..."))
-        await user.paste("sk-proj-firstsk-proj-second")
-        if (action === "Save changes") {
-            await user.click(screen.getByRole("button", {name: "close"}))
-            await user.click(screen.getByRole("button", {name: action}))
-        } else {
-            await user.click(within(row).getByRole("button", {name: action}))
-        }
-        expect(await screen.findByText(/multiple API keys pasted together/u)).toBeVisible()
-        expect(global.fetch).not.toHaveBeenCalled()
-        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
-        expect(onClose).not.toHaveBeenCalled()
-    })
-
     it.each(["Save", "Save changes"])("retains a saved key when %s validation fails", async (action) => {
         useSettingsStore
             .getState()
@@ -291,7 +267,8 @@ describe("ByokDialog", () => {
             await user.click(within(row).getByRole("button", {name: action}))
         }
         expect(await screen.findByText("Invalid replacement key")).toBeVisible()
-        expect(screen.queryByRole("button", {name: "Save without verification"})).not.toBeInTheDocument()
+        await user.click(screen.getByRole("button", {name: "Keep editing"}))
+        expect(screen.queryByRole("button", {name: "Save anyway"})).not.toBeInTheDocument()
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe("old-key")
         expect(input).toHaveValue("sk-proj-invalid")
         expect(onClose).not.toHaveBeenCalled()
@@ -342,13 +319,8 @@ describe("ByokDialog", () => {
         await user.click(within(row).getByPlaceholderText(placeholder))
         await user.paste(key)
         await user.click(within(row).getByRole("button", {name: "Save"}))
-        if (provider === "anthropic") {
-            expect(await screen.findByText(/multiple API keys pasted together/u)).toBeVisible()
-            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Anthropic")).toBeFalsy()
-        } else {
-            await waitFor(() => expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled())
-            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Google")).toBe(key)
-        }
+        await waitFor(() => expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled())
+        expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
     it("ignores a test result after the user changes the key", async () => {
@@ -436,28 +408,31 @@ describe("ByokDialog", () => {
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 
-    it.each(["Save", "Save changes"])("offers an explicit unverified save after OpenAI denies %s", async (action) => {
-        global.fetch = mockFetch({error: {message: "Missing model list permission"}}, false, 403)
-        render(<ByokDialog id="restricted-key" />)
-        const row = screen.getByTestId("restricted-key-openai-input")
-        const key = "sk-proj-example-sk-payload"
-        await user.click(within(row).getByPlaceholderText("sk-..."))
-        await user.paste(key)
-        if (action === "Save changes") {
-            await user.click(screen.getByRole("button", {name: "close"}))
-            await user.click(screen.getByRole("button", {name: action}))
-        } else {
-            await user.click(within(row).getByRole("button", {name: action}))
-        }
+    it.each(["Save", "Save changes"])(
+        "offers Save anyway after provider validation fails through %s",
+        async (action) => {
+            global.fetch = mockFetch({error: {message: "Key rejected"}}, false, 401)
+            render(<ByokDialog id="restricted-key" />)
+            const row = screen.getByTestId("restricted-key-openai-input")
+            const key = "sk-proj-example-sk-payload"
+            await user.click(within(row).getByPlaceholderText("sk-..."))
+            await user.paste(key)
+            if (action === "Save changes") {
+                await user.click(screen.getByRole("button", {name: "close"}))
+                await user.click(screen.getByRole("button", {name: action}))
+            } else {
+                await user.click(within(row).getByRole("button", {name: action}))
+            }
 
-        const saveUnverified = await screen.findByRole("button", {name: "Save without verification"})
-        expect(screen.getByText(/its access is unverified/u)).toBeVisible()
-        expect(within(row).getByRole("button", {name: "Forget"})).toBeDisabled()
-        await user.click(saveUnverified)
-        expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled()
-        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(key)
-        expect(global.fetch).toHaveBeenCalledTimes(1)
-    })
+            const saveUnverified = await screen.findByRole("button", {name: "Save anyway"})
+            expect(screen.getByText(/The key could not be verified/u)).toBeVisible()
+            expect(within(row).getByRole("button", {name: "Forget"})).toBeDisabled()
+            await user.click(saveUnverified)
+            expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled()
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(key)
+            expect(global.fetch).toHaveBeenCalledTimes(1)
+        }
+    )
 
     it("renders dark mode logo when theme mode is dark", () => {
         const darkTheme = createTheme({palette: {mode: "dark"}})

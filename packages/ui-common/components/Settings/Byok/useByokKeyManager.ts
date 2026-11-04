@@ -181,26 +181,14 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
             const id = Symbol("BYOK save")
             const save = async (): Promise<boolean> => {
                 if (key && !allowUnverified) {
-                    const openAIPrefix = ["sk-proj-", "sk-svcacct-"].find((prefix) => key.startsWith(prefix)) ?? "sk-"
-                    const prefix = vendor === "OpenAI" ? openAIPrefix : vendor === "Anthropic" ? "sk-ant-" : null
-                    const result: KeyValidationResult =
-                        prefix && key.split(prefix).length > 2
-                            ? {
-                                  ok: false,
-                                  message:
-                                      "This looks like multiple API keys pasted together. " +
-                                      "Clear the field and paste one key.",
-                              }
-                            : await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
+                    const result = await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
                     // An edit or discard while testing invalidates this save.
                     if (savingKeys.current.get(vendor)?.id !== id || currentDrafts.current[vendor] !== key) {
                         return false
                     }
                     setKeyTestResults((prev) => ({
                         ...prev,
-                        [vendor]: isKeyValidationFailure(result)
-                            ? {vendor, result, canSaveUnverified: vendor === "OpenAI" && result.status === 403}
-                            : null,
+                        [vendor]: isKeyValidationFailure(result) ? {vendor, result, canSaveUnverified: true} : null,
                     }))
                     if (!result.ok) {
                         return false
