@@ -760,7 +760,7 @@ describe("SettingsDialog", () => {
         )
     })
 
-    it("keeps a first API key cleared when validation finishes after reset", async () => {
+    it.each(["Save", "Test"])("ignores pending %s validation after reset", async (action) => {
         let resolveRequest: (response: Response) => void
         global.fetch = vi.fn(
             () =>
@@ -777,13 +777,18 @@ describe("SettingsDialog", () => {
         const row = screen.getByTestId("settings-dialog-openai-input")
         await user.click(within(row).getByPlaceholderText("sk-..."))
         await user.paste("sk-proj-example")
-        await user.click(within(row).getByRole("button", {name: "Save"}))
+        await user.click(within(row).getByRole("button", {name: action}))
         await user.click(screen.getByRole("button", {name: "Reset to defaults"}))
         await user.click(await screen.findByRole("button", {name: "Confirm"}))
         await act(async () => {
-            resolveRequest(Response.json({}))
+            resolveRequest(
+                action === "Test"
+                    ? Response.json({error: {message: "Discarded key rejected"}}, {status: 401})
+                    : Response.json({})
+            )
         })
 
+        expect(screen.queryByText("Discarded key rejected")).not.toBeInTheDocument()
         expect(screen.getByPlaceholderText("sk-...")).toHaveValue("")
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
