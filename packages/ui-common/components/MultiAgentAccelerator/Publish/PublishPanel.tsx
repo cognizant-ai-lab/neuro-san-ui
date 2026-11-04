@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import DownloadIcon from "@mui/icons-material/Download"
+import PublicIcon from "@mui/icons-material/Public"
+import PublicOffIcon from "@mui/icons-material/PublicOff"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
@@ -105,6 +108,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({
                         disabled={publishState.isUnpublishing || isDownloadingBundle}
                         onClick={() => onDownloadBundle(publishState)}
                         size="small"
+                        startIcon={<DownloadIcon />}
                         sx={{color: "var(--bs-secondary)"}}
                     >
                         {isDownloadingBundle ? "Downloading..." : "Download Bundle"}
@@ -113,6 +117,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({
                         disabled={publishState.isUnpublishing}
                         onClick={onRepublish}
                         size="small"
+                        startIcon={<PublicIcon />}
                         sx={{color: "var(--bs-secondary)"}}
                     >
                         Republish
@@ -121,6 +126,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({
                         disabled={publishState.isUnpublishing}
                         onClick={() => onUnpublish(publishState)}
                         size="small"
+                        startIcon={<PublicOffIcon />}
                         sx={{color: "error.light"}}
                     >
                         {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}
