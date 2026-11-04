@@ -146,7 +146,7 @@ describe("Publish", () => {
 
         const ready = await create()
 
-        expect(ready).toEqual({id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL})
+        expect(ready).toEqual({id: PUBLISH_ID, url: PUBLISHED_URL})
         expect(fetchMock).toHaveBeenCalledTimes(3)
         expect(fetchMock.mock.calls[1][0]).toContain(`/api/publish/deployments/${PUBLISH_ID}/wait?`)
     })
@@ -256,7 +256,7 @@ describe("Publish", () => {
     })
 
     // GET /deployments
-    it("should list only our org's networks, with no URL for the unpublished ones", async () => {
+    it("should list every org's published networks, with no URL for the unpublished ones", async () => {
         fetchMock.mockResolvedValue(
             Response.json({
                 capacity: {},
@@ -280,12 +280,13 @@ describe("Publish", () => {
             })
         )
 
-        const published = await listPublishedNetworks(SERVER_URL, ORG_NAME)
+        const published = await listPublishedNetworks(SERVER_URL)
 
         expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
         expect(published).toEqual([
-            {id: "stopped", name: NETWORK_NAME, url: null},
-            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
+            {id: "other-org", url: "x"},
+            {id: "stopped", url: null},
+            {id: PUBLISH_ID, url: PUBLISHED_URL},
         ])
     })
 
@@ -298,31 +299,7 @@ describe("Publish", () => {
             })
         )
 
-        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
-            {id: "failed", name: NETWORK_NAME, url: null},
-        ])
-    })
-
-    // GET /deployments
-    it("should list our org's networks when the server spells the org name with different case", async () => {
-        fetchMock.mockResolvedValue(
-            Response.json({
-                capacity: {},
-                deployments: [
-                    {
-                        id: PUBLISH_ID,
-                        name: NETWORK_NAME,
-                        org_name: ORG_NAME.toUpperCase(),
-                        status: "ready",
-                        url: PUBLISHED_URL,
-                    },
-                ],
-            })
-        )
-
-        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([
-            {id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL},
-        ])
+        await expect(listPublishedNetworks(SERVER_URL)).resolves.toEqual([{id: "failed", url: null}])
     })
 
     it("should leave out networks that are still building", async () => {
@@ -333,7 +310,7 @@ describe("Publish", () => {
             })
         )
 
-        await expect(listPublishedNetworks(SERVER_URL, ORG_NAME)).resolves.toEqual([])
+        await expect(listPublishedNetworks(SERVER_URL)).resolves.toEqual([])
     })
 
     // POST /deployments/{id}/unpublish, then DELETE /deployments/{id}

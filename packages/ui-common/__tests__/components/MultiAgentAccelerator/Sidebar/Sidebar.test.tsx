@@ -674,11 +674,7 @@ describe("SideBar", () => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: "cailville"}})
             usePublishStore.setState(usePublishStore.getInitialState())
             vi.mocked(listPublishedNetworks).mockResolvedValue([])
-            vi.mocked(publishNetwork).mockResolvedValue({
-                id: "dep-123",
-                name: TEMPORARY_NETWORK.agentNetworkName,
-                url: PUBLISHED_URL,
-            })
+            vi.mocked(publishNetwork).mockResolvedValue({id: "dep-123", url: PUBLISHED_URL})
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
 

@@ -25,7 +25,6 @@ import httpStatus from "http-status"
 
 export interface PublishedNetwork {
     readonly id: string
-    readonly name: string
     /** Null once it's unpublished, since the server keeps it stopped */
     readonly url: string | null
 }
@@ -46,8 +45,6 @@ interface PublishNetworkRequest {
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
 interface ServerNetwork {
     readonly id: string
-    readonly name: string
-    readonly org_name: string
     readonly status: "queued" | "building" | "ready" | "failed" | "stopped"
     /** Set once status is ready */
     readonly url?: string | null
@@ -114,25 +111,22 @@ export const checkHealth = async (serverUrl: string): Promise<boolean> => {
 }
 
 /**
- * Lists the org's published networks, live or unpublished.
+ * Lists the server's published networks, live or unpublished, which networks are found in by id.
  */
-export const listPublishedNetworks = async (serverUrl: string, orgName: string): Promise<PublishedNetwork[]> => {
+export const listPublishedNetworks = async (serverUrl: string): Promise<PublishedNetwork[]> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
     // Unpublishing stops it, and a failed publish leaves it failed. The server keeps both, so both can be republished.
-    // Compared in lowercase: the server files a publish under an existing org whose name differs only in case, and
-    // lists it with that org's spelling, so "darren" can come back as "Darren"
-    const isOurOrg = (network: ServerNetwork) => network.org_name.toLowerCase() === orgName.toLowerCase()
     const isListed = (network: ServerNetwork) =>
         (network.status === "ready" && Boolean(network.url)) ||
         network.status === "stopped" ||
         network.status === "failed"
 
     return networks
-        .filter((network) => isOurOrg(network) && isListed(network))
-        .map((network) => ({id: network.id, name: network.name, url: network.status === "ready" ? network.url : null}))
+        .filter((network) => isListed(network))
+        .map((network) => ({id: network.id, url: network.status === "ready" ? network.url : null}))
 }
 
 /**
@@ -168,7 +162,7 @@ export const publishNetwork = async ({
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
-    // Lowercase, like the org names we look for when listing
+    // Lowercase, so the org is spelled the same however it's typed in Settings
     form.append("org_name", orgName.toLowerCase())
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
@@ -195,7 +189,7 @@ export const publishNetwork = async ({
         throw new Error(network.error || `Publishing ended as ${network.status}`)
     }
 
-    return {id: network.id, name: network.name, url: network.url}
+    return {id: network.id, url: network.url}
 }
 
 /**

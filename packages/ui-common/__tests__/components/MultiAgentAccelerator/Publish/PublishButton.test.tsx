@@ -55,7 +55,7 @@ describe("PublishButton", () => {
     let user: UserEvent
     let openSpy: MockInstance<typeof window.open>
 
-    const makePublishedNetwork = (): PublishedNetwork => ({id: PUBLISH_ID, name: NETWORK_NAME, url: PUBLISHED_URL})
+    const makePublishedNetwork = (): PublishedNetwork => ({id: PUBLISH_ID, url: PUBLISHED_URL})
 
     const makeTempNetwork = (id: string, networkName: string, deploymentId?: string): TemporaryNetwork => ({
         reservation: {reservation_id: id, lifetime_in_seconds: 300, expiration_time_in_seconds: 0},
@@ -200,8 +200,8 @@ describe("PublishButton", () => {
     it("should find the network by its id when another with the same name is live", async () => {
         setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([
-            {id: "their-dep", name: NETWORK_NAME, url: "http://live.test/theirs"},
-            {id: PUBLISH_ID, name: NETWORK_NAME, url: null},
+            {id: "their-dep", url: "http://live.test/theirs"},
+            {id: PUBLISH_ID, url: null},
         ])
         renderPublishButton()
         await screen.findByRole("button", {name: "Republish"})
@@ -472,7 +472,7 @@ describe("PublishButton", () => {
 
     it("should offer to republish a network the server has unpublished", async () => {
         setPublishedBefore()
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
         renderPublishButton()
         await screen.findByRole("button", {name: "Republish"})
 
@@ -683,7 +683,7 @@ describe("PublishButton", () => {
             onAccepted?.(PUBLISH_ID)
             throw new Error(SERVER_ERROR)
         })
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
         renderPublishButton()
 
         await clickPublishAndConfirm()
@@ -709,7 +709,7 @@ describe("PublishButton", () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
         mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, name: NETWORK_NAME, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
         const confirmation = await clickRepublish()
         vi.mocked(listPublishedNetworks).mockClear()
 

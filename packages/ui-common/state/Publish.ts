@@ -48,10 +48,9 @@ interface Unpublished {
 
 export type PublishState = Publishing | Published | Unpublished
 
-/** The org's published networks on a server, as one request every network can share */
+/** A server's published networks, as one request every network can share */
 interface PublishedList {
-    /** Which server and org the list is for */
-    readonly key: string
+    readonly serverUrl: string
     readonly request: Promise<PublishedNetwork[]>
 }
 

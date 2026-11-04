@@ -28,7 +28,7 @@ export const REFRESH_THEME_LABEL = "Recreate theme"
 interface PublishConfirmationProps {
     readonly displayName: string
     readonly id: string
-    /** Republishing replaces what's published under the network's name, and can recreate its theme */
+    /** Republishing replaces what this network published before, and can recreate its theme */
     readonly isRepublish: boolean
     readonly onCancel: () => void
     readonly onConfirm: (refreshTheme: boolean) => void

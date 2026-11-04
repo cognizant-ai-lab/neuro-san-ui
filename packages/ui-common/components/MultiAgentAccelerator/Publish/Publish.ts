@@ -69,17 +69,16 @@ const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: Publish
  * Does nothing if we already know the network's publish state, or if this browser hasn't published it.
  */
 export const checkIfPublished = async (network: PublishNetwork, target: PublishTarget): Promise<void> => {
-    const {serverUrl, orgName} = target
+    const {serverUrl} = target
     const {networks, publishedList, setPublishedList} = usePublishStore.getState()
     const deployment = getPublishedDeployment(network.id, target)
     if (networks[network.id] || !deployment) return
 
-    // Every network on screen asks, so they share one request for the org's list
-    const key = `${serverUrl} ${orgName}`
-    let request = publishedList?.key === key ? publishedList.request : null
+    // Every network on screen asks, so they share one request for the server's list
+    let request = publishedList?.serverUrl === serverUrl ? publishedList.request : null
     if (!request) {
-        request = listPublishedNetworks(serverUrl, orgName)
-        setPublishedList({key, request})
+        request = listPublishedNetworks(serverUrl)
+        setPublishedList({serverUrl, request})
     }
 
     try {
@@ -118,7 +117,7 @@ const makeBrand = (networkName: string): string =>
 
 /**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
- * Republishing is the same, and replaces what's published under the network's name. Tells the user how it went either
+ * Republishing is the same, and replaces what this network published before. Tells the user how it went either
  * way.
  * @param refreshTheme Has the server make a new theme instead of keeping the one it made before
  */
