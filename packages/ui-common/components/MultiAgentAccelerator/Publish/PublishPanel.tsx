@@ -78,7 +78,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublis
                     <StatusLight statusValue="unknown" />
                     <PanelTitle>Unpublished</PanelTitle>
                 </StatusRow>
-                <PanelNote>Republish to put it back online.</PanelNote>
+                <PanelNote>Publish to put it back online.</PanelNote>
             </>
         )}
         {publishState.status === PublishStatus.Published && (

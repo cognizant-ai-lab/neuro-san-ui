@@ -31,7 +31,7 @@ interface PublishIconButtonProps {
     readonly displayName: string
     readonly hocon: string
     readonly id: string
-    /** An expired network can't be republished, but its live site still opens */
+    /** An expired network can't be published, but its live site still opens */
     readonly isExpired: boolean
     /** The network's id in the app, which its publish state is kept under */
     readonly networkId: string
@@ -41,7 +41,7 @@ interface PublishIconButtonProps {
 
 /**
  * Small globe button for publishing a network from the sidebar. Publishes after asking and spins while publishing.
- * Once the network is live it turns green and opens the live site, and once it's unpublished it republishes.
+ * Once the network is live it turns green and opens the live site.
  */
 export const PublishIconButton: FC<PublishIconButtonProps> = ({
     displayName,
@@ -65,7 +65,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
         if (publishedUrl) return "View live"
         if (isExpired) return "Expired"
         if (!target) return PUBLISH_SETTINGS_REQUIRED_MESSAGE
-        return publishState ? "Republish" : "Publish"
+        return "Publish"
     }
 
     const label = getLabel()
@@ -118,7 +118,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                     <PublishConfirmation
                         displayName={displayName}
                         id={`${id}-confirm`}
-                        isRepublish={Boolean(publishState)}
+                        hasTheme={Boolean(publishState)}
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)

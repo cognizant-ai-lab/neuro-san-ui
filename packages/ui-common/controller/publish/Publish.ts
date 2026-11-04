@@ -116,7 +116,8 @@ export const listPublishedNetworks = async (serverUrl: string): Promise<Publishe
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    // Unpublishing stops it, and a failed publish leaves it failed. The server keeps both, so both can be republished.
+    // Unpublishing stops it, and a failed publish leaves it failed. The server keeps both, so both can be published
+    // again.
     const isListed = (network: ServerNetwork) =>
         (network.status === "ready" && Boolean(network.url)) ||
         network.status === "stopped" ||
@@ -172,7 +173,7 @@ export const publishNetwork = async ({
 }
 
 /**
- * Takes a published network off the map, then stops it. The server keeps it, so it can be republished.
+ * Takes a published network off the map, then stops it. The server keeps it, so it can be published again.
  */
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
     const mapResponse = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}/unpublish`), {

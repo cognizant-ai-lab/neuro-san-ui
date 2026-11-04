@@ -39,6 +39,7 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
@@ -761,14 +762,14 @@ describe("SideBar", () => {
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 
-        it("Should ask before republishing an unpublished temporary network, without opening the network", async () => {
+        it("Should ask before publishing an unpublished temporary network again, without opening it", async () => {
             markUnpublished()
             renderWithTemporaryNetwork()
-            const republishButton = await screen.findByRole("button", {name: "Republish"})
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
 
-            await user.click(republishButton)
+            await user.click(publishButton)
             const confirmation = await screen.findByRole("dialog")
-            const confirmButton = within(confirmation).getByRole("button", {name: "Republish"})
+            const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
             await user.click(confirmButton)
 
             await waitFor(() =>
@@ -777,11 +778,22 @@ describe("SideBar", () => {
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 
-        it("Should cancel republishing with Escape, without republishing or opening the network", async () => {
+        it("Should offer to recreate the theme when publishing an unpublished temporary network again", async () => {
             markUnpublished()
             renderWithTemporaryNetwork()
-            const republishButton = await screen.findByRole("button", {name: "Republish"})
-            await user.click(republishButton)
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+
+            const confirmation = await screen.findByRole("dialog")
+            within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})
+        })
+
+        it("Should cancel publishing again with Escape, without publishing or opening the network", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
             await screen.findByRole("dialog")
 
             await user.keyboard("{Escape}")

@@ -28,21 +28,24 @@ export const REFRESH_THEME_LABEL = "Recreate theme"
 interface PublishConfirmationProps {
     readonly displayName: string
     readonly id: string
-    /** Republishing replaces what this network published before, and can recreate its theme */
-    readonly isRepublish: boolean
+    /** Published before, so the server has a theme it can keep or recreate */
+    readonly hasTheme: boolean
+    /** Live now, so publishing replaces the live version */
+    readonly isRepublish?: boolean
     readonly onCancel: () => void
     readonly onConfirm: (refreshTheme: boolean) => void
     readonly target: PublishTarget
 }
 
 /**
- * Asks before publishing or republishing, naming where it goes and warning that it'll be public. Republishing also
- * offers to recreate the theme instead of keeping the one the server made before.
+ * Asks before publishing or republishing, naming where it goes and warning that it'll be public. A network that was
+ * published before can also recreate its theme instead of keeping the one the server made before.
  */
 export const PublishConfirmation: FC<PublishConfirmationProps> = ({
     displayName,
+    hasTheme,
     id,
-    isRepublish,
+    isRepublish = false,
     onCancel,
     onConfirm,
     target,
@@ -59,7 +62,7 @@ export const PublishConfirmation: FC<PublishConfirmationProps> = ({
             content={
                 <>
                     <Typography variant="body2">{`${message} ${PUBLIC_ACCESS_WARNING}`}</Typography>
-                    {isRepublish && (
+                    {hasTheme && (
                         <FormControlLabel
                             control={
                                 <Checkbox

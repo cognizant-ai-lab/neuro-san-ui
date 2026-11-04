@@ -59,9 +59,9 @@ interface MainAction {
 }
 
 /**
- * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live". Once
- * it's unpublished it says "Republish", since the server keeps it. The dropdown opens a panel with the progress, or the
- * live URL with Republish and Unpublish.
+ * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live", and
+ * "Publish" again once it's unpublished. The dropdown opens a panel with the progress, or the live URL with Republish
+ * and Unpublish.
  */
 export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkId])
@@ -113,7 +113,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
         return {
             color: "primary",
             icon: <PublicIcon />,
-            label: publishState ? "Republish" : "Publish",
+            label: "Publish",
             handleClick: () => setIsConfirmOpen(true),
         }
     }
@@ -184,7 +184,8 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                 <PublishConfirmation
                     displayName={displayName}
                     id={`${id}-confirm`}
-                    isRepublish={Boolean(publishState)}
+                    hasTheme={Boolean(publishState)}
+                    isRepublish={publishState?.status === PublishStatus.Published}
                     onCancel={() => setIsConfirmOpen(false)}
                     onConfirm={(refreshTheme) => {
                         setIsConfirmOpen(false)

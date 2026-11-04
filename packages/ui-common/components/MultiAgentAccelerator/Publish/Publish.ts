@@ -126,7 +126,7 @@ export const publish = async (
 
     try {
         const {serverUrl, orgName} = target
-        // Republishing goes to the same deployment, under the name it was first published under
+        // Publishing again goes to the same deployment, under the name it was first published under
         const publishName = getPublishedDeployment(network.id, target)?.name ?? makePublishName(network.name)
         const ready = await publishNetwork({
             serverUrl,
@@ -134,7 +134,7 @@ export const publish = async (
             networkName: publishName,
             hocon,
             refreshTheme,
-            // Remembered as soon as the server has it, so a publish that fails can still be republished. On the
+            // Remembered as soon as the server has it, so a publish that fails can still be published again. On the
             // network that's there now, in case it was edited while publishing.
             onAccepted: (deploymentId) =>
                 useTempNetworksStore.getState().setTempNetworkPublished(resolveNetworkId(network.id), {
@@ -155,7 +155,7 @@ export const publish = async (
         setPublishedList(null)
         await checkIfPublished({...network, id: resolveNetworkId(network.id)}, target)
 
-        // If the server couldn't be asked either, it was still published before, so keep offering Republish
+        // If the server couldn't be asked either, it was published before, so keep offering to recreate its theme
         if (previousState && !usePublishStore.getState().networks[resolveNetworkId(network.id)]) {
             setPublishState(network.id, {status: PublishStatus.Unpublished})
         }
@@ -164,7 +164,7 @@ export const publish = async (
 
 /**
  * Takes a live network off the map and offline, on the server it was published to. The server keeps it, so it can be
- * republished.
+ * published again.
  */
 export const unpublish = async (network: PublishNetwork, published: Published): Promise<void> => {
     const {setPublishState, setPublishedList} = usePublishStore.getState()
