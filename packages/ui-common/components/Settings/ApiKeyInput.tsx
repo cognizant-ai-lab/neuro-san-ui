@@ -21,6 +21,7 @@ interface ApiKeyInputProps {
     readonly logo: string
     readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     readonly onSave: (key: string) => Promise<boolean>
+    readonly onSaveUnverified?: (key: string) => Promise<boolean>
     readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly onValueChange?: (vendor: LLMProvider, value: string) => void
     readonly persistedValue: string
@@ -37,6 +38,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     logo,
     onResultChange,
     onSave,
+    onSaveUnverified,
     onTest,
     onValueChange,
     persistedValue,
@@ -219,6 +221,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 Save
             </Button>
+            {onSaveUnverified && !disableActions ? (
+                <Button
+                    onClick={() => onSaveUnverified(inputValue)}
+                    size="small"
+                    variant="outlined"
+                >
+                    Save without verification
+                </Button>
+            ) : null}
             <Button
                 onClick={() => setConfirmationDialogOpen(true)}
                 size="small"

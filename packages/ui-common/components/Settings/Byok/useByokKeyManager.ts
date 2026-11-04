@@ -94,6 +94,7 @@ export interface UseByokKeyManagerReturn {
     /** Handler for closing the dialog, prompting confirmation if unsaved edits exist. */
     readonly handleClose: () => void
     /** Handler for discarding unsaved changes and closing the dialog. */
+    readonly clearDrafts: () => void
     readonly handleDiscard: () => void
     /** Handler for updating validation failure results for a vendor. */
     readonly handleKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
@@ -104,7 +105,13 @@ export interface UseByokKeyManagerReturn {
     /** Current validation failures for active providers. */
     readonly keyFailures: readonly ApiKeyFailure[]
     /** Persists a single API key to settings store. */
-    readonly persistKey: (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => Promise<boolean>
+    readonly persistKey: (
+        vendor: LLMProvider,
+        key: string,
+        checkmark: CheckmarkFade,
+        now: number,
+        allowUnverified?: boolean
+    ) => Promise<boolean>
     /** Whether the unsaved changes confirmation modal is currently visible. */
     readonly showUnsavedChangesModal: boolean
 }
@@ -170,11 +177,12 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     )
 
     const persistKey = useCallback(
-        async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => {
+        async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number, allowUnverified = false) => {
             const id = Symbol("BYOK save")
             const save = async (): Promise<boolean> => {
-                if (key) {
-                    const prefix = vendor === "OpenAI" ? "sk-" : vendor === "Anthropic" ? "sk-ant-" : null
+                if (key && !allowUnverified) {
+                    const openAIPrefix = ["sk-proj-", "sk-svcacct-"].find((prefix) => key.startsWith(prefix)) ?? "sk-"
+                    const prefix = vendor === "OpenAI" ? openAIPrefix : vendor === "Anthropic" ? "sk-ant-" : null
                     const result: KeyValidationResult =
                         prefix && key.split(prefix).length > 2
                             ? {
@@ -190,7 +198,9 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     }
                     setKeyTestResults((prev) => ({
                         ...prev,
-                        [vendor]: isKeyValidationFailure(result) ? {vendor, result} : null,
+                        [vendor]: isKeyValidationFailure(result)
+                            ? {vendor, result, canSaveUnverified: vendor === "OpenAI" && result.status === 403}
+                            : null,
                     }))
                     if (!result.ok) {
                         return false
@@ -214,6 +224,13 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                 return true
             }
 
+            if (
+                allowUnverified &&
+                (!keyTestResults[vendor]?.canSaveUnverified || currentDrafts.current[vendor] !== key)
+            ) {
+                return false
+            }
+
             if (!key) {
                 savingKeys.current.delete(vendor)
                 return save()
@@ -234,7 +251,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                 }
             }
         },
-        [updateSettings]
+        [keyTestResults, updateSettings]
     )
 
     const handleValueChange = useCallback((vendor: LLMProvider, value: string) => {
@@ -275,12 +292,18 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         }
     }, [getDirtyDrafts, onClose])
 
-    const handleDiscard = useCallback(() => {
+    const clearDrafts = useCallback(() => {
+        savingKeys.current.clear()
+        setKeyTestResults({})
         currentDrafts.current = {}
         setDraftKeys({})
         setShowUnsavedChangesModal(false)
+    }, [])
+
+    const handleDiscard = useCallback(() => {
+        clearDrafts()
         onClose?.()
-    }, [onClose])
+    }, [clearDrafts, onClose])
 
     const handleSave = useCallback(async () => {
         const now = Date.now()
@@ -307,6 +330,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         activeConfigs,
         apiKeys,
         handleClose,
+        clearDrafts,
         handleDiscard,
         handleKeyResultChange,
         handleSave,

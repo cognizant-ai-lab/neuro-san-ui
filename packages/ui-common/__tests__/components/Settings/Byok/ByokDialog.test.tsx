@@ -291,6 +291,7 @@ describe("ByokDialog", () => {
             await user.click(within(row).getByRole("button", {name: action}))
         }
         expect(await screen.findByText("Invalid replacement key")).toBeVisible()
+        expect(screen.queryByRole("button", {name: "Save without verification"})).not.toBeInTheDocument()
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe("old-key")
         expect(input).toHaveValue("sk-proj-invalid")
         expect(onClose).not.toHaveBeenCalled()
@@ -433,6 +434,29 @@ describe("ByokDialog", () => {
         })
         expect(input).toHaveValue("")
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
+    })
+
+    it.each(["Save", "Save changes"])("offers an explicit unverified save after OpenAI denies %s", async (action) => {
+        global.fetch = mockFetch({error: {message: "Missing model list permission"}}, false, 403)
+        render(<ByokDialog id="restricted-key" />)
+        const row = screen.getByTestId("restricted-key-openai-input")
+        const key = "sk-proj-example-sk-payload"
+        await user.click(within(row).getByPlaceholderText("sk-..."))
+        await user.paste(key)
+        if (action === "Save changes") {
+            await user.click(screen.getByRole("button", {name: "close"}))
+            await user.click(screen.getByRole("button", {name: action}))
+        } else {
+            await user.click(within(row).getByRole("button", {name: action}))
+        }
+
+        const saveUnverified = await screen.findByRole("button", {name: "Save without verification"})
+        expect(screen.getByText(/its access is unverified/u)).toBeVisible()
+        expect(within(row).getByRole("button", {name: "Forget"})).toBeDisabled()
+        await user.click(saveUnverified)
+        expect(within(row).getByRole("button", {name: "Forget"})).toBeEnabled()
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(key)
+        expect(global.fetch).toHaveBeenCalledTimes(1)
     })
 
     it("renders dark mode logo when theme mode is dark", () => {

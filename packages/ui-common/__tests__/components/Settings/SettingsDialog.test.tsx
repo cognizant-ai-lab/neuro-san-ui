@@ -1,5 +1,5 @@
 import {createTheme, PaletteMode, ThemeProvider} from "@mui/material/styles"
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import httpStatus from "http-status"
 
@@ -758,6 +758,34 @@ describe("SettingsDialog", () => {
             NotificationType.success,
             "Settings have been reset to default values."
         )
+    })
+
+    it("keeps a first API key cleared when validation finishes after reset", async () => {
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        render(
+            <SettingsDialog
+                id="settings-dialog"
+                isOpen={true}
+            />
+        )
+        const row = screen.getByTestId("settings-dialog-openai-input")
+        await user.click(within(row).getByPlaceholderText("sk-..."))
+        await user.paste("sk-proj-example")
+        await user.click(within(row).getByRole("button", {name: "Save"}))
+        await user.click(screen.getByRole("button", {name: "Reset to defaults"}))
+        await user.click(await screen.findByRole("button", {name: "Confirm"}))
+        await act(async () => {
+            resolveRequest(Response.json({}))
+        })
+
+        expect(screen.getByPlaceholderText("sk-...")).toHaveValue("")
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 
     it("Does not reset settings to default when cancel button clicked", async () => {
