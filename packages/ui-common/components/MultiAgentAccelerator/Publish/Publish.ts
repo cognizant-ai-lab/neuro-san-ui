@@ -54,7 +54,8 @@ export const openInNewTab = (url: string): boolean => {
 }
 
 /**
- * Where this browser published the network to the publish server and org in Settings, if it did
+ * The deployment this browser published the network to, unless Settings has since changed the publishing server or
+ * org, since its id only means something there
  */
 const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null => {
     const published = useTempNetworksStore
