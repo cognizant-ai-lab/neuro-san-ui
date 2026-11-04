@@ -170,8 +170,8 @@ export const publish = async (
 }
 
 /**
- * Takes a live network off the map and offline, on the server it was published to. The server keeps it, so it can be
- * published again.
+ * Stops a live network, which takes it off the map, on the server it was published to. The server keeps it, so it can
+ * be published again.
  */
 export const unpublish = async (network: PublishNetwork, published: Published): Promise<void> => {
     const {setPublishState, setPublishedList} = usePublishStore.getState()

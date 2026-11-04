@@ -19,8 +19,6 @@ limitations under the License.
  * requests from browsers.
  */
 
-import httpStatus from "http-status"
-
 //#region Types
 
 export interface PublishedNetwork {
@@ -146,8 +144,7 @@ export const isPublishNameTaken = async (serverUrl: string, orgName: string, net
 }
 
 /**
- * Uploads the HOCON and waits until the network is live. The server puts it on the map, including after it was
- * unpublished.
+ * Uploads the HOCON and waits until the network is live.
  */
 export const publishNetwork = async ({
     serverUrl,
@@ -175,11 +172,9 @@ export const publishNetwork = async ({
         const waitResponse = await fetch(
             publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
         )
-        // A timeout means it's still building, so ask again
-        if (waitResponse.status !== httpStatus.GATEWAY_TIMEOUT) {
-            await throwIfNotOk(waitResponse, "Waiting for it to go live")
-            network = await waitResponse.json()
-        }
+        // When the wait times out, the server answers with it still building, so this asks again
+        await throwIfNotOk(waitResponse, "Waiting for it to go live")
+        network = await waitResponse.json()
     }
 
     if (network.status !== "ready" || !network.url) {
@@ -190,14 +185,9 @@ export const publishNetwork = async ({
 }
 
 /**
- * Takes a published network off the map, then stops it. The server keeps it, so it can be published again.
+ * Stops a published network, which takes it off the map. The server keeps it, so it can be published again.
  */
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
-    const mapResponse = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}/unpublish`), {
-        method: "POST",
-    })
-    await throwIfNotOk(mapResponse, "Taking it off the map")
-
-    const stopResponse = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
-    await throwIfNotOk(stopResponse, "Unpublishing")
+    const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
+    await throwIfNotOk(response, "Unpublishing")
 }
