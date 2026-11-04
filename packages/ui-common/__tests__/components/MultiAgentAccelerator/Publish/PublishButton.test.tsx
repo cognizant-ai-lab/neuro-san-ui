@@ -340,14 +340,6 @@ describe("PublishButton", () => {
         )
     })
 
-    it("should give the site the network's name as its brand, without the id", async () => {
-        renderPublishButton()
-
-        await publishAndWaitUntilLive()
-
-        expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({brand: "Cailville Bakery"}))
-    })
-
     it.each([
         {missing: "a publish server", publish: {serverUrl: null}},
         {missing: "an org name", publish: {orgName: null}},

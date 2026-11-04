@@ -38,8 +38,6 @@ interface PublishNetworkRequest {
     readonly refreshTheme?: boolean
     /** Called with the server's id for it as soon as the server accepts it, before it's live */
     readonly onAccepted?: (id: string) => void
-    /** Shown on the site, instead of the brand the server makes from the name it's published under */
-    readonly brand?: string
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -130,23 +128,6 @@ export const listPublishedNetworks = async (serverUrl: string): Promise<Publishe
 }
 
 /**
- * Sets the brand the site shows. Set while it builds, the first build already uses it. A brand that can't be set
- * leaves the server's, so it's only logged.
- */
-const setBrand = async (serverUrl: string, id: string, brand: string): Promise<void> => {
-    try {
-        const response = await fetch(publishRouteUrl(serverUrl, `deployments/${id}/theme-spec`), {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({brand}),
-        })
-        await throwIfNotOk(response, "Setting its brand")
-    } catch (e) {
-        console.warn(`Unable to set the brand of "${brand}":`, e)
-    }
-}
-
-/**
  * Uploads the HOCON and waits until the network is live. The server puts it on the map, including after it was
  * unpublished.
  */
@@ -157,7 +138,6 @@ export const publishNetwork = async ({
     hocon,
     refreshTheme = false,
     onAccepted,
-    brand,
 }: PublishNetworkRequest): Promise<LiveNetwork> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
@@ -172,7 +152,6 @@ export const publishNetwork = async ({
     await throwIfNotOk(createResponse, "Publishing")
     let network: ServerNetwork = await createResponse.json()
     onAccepted?.(network.id)
-    if (brand) await setBrand(serverUrl, network.id, brand)
 
     while (network.status === "queued" || network.status === "building") {
         const waitResponse = await fetch(

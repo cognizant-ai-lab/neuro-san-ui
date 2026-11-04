@@ -109,14 +109,6 @@ export const checkIfPublished = async (network: PublishNetwork, target: PublishT
 const makePublishName = (networkName: string): string => `${networkName}_${uuid().slice(0, 8)}`
 
 /**
- * The brand the server would make from the network's name, without the id at the end of the name it's published under
- */
-const makeBrand = (networkName: string): string =>
-    networkName
-        .replaceAll("_", " ")
-        .replaceAll(/[a-z]+/giu, (word) => word[0].toUpperCase() + word.slice(1).toLowerCase())
-
-/**
  * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
  * Republishing is the same, and replaces what this network published before. Tells the user how it went either
  * way.
@@ -142,7 +134,6 @@ export const publish = async (
             networkName: publishName,
             hocon,
             refreshTheme,
-            brand: makeBrand(network.name),
             // Remembered as soon as the server has it, so a publish that fails can still be republished. On the
             // network that's there now, in case it was edited while publishing.
             onAccepted: (deploymentId) =>
