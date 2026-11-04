@@ -107,6 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         const upstream = await fetch(target, {
             method: req.method,
+            // A redirect could send the token to a path or host the checks above didn't allow
+            redirect: "error",
             headers: {
                 Authorization: `Bearer ${token}`,
                 ...(contentType ? {"Content-Type": contentType} : {}),

@@ -129,6 +129,15 @@ describe("Publish API route", () => {
             expect(fetchMock).not.toHaveBeenCalled()
         })
 
+        it("should not follow redirects, so the token can't be sent anywhere else", async () => {
+            fetchMock.mockRejectedValue(new TypeError("fetch failed", {cause: new Error("unexpected redirect")}))
+
+            const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
+
+            expect(fetchMock.mock.calls[0][1]?.redirect).toBe("error")
+            expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
+        })
+
         it("should explain when the server can't be reached", async () => {
             fetchMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"))
 
