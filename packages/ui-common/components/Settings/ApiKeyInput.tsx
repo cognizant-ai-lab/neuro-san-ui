@@ -45,13 +45,8 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     placeholder,
     vendor,
 }) => {
-    const currentValue = useRef<string | null>(persistedValue ?? "")
-    useEffect(
-        () => () => {
-            currentValue.current = null
-        },
-        []
-    )
+    // Edits and unmounts invalidate a pending test, even if the same key is entered again.
+    const ignoreTestResult = useRef(false)
     const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
@@ -60,7 +55,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
-        currentValue.current = newValue
+        ignoreTestResult.current = true
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         setInputValue(newValue)
@@ -71,10 +66,10 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setIsValidating(true)
         setKeyValidated(null)
         onResultChange?.(vendor, null)
-        const testedValue = inputValue
+        ignoreTestResult.current = false
         try {
-            const result = await onTest(testedValue)
-            if (currentValue.current !== testedValue) {
+            const result = await onTest(inputValue)
+            if (ignoreTestResult.current) {
                 return
             }
             setKeyValidated(result.ok)
@@ -88,15 +83,17 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     // Sync with persisted value changes - if the persisted value changes from outside
     useEffect(() => {
-        currentValue.current = persistedValue ?? ""
         setInputValue(persistedValue ?? "")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         onValueChange?.(vendor, persistedValue ?? "")
+        return () => {
+            ignoreTestResult.current = true
+        }
     }, [persistedValue, vendor, onResultChange, onValueChange])
 
     const handleClearInput = () => {
-        currentValue.current = ""
+        ignoreTestResult.current = true
         setInputValue("")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
