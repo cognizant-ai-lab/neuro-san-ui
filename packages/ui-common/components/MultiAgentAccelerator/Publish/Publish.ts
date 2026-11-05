@@ -194,10 +194,19 @@ export const unpublish = async (network: PublishNetwork, published: Published): 
  * Downloads a static bundle of a live network, which can be hosted without the publish server.
  */
 export const downloadBundle = async (network: PublishNetwork, published: Published): Promise<void> => {
+    const {setPublishState} = usePublishStore.getState()
+    setPublishState(network.id, {...published, isDownloadingBundle: true})
+
     try {
         const {archive, fileName} = await fetchBundle(published.serverUrl, published.publishId)
         downloadFile(archive, fileName, "application/gzip")
     } catch (e) {
         sendNotification(NotificationType.error, `Failed to download a bundle of "${network.name}".`, String(e))
+    }
+
+    // It can be republished while the bundle builds, so this only clears the flag if it's still live
+    const current = usePublishStore.getState().networks[resolveNetworkId(network.id)]
+    if (current?.status === PublishStatus.Published) {
+        setPublishState(network.id, {...current, isDownloadingBundle: false})
     }
 }

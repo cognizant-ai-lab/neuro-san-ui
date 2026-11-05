@@ -73,7 +73,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const [isPanelOpen, setIsPanelOpen] = useState(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
-    const [isDownloadingBundle, setIsDownloadingBundle] = useState(false)
 
     const network: PublishNetwork = {id: networkId, name: networkName}
 
@@ -86,12 +85,6 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const handleUnpublish = async (published: Published) => {
         await unpublish(network, published)
         setIsPanelOpen(false)
-    }
-
-    const handleDownloadBundle = async (published: Published) => {
-        setIsDownloadingBundle(true)
-        await downloadBundle(network, published)
-        setIsDownloadingBundle(false)
     }
 
     const getMainAction = (): MainAction => {
@@ -180,8 +173,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     <PublishPanel
                         publishState={publishState}
                         id={`${id}-panel`}
-                        isDownloadingBundle={isDownloadingBundle}
-                        onDownloadBundle={(published) => void handleDownloadBundle(published)}
+                        onDownloadBundle={(published) => void downloadBundle(network, published)}
                         onRepublish={() => {
                             setIsPanelOpen(false)
                             setIsConfirmOpen(true)

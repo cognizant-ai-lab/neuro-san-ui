@@ -39,6 +39,8 @@ export interface Published {
     readonly url: string
     /** Set while it's being unpublished, when it can't be republished */
     readonly isUnpublishing?: boolean
+    /** Set while the server builds a bundle of it to download, when it can't be unpublished */
+    readonly isDownloadingBundle?: boolean
 }
 
 /** Published before and now unpublished, or its publish failed. The server keeps it, so it can be published again. */

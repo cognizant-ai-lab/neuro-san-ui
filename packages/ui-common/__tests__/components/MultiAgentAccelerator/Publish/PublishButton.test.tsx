@@ -22,7 +22,7 @@ import {
     publishNetwork,
     unpublishNetwork,
 } from "../../../../controller/publish/Publish"
-import {usePublishStore} from "../../../../state/Publish"
+import {PublishStatus, usePublishStore} from "../../../../state/Publish"
 import {useSettingsStore} from "../../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../../state/TemporaryNetworks"
 import {downloadFile} from "../../../../utils/File"
@@ -92,16 +92,29 @@ describe("PublishButton", () => {
         return () => release()
     }
 
-    const renderPublishButton = () =>
-        render(
-            <PublishButton
-                displayName={DISPLAY_NAME}
-                hocon={HOCON}
-                id="publish-button"
-                networkId={NETWORK_ID}
-                networkName={NETWORK_NAME}
-            />
+    const makePublishButton = (networkId = NETWORK_ID) => (
+        <PublishButton
+            displayName={DISPLAY_NAME}
+            hocon={HOCON}
+            id="publish-button"
+            networkId={networkId}
+            networkName={NETWORK_NAME}
+        />
+    )
+
+    const renderPublishButton = () => render(makePublishButton())
+
+    /** Keeps the bundle building until the returned `finish()` is called */
+    const mockInFlightBundle = () => {
+        let finish!: () => void
+        vi.mocked(fetchBundle).mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    finish = () => resolve({archive: new Uint8Array(), fileName: BUNDLE_FILE_NAME})
+                })
         )
+        return () => finish()
+    }
 
     const clickPublish = async () => {
         const publishButton = screen.getByRole("button", {name: "Publish"})
@@ -696,13 +709,7 @@ describe("PublishButton", () => {
     })
 
     it("should not allow a second bundle download while the first is still building", async () => {
-        let finishBundle!: () => void
-        vi.mocked(fetchBundle).mockImplementation(
-            () =>
-                new Promise((resolve) => {
-                    finishBundle = () => resolve({archive: new Uint8Array(), fileName: BUNDLE_FILE_NAME})
-                })
-        )
+        const finishBundle = mockInFlightBundle()
         renderPublishButton()
         await publishAndWaitUntilLive()
 
@@ -712,6 +719,67 @@ describe("PublishButton", () => {
 
         finishBundle()
         await screen.findByRole("button", {name: "Download Bundle"})
+    })
+
+    it("should not allow unpublishing while a bundle downloads", async () => {
+        mockInFlightBundle()
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+
+        await clickDownloadBundle()
+
+        const unpublishButton = screen.getByRole("button", {name: "Unpublish"})
+        expect(unpublishButton).toBeDisabled()
+    })
+
+    it("should still offer a download on another live network while the first network's bundle builds", async () => {
+        mockInFlightBundle()
+        const otherNetworkId = "temporary/cailville_cafe-1"
+        usePublishStore.getState().setPublishState(otherNetworkId, {
+            status: PublishStatus.Published,
+            serverUrl: SERVER_URL,
+            publishId: "dep-456",
+            url: "http://live.test/cailville_cafe",
+        })
+        const {rerender} = renderPublishButton()
+        await publishAndWaitUntilLive()
+        await clickDownloadBundle()
+
+        // The title bar keeps the same button, and its panel stays open, when another network is picked
+        rerender(makePublishButton(otherNetworkId))
+
+        const downloadButton = screen.getByRole("button", {name: "Download Bundle"})
+        expect(downloadButton).toBeEnabled()
+    })
+
+    it("should still show the download when going back to a network whose bundle is building", async () => {
+        mockInFlightBundle()
+        const {unmount} = renderPublishButton()
+        await publishAndWaitUntilLive()
+        await clickDownloadBundle()
+
+        unmount()
+        renderPublishButton()
+
+        await openDetails()
+        const downloadingButton = screen.getByRole("button", {name: "Downloading..."})
+        expect(downloadingButton).toBeDisabled()
+    })
+
+    it("should keep publishing when a bundle finishes downloading after republishing started", async () => {
+        const finishBundle = mockInFlightBundle()
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        await clickDownloadBundle()
+        mockInFlightPublish()
+        const republishButton = screen.getByRole("button", {name: "Republish"})
+        await user.click(republishButton)
+        await confirmRepublish(await screen.findByRole("dialog"))
+
+        finishBundle()
+
+        await waitFor(() => expect(downloadFile).toHaveBeenCalled())
+        screen.getByText("Putting it online...")
     })
 
     it("should not allow downloading a bundle while unpublishing", async () => {
