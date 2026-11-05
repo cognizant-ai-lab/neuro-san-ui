@@ -142,6 +142,8 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
 
     useEffect(
         () => () => {
+            // Invalidate pending validation so it cannot save a key after this dialog unmounts.
+            savingKeys.current.clear()
             currentDrafts.current = {}
         },
         []

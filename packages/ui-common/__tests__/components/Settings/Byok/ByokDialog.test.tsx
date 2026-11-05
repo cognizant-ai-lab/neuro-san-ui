@@ -274,6 +274,27 @@ describe("ByokDialog", () => {
         expect(onClose).not.toHaveBeenCalled()
     })
 
+    it("does not save a key when validation finishes after the dialog unmounts", async () => {
+        let resolveRequest: (response: Response) => void
+        global.fetch = vi.fn(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveRequest = resolve
+                })
+        )
+        const {unmount} = render(<ByokDialog id="unmounted-key" />)
+        const row = screen.getByTestId("unmounted-key-openai-input")
+        await user.click(within(row).getByPlaceholderText("sk-..."))
+        await user.paste("sk-proj-example")
+        await user.click(within(row).getByRole("button", {name: "Save"}))
+        unmount()
+        await act(async () => {
+            resolveRequest(Response.json({}))
+        })
+
+        expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
+    })
+
     it("does not save a draft changed while validation is pending", async () => {
         let resolveRequest: (response: Response) => void
         global.fetch = vi.fn(
