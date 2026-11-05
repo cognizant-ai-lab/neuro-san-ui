@@ -157,8 +157,7 @@ export const publishNetwork = async ({
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
-    // Lowercase, so the org is spelled the same however it's typed in Settings
-    form.append("org_name", orgName.toLowerCase())
+    form.append("org_name", orgName)
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
     form.append("theme_refresh", String(refreshTheme))
