@@ -48,6 +48,7 @@ interface SettingsDialogProps {
 export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoServiceToken, onClose}) => {
     // Settings store actions
     const updateSettings = useSettingsStore((state) => state.updateSettings)
+    const [keyInputVersion, setKeyInputVersion] = useState(0)
     const resetSettings = useSettingsStore((state) => state.resetSettings)
 
     // Reset settings confirmation dialog state
@@ -89,6 +90,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         activeConfigs: apiKeyConfigs,
         apiKeys,
         handleClose: handleSettingsClose,
+        clearDrafts: clearKeyDrafts,
         handleDiscard: handleDiscardUnsavedKeys,
         handleKeyResultChange,
         handleSave: handleSaveUnsavedKeys,
@@ -314,6 +316,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             }}
             handleOk={() => {
                 setResetToDefaultSettingsOpen(false)
+                clearKeyDrafts()
+                setKeyInputVersion((version) => version + 1)
                 resetSettings()
                 sendNotification(NotificationType.success, "Settings have been reset to default values.")
             }}
@@ -418,6 +422,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             </Box>
             <SettingsSubsection title="LLM Providers">
                 <ByokInputs
+                    key={keyInputVersion}
                     apiKeys={apiKeys}
                     configs={apiKeyConfigs}
                     id={id}

@@ -23,7 +23,8 @@ const BYOK_TOOLTIP_TEXT =
     "API keys are stored locally in your browser's memory for the duration of your session only " +
     "and are only sent to the Neuro SAN service for use with the associated LLM provider when you use " +
     "this application to interact with networks.\n" +
-    "Your keys are never sent to any other servers or services and are not stored on our servers.\n" +
+    "Testing or saving a key sends it directly to the selected provider to verify it. " +
+    "Your keys are not stored on our servers.\n" +
     "When you close this tab or your browser, your keys will be permanently cleared from memory and " +
     "you will need to enter them again to use services that require them."
 
