@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import DownloadIcon from "@mui/icons-material/Download"
+import PublicIcon from "@mui/icons-material/Public"
+import PublicOffIcon from "@mui/icons-material/PublicOff"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
 import Divider from "@mui/material/Divider"
@@ -60,14 +63,16 @@ const StatusRow = styled(Box)(({theme}) => ({
 interface PublishPanelProps {
     readonly publishState: PublishState
     readonly id: string
+    readonly onDownloadBundle: (published: Published) => void
     readonly onRepublish: () => void
     readonly onUnpublish: (published: Published) => void
 }
 
 /**
- * Details of publishing a network: progress while publishing, the live URL once published, or that it's unpublished.
+ * Details of publishing a network: progress while publishing, the live URL and a bundle to download once published,
+ * or that it's unpublished.
  */
-export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublish, publishState}) => (
+export const PublishPanel: FC<PublishPanelProps> = ({id, onDownloadBundle, onRepublish, onUnpublish, publishState}) => (
     <Box
         id={id}
         sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
@@ -91,17 +96,28 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublis
                 <Divider />
                 <PanelActions>
                     <PanelAction
+                        disabled={publishState.isUnpublishing || publishState.isDownloadingBundle}
+                        onClick={() => onDownloadBundle(publishState)}
+                        size="small"
+                        startIcon={<DownloadIcon />}
+                        sx={{color: "var(--bs-secondary)"}}
+                    >
+                        {publishState.isDownloadingBundle ? "Downloading..." : "Download Bundle"}
+                    </PanelAction>
+                    <PanelAction
                         disabled={publishState.isUnpublishing}
                         onClick={onRepublish}
                         size="small"
+                        startIcon={<PublicIcon />}
                         sx={{color: "var(--bs-secondary)"}}
                     >
                         Republish
                     </PanelAction>
                     <PanelAction
-                        disabled={publishState.isUnpublishing}
+                        disabled={publishState.isUnpublishing || publishState.isDownloadingBundle}
                         onClick={() => onUnpublish(publishState)}
                         size="small"
+                        startIcon={<PublicOffIcon />}
                         sx={{color: "error.light"}}
                     >
                         {publishState.isUnpublishing ? "Unpublishing..." : "Unpublish"}

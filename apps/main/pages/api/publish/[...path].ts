@@ -115,9 +115,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         throw e
     }
 
-    const upstreamContentType = upstream.headers.get("content-type")
-    if (upstreamContentType) {
-        res.setHeader("Content-Type", upstreamContentType)
+    // Content-Disposition has the file name of a bundle
+    for (const header of ["Content-Type", "Content-Disposition"]) {
+        const value = upstream.headers.get(header)
+        if (value) {
+            res.setHeader(header, value)
+        }
     }
     res.status(upstream.status).send(upstreamBody)
 }
