@@ -31,7 +31,7 @@ import {
     extractReservations,
     mergeNetworks,
 } from "../TemporaryNetworks"
-import {BANNER_AUTO_DISMISS_MS, STREAM_TIMEOUT_MS} from "./Const"
+import {BANNER_AUTO_DISMISS_MS, INITIAL_WAIT_REMINDER_MS, REPEATED_WAIT_REMINDER_MS} from "./Const"
 
 //#region Constants
 const PROMPT_PLACEHOLDER = "Describe a change to the network"
@@ -82,11 +82,19 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     // Dock (edit-mode prompt bar) state
     const [dockPrompt, setDockPrompt] = useState<string>("")
 
-    // "idle" = no apply in flight, "applying" = applying save, "confirmingStop" = abort confirmation dialog is open
-    const [state, setState] = useState<"idle" | "applying" | "confirmingStop">("idle")
+    // "idle" = no apply in flight; the other states describe the active apply overlay.
+    const [state, setState] = useState<"idle" | "applying" | "confirmingStop" | "confirmingWait">("idle")
     const isPending = state !== "idle"
 
     const abortControllerRef = useRef<AbortController | null>(null)
+    const waitReminderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const scheduleWaitReminder = useCallback((delay: number) => {
+        clearTimeout(waitReminderTimeoutRef.current)
+        waitReminderTimeoutRef.current = setTimeout(() => {
+            setState("confirmingWait")
+        }, delay)
+    }, [])
 
     // Show a dock banner. Success/cancel banners auto-dismiss; error banners persist until dismissed.
     const showBanner = useCallback((bannerInfo: {severity: AlertColor; title: string; detail: string}) => {
@@ -98,12 +106,19 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     }, [])
 
     const handleStopClick = useCallback(() => {
+        clearTimeout(waitReminderTimeoutRef.current)
         setState("confirmingStop")
     }, [])
 
     const handleKeepApplying = useCallback(() => {
         setState("applying")
-    }, [])
+        scheduleWaitReminder(INITIAL_WAIT_REMINDER_MS)
+    }, [scheduleWaitReminder])
+
+    const handleContinueWaiting = useCallback(() => {
+        setState("applying")
+        scheduleWaitReminder(REPEATED_WAIT_REMINDER_MS)
+    }, [scheduleWaitReminder])
 
     const handleDismissBanner = useCallback(() => {
         clearTimeout(bannerTimeoutRef.current)
@@ -111,6 +126,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     }, [])
 
     const handleStopAndDiscard = useCallback(() => {
+        clearTimeout(waitReminderTimeoutRef.current)
         abortControllerRef.current?.abort()
         abortControllerRef.current = null
         setState("idle")
@@ -123,6 +139,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
 
     const handleExitEditMode = useCallback(() => {
         if (isPending) {
+            clearTimeout(waitReminderTimeoutRef.current)
             abortControllerRef.current?.abort()
             abortControllerRef.current = null
             setState("idle")
@@ -258,11 +275,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         setState("applying")
         const controller = new AbortController()
         abortControllerRef.current = controller
-        let hasTimedOut = false
-        const timeoutId = setTimeout(() => {
-            hasTimedOut = true
-            controller.abort()
-        }, STREAM_TIMEOUT_MS)
+        scheduleWaitReminder(INITIAL_WAIT_REMINDER_MS)
         try {
             const newNetworks = await applyNetworkDesignerChanges(
                 controller.signal,
@@ -281,19 +294,11 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
             }
         } catch (e: unknown) {
             const isAbort = e instanceof DOMException && e.name === "AbortError"
-            if (isAbort) {
-                if (hasTimedOut) {
-                    showBanner({
-                        severity: "error",
-                        title: "Failed to apply network change.",
-                        detail: "The request timed out. Please try again.",
-                    })
-                }
-            } else {
+            if (!isAbort) {
                 showBanner({severity: "error", title: "Failed to apply network change.", detail: String(e)})
             }
         } finally {
-            clearTimeout(timeoutId)
+            clearTimeout(waitReminderTimeoutRef.current)
             abortControllerRef.current = null
             setState("idle")
         }
@@ -304,6 +309,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         networkId,
         neuroSanURL,
         saveUpdates,
+        scheduleWaitReminder,
         showBanner,
         tempNetworks,
     ])
@@ -312,6 +318,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     useEffect(() => {
         return () => {
             clearTimeout(bannerTimeoutRef.current)
+            clearTimeout(waitReminderTimeoutRef.current)
             abortControllerRef.current?.abort()
             abortControllerRef.current = null
         }
@@ -324,7 +331,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 open={isPending}
                 sx={{zIndex: (t) => t.zIndex.modal + 1}}
             >
-                {state === "confirmingStop" ? (
+                {state === "confirmingStop" || state === "confirmingWait" ? (
                     <Paper
                         elevation={6}
                         sx={{
@@ -341,13 +348,18 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                             variant="body1"
                             sx={{fontWeight: "bold"}}
                         >
-                            Abort changes?
+                            {state === "confirmingWait"
+                                ? "This operation is taking longer than expected."
+                                : "Abort changes?"}
                         </Typography>
                         <Typography
                             variant="body2"
                             color="text.secondary"
                         >
-                            The in-progress update will be cancelled and discarded. Your network will not be modified.
+                            {state === "confirmingWait"
+                                ? "Would you like to continue waiting or cancel?"
+                                : "The in-progress update will be cancelled and discarded. Your network will not be " +
+                                  "modified."}
                         </Typography>
                         <Box
                             sx={{
@@ -356,19 +368,32 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                                 justifyContent: "flex-end",
                             }}
                         >
-                            <Button
-                                variant="outlined"
-                                onClick={handleKeepApplying}
-                            >
-                                Keep applying
-                            </Button>
+                            {state === "confirmingWait" ? (
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleStopAndDiscard}
+                                >
+                                    Cancel
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleKeepApplying}
+                                >
+                                    Keep applying
+                                </Button>
+                            )}
                             <Button
                                 variant="contained"
-                                color="error"
-                                startIcon={<span style={{fontSize: "0.7rem"}}>&#9632;</span>}
-                                onClick={handleStopAndDiscard}
+                                color={state === "confirmingWait" ? "primary" : "error"}
+                                startIcon={
+                                    state === "confirmingWait" ? undefined : (
+                                        <span style={{fontSize: "0.7rem"}}>&#9632;</span>
+                                    )
+                                }
+                                onClick={state === "confirmingWait" ? handleContinueWaiting : handleStopAndDiscard}
                             >
-                                Stop &amp; discard
+                                {state === "confirmingWait" ? "Continue waiting" : "Stop & discard"}
                             </Button>
                         </Box>
                     </Paper>
