@@ -206,6 +206,32 @@ describe("Publish", () => {
         await expect(create()).rejects.toThrow("Publishing ended as stopped")
     })
 
+    // POST /deployments, then GET /deployments/{id}/wait times out without the server answering
+    it.each([
+        {
+            desc: "our route",
+            response: Response.json(
+                {detail: "The publishing server didn't answer in time"},
+                {status: httpStatus.GATEWAY_TIMEOUT}
+            ),
+            reason: "The publishing server didn't answer in time",
+        },
+        {
+            desc: "a proxy",
+            response: new Response("<html>Gateway Timeout</html>", {
+                status: httpStatus.GATEWAY_TIMEOUT,
+                statusText: "Gateway Timeout",
+            }),
+            reason: "Gateway Timeout",
+        },
+    ])("should fail with the reason when $desc times out the wait", async ({response, reason}) => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
+            .mockResolvedValueOnce(response)
+
+        await expect(create()).rejects.toThrow(`Waiting for the network to go live failed (504): ${reason}`)
+    })
+
     // POST /deployments, then GET /deployments/{id}/wait rejected without a detail
     it("should fail with the status text when the error doesn't say why", async () => {
         fetchMock
