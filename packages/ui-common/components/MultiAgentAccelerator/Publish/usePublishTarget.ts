@@ -16,8 +16,8 @@ limitations under the License.
 
 import {useEffect} from "react"
 
-import {checkIfPublished, PublishTarget} from "./Publish"
-import {usePublishServerUrl} from "../../../state/Publish"
+import {fetchPublishState, PublishTarget} from "./Publish"
+import {usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useSettingsStore} from "../../../state/Settings"
 
 /**
@@ -29,9 +29,16 @@ export const usePublishTarget = (networkId: string, networkName: string): Publis
     const orgName = useSettingsStore((state) => state.settings.publish.orgName)
 
     useEffect(() => {
-        if (serverUrl && orgName) {
-            void checkIfPublished({id: networkId, name: networkName}, {serverUrl, orgName})
-        }
+        if (!serverUrl || !orgName || usePublishStore.getState().networks[networkId]) return
+
+        fetchPublishState(networkId, {serverUrl, orgName})
+            .then((publishState) => {
+                // Don't overwrite a publish the user started while we were asking
+                if (publishState && !usePublishStore.getState().networks[networkId]) {
+                    usePublishStore.getState().setPublishState(networkId, publishState)
+                }
+            })
+            .catch((e: unknown) => console.warn(`Unable to check whether "${networkName}" is published:`, e))
     }, [networkId, networkName, orgName, serverUrl])
 
     return serverUrl && orgName ? {serverUrl, orgName} : null

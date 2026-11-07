@@ -30,6 +30,7 @@ import {
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PublishNetwork,
     PublishTarget,
+    showPublishResult,
     unpublish,
 } from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
@@ -37,6 +38,7 @@ import {PublishPanel} from "./PublishPanel"
 import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
+import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const SHOW_DETAILS_LABEL = "Show publish details"
 
@@ -78,7 +80,7 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
         setIsPanelOpen(true)
         try {
-            await publish(network, hocon, publishTarget, refreshTheme)
+            showPublishResult(networkName, await publish(network, hocon, publishTarget, refreshTheme))
         } finally {
             setIsPanelOpen(false)
         }
@@ -86,7 +88,10 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const handleUnpublish = async (published: Published) => {
         try {
-            await unpublish(network, published)
+            const {error} = await unpublish(network, published)
+            if (error) {
+                sendNotification(NotificationType.error, `Failed to unpublish "${networkName}".`, error)
+            }
         } finally {
             setIsPanelOpen(false)
         }

@@ -21,7 +21,7 @@ import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishNetwork} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishNetwork, showPublishResult} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {PublishStatus, usePublishStore} from "../../../state/Publish"
@@ -122,7 +122,9 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)
-                            void publish(network, hocon, target, refreshTheme)
+                            void publish(network, hocon, target, refreshTheme).then((result) =>
+                                showPublishResult(networkName, result)
+                            )
                         }}
                         target={target}
                     />

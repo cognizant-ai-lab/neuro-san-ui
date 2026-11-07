@@ -208,7 +208,7 @@ describe("PublishButton", () => {
         setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([
             {id: "their-dep", url: "http://live.test/theirs"},
-            {id: PUBLISH_ID, url: null},
+            {id: PUBLISH_ID},
         ])
         renderPublishButton()
 
@@ -498,7 +498,7 @@ describe("PublishButton", () => {
 
     it("should show a network the server has unpublished as unpublished, with nothing to unpublish", async () => {
         setPublishedBefore()
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID}])
         renderPublishButton()
 
         await openDetails("Unpublished")
@@ -721,7 +721,7 @@ describe("PublishButton", () => {
             onAccepted?.(PUBLISH_ID)
             throw new Error(SERVER_ERROR)
         })
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID}])
         renderPublishButton()
 
         await clickPublishAndConfirm()
@@ -731,7 +731,6 @@ describe("PublishButton", () => {
     })
 
     it("should show it as unpublished when republishing fails and the server can't be asked", async () => {
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
         renderPublishButton()
         await publishAndWaitUntilLive()
         mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
@@ -740,15 +739,15 @@ describe("PublishButton", () => {
 
         await confirmRepublish(confirmation)
 
-        await waitFor(() => expect(warnSpy).toHaveBeenCalled())
         await openDetails("Unpublished")
+        expect(screen.getByText("Publish to put it back online.")).toBeVisible()
     })
 
     it("should ask the server again when republishing fails, and show what it says", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
         mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
-        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID, url: null}])
+        vi.mocked(listPublishedNetworks).mockResolvedValue([{id: PUBLISH_ID}])
         const confirmation = await clickRepublish()
         vi.mocked(listPublishedNetworks).mockClear()
 
