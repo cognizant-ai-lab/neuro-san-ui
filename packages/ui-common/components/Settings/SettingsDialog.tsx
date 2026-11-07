@@ -9,30 +9,73 @@ import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import MenuItem from "@mui/material/MenuItem"
 import Select, {SelectChangeEvent} from "@mui/material/Select"
-import {createTheme, ThemeProvider, useTheme} from "@mui/material/styles"
+import {SxProps, Theme, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {FC, ChangeEvent as ReactChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useMemo, useState} from "react"
+import {FC, ChangeEvent as ReactChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ByokInputs, ByokStorageTooltip, ByokUnsavedChangesModal, useByokKeyManager} from "./Byok"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import {PublishSettings} from "./PublishSettings"
 import {Section, SettingsSectionTitle, SettingsSubsection, SubSection, SubSectionBody} from "./SettingsLayout"
+import {SettingsNavLayout} from "./SettingsNav"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
-import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore} from "../../state/Settings"
+import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore, VisualEffects} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
+import {glassSurface, gradientBorder, SHEEN_FONT_DISPLAY, SHEEN_RADIUS_SURFACE} from "../../Theme/sheen"
 import {normalizeUrlInput, Protocol, stripProtocol} from "../../utils/Url"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 import {StatusLight} from "../Common/StatusLight"
 import {CustomerLogo} from "../Logo/CustomerLogo"
+
+//#region: Constants
+
+// The settings dialog is dense, so scale its body text down a notch (inherits the app theme otherwise)
+const COMPACT_FONT_SIZE = "0.8125rem"
+const SETTINGS_CONTENT_SX = {
+    fontSize: COMPACT_FONT_SIZE,
+    [[
+        "& .MuiTypography-body1",
+        "& .MuiInputBase-root",
+        "& .MuiInputLabel-root",
+        "& .MuiFormControlLabel-label",
+        "& .MuiButton-root",
+        "& .MuiToggleButton-root",
+        "& .MuiMenuItem-root",
+    ].join(", ")]: {fontSize: COMPACT_FONT_SIZE},
+    "& .MuiTypography-subtitle1": {fontSize: "0.875rem"},
+    "& .MuiTypography-body2, & .MuiTypography-caption, & .MuiFormHelperText-root": {fontSize: "0.75rem"},
+    // The nav and the section column scroll independently, so the content area itself doesn't scroll
+    display: "flex",
+    overflow: "hidden",
+    paddingBottom: 0,
+} as const
+
+// Glass dialog surface with a faint iridescent hairline. Near full-screen on phones.
+const getDialogPaperSx = (theme: Theme): SxProps => ({
+    ...glassSurface(theme, SHEEN_RADIUS_SURFACE),
+    ...gradientBorder(theme, SHEEN_RADIUS_SURFACE, 1, 0.35),
+    height: "min(860px, calc(100% - 64px))",
+    maxWidth: "none",
+    overflow: "hidden",
+    width: "min(1040px, calc(100% - 64px))",
+    [theme.breakpoints.down("sm")]: {
+        height: "calc(100% - 24px)",
+        margin: "12px",
+        maxHeight: "none",
+        width: "calc(100% - 24px)",
+    },
+})
+
+//#endregion: Constants
 
 //#region: Types and Interfaces
 
@@ -66,6 +109,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const agentIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const agentIconColorCheckmark = useCheckmarkFade()
     const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
+
+    // Visual effects level (lite drops glass blur and the 3D splash, for browsers without GPU acceleration)
+    const visualEffects = useSettingsStore((state) => state.settings.appearance.visualEffects)
+    const visualEffectsCheckmark = useCheckmarkFade()
 
     // Which palette to use for heatmaps and depth display?
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
@@ -135,9 +182,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const statusLightValue = neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"
 
-    // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
-    const paletteMode = theme.palette.mode
 
     const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
         if (newPalette) {
@@ -838,9 +883,42 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SettingsSubsection>
     )
 
+    const getVisualEffectsSubsection = () => (
+        <SettingsSubsection title="Visual effects">
+            <SettingsRow
+                checkmark={visualEffectsCheckmark}
+                label="Effects:"
+                tooltip={
+                    "Lite turns off frosted-glass blur and the 3D splash scene, which are costly when the browser " +
+                    "has no GPU acceleration (for example in a virtual machine). Auto picks Lite only when that is " +
+                    "detected."
+                }
+            >
+                <ToggleButtonGroup
+                    aria-label="visual-effects-selection"
+                    exclusive={true}
+                    id="visual-effects-toggle"
+                    onChange={(_event, value: VisualEffects | null) => {
+                        if (value) {
+                            updateSettings({appearance: {visualEffects: value}})
+                            visualEffectsCheckmark.trigger()
+                        }
+                    }}
+                    size="small"
+                    value={visualEffects}
+                >
+                    <ToggleButton value="auto">Auto</ToggleButton>
+                    <ToggleButton value="full">Full</ToggleButton>
+                    <ToggleButton value="lite">Lite</ToggleButton>
+                </ToggleButtonGroup>
+            </SettingsRow>
+        </SettingsSubsection>
+    )
+
     const getAppearanceSection = () => (
         <Section>
             <SettingsSectionTitle>Appearance</SettingsSectionTitle>
+            {getVisualEffectsSubsection()}
             {getNamingSubsection()}
             {getBrandingSubsection()}
             {getNetworkDisplaySubsection()}
@@ -849,7 +927,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     )
 
     const getResetSettingsSection = () => (
-        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: "4px solid var(--bs-border-color)"}}>
+        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: 1, borderColor: "divider"}}>
             <SubSectionBody>
                 <Button
                     variant="text"
@@ -857,7 +935,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     onClick={() => {
                         setResetToDefaultSettingsOpen(true)
                     }}
-                    sx={{color: "var(--bs-secondary)"}}
+                    sx={{color: "primary.main"}}
                 >
                     Reset to defaults
                 </Button>
@@ -865,23 +943,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SubSection>
     )
 
-    const settingsTheme = useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode: paletteMode,
-                },
-                typography: {
-                    fontSize: 12,
-                },
-            }),
-        [paletteMode]
-    )
-
     return (
-        // Always use the default theme for settings dialog so user can always see to reset. It's possible that with
-        // certain custom themes the dialog would be unreadable.
-        <ThemeProvider theme={settingsTheme}>
+        <>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
             {showUnsavedChangesModal ? (
                 <ByokUnsavedChangesModal
@@ -892,21 +955,35 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             ) : null}
             <MUIDialog
                 id={id}
-                title={<Box sx={{fontSize: "1.5rem"}}>Settings</Box>}
+                title={
+                    <Box
+                        component="span"
+                        sx={{
+                            fontFamily: SHEEN_FONT_DISPLAY,
+                            fontSize: "1.75rem",
+                            fontWeight: 500,
+                            letterSpacing: "-0.015em",
+                        }}
+                    >
+                        Settings
+                    </Box>
+                }
                 isOpen={isOpen}
                 onClose={handleSettingsClose}
-                paperProps={{
-                    minWidth: "50%",
-                    minHeight: "50%",
-                    border: "1px solid",
-                }}
+                paperProps={getDialogPaperSx(theme)}
+                contentSx={SETTINGS_CONTENT_SX}
             >
-                {getServicesSection()}
-                {getApiKeysSection()}
-                {getBehaviorSection()}
-                {getAppearanceSection()}
-                {getResetSettingsSection()}
+                <SettingsNavLayout
+                    id={id}
+                    sections={[
+                        {key: "external-services", label: "External Services", content: getServicesSection()},
+                        {key: "api-keys", label: "API Keys", content: getApiKeysSection()},
+                        {key: "behavior", label: "Behavior", content: getBehaviorSection()},
+                        {key: "appearance", label: "Appearance", content: getAppearanceSection()},
+                    ]}
+                    after={getResetSettingsSection()}
+                />
             </MUIDialog>
-        </ThemeProvider>
+        </>
     )
 }

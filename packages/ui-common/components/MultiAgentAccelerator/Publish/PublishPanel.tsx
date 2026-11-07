@@ -23,6 +23,7 @@ import {FC} from "react"
 
 import {PublishedNetworkUrl} from "./PublishedNetworkUrl"
 import {Published, PublishState, PublishStatus} from "../../../state/Publish"
+import {sheenGradient} from "../../../Theme/sheen"
 import {StatusLight} from "../../Common/StatusLight"
 
 interface PublishPanelProps {
@@ -62,7 +63,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, isUnpublishing, onUnpub
                 <Typography sx={{fontWeight: 600}}>Putting it online...</Typography>
                 <LinearProgress
                     aria-label="Publishing progress"
-                    sx={{"& .MuiLinearProgress-bar": {backgroundColor: "var(--bs-secondary)"}}}
+                    sx={(theme) => ({"& .MuiLinearProgress-bar": {backgroundImage: sheenGradient(theme, 90)}})}
                 />
                 <Typography
                     color="text.secondary"

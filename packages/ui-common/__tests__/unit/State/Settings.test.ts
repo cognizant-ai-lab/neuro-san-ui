@@ -3,6 +3,7 @@ import {
     APP_SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
     getApiKey,
+    LEGACY_APPEARANCE_DEFAULTS,
     SESSION_API_KEYS_STORAGE_KEY,
     useSettingsStore,
 } from "../../../state/Settings"
@@ -118,6 +119,37 @@ describe("Settings", () => {
 
             const settings = useSettingsStore.getState().settings
             expect(settings).toEqual(DEFAULT_SETTINGS)
+        })
+
+        it("upgrades untouched pre-reskin appearance defaults but keeps user customizations", async () => {
+            const customNodeColor = "#123456"
+            localStorage.setItem(
+                APP_SETTINGS_STORAGE_KEY,
+                JSON.stringify({
+                    state: {
+                        settings: {
+                            appearance: {
+                                ...LEGACY_APPEARANCE_DEFAULTS,
+                                agentNodeColor: customNodeColor,
+                                layout: "linear",
+                            },
+                        },
+                    },
+                })
+            )
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {appearance} = freshUseSettingsStore.getState().settings
+
+            // Legacy defaults are replaced by the new defaults...
+            expect(appearance.agentIconColor).toBe(DEFAULT_SETTINGS.appearance.agentIconColor)
+            expect(appearance.plasmaColor).toBe(DEFAULT_SETTINGS.appearance.plasmaColor)
+            expect(appearance.rangePalette).toBe(DEFAULT_SETTINGS.appearance.rangePalette)
+
+            // ...while values the user changed are preserved
+            expect(appearance.agentNodeColor).toBe(customNodeColor)
+            expect(appearance.layout).toBe("linear")
         })
     })
 })

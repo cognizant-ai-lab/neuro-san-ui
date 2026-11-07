@@ -461,6 +461,56 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
+    describe("Workspace layout", () => {
+        it("renders the canvas full-bleed behind floating panels", async () => {
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            const container = document.getElementById("multi-agent-accelerator-container")
+            const canvas = document.getElementById("multi-agent-accelerator-canvas")
+            expect(canvas?.parentElement).toBe(container)
+            expect(canvas).toContainElement(document.getElementById("multi-agent-accelerator-agent-flow-container"))
+
+            // Sidebar and chat live in floating cards inside the resizable panels
+            expect(document.getElementById("multi-agent-accelerator-left-card")).toContainElement(
+                document.getElementById("multi-agent-accelerator-sidebar-sidebar")
+            )
+            expect(document.getElementById("multi-agent-accelerator-right-card")).toContainElement(
+                screen.getByTestId("test-chat-common")
+            )
+            expect(document.getElementById("multi-agent-accelerator-left-card")).toHaveAttribute(
+                "data-collapsed",
+                "false"
+            )
+
+            // AgentFlow is told which part of the canvas the panels leave uncovered
+            expect(agentFlowMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    safeArea: expect.objectContaining({bottom: 14}),
+                })
+            )
+        })
+
+        it("shows the empty state prompt until a network is selected, and can open the designer", async () => {
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            expect(document.getElementById("multi-agent-accelerator-empty-state")).toBeInTheDocument()
+            expect(screen.getByText(/Pick one from Agent Networks/u)).toBeInTheDocument()
+
+            await user.click(screen.getByRole("button", {name: "Open Agent Network Designer"}))
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenLastCalledWith(
+                    expect.objectContaining({selectedNetwork: AGENT_NETWORK_DESIGNER_ID})
+                )
+            })
+            await waitFor(() => {
+                expect(document.getElementById("multi-agent-accelerator-empty-state")).not.toBeInTheDocument()
+            })
+        })
+    })
+
     describe("Zen Mode", () => {
         const expectPanelState = (panelTestId: string, expectedState: "expanded" | "collapsed") => {
             const panel = screen.getByTestId(panelTestId)
@@ -509,6 +559,18 @@ describe("MultiAgentAccelerator", () => {
 
             // Right panel: Chat window should be hidden in Zen mode
             expectPanelState("multi-agent-accelerator-right-panel", "collapsed")
+
+            // Floating cards slide out and become inert while their panels are collapsed
+            await waitFor(() => {
+                expect(document.getElementById("multi-agent-accelerator-left-card")).toHaveAttribute(
+                    "data-collapsed",
+                    "true"
+                )
+            })
+            expect(document.getElementById("multi-agent-accelerator-right-card")).toHaveAttribute(
+                "data-collapsed",
+                "true"
+            )
 
             // Simulate "end streaming"
             await act(async () => {

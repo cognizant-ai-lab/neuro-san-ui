@@ -21,6 +21,7 @@ import Button from "@mui/material/Button"
 import ButtonGroup from "@mui/material/ButtonGroup"
 import CircularProgress from "@mui/material/CircularProgress"
 import Popover from "@mui/material/Popover"
+import {Theme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, ReactNode, useState} from "react"
 
@@ -36,6 +37,7 @@ import {PublishConfirmation} from "./PublishConfirmation"
 import {PublishPanel} from "./PublishPanel"
 import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
+import {glassSurface, gradientBorder, SHEEN_RADIUS} from "../../../Theme/sheen"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
 
 export const SHOW_DETAILS_LABEL = "Show publish details"
@@ -127,9 +129,9 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                 id={id}
                 ref={setAnchorEl}
                 size="small"
-                // White text on green (the theme's contrast text is dark there), and icons that follow the text color
+                // Text in the palette's contrast color for the current action, and icons that follow the text color
                 sx={{
-                    "& .MuiButton-root:not(.Mui-disabled)": {color: "common.white"},
+                    "& .MuiButton-root:not(.Mui-disabled)": {color: `${mainAction.color}.contrastText`},
                     "& .MuiSvgIcon-root": {color: "inherit"},
                 }}
                 variant="contained"
@@ -165,7 +167,16 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     anchorOrigin={{vertical: "bottom", horizontal: "right"}}
                     onClose={() => setIsPanelOpen(false)}
                     open={isPanelOpen}
-                    slotProps={{paper: {sx: {mt: 1}}}}
+                    slotProps={{
+                        paper: {
+                            // Floating glass card with a faint iridescent hairline
+                            sx: (theme: Theme) => ({
+                                ...glassSurface(theme, SHEEN_RADIUS),
+                                ...gradientBorder(theme, SHEEN_RADIUS, 1, 0.4),
+                                mt: 1,
+                            }),
+                        },
+                    }}
                     transformOrigin={{vertical: "top", horizontal: "right"}}
                 >
                     <PublishPanel

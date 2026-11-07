@@ -313,4 +313,42 @@ describe("Main App Component", () => {
             })
         )
     })
+
+    it("Should open the command palette with the keyboard shortcut and navigate with the router", async () => {
+        const push = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({push}))
+
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        await user.keyboard("{Control>}k{/Control}")
+        await screen.findByRole("dialog", {name: "Command palette"})
+
+        await user.type(screen.getByRole("combobox"), "accelerator")
+        await user.keyboard("{Enter}")
+
+        expect(push).toHaveBeenCalledWith("/multiAgentAccelerator")
+    })
+
+    it("Should open the command palette from the navbar search pill", async () => {
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        await user.click(await screen.findByRole("button", {name: "Open command palette"}))
+
+        await screen.findByRole("dialog", {name: "Command palette"})
+    })
+
+    it("Should use client-side navigation for the navbar page links", async () => {
+        const push = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({push}))
+
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        // The links only show on wide screens (a media query jsdom doesn't match), so include hidden elements
+        await user.click(await screen.findByRole("link", {hidden: true, name: "User Guide"}))
+
+        expect(push).toHaveBeenCalledWith("/UserGuide")
+    })
 })

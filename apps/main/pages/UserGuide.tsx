@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {Theme} from "@mui/material/styles"
 import {FC, JSX as ReactJSX, useEffect, useState} from "react"
 import ReactMarkdown from "react-markdown"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
 import remarkToc from "remark-toc"
 
+import {Spotlight} from "../../../packages/ui-common/components/Common/Spotlight"
+import {glassSurface} from "../../../packages/ui-common/Theme/sheen"
 import {StyledMarkdownContainer} from "../styles/StyledMarkdownContainer"
 import {CustomPageProps} from "../Types/Types"
 
@@ -61,17 +64,41 @@ export const UserGuide: FC & CustomPageProps = Object.assign(
         }, [])
 
         return (
-            <StyledMarkdownContainer
-                id="user-guide-container"
-                sx={{flex: 1, minHeight: 0, overflowY: "auto", paddingRight: "1rem"}}
+            // Frosted-glass reading card lit by a soft glow that follows the pointer
+            <Spotlight
+                id="user-guide-card"
+                size={560}
+                sx={(theme: Theme) => ({
+                    ...glassSurface(theme),
+                    display: "flex",
+                    flex: 1,
+                    marginBottom: "1.5rem",
+                    marginTop: "0.5rem",
+                    marginX: "auto",
+                    maxWidth: 1080,
+                    minHeight: 0,
+                    overflow: "hidden",
+                    width: "100%",
+                })}
             >
-                <ReactMarkdown
-                    rehypePlugins={[rehypeRaw, rehypeSlug]}
-                    remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
+                <StyledMarkdownContainer
+                    id="user-guide-container"
+                    sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        overflowY: "auto",
+                        padding: {xs: "1.25rem 1.25rem", md: "2.25rem 3rem"},
+                        scrollbarGutter: "stable",
+                    }}
                 >
-                    {userGuide}
-                </ReactMarkdown>
-            </StyledMarkdownContainer>
+                    <ReactMarkdown
+                        rehypePlugins={[rehypeRaw, rehypeSlug]}
+                        remarkPlugins={[[remarkToc, {heading: "Table of Contents", tight: true}]]}
+                    >
+                        {userGuide}
+                    </ReactMarkdown>
+                </StyledMarkdownContainer>
+            </Spotlight>
         )
     },
     {authRequired: true}

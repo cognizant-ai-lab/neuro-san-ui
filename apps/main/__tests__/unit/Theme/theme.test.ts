@@ -15,13 +15,14 @@ limitations under the License.
 */
 
 /*
-Tests for the main app theme, focused on the MuiButton style overrides.
+Tests for the main app theme: color schemes, branding overrides and the MuiButton style overrides.
  */
 
-import {createTheme, Theme} from "@mui/material/styles"
+import {createTheme, CssVarsTheme, Theme} from "@mui/material/styles"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {createAppTheme} from "../../../theme"
+import {SHEEN_DARK, SHEEN_LIGHT} from "../../../../../packages/ui-common/Theme/sheen"
+import {COLOR_SCHEME_ATTRIBUTE, createAppTheme} from "../../../theme"
 
 // MUI types the override callbacks as broad unions (style object | callback), so narrow them to the
 // callback signatures we actually use here rather than reaching for `any`.
@@ -73,5 +74,58 @@ describe("createAppTheme MuiButton overrides", () => {
             const lightTheme = createTheme({palette: {mode: "light"}})
             expect(variant.style({theme: lightTheme})).toEqual({})
         })
+    })
+})
+
+describe("createAppTheme color schemes", () => {
+    withStrictMocks()
+
+    // With cssVariables enabled, createTheme returns a CSS-vars theme; the public Theme type doesn't expose its fields
+    const createVarsTheme = (...args: Parameters<typeof createAppTheme>) =>
+        createAppTheme(...args) as unknown as CssVarsTheme
+
+    it("enables CSS theme variables keyed on the color scheme attribute, defaulting to dark", () => {
+        const theme = createVarsTheme()
+        expect(theme.colorSchemeSelector).toContain(COLOR_SCHEME_ATTRIBUTE)
+        expect(theme.defaultColorScheme).toBe("dark")
+        expect(theme.vars).toBeDefined()
+    })
+
+    it("builds both schemes from the sheen tokens", () => {
+        const theme = createVarsTheme()
+        const dark = theme.colorSchemes.dark?.palette
+        const light = theme.colorSchemes.light?.palette
+
+        expect(dark?.primary.main).toBe(SHEEN_DARK.primary)
+        expect(dark?.background.default).toBe(SHEEN_DARK.background.default)
+        expect(dark?.text.primary).toBe(SHEEN_DARK.text.primary)
+        expect(dark?.sheen.glassBg).toBe(SHEEN_DARK.sheen.glassBg)
+
+        expect(light?.primary.main).toBe(SHEEN_LIGHT.primary)
+        expect(light?.background.default).toBe(SHEEN_LIGHT.background.default)
+        expect(light?.text.primary).toBe(SHEEN_LIGHT.text.primary)
+        expect(light?.sheen.glassBg).toBe(SHEEN_LIGHT.sheen.glassBg)
+    })
+
+    it("lets user branding override text and background colors in both schemes", () => {
+        const theme = createVarsTheme("#111111", "#222222", "#333333")
+
+        for (const scheme of ["dark", "light"] as const) {
+            const palette = theme.colorSchemes[scheme]?.palette
+            expect(palette?.text.primary).toBe("#111111")
+            expect(palette?.text.secondary).toBe("#222222")
+            expect(palette?.background.default).toBe("#333333")
+            // Accent colors are not affected by branding
+            expect(palette?.primary.main).toBe(scheme === "dark" ? SHEEN_DARK.primary : SHEEN_LIGHT.primary)
+        }
+    })
+
+    it("uses the signature gradient for contained primary buttons", () => {
+        const variants = createAppTheme().components?.MuiButton?.variants as unknown as ButtonVariant[]
+        const contained = variants.find(
+            (v) => v.props.variant === "contained" && (v.props as {color?: string}).color === "primary"
+        )
+        const style = contained?.style({theme: createAppTheme()})
+        expect(style?.["backgroundImage"]).toMatch(/^linear-gradient\(/u)
     })
 })

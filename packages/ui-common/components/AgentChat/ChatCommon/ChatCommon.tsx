@@ -33,9 +33,10 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Menu from "@mui/material/Menu"
 import MenuItem from "@mui/material/MenuItem"
-import {useTheme} from "@mui/material/styles"
+import {keyframes, useTheme} from "@mui/material/styles"
 import Typography from "@mui/material/Typography"
 import {isEmpty} from "lodash-es"
+import {motion} from "motion/react"
 import {
     CSSProperties,
     Dispatch,
@@ -65,6 +66,18 @@ import {sendLlmRequest, StreamingUnit} from "../../../controller/llm/LlmChat"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {useSettingsStore} from "../../../state/Settings"
+import {
+    getSheen,
+    glassSurface,
+    glowShadow,
+    gradientBorder,
+    gradientText,
+    SHEEN_EASE,
+    SHEEN_RADIUS,
+    SHEEN_RADIUS_SURFACE,
+    sheenConic,
+    spinningBorder,
+} from "../../../Theme/sheen"
 import {toDisplayName} from "../../../utils/AgentName"
 import {downloadFile, toSafeFilename} from "../../../utils/File"
 import {hasOnlyWhitespace} from "../../../utils/text"
@@ -252,6 +265,20 @@ const EXPORT_ROLE_LABELS: Record<MessageRole, string> = {
  * @returns The label for the message role
  */
 export const roleToExportLabel = (role: MessageRole): string => EXPORT_ROLE_LABELS[role]
+
+// Radius of the chat input pill (large enough to stay fully rounded as the input grows to several rows)
+const INPUT_PILL_RADIUS = 28
+
+// The "thinking" orb: an iridescent blob that slowly morphs its outline and breathes
+const ORB_MORPH = keyframes`
+    0%, 100% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; transform: scale(1); }
+    25% { border-radius: 58% 42% 55% 45% / 46% 58% 42% 54%; transform: scale(1.08); }
+    50% { border-radius: 44% 56% 42% 58% / 56% 44% 56% 44%; transform: scale(0.94); }
+    75% { border-radius: 52% 48% 60% 40% / 40% 56% 44% 60%; transform: scale(1.05); }
+`
+
+// Size of the thinking orb (px)
+const ORB_SIZE = 22
 
 /**
  * Common chat component for agent chat. This component is used by all agent chat components to provide a consistent
@@ -924,8 +951,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             id={`llm-chat-title-container-${id}`}
             sx={{
                 alignItems: "center",
-                borderTopLeftRadius: "var(--bs-border-radius)",
-                borderTopRightRadius: "var(--bs-border-radius)",
+                borderTopLeftRadius: `${SHEEN_RADIUS_SURFACE}px`,
+                borderTopRightRadius: `${SHEEN_RADIUS_SURFACE}px`,
                 display: "flex",
                 justifyContent: "space-between",
                 paddingLeft: "1rem",
@@ -936,7 +963,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         >
             <Typography
                 id={`llm-chat-title-${id}-text`}
-                sx={{fontSize: "0.9rem"}}
+                sx={{color: "text.primary", fontSize: "0.9rem", fontWeight: 600}}
             >
                 {title}
             </Typography>
@@ -956,8 +983,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
         <Box
             id={`${id}-options-menu-button-container`}
             sx={{
-                backgroundColor: theme.palette.background.paper,
-                borderRadius: "var(--bs-border-radius)",
+                ...glassSurface(theme, SHEEN_RADIUS),
                 position: "absolute",
                 right: theme.spacing(2.5),
                 top: theme.spacing(1),
@@ -1121,21 +1147,67 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             {isAwaitingLlm && (
                 <Box
                     id="awaitingOutputContainer"
-                    sx={{display: "flex", alignItems: "center", fontSize: "smaller"}}
+                    sx={{
+                        alignItems: "center",
+                        animation: `sheenRise 0.4s ${SHEEN_EASE} both`,
+                        display: "flex",
+                        fontSize: "smaller",
+                        gap: "0.75rem",
+                        my: "0.5rem",
+                    }}
                 >
-                    <span
+                    {/* Morphing iridescent orb with a soft halo */}
+                    <Box
+                        aria-label="Working"
+                        component={motion.div}
+                        id="awaitingOutputSpinner"
+                        initial={{opacity: 0, scale: 0.3}}
+                        animate={{opacity: 1, scale: 1}}
+                        transition={{type: "spring", stiffness: 420, damping: 20}}
+                        role="progressbar"
+                        sx={{
+                            flexShrink: 0,
+                            height: ORB_SIZE,
+                            position: "relative",
+                            width: ORB_SIZE,
+                            // Halo
+                            "&::before": {
+                                animation: "sheenSpin 3s linear infinite",
+                                background: sheenConic(theme),
+                                borderRadius: "50%",
+                                content: '""',
+                                filter: "blur(8px)",
+                                inset: -4,
+                                opacity: 0.7,
+                                position: "absolute",
+                            },
+                            // Blob
+                            "&::after": {
+                                animation: `sheenSpin 2.4s linear infinite, ${ORB_MORPH} 3.2s ${SHEEN_EASE} infinite`,
+                                background: [
+                                    "radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.85), transparent 42%)",
+                                    sheenConic(theme),
+                                ].join(", "),
+                                boxShadow: `inset 0 -2px 6px rgba(0, 0, 0, 0.25), 0 0 16px ${getSheen(theme).glow}`,
+                                content: '""',
+                                inset: 0,
+                                position: "absolute",
+                            },
+                        }}
+                    />
+                    {/* Shimmering gradient label */}
+                    <Box
+                        component="span"
                         id="working-span"
-                        style={{marginRight: "1rem"}}
+                        sx={{
+                            ...gradientText(theme),
+                            animationDuration: "2.4s",
+                            fontWeight: 600,
+                            letterSpacing: "0.02em",
+                        }}
                     >
                         Working...
-                    </span>
-                    <CircularProgress
-                        id="awaitingOutputSpinner"
-                        sx={{
-                            color: "var(--bs-primary)",
-                        }}
-                        size="1rem"
-                    />
+                    </Box>
                 </Box>
             )}
         </>
@@ -1159,8 +1231,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             id="llm-response-div"
             sx={{
                 ...divStyle,
-                border: "var(--bs-border-width) var(--bs-border-style)",
-                borderRadius: "var(--bs-border-radius)",
+                border: `1px solid ${getSheen(theme).glassBorder}`,
+                borderRadius: `${SHEEN_RADIUS_SURFACE}px`,
                 display: "flex",
                 flexGrow: 1,
                 marginLeft: "10px",
@@ -1205,7 +1277,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 ref={chatOutputRef}
                 sx={{
                     backgroundColor,
-                    borderRadius: "0.5rem",
+                    borderRadius: `${SHEEN_RADIUS}px`,
                     fontSize: "16px",
                     overflowY: "auto",
                     paddingBottom: "60px",
@@ -1234,6 +1306,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                     <Conversation
                         id={id}
                         includeAgentMessages={!givesFinalAnswer(selectedNetwork)}
+                        isStreaming={isAwaitingLlm}
                         shouldWrapOutput={shouldWrapOutput}
                         turns={turns}
                     />
@@ -1244,6 +1317,49 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             </Box>
         </Box>
     )
+
+    /**
+     * Floating glass pill. A faint gradient hairline brightens on hover/focus; while awaiting a response it becomes a
+     * rotating iridescent border so the input visibly "thinks".
+     */
+    const getUserInputSx = () => {
+        const sheen = getSheen(theme)
+        const border = isAwaitingLlm
+            ? spinningBorder(theme, INPUT_PILL_RADIUS, 1.5)
+            : gradientBorder(theme, INPUT_PILL_RADIUS, 1, 0.35)
+        const restingShadow = `inset 0 1px 0 ${sheen.highlight}, 0 14px 40px -16px rgba(0, 0, 0, 0.45)`
+        return {
+            ...glassSurface(theme),
+            ...border,
+            borderColor: "transparent",
+            borderRadius: `${INPUT_PILL_RADIUS}px`,
+            boxShadow: isAwaitingLlm ? `${restingShadow}, 0 0 28px -10px ${sheen.glow}` : restingShadow,
+            color: "text.primary",
+            display: "flex",
+            flexGrow: 1,
+            fontSize: "17px",
+            marginRight: "0.75rem",
+            paddingBottom: "0.5rem",
+            paddingTop: "0.5rem",
+            paddingLeft: "1.1rem",
+            paddingRight: "1rem",
+            transition: `margin-right 0.2s, box-shadow 0.3s ${SHEEN_EASE}`,
+            "&::before": {...border["&::before"], transition: "opacity 0.3s ease"},
+            "&:hover::before": {opacity: isAwaitingLlm ? 1 : 0.6},
+            "&.Mui-focused": {
+                boxShadow: `${restingShadow}, 0 0 0 4px ${sheen.tint}, ${glowShadow(theme)}`,
+            },
+            "&.Mui-focused::before": {opacity: 1},
+            "& textarea": {
+                overflowY: "auto",
+            },
+            // The pill grows smoothly with its content (MUI's autosize sets an explicit pixel height on the visible
+            // textarea; the hidden measuring copy is aria-hidden and left alone)
+            "& textarea:not([aria-hidden])": {
+                transition: `height 0.28s ${SHEEN_EASE}`,
+            },
+        }
+    }
 
     const getUserInputBox = () => (
         <Box
@@ -1263,22 +1379,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 multiline={true}
                 placeholder={getPlaceholder()}
                 ref={chatInputRef}
-                sx={{
-                    border: "var(--bs-border-style) var(--bs-border-width) var(--bs-gray-light)",
-                    borderRadius: "var(--bs-border-radius)",
-                    display: "flex",
-                    flexGrow: 1,
-                    fontSize: "17px",
-                    marginRight: "0.75rem",
-                    paddingBottom: "0.5rem",
-                    paddingTop: "0.5rem",
-                    paddingLeft: "1rem",
-                    paddingRight: "1rem",
-                    transition: "margin-right 0.2s",
-                    "& textarea": {
-                        overflowY: "auto",
-                    },
-                }}
+                disableUnderline={true}
+                sx={getUserInputSx()}
                 onChange={(event) => {
                     setChatInput(event.target.value)
                 }}
@@ -1300,7 +1402,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                             <CircularProgress
                                 size={16}
                                 sx={{
-                                    color: "var(--bs-primary)",
+                                    color: "primary.main",
                                     marginRight: "0.5rem",
                                 }}
                             />
@@ -1311,7 +1413,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                                 setChatInput("")
                             }}
                             sx={{
-                                color: "var(--bs-primary)",
+                                color: "text.secondary",
                                 opacity: userInputEmpty ? "25%" : "100%",
                             }}
                             disabled={userInputEmpty}
@@ -1375,7 +1477,7 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
             >
                 <AddBoxRounded
                     sx={{
-                        color: "var(--bs-secondary)",
+                        color: "primary.main",
                         fontSize: "1rem",
                     }}
                 />

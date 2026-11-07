@@ -15,6 +15,7 @@ import {sendChatQuery} from "../../../controller/agent/Agent"
 import {StreamingUnit} from "../../../controller/llm/LlmChat"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {getSheen, glassSurface, gradientBorder, sheenGradient} from "../../../Theme/sheen"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {chatMessageFromChunk} from "../../AgentChat/Common/Utils"
 import {MUIAlert} from "../../Common/MUIAlert"
@@ -74,6 +75,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
     tempNetworks,
 }) => {
     const theme = useTheme()
+    const themeVars = theme.vars ?? theme
     // Inline status banner shown above the dock header after an "apply" succeeds, is canceled, or fails.
     const [banner, setBanner] = useState<{severity: AlertColor; title: string; detail: string} | null>(null)
     const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -331,12 +333,14 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                     <Paper
                         elevation={6}
                         sx={{
+                            ...glassSurface(theme),
+                            ...gradientBorder(theme, undefined, 1, 0.5),
+                            boxShadow: theme.shadows[6],
                             display: "flex",
                             flexDirection: "column",
                             gap: 2,
                             px: 4,
                             py: 3,
-                            borderRadius: 2,
                             maxWidth: 420,
                         }}
                     >
@@ -397,12 +401,14 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                     <Paper
                         elevation={6}
                         sx={{
+                            ...glassSurface(theme),
+                            ...gradientBorder(theme, undefined, 1, 0.5),
+                            boxShadow: theme.shadows[6],
                             display: "flex",
                             alignItems: "center",
                             gap: 2,
                             px: 4,
                             py: 2.5,
-                            borderRadius: 2,
                             maxWidth: 480,
                             width: "calc(100% - 32px)",
                         }}
@@ -433,12 +439,12 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                             sx={{
                                 whiteSpace: "nowrap",
                                 flexShrink: 0,
-                                color: theme.palette.common.white,
-                                borderColor: theme.palette.common.white,
+                                color: themeVars.palette.text.primary,
+                                borderColor: themeVars.palette.text.secondary,
                                 fontWeight: "bold",
                                 "&:hover": {
-                                    borderColor: theme.palette.error.main,
-                                    color: theme.palette.error.main,
+                                    borderColor: themeVars.palette.error.main,
+                                    color: themeVars.palette.error.main,
                                     backgroundColor: alpha(theme.palette.error.main, 0.08),
                                 },
                             }}
@@ -489,12 +495,23 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
         isEditingNetwork && (
             <Box
                 sx={{
-                    backdropFilter: "blur(8px)",
-                    backgroundColor: alpha(theme.palette.background.paper, 0.2),
-                    borderTop: `2px solid ${theme.palette.primary.main}`,
+                    ...glassSurface(theme, 0),
+                    borderWidth: 0,
                     flexShrink: 0,
                     position: "relative",
                     zIndex: getZIndex(2, theme),
+                    // Glowing iridescent rule along the top edge marks the dock as "live" edit mode
+                    "&::before": {
+                        background: sheenGradient(theme, 90),
+                        boxShadow: `0 0 16px 1px ${getSheen(theme).glow}`,
+                        content: '""',
+                        height: "2px",
+                        left: 0,
+                        pointerEvents: "none",
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                    },
                 }}
             >
                 {/* Status banner: shown after an "apply" succeeds, is canceled, or fails */}
@@ -502,8 +519,7 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 {/* Dock header */}
                 <Box
                     sx={{
-                        backdropFilter: "blur(6px)",
-                        borderBottom: "1px solid divider",
+                        borderBottom: `1px solid ${getSheen(theme).glassBorder}`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",

@@ -202,6 +202,13 @@ describe("ChatCommon", () => {
             await screen.findByText(sampleQueries[4])
             expect(screen.queryByText(sampleQueries[5])).not.toBeInTheDocument()
 
+            // Sample query chips use the outlined, hairline-bordered style
+            const sampleQueryChips = document.querySelectorAll("#sample-queries-box .MuiChip-root")
+            expect(sampleQueryChips).toHaveLength(MAX_SAMPLE_QUERIES)
+            for (const chip of sampleQueryChips) {
+                expect(chip).toHaveClass("MuiChip-outlined")
+            }
+
             for (const query of sampleQueries.slice(0, MAX_SAMPLE_QUERIES - 1)) {
                 mockSendFunction.mockClear()
                 const truncatedQuery =
@@ -330,6 +337,10 @@ describe("ChatCommon", () => {
 
             // "Regenerate" button should be replaced by "Stop" button while awaiting LLM response
             expect(screen.queryByRole("button", {name: "Regenerate"})).not.toBeInTheDocument()
+
+            // Working indicator: gradient label plus pulsing dots exposed as a progress indicator
+            expect(screen.getByText("Working...")).toHaveAttribute("id", "working-span")
+            expect(screen.getByRole("progressbar", {name: "Working"})).toHaveAttribute("id", "awaitingOutputSpinner")
         })
 
         it("Should handle user input correctly and should call Send on click", async () => {
