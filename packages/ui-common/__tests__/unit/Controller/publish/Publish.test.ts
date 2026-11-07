@@ -136,7 +136,10 @@ describe("Publish", () => {
     it("should keep waiting while the server says it's still building, then return the live URL", async () => {
         fetchMock
             .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
-            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "building"}))
+            // The server answers 504 when a wait times out before the build is done
+            .mockResolvedValueOnce(
+                Response.json({id: PUBLISH_ID, status: "building"}, {status: httpStatus.GATEWAY_TIMEOUT})
+            )
             .mockResolvedValueOnce(
                 Response.json({id: PUBLISH_ID, name: NETWORK_NAME, status: "ready", url: PUBLISHED_URL})
             )
@@ -201,6 +204,17 @@ describe("Publish", () => {
         fetchMock.mockResolvedValue(Response.json({id: PUBLISH_ID, status: "stopped"}, {status: 202}))
 
         await expect(create()).rejects.toThrow("Publishing ended as stopped")
+    })
+
+    // POST /deployments, then GET /deployments/{id}/wait rejected without a detail
+    it("should fail with the status text when the error doesn't say why", async () => {
+        fetchMock
+            .mockResolvedValueOnce(Response.json({id: PUBLISH_ID, status: "queued"}, {status: 202}))
+            .mockResolvedValueOnce(
+                Response.json({}, {status: httpStatus.INTERNAL_SERVER_ERROR, statusText: "Internal Server Error"})
+            )
+
+        await expect(create()).rejects.toThrow("Waiting for the network to go live failed (500): Internal Server Error")
     })
 
     // POST /deployments rejected
