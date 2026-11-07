@@ -2,8 +2,10 @@ import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {MockInstance} from "vitest"
 
+import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {NotificationType, sendNotification} from "../../../../components/Common/notification"
+import {TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PUBLISHED_MESSAGE,
@@ -31,7 +33,7 @@ const PUBLISH_ID = "dep-123"
 const DISPLAY_NAME = "Cailville Bakery"
 const HOCON = "{ tools: [] }"
 const PUBLISHED_URL = "http://live.test/cailville_bakery"
-const NETWORK_ID = "temporary/cailville_bakery-1"
+const NETWORK_ID = `${TEMPORARY_NETWORK_FOLDER}/cailville_bakery-1`
 const NETWORK_NAME = "cailville_bakery"
 // What a network published before was published under, with the id MAUI adds when the org already has the name
 const PUBLISH_NAME = `${NETWORK_NAME}_1a2b3c4d`
@@ -56,20 +58,23 @@ describe("PublishButton", () => {
     let user: UserEvent
     let openSpy: MockInstance<typeof window.open>
 
-    const makePublishedNetwork = (): PublishedNetwork => ({id: PUBLISH_ID, url: PUBLISHED_URL})
+    const makePublishedNetwork = (): Required<PublishedNetwork> => ({id: PUBLISH_ID, url: PUBLISHED_URL})
 
-    const makeTempNetwork = (id: string, networkName: string, deploymentId?: string): TemporaryNetwork => ({
-        reservation: {reservation_id: id, lifetime_in_seconds: 300, expiration_time_in_seconds: 0},
-        agentInfo: {agent_name: id},
-        agentNetworkName: networkName,
+    const makeNetwork = (id: string, networkName: string, deploymentId?: string): TemporaryNetwork => ({
+        ...makeTempNetwork(id, undefined, networkName),
         ...(deploymentId && {
-            published: {serverUrl: SERVER_URL, orgName: ORG_NAME, deploymentId, name: `${networkName}_1a2b3c4d`},
+            deployment: {
+                serverUrl: SERVER_URL,
+                orgName: ORG_NAME,
+                deploymentId,
+                name: `${networkName}_1a2b3c4d`,
+            },
         }),
     })
 
     /** As if this browser published the network before, for example before a reload */
     const setPublishedBefore = (deploymentId = PUBLISH_ID) => {
-        useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(NETWORK_ID, NETWORK_NAME, deploymentId)])
+        useTempNetworksStore.getState().setTempNetworks([makeNetwork(NETWORK_ID, NETWORK_NAME, deploymentId)])
     }
 
     /**
@@ -79,7 +84,7 @@ describe("PublishButton", () => {
         let release!: () => void
         mockPublishNetwork.mockImplementation(
             ({onAccepted}) =>
-                new Promise<PublishedNetwork>((resolve) => {
+                new Promise<Required<PublishedNetwork>>((resolve) => {
                     onAccepted?.(PUBLISH_ID)
                     release = () => resolve(makePublishedNetwork())
                 })
@@ -156,7 +161,7 @@ describe("PublishButton", () => {
         user = userEvent.setup()
         openSpy = vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         usePublishStore.setState(usePublishStore.getInitialState())
-        useTempNetworksStore.getState().setTempNetworks([makeTempNetwork(NETWORK_ID, NETWORK_NAME)])
+        useTempNetworksStore.getState().setTempNetworks([makeNetwork(NETWORK_ID, NETWORK_NAME)])
         useSettingsStore.getState().resetSettings()
         useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: ORG_NAME}})
         vi.mocked(isPublishNameTaken).mockResolvedValue(false)
@@ -260,8 +265,8 @@ describe("PublishButton", () => {
         useTempNetworksStore
             .getState()
             .setTempNetworks([
-                makeTempNetwork("temporary/first", "first_network", "first-dep"),
-                makeTempNetwork("temporary/second", "second_network", "second-dep"),
+                makeNetwork(`${TEMPORARY_NETWORK_FOLDER}/first`, "first_network", "first-dep"),
+                makeNetwork(`${TEMPORARY_NETWORK_FOLDER}/second`, "second_network", "second-dep"),
             ])
         render(
             <>
@@ -269,14 +274,14 @@ describe("PublishButton", () => {
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="first-publish-button"
-                    networkId="temporary/first"
+                    networkId={`${TEMPORARY_NETWORK_FOLDER}/first`}
                     networkName="first_network"
                 />
                 <PublishButton
                     displayName={DISPLAY_NAME}
                     hocon={HOCON}
                     id="second-publish-button"
-                    networkId="temporary/second"
+                    networkId={`${TEMPORARY_NETWORK_FOLDER}/second`}
                     networkName="second_network"
                 />
             </>
@@ -502,12 +507,12 @@ describe("PublishButton", () => {
     })
 
     it("should finish publishing on the edited network when it's edited while publishing", async () => {
-        const editedId = "temporary/cailville_bakery-2"
+        const editedId = `${TEMPORARY_NETWORK_FOLDER}/cailville_bakery-2`
         let finishPublish!: () => void
         // The server only accepts it after the edit, which is the latest it can
         mockPublishNetwork.mockImplementation(
             ({onAccepted}) =>
-                new Promise<PublishedNetwork>((resolve) => {
+                new Promise<Required<PublishedNetwork>>((resolve) => {
                     finishPublish = () => {
                         onAccepted?.(PUBLISH_ID)
                         resolve(makePublishedNetwork())
@@ -521,7 +526,7 @@ describe("PublishButton", () => {
 
         // Editing replaces the network with one under a new id, and the title bar shows that one
         act(() => {
-            useTempNetworksStore.getState().upsertTempNetworks([makeTempNetwork(editedId, NETWORK_NAME)])
+            useTempNetworksStore.getState().upsertTempNetworks([makeNetwork(editedId, NETWORK_NAME)])
             usePublishStore.getState().replaceNetwork(NETWORK_ID, editedId)
         })
         render(
@@ -538,17 +543,17 @@ describe("PublishButton", () => {
         act(() => finishPublish())
 
         await screen.findByRole("button", {name: "View live"})
-        expect(useTempNetworksStore.getState().tempNetworks[0].published?.deploymentId).toBe(PUBLISH_ID)
+        expect(useTempNetworksStore.getState().tempNetworks[0].deployment?.deploymentId).toBe(PUBLISH_ID)
     })
 
     it("should show a published network as published after it's edited", async () => {
-        const editedId = "temporary/cailville_bakery-2"
+        const editedId = `${TEMPORARY_NETWORK_FOLDER}/cailville_bakery-2`
         renderPublishButton()
         await publishAndWaitUntilLive()
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
 
         // Editing replaces the network with one under a new id
-        useTempNetworksStore.getState().upsertTempNetworks([makeTempNetwork(editedId, NETWORK_NAME)])
+        useTempNetworksStore.getState().upsertTempNetworks([makeNetwork(editedId, NETWORK_NAME)])
         render(
             <PublishButton
                 displayName={DISPLAY_NAME}

@@ -68,8 +68,8 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
     const target = usePublishTarget(networkId, networkName)
 
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-    const [isPanelOpen, setIsPanelOpen] = useState(false)
+    const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
+    const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
@@ -77,44 +77,50 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
         setIsPanelOpen(true)
-        await publish(network, hocon, publishTarget, refreshTheme)
-        setIsPanelOpen(false)
+        try {
+            await publish(network, hocon, publishTarget, refreshTheme)
+        } finally {
+            setIsPanelOpen(false)
+        }
     }
 
     const handleUnpublish = async (published: Published) => {
-        await unpublish(network, published)
-        setIsPanelOpen(false)
+        try {
+            await unpublish(network, published)
+        } finally {
+            setIsPanelOpen(false)
+        }
     }
 
     const getMainAction = (): MainAction => {
-        if (publishState?.status === PublishStatus.Publishing) {
-            return {
-                color: "primary",
-                icon: (
-                    <CircularProgress
-                        color="inherit"
-                        size="1rem"
-                    />
-                ),
-                label: "Publishing...",
-                handleClick: () => setIsPanelOpen(true),
-            }
-        }
-
-        if (publishState?.status === PublishStatus.Published) {
-            return {
-                color: "success",
-                icon: <OpenInNewIcon />,
-                label: "View live",
-                handleClick: () => openInNewTab(publishState.url),
-            }
-        }
-
-        return {
-            color: "primary",
-            icon: <PublicIcon />,
-            label: "Publish",
-            handleClick: () => setIsConfirmOpen(true),
+        switch (publishState?.status) {
+            case PublishStatus.Publishing:
+                return {
+                    color: "primary",
+                    icon: (
+                        <CircularProgress
+                            color="inherit"
+                            size="1rem"
+                        />
+                    ),
+                    label: "Publishing...",
+                    handleClick: () => setIsPanelOpen(true),
+                }
+            case PublishStatus.Published:
+                return {
+                    color: "success",
+                    icon: <OpenInNewIcon />,
+                    label: "View live",
+                    handleClick: () => openInNewTab(publishState.url),
+                }
+            case PublishStatus.Unpublished:
+            default:
+                return {
+                    color: "primary",
+                    icon: <PublicIcon />,
+                    label: "Publish",
+                    handleClick: () => setIsConfirmOpen(true),
+                }
         }
     }
 

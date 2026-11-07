@@ -23,8 +23,8 @@ limitations under the License.
 
 export interface PublishedNetwork {
     readonly id: string
-    /** Null when it isn't live, since the server keeps unpublished and failed networks */
-    readonly url: string | null
+    /** Only set while the network is live. The server also lists unpublished and failed networks. */
+    readonly url?: string
 }
 
 interface PublishNetworkRequest {
@@ -32,9 +32,9 @@ interface PublishNetworkRequest {
     readonly orgName: string
     readonly networkName: string
     readonly hocon: string
-    /** Has the server make a new theme instead of keeping the one it made before */
+    /** Makes a new theme instead of keeping the theme the server made before */
     readonly refreshTheme?: boolean
-    /** Called with the server's id for it as soon as the server accepts it, before it's live */
+    /** Called with the deployment id as soon as the server accepts the publish, before the network is live */
     readonly onAccepted?: (id: string) => void
 }
 
@@ -48,8 +48,6 @@ interface ServerNetwork {
     readonly url?: string | null
     readonly error?: string | null
 }
-
-type LiveNetwork = PublishedNetwork & {readonly url: string}
 
 //#endregion Types
 
@@ -86,8 +84,8 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
 
 /**
  * Checks that a publishing server is up and accepts our token.
- * @returns Whether it's a healthy publishing server that accepts the token. False if it couldn't be reached, didn't
- * answer in time, isn't a publishing server, isn't OK, or turned the token down.
+ * @returns Whether the server is a healthy publishing server that accepts the token. False if the server couldn't be
+ * reached, didn't answer in time, isn't a publishing server, isn't healthy, or turned the token down.
  */
 export const checkHealth = async (serverUrl: string): Promise<boolean> => {
     try {
@@ -109,28 +107,25 @@ export const checkHealth = async (serverUrl: string): Promise<boolean> => {
 }
 
 /**
- * Lists the server's published networks, live or unpublished, which networks are found in by id.
+ * Lists the server's published networks, live or unpublished.
  */
 export const listPublishedNetworks = async (serverUrl: string): Promise<PublishedNetwork[]> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    // Unpublishing stops it, and a failed publish leaves it failed. The server keeps both, so both can be published
-    // again.
-    const isListed = (network: ServerNetwork) =>
-        (network.status === "ready" && Boolean(network.url)) ||
-        network.status === "stopped" ||
-        network.status === "failed"
-
-    return networks
-        .filter((network) => isListed(network))
-        .map((network) => ({id: network.id, url: network.status === "ready" ? network.url : null}))
+    return networks.flatMap((network): PublishedNetwork[] => {
+        if (network.status === "ready" && network.url) return [{id: network.id, url: network.url}]
+        // Unpublishing stops a network, and a failed publish leaves the network failed. The server keeps both, so both
+        // can be published again.
+        if (network.status === "stopped" || network.status === "failed") return [{id: network.id}]
+        return []
+    })
 }
 
 /**
- * Checks whether the org already has a network published under the name, live or not. Publishing under it would
- * replace that network.
+ * Checks whether the org already has a network published under the name, live or not. Publishing under the same
+ * name would replace that network.
  */
 export const isPublishNameTaken = async (serverUrl: string, orgName: string, networkName: string): Promise<boolean> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
@@ -153,7 +148,7 @@ export const publishNetwork = async ({
     hocon,
     refreshTheme = false,
     onAccepted,
-}: PublishNetworkRequest): Promise<LiveNetwork> => {
+}: PublishNetworkRequest): Promise<Required<PublishedNetwork>> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
@@ -171,8 +166,8 @@ export const publishNetwork = async ({
         const waitResponse = await fetch(
             publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
         )
-        // When the wait times out, the server answers with it still building, so this asks again
-        await throwIfNotOk(waitResponse, "Waiting for it to go live")
+        // When the wait times out, the server answers with the network still building, so this asks again
+        await throwIfNotOk(waitResponse, "Waiting for the network to go live")
         network = await waitResponse.json()
     }
 
@@ -184,7 +179,8 @@ export const publishNetwork = async ({
 }
 
 /**
- * Stops a published network, which takes it off the map. The server keeps it, so it can be published again.
+ * Stops a published network, which takes the network off the map. The server keeps the network, so it can be published
+ * again.
  */
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
     const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})

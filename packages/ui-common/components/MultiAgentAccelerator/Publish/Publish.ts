@@ -62,13 +62,15 @@ export const openInNewTab = (url: string): boolean => {
  * The deployment this browser published the network to, unless Settings has since changed the publishing server or
  * org, since its id only means something there
  */
-const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null => {
-    const published = useTempNetworksStore
+const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null =>
+    useTempNetworksStore
         .getState()
-        .tempNetworks.find((network) => network.agentInfo.agent_name === networkId)?.published
-    const isSameTarget = published?.serverUrl === serverUrl && published.orgName.toLowerCase() === orgName.toLowerCase()
-    return isSameTarget ? published : null
-}
+        .tempNetworks.find(
+            ({agentInfo, deployment}) =>
+                agentInfo.agent_name === networkId &&
+                deployment?.serverUrl === serverUrl &&
+                deployment.orgName.toLowerCase() === orgName.toLowerCase()
+        )?.deployment ?? null
 
 /**
  * Asks the server how the network this browser published is doing, for example after a reload, and remembers it.
@@ -135,25 +137,28 @@ export const publish = async (
         // Publishing again goes to the same deployment, under the name it was first published under
         const publishName =
             getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(network.name, target))
-        const ready = await publishNetwork({
+        const liveNetwork = await publishNetwork({
             serverUrl,
             orgName,
             networkName: publishName,
             hocon,
             refreshTheme,
-            // Remembered as soon as the server has it, so a publish that fails can still be published again. On the
-            // network that's there now, in case it was edited while publishing.
+            // Save the deployment id as soon as the server accepts the publish, so MAUI can still find the deployment
+            // if the build fails. Saved on the current network, since the user may have edited the network while
+            // publishing.
             onAccepted: (deploymentId) =>
-                useTempNetworksStore.getState().setTempNetworkPublished(resolveNetworkId(network.id), {
-                    serverUrl,
-                    orgName,
-                    deploymentId,
-                    name: publishName,
+                useTempNetworksStore.getState().updateTempNetwork(resolveNetworkId(network.id), {
+                    deployment: {serverUrl, orgName, deploymentId, name: publishName},
                 }),
         })
-        setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
+        setPublishState(network.id, {
+            status: PublishStatus.Published,
+            serverUrl,
+            publishId: liveNetwork.id,
+            url: liveNetwork.url,
+        })
 
-        const message = openInNewTab(ready.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
+        const message = openInNewTab(liveNetwork.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
         sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})
     } catch (e) {
         sendNotification(NotificationType.error, `Failed to publish "${network.name}".`, String(e))

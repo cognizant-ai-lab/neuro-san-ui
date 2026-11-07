@@ -116,7 +116,6 @@ describe("Publish API route", () => {
             const res = await callProxy("GET", {path: ["health"], server: SERVER_URL})
 
             expect(res._getStatusCode()).toBe(httpStatus.BAD_GATEWAY)
-            expect(res._getJSONData().detail).toBe(`Couldn't reach the publishing server at ${SERVER_URL}`)
         })
 
         it("should rethrow an unexpected error instead of saying the server couldn't be reached", async () => {

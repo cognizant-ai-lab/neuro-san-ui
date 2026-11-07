@@ -182,8 +182,8 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
                 if (networkId) {
                     useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
-                    // The replacement has a new id, so it takes over the publish state too. A publish that's still
-                    // running finishes on it.
+                    // Move the publish state to the edited network, which has a new id. A publish that's still running
+                    // finishes on the edited network.
                     usePublishStore.getState().replaceNetwork(networkId, replacement.agentInfo.agent_name)
                     setSelectedNetwork(replacement.agentInfo.agent_name)
                 }

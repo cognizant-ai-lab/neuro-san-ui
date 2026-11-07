@@ -17,7 +17,7 @@ limitations under the License.
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {PublishedDeployment, TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 
-const PUBLISHED: PublishedDeployment = {
+const PUBLISHED_DEPLOYMENT: PublishedDeployment = {
     serverUrl: "https://publish.test",
     orgName: "cailville",
     deploymentId: "dep-1",
@@ -133,17 +133,19 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
 
     it("keeps where a network was published when an edit replaces it", () => {
         useTempNetworksStore.getState().upsertTempNetworks([makeNetwork("network_alpha-1", "network_alpha")])
-        useTempNetworksStore.getState().setTempNetworkPublished("temporary/network_alpha-1", PUBLISHED)
+        useTempNetworksStore
+            .getState()
+            .updateTempNetwork("temporary/network_alpha-1", {deployment: PUBLISHED_DEPLOYMENT})
 
         useTempNetworksStore.getState().upsertTempNetworks([makeNetwork("network_alpha-2", "network_alpha")])
 
         const [stored] = useTempNetworksStore.getState().tempNetworks
         expect(stored.agentInfo.agent_name).toBe("temporary/network_alpha-2")
-        expect(stored.published).toEqual(PUBLISHED)
+        expect(stored.deployment).toEqual(PUBLISHED_DEPLOYMENT)
     })
 })
 
-describe("useTempNetworksStore / setTempNetworkPublished", () => {
+describe("useTempNetworksStore / updateTempNetwork", () => {
     withStrictMocks()
 
     beforeEach(() => {
@@ -155,10 +157,10 @@ describe("useTempNetworksStore / setTempNetworkPublished", () => {
             .getState()
             .upsertTempNetworks([makeNetwork("res-1", "network_alpha"), makeNetwork("res-2", "network_beta")])
 
-        useTempNetworksStore.getState().setTempNetworkPublished("temporary/res-1", PUBLISHED)
+        useTempNetworksStore.getState().updateTempNetwork("temporary/res-1", {deployment: PUBLISHED_DEPLOYMENT})
 
         const [alpha, beta] = useTempNetworksStore.getState().tempNetworks
-        expect(alpha.published).toEqual(PUBLISHED)
-        expect(beta.published).toBeUndefined()
+        expect(alpha.deployment).toEqual(PUBLISHED_DEPLOYMENT)
+        expect(beta.deployment).toBeUndefined()
     })
 })
