@@ -149,6 +149,23 @@ export const isPublishNameTaken = async (serverUrl: string, orgName: string, net
 }
 
 /**
+ * Reads the network from a wait. When the wait times out, the server answers 504 with the network still building, so
+ * the caller asks again. Any other 504, like our route's when the server doesn't answer at all, is an error.
+ */
+const readWaitResponse = async (response: Response): Promise<ServerNetwork> => {
+    if (response.status === httpStatus.GATEWAY_TIMEOUT) {
+        const network: ServerNetwork | null = await response
+            .clone()
+            .json()
+            .catch((): null => null)
+        if (network?.status) return network
+    }
+
+    await throwIfNotOk(response, "Waiting for the network to go live")
+    return response.json()
+}
+
+/**
  * Uploads the HOCON and waits until the network is live.
  */
 export const publishNetwork = async ({
@@ -176,11 +193,7 @@ export const publishNetwork = async ({
         const waitResponse = await fetch(
             publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
         )
-        // When the wait times out, the server answers 504 with the network still building, so this asks again
-        if (waitResponse.status !== httpStatus.GATEWAY_TIMEOUT) {
-            await throwIfNotOk(waitResponse, "Waiting for the network to go live")
-        }
-        network = await waitResponse.json()
+        network = await readWaitResponse(waitResponse)
     }
 
     if (network.status !== "ready" || !network.url) {
