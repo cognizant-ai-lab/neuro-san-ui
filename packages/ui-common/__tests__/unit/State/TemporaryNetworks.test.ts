@@ -15,7 +15,14 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {PublishedDeployment, TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+
+const PUBLISHED_DEPLOYMENT: PublishedDeployment = {
+    serverUrl: "https://publish.test",
+    orgName: "cailville",
+    deploymentId: "dep-1",
+    name: "network_alpha_1a2b3c4d",
+}
 
 const makeNetwork = (reservationId: string, agentNetworkName?: string): TemporaryNetwork => ({
     reservation: {
@@ -122,5 +129,38 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
         expect(stored.find((n) => n.agentNetworkName === "brand_new_name")?.agentInfo.agent_name).toBe(
             "temporary/brand_new_name-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
         )
+    })
+
+    it("keeps where a network was published when an edit replaces it", () => {
+        useTempNetworksStore.getState().upsertTempNetworks([makeNetwork("network_alpha-1", "network_alpha")])
+        useTempNetworksStore
+            .getState()
+            .updateTempNetwork("temporary/network_alpha-1", {deployment: PUBLISHED_DEPLOYMENT})
+
+        useTempNetworksStore.getState().upsertTempNetworks([makeNetwork("network_alpha-2", "network_alpha")])
+
+        const [stored] = useTempNetworksStore.getState().tempNetworks
+        expect(stored.agentInfo.agent_name).toBe("temporary/network_alpha-2")
+        expect(stored.deployment).toEqual(PUBLISHED_DEPLOYMENT)
+    })
+})
+
+describe("useTempNetworksStore / updateTempNetwork", () => {
+    withStrictMocks()
+
+    beforeEach(() => {
+        useTempNetworksStore.getState().setTempNetworks([])
+    })
+
+    it("remembers where only that network was published", () => {
+        useTempNetworksStore
+            .getState()
+            .upsertTempNetworks([makeNetwork("res-1", "network_alpha"), makeNetwork("res-2", "network_beta")])
+
+        useTempNetworksStore.getState().updateTempNetwork("temporary/res-1", {deployment: PUBLISHED_DEPLOYMENT})
+
+        const [alpha, beta] = useTempNetworksStore.getState().tempNetworks
+        expect(alpha.deployment).toEqual(PUBLISHED_DEPLOYMENT)
+        expect(beta.deployment).toBeUndefined()
     })
 })

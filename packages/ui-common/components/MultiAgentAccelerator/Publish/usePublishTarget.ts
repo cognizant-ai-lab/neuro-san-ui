@@ -21,8 +21,8 @@ import {usePublishServerUrl} from "../../../state/Publish"
 import {useSettingsStore} from "../../../state/Settings"
 
 /**
- * Where to publish the network, or null until there's a server and an org name. Also asks the server whether the
- * network is already live, since we only remember that in memory.
+ * Where to publish the network, or null until there's a server and an org name. Also asks the server how the network
+ * is doing if this browser published it, since its publish state is only kept in memory.
  */
 export const usePublishTarget = (networkId: string, networkName: string): PublishTarget | null => {
     const serverUrl = usePublishServerUrl()

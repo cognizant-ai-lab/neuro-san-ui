@@ -39,6 +39,7 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
@@ -49,7 +50,7 @@ import {
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
-import {listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
+import {isPublishNameTaken, listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
@@ -652,6 +653,11 @@ describe("SideBar", () => {
             },
         }
 
+        const markUnpublished = () =>
+            usePublishStore.setState({
+                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Unpublished}},
+            })
+
         const markLive = () =>
             usePublishStore.setState({
                 networks: {
@@ -669,11 +675,8 @@ describe("SideBar", () => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: "cailville"}})
             usePublishStore.setState(usePublishStore.getInitialState())
             vi.mocked(listPublishedNetworks).mockResolvedValue([])
-            vi.mocked(publishNetwork).mockResolvedValue({
-                id: "dep-123",
-                name: TEMPORARY_NETWORK.agentNetworkName,
-                url: PUBLISHED_URL,
-            })
+            vi.mocked(isPublishNameTaken).mockResolvedValue(false)
+            vi.mocked(publishNetwork).mockResolvedValue({id: "dep-123", url: PUBLISHED_URL})
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
 
@@ -745,7 +748,7 @@ describe("SideBar", () => {
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
         })
 
-        it("Should open the live site once the temporary network is live", async () => {
+        it("Should open the live site once the temporary network is live, without opening the network", async () => {
             markLive()
             renderWithTemporaryNetwork()
             const viewLiveButton = await screen.findByRole("button", {name: "View live"})
@@ -753,6 +756,47 @@ describe("SideBar", () => {
             await user.click(viewLiveButton)
 
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should ask before publishing an unpublished temporary network again, without opening it", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+            const confirmation = await screen.findByRole("dialog")
+            const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
+            await user.click(confirmButton)
+
+            await waitFor(() =>
+                expect(publishNetwork).toHaveBeenCalledWith(expect.objectContaining({refreshTheme: false}))
+            )
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should offer to recreate the theme when publishing an unpublished temporary network again", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+
+            const confirmation = await screen.findByRole("dialog")
+            within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})
+        })
+
+        it("Should cancel publishing again with Escape, without publishing or opening the network", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
+            await screen.findByRole("dialog")
+
+            await user.keyboard("{Escape}")
+
+            await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+            expect(publishNetwork).not.toHaveBeenCalled()
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 

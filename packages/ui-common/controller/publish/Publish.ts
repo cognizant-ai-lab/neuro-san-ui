@@ -19,16 +19,12 @@ limitations under the License.
  * requests from browsers.
  */
 
-import httpStatus from "http-status"
-
-import {testConnection, TestConnectionResult} from "../agent/Agent"
-
 //#region Types
 
 export interface PublishedNetwork {
     readonly id: string
-    readonly name: string
-    readonly url: string
+    /** Only set while the network is live. The server also lists unpublished and failed networks. */
+    readonly url?: string
 }
 
 interface PublishNetworkRequest {
@@ -36,6 +32,10 @@ interface PublishNetworkRequest {
     readonly orgName: string
     readonly networkName: string
     readonly hocon: string
+    /** Makes a new theme instead of keeping the theme the server made before */
+    readonly refreshTheme?: boolean
+    /** Called with the deployment id as soon as the server accepts the publish, before the network is live */
+    readonly onAccepted?: (id: string) => void
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -53,8 +53,11 @@ interface ServerNetwork {
 
 //#region Constants
 
+// How long the Settings test waits for the server to answer
+const HEALTH_TIMEOUT_MS = 5_000
+
 // How long each /wait request holds open waiting for the build to finish
-const WAIT_TIMEOUT_SECONDS = 60
+export const WAIT_TIMEOUT_SECONDS = 60
 
 //#endregion Constants
 
@@ -80,23 +83,58 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
 }
 
 /**
- * Checks that a publish server is up.
+ * Checks that a publishing server is up and accepts our token.
+ * @returns Whether the server is a healthy publishing server that accepts the token. False if the server couldn't be
+ * reached, didn't answer in time, isn't a publishing server, isn't healthy, or turned the token down.
  */
-export const checkHealth = (serverUrl: string): Promise<TestConnectionResult> =>
-    testConnection(publishRouteUrl(serverUrl, "health"))
+export const checkHealth = async (serverUrl: string): Promise<boolean> => {
+    try {
+        const signal = AbortSignal.timeout(HEALTH_TIMEOUT_MS)
+
+        const healthResponse = await fetch(publishRouteUrl(serverUrl, "health"), {signal})
+        if (!healthResponse.ok) return false
+
+        // Other servers can answer "ok" too, but only a publishing server reports its port pool
+        const health: {status?: string; port_pool?: unknown} = await healthResponse.json()
+        if (health.status !== "ok" || !health.port_pool) return false
+
+        // /health doesn't need the token, so also ask for something that does
+        const listResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {signal})
+        return listResponse.ok
+    } catch {
+        return false
+    }
+}
 
 /**
- * Lists the org's live networks.
+ * Lists the server's published networks, live or unpublished.
  */
-export const listPublishedNetworks = async (serverUrl: string, orgName: string): Promise<PublishedNetwork[]> => {
+export const listPublishedNetworks = async (serverUrl: string): Promise<PublishedNetwork[]> => {
     const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
     await throwIfNotOk(response, "Listing published networks")
     const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
 
-    return networks.flatMap((network) =>
-        network.org_name === orgName && network.status === "ready" && network.url
-            ? [{id: network.id, name: network.name, url: network.url}]
-            : []
+    return networks.flatMap((network): PublishedNetwork[] => {
+        if (network.status === "ready" && network.url) return [{id: network.id, url: network.url}]
+        // Unpublishing stops a network, and a failed publish leaves the network failed. The server keeps both, so both
+        // can be published again.
+        if (network.status === "stopped" || network.status === "failed") return [{id: network.id}]
+        return []
+    })
+}
+
+/**
+ * Checks whether the org already has a network published under the name, live or not. Publishing under the same
+ * name would replace that network.
+ */
+export const isPublishNameTaken = async (serverUrl: string, orgName: string, networkName: string): Promise<boolean> => {
+    const response = await fetch(publishRouteUrl(serverUrl, "deployments"))
+    await throwIfNotOk(response, "Listing published networks")
+    const {deployments: networks}: {deployments: ServerNetwork[]} = await response.json()
+
+    // The server files an org under the spelling it first saw, whatever the case
+    return networks.some(
+        (network) => network.name === networkName && network.org_name.toLowerCase() === orgName.toLowerCase()
     )
 }
 
@@ -108,39 +146,41 @@ export const publishNetwork = async ({
     orgName,
     networkName,
     hocon,
-}: PublishNetworkRequest): Promise<PublishedNetwork> => {
+    refreshTheme = false,
+    onAccepted,
+}: PublishNetworkRequest): Promise<Required<PublishedNetwork>> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
     form.append("name", networkName)
     form.append("org_name", orgName)
     // Without theme the server makes a plain page. theme_refresh=false keeps a theme it already made for this network.
     form.append("theme", "true")
-    form.append("theme_refresh", "false")
+    form.append("theme_refresh", String(refreshTheme))
 
     const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
     await throwIfNotOk(createResponse, "Publishing")
     let network: ServerNetwork = await createResponse.json()
+    onAccepted?.(network.id)
 
     while (network.status === "queued" || network.status === "building") {
         const waitResponse = await fetch(
             publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
         )
-        // A timeout means it's still building, so ask again
-        if (waitResponse.status !== httpStatus.GATEWAY_TIMEOUT) {
-            await throwIfNotOk(waitResponse, "Waiting for it to go live")
-            network = await waitResponse.json()
-        }
+        // When the wait times out, the server answers with the network still building, so this asks again
+        await throwIfNotOk(waitResponse, "Waiting for the network to go live")
+        network = await waitResponse.json()
     }
 
     if (network.status !== "ready" || !network.url) {
         throw new Error(network.error || `Publishing ended as ${network.status}`)
     }
 
-    return {id: network.id, name: network.name, url: network.url}
+    return {id: network.id, url: network.url}
 }
 
 /**
- * Takes a published network offline.
+ * Stops a published network, which takes the network off the map. The server keeps the network, so it can be published
+ * again.
  */
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
     const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
