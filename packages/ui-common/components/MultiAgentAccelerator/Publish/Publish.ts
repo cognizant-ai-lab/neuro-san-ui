@@ -230,7 +230,11 @@ export const downloadBundle = async (network: PublishNetwork, published: Publish
         const {archive, fileName} = await fetchBundle(published.serverUrl, published.publishId)
         downloadFile(archive, fileName, "application/gzip")
     } catch (e) {
-        sendNotification(NotificationType.error, `Failed to download a bundle of "${network.name}".`, String(e))
+        sendNotification(
+            NotificationType.error,
+            `Failed to download a bundle of "${network.name}".`,
+            e instanceof Error ? e.message : String(e)
+        )
     }
 
     // It can be republished while the bundle builds, so this only clears the flag if it's still live

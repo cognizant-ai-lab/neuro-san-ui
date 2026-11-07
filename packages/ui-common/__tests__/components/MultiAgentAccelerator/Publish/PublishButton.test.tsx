@@ -803,8 +803,8 @@ describe("PublishButton", () => {
         expect(downloadButton).toBeDisabled()
     })
 
-    it("should report the error when the bundle can't be built", async () => {
-        vi.mocked(fetchBundle).mockRejectedValue(new Error(SERVER_ERROR))
+    it.each(FAILURES)("should report the error when the bundle can't be built with $desc", async ({failure}) => {
+        vi.mocked(fetchBundle).mockRejectedValue(failure)
         renderPublishButton()
         await publishAndWaitUntilLive()
 
@@ -814,7 +814,7 @@ describe("PublishButton", () => {
             expect(sendNotification).toHaveBeenCalledWith(
                 NotificationType.error,
                 `Failed to download a bundle of "${NETWORK_NAME}".`,
-                expect.stringContaining(SERVER_ERROR)
+                SERVER_ERROR
             )
         )
         expect(downloadFile).not.toHaveBeenCalled()
