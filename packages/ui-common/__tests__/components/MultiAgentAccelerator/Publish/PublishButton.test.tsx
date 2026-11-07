@@ -751,6 +751,47 @@ describe("PublishButton", () => {
         expect(screen.getByText("Publish to put it back online.")).toBeVisible()
     })
 
+    it("should report the error and offer to publish again while the server is still being asked", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
+        // The server never answers
+        vi.mocked(listPublishedNetworks).mockReturnValue(new Promise(vi.fn()))
+        const confirmation = await clickRepublish()
+
+        await confirmRepublish(confirmation)
+
+        await waitFor(() =>
+            expect(sendNotification).toHaveBeenCalledWith(
+                NotificationType.error,
+                `Failed to publish "${NETWORK_NAME}".`,
+                SERVER_ERROR
+            )
+        )
+        await screen.findByRole("button", {name: "Publish"})
+    })
+
+    it("should keep publishing when the server answers after the user published again", async () => {
+        renderPublishButton()
+        await publishAndWaitUntilLive()
+        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
+        let answerList: (networks: PublishedNetwork[]) => void
+        vi.mocked(listPublishedNetworks).mockReturnValue(
+            new Promise((resolve) => {
+                answerList = resolve
+            })
+        )
+        await confirmRepublish(await clickRepublish())
+        // Still publishing when the server answers
+        mockPublishNetwork.mockReturnValue(new Promise(vi.fn()))
+        await clickPublishAndConfirm()
+        await screen.findByRole("progressbar", {name: "Publishing progress"})
+
+        await act(async () => answerList([makePublishedNetwork()]))
+
+        expect(screen.getByRole("progressbar", {name: "Publishing progress"})).toBeVisible()
+    })
+
     it("should ask the server again when republishing fails, and show what it says", async () => {
         renderPublishButton()
         await publishAndWaitUntilLive()
