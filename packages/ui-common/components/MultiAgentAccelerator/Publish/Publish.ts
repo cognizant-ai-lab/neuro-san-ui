@@ -113,6 +113,18 @@ export const fetchPublishState = async (networkId: string, target: PublishTarget
 }
 
 /**
+ * Asks the server for the network's publish state after a failed publish, and shows it unless the user has started
+ * publishing again since
+ */
+const showServerPublishState = async (networkId: string, target: PublishTarget): Promise<void> => {
+    const serverState = await fetchPublishState(resolveNetworkId(networkId), target).catch((): null => null)
+    const {networks, setPublishState} = usePublishStore.getState()
+    if (serverState && networks[resolveNetworkId(networkId)]?.status !== PublishStatus.Publishing) {
+        setPublishState(networkId, serverState)
+    }
+}
+
+/**
  * A name to publish the network under for the first time: its own name, unless the org already has a network under
  * it. The server would replace that network, which may be someone else's, so then it ends in an id of its own.
  */
@@ -172,16 +184,15 @@ export const publish = async (
         })
         return {url: liveNetwork.url}
     } catch (e) {
-        // A failed republish can leave the network live, unpublished, or never published, so ask the server which
-        setPublishedList(null)
-        const serverState = await fetchPublishState(resolveNetworkId(network.id), target).catch((): null => null)
-        // If the server couldn't say and the network was published before, keep offering to recreate its theme
-        const stateNow = serverState ?? (previousState ? {status: PublishStatus.Unpublished} : null)
-        if (stateNow) {
-            setPublishState(network.id, stateNow)
+        // A failed republish can leave the network live, unpublished, or never published. Until the server says which,
+        // a network that was published before shows as unpublished, so it still offers to recreate its theme.
+        if (previousState) {
+            setPublishState(network.id, {status: PublishStatus.Unpublished})
         } else {
             clearPublishState(network.id)
         }
+        setPublishedList(null)
+        void showServerPublishState(network.id, target)
         return {error: e instanceof Error ? e.message : String(e)}
     }
 }
