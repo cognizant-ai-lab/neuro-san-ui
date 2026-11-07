@@ -18,9 +18,12 @@ import Button, {ButtonProps} from "@mui/material/Button"
 import {styled} from "@mui/material/styles"
 import {ComponentType} from "react"
 
+import {getSheen, SHEEN_RADIUS} from "../../../Theme/sheen"
+
 export const LlmChatButton: ComponentType<ButtonProps> = styled(Button)<ButtonProps>(({disabled, theme}) => ({
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: "var(--bs-border-radius)",
+    backgroundColor: (theme.vars ?? theme).palette.background.paper,
+    border: `1px solid ${getSheen(theme).glassBorder}`,
+    borderRadius: SHEEN_RADIUS,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? "50%" : "100%",
     padding: "0.5rem",

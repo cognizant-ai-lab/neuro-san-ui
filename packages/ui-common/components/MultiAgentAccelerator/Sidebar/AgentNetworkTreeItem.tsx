@@ -8,7 +8,7 @@ import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
-import {styled} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
@@ -20,11 +20,13 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
+import {motion, useReducedMotion} from "motion/react"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {usePublishServerUrl} from "../../../state/Publish"
+import {getSheen, SHEEN_EASE, sheenGradient} from "../../../Theme/sheen"
 import {downloadFile} from "../../../utils/File"
 import {PublishIconButton} from "../Publish/PublishIconButton"
 
@@ -34,29 +36,19 @@ import {PublishIconButton} from "../Publish/PublishIconButton"
 export const EDIT_NETWORK_LABEL = "Edit this network"
 export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
 
-// Palette of colors we can use for tags
-const TAG_COLORS = [
-    "--bs-accent2-light",
-    "--bs-accent1-medium",
-    "--bs-accent3-medium",
-    "--bs-accent3-dark",
-    "--bs-green",
-    "--bs-orange",
-    "--bs-pink",
-    "--bs-secondary",
-    "--bs-yellow",
-] as const
+// Palette of theme colors we can use for tags (MUI palette keys; each has .main and .contrastText)
+const TAG_COLORS = ["primary", "secondary", "info", "success", "warning", "error"] as const
 
 // Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
 // color and only dims via opacity.
-const ActionIconButton = styled(IconButton)({
+const ActionIconButton = styled(IconButton)(({theme}) => ({
     padding: 0,
-    color: "var(--bs-secondary)",
-    "&:hover": {color: "var(--bs-secondary-dark)"},
+    color: (theme.vars ?? theme).palette.primary.main,
+    "&:hover": {color: (theme.vars ?? theme).palette.primary.dark},
     "&.Mui-disabled": {
         opacity: 0.3,
     },
-})
+}))
 
 //#endregion Constants
 
@@ -97,8 +89,18 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
 }) => {
     const item = useTreeItemModel<AgentNetworkTreeItemModel>(itemId)
 
-    const {getContextProviderProps, getRootProps, getContentProps, getLabelProps, getGroupTransitionProps} =
-        useTreeItem({itemId, children, label, disabled})
+    const {
+        getContextProviderProps,
+        getRootProps,
+        getContentProps,
+        getLabelProps,
+        getGroupTransitionProps,
+        status: itemStatus,
+    } = useTreeItem({itemId, children, label, disabled})
+
+    const reduceMotion = useReducedMotion()
+    const theme = useTheme()
+    const sheen = getSheen(theme)
 
     const rootRef = useRef<HTMLLIElement>(null)
 
@@ -146,7 +148,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         }
     } else {
         // Use folder icon for parent items (i.e., folders)
-        muiIconElement = <MuiIcons.Folder sx={{fontSize: "1rem"}} />
+        muiIconElement = <MuiIcons.Folder sx={{fontSize: "0.85rem", color: "text.secondary"}} />
     }
 
     return (
@@ -159,10 +161,51 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                 <TreeItemContent
                     {...getContentProps()}
                     sx={{
+                        borderRadius: "10px",
                         cursor: isExpired ? "not-allowed" : "pointer",
+                        position: "relative",
+                        transition: `background-color 0.2s ${SHEEN_EASE}`,
+                        // The selected look is drawn by the gliding indicator below, not a background
+                        "&.Mui-selected, &.Mui-selected:hover, &.Mui-selected.Mui-focused": {
+                            backgroundColor: "transparent",
+                        },
                     }}
                 >
-                    <Box sx={{display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%"}}>
+                    {itemStatus.selected && (
+                        // Selected network: accent tint with a slim iridescent bar on the left edge. Shares a layoutId
+                        // across items so it springs from the previously selected network to the new one.
+                        <motion.span
+                            aria-hidden={true}
+                            className="agent-network-selection-indicator"
+                            layoutId="agent-network-selection"
+                            style={{
+                                backgroundColor: sheen.tint,
+                                backgroundImage: sheenGradient(theme, 180),
+                                backgroundPosition: "left 2px center",
+                                backgroundRepeat: "no-repeat",
+                                backgroundSize: "3px 65%",
+                                borderRadius: "10px",
+                                boxShadow: `inset 0 0 0 1px ${sheen.glassBorder}`,
+                                inset: 0,
+                                pointerEvents: "none",
+                                position: "absolute",
+                                zIndex: 0,
+                            }}
+                            transition={
+                                reduceMotion ? {duration: 0} : {type: "spring", stiffness: 420, damping: 34, mass: 0.7}
+                            }
+                        />
+                    )}
+                    <Box
+                        sx={{
+                            alignItems: "center",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            position: "relative",
+                            width: "100%",
+                            zIndex: 1,
+                        }}
+                    >
                         <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem"}}>
                             <Tooltip
                                 title={
@@ -176,9 +219,12 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <TreeItemLabel
                                         {...getLabelProps()}
                                         sx={{
-                                            fontWeight: isParent ? "bold" : "normal",
-                                            fontSize: isParent ? "1rem" : "0.9rem",
-                                            color: isParent ? "var(--heading-color)" : null,
+                                            // Folders read as small uppercase section labels (overline style)
+                                            fontWeight: isParent ? 600 : "normal",
+                                            fontSize: isParent ? "0.7rem" : "0.9rem",
+                                            letterSpacing: isParent ? "0.12em" : null,
+                                            textTransform: isParent ? "uppercase" : null,
+                                            color: isParent ? "text.secondary" : null,
                                             opacity: isExpired ? 0.25 : 1,
                                             "&:hover": {
                                                 textDecoration: "underline",
@@ -197,16 +243,17 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             <Chip
                                                 key={tag}
                                                 label={tag}
-                                                style={{
+                                                sx={{
                                                     margin: "0.25rem",
-                                                    backgroundColor: `var(${tagsToColors.get(tag) || TAG_COLORS[0]})`,
+                                                    backgroundColor: `${tagsToColors.get(tag) || TAG_COLORS[0]}.main`,
+                                                    color: `${tagsToColors.get(tag) || TAG_COLORS[0]}.contrastText`,
                                                 }}
                                             />
                                         ))}
                                     placement="right"
                                     arrow={true}
                                 >
-                                    <BookmarkIcon sx={{fontSize: "0.75rem", color: "var(--bs-accent1-medium)"}} />
+                                    <BookmarkIcon sx={{fontSize: "0.75rem", color: "secondary.main"}} />
                                 </Tooltip>
                             ) : null}
                         </Box>
@@ -262,8 +309,8 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             onDeleteNetwork?.(itemId, isExpired)
                                         }}
                                         sx={{
-                                            color: "var(--bs-secondary)",
-                                            "&:hover": {color: (theme) => theme.palette.warning.main},
+                                            color: "primary.main",
+                                            "&:hover": {color: "error.main"},
                                             "&.Mui-disabled": {
                                                 opacity: 0.3,
                                             },

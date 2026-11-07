@@ -14,22 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import "@fontsource-variable/inter"
+import "@fontsource-variable/newsreader"
 import "../styles/globals.css"
 import "@xyflow/react/dist/style.css"
 
 import type {EnvironmentResponse} from "./api/environment/Types"
 import Container from "@mui/material/Container"
 import CssBaseline from "@mui/material/CssBaseline"
-import {createTheme, Theme, ThemeProvider} from "@mui/material/styles"
+import {Theme, ThemeProvider} from "@mui/material/styles"
 import startCase from "lodash-es/startCase"
+import {AnimatePresence, motion, MotionConfig} from "motion/react"
 import {AppProps} from "next/app"
 import Head from "next/head"
 import {useRouter} from "next/router"
 import {SessionProvider} from "next-auth/react"
 import {SnackbarProvider} from "notistack"
-import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useEffect, useState} from "react"
+import {FC, ReactElement, JSX as ReactJSX, ReactNode, StrictMode, useCallback, useEffect, useState} from "react"
 
 import {Auth} from "../../../packages/ui-common/components/Authentication/Auth"
+import {CommandPalette} from "../../../packages/ui-common/components/CommandPalette/CommandPalette"
 import {NeuroAIBreadcrumbs} from "../../../packages/ui-common/components/Common/Breadcrumbs"
 import {Footer} from "../../../packages/ui-common/components/Common/Footer"
 import {GoogleAnalytics} from "../../../packages/ui-common/components/Common/GoogleAnalytics"
@@ -42,6 +46,7 @@ import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-c
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
+import {useApplyVisualEffects} from "../../../packages/ui-common/Theme/effects"
 import {getAuthenticationType, smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
@@ -61,6 +66,32 @@ const onStartTour = () => {
     // Dispatches the "start tour" event
     window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
 }
+
+// Page entrance: fade up out of a soft blur. Filter and transform are cleared afterwards (transitionEnd) so the page
+// wrapper doesn't become the containing block for position: fixed descendants (chat launcher, dialogs, panels).
+const PAGE_SPRING = {type: "spring", stiffness: 260, damping: 30, mass: 0.9} as const
+
+interface PageTransitionProps {
+    readonly children: ReactNode
+    readonly fill?: boolean
+}
+
+/**
+ * Animates the page content in (and briefly out) on route changes. Keyed by pathname by the caller.
+ * Reduced motion is handled globally by <MotionConfig reducedMotion="user"> (transforms are skipped, fades kept),
+ * rather than branching on useReducedMotion here, which differs between server and client and broke hydration.
+ */
+const PageTransition = ({children, fill = false}: PageTransitionProps): ReactJSX.Element => (
+    <motion.div
+        animate={{opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: {filter: "none"}}}
+        exit={{opacity: 0, y: -6, filter: "blur(4px)", transition: {duration: 0.14, ease: "easeIn"}}}
+        initial={{opacity: 0, y: 14, filter: "blur(8px)"}}
+        style={fill ? {height: "100%"} : {display: "flex", flex: 1, flexDirection: "column", minHeight: 0, minWidth: 0}}
+        transition={{...PAGE_SPRING, opacity: {duration: 0.35}, filter: {duration: 0.45, ease: "easeOut"}}}
+    >
+        {children}
+    </motion.div>
+)
 
 /**
  * Utility component to pass user data along to Navbar. This component exists to isolate the main app from
@@ -84,6 +115,9 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
 
 // Main function.
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
+    // Switch off expensive effects (glass blur, 3D) app-wide when requested or when rendering without a GPU
+    useApplyVisualEffects()
+
     const {
         auth0ClientId,
         auth0Domain,
@@ -102,7 +136,16 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     } = useEnvironmentStore()
 
     // Access Next.js router
-    const {pathname, query} = useRouter()
+    const router = useRouter()
+    const {pathname, query} = router
+
+    // Client-side navigation for the command palette
+    const navigate = useCallback(
+        (path: string) => {
+            void router.push(path)
+        },
+        [router]
+    )
 
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
@@ -118,7 +161,8 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     const secondary = useSettingsStore((state) => state.settings.branding.secondary)
     const background = useSettingsStore((state) => state.settings.branding.background)
 
-    const [theme, setTheme] = useState<Theme>(() => createTheme())
+    // Start from the default (unbranded) app theme so the first paint already has the new look
+    const [theme, setTheme] = useState<Theme>(() => createAppTheme())
 
     // For Google Analytics
     const [enableGoogleAnalytics, setEnableGoogleAnalytics] = useState<boolean>(false)
@@ -296,23 +340,23 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
     const isAuthenticationKnown = enableAuthentication !== undefined
 
     if (pathname === "/") {
-        // Main page is special: doesn't have usual header and footer, does have a background image.
+        // Main page is special: doesn't have usual header and footer, and draws its own aurora hero background.
         // In the ALB it is usually set to require authentication, but for historical reasons we don't wrap it in an
         // auth sandwich for the local testing auth.js/next-auth case.
         body = (
             <div
                 id="body-div"
                 style={{
-                    background:
-                        "linear-gradient(0deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/NeuroAI_SC_BH1.webp')",
-                    backgroundSize: "cover",
                     height: "100%",
+                    position: "relative",
                 }}
             >
-                <Component
-                    id="body-component"
-                    {...pageProps}
-                />
+                <PageTransition fill={true}>
+                    <Component
+                        id="body-component"
+                        {...pageProps}
+                    />
+                </PageTransition>
             </div>
         )
     } else if (!isAuthenticationKnown) {
@@ -326,6 +370,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     id="nav-bar"
                     logo={LOGO}
                     logoServiceToken={logoServiceToken}
+                    onNavigate={navigate}
                     pathname={pathname}
                     query={query}
                     signOut={handleSignOut}
@@ -335,22 +380,28 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     id="body-container"
                     maxWidth={false}
                     sx={{
-                        border: `solid 1px ${theme.palette.grey[300]}`,
                         display: "flex",
                         flex: 1,
                         flexDirection: "column",
                         minHeight: "90%",
                     }}
                 >
-                    {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
-                    {getAppComponent()}
+                    <AnimatePresence mode="wait">
+                        <PageTransition key={pathname}>
+                            {includeBreadcrumbs && <NeuroAIBreadcrumbs pathname={pathname} />}
+                            {getAppComponent()}
+                        </PageTransition>
+                    </AnimatePresence>
                 </Container>
-                <Footer
-                    supportEmailAddress={supportEmailAddress}
-                    logoLinkUrl="https://www.cognizant.com/"
-                    logoUrl="/cognizant-logo-white.svg"
-                    sx={{borderTop: "none", marginTop: 0}}
-                />
+                {/* The multi-agent workspace is a full-viewport canvas, so it has no footer */}
+                {pathname !== "/multiAgentAccelerator" && (
+                    <Footer
+                        supportEmailAddress={supportEmailAddress}
+                        logoLinkUrl="https://www.cognizant.com/"
+                        logoUrl="/cognizant-logo-white.svg"
+                        sx={{borderTop: "none", marginTop: 0}}
+                    />
+                )}
             </ErrorBoundary>
         )
 
@@ -374,21 +425,32 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
             </Head>
             {enableGoogleAnalytics && gaMeasurementID && <GoogleAnalytics gaMeasurementID={gaMeasurementID} />}
             <StrictMode>
-                <ThemeProvider
-                    theme={theme}
-                    noSsr={true}
-                >
-                    <CssBaseline />
-                    {body}
-                    <SnackbarProvider
-                        Components={{
-                            info: Snackbar,
-                            success: Snackbar,
-                            warning: Snackbar,
-                            error: Snackbar,
-                        }}
-                    />
-                </ThemeProvider>
+                {/* Honor prefers-reduced-motion for every motion animation in the app */}
+                <MotionConfig reducedMotion="user">
+                    <ThemeProvider
+                        theme={theme}
+                        noSsr={true}
+                        defaultMode="dark"
+                    >
+                        <CssBaseline />
+                        {body}
+                        <CommandPalette
+                            logoServiceToken={logoServiceToken}
+                            onNavigate={navigate}
+                            onStartTour={onStartTour}
+                            pathname={pathname}
+                            supportEmailAddress={supportEmailAddress}
+                        />
+                        <SnackbarProvider
+                            Components={{
+                                info: Snackbar,
+                                success: Snackbar,
+                                warning: Snackbar,
+                                error: Snackbar,
+                            }}
+                        />
+                    </ThemeProvider>
+                </MotionConfig>
             </StrictMode>
         </div>
     )

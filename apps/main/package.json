@@ -11,12 +11,17 @@
     "dependencies": {
         "@emotion/react": "11.14.0",
         "@emotion/styled": "11.14.1",
+        "@fontsource-variable/inter": "5.2.8",
+        "@fontsource-variable/newsreader": "5.2.10",
         "@langchain/core": "catalog:default",
         "@langchain/openai": "1.2.5",
         "@mui/material": "catalog:default",
+        "@react-three/drei": "10.7.9",
+        "@react-three/fiber": "9.8.2",
         "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",
+        "motion": "14.6.0",
         "next": "catalog:default",
         "next-auth": "catalog:default",
         "notistack": "catalog:default",
@@ -26,7 +31,8 @@
         "rehype-raw": "catalog:default",
         "rehype-slug": "catalog:default",
         "remark-toc": "9.0.0",
-        "sharp": "0.35.4"
+        "sharp": "0.35.4",
+        "three": "0.186.1"
     },
     "devDependencies": {
         "@testing-library/dom": "catalog:default",
@@ -34,6 +40,7 @@
         "@testing-library/user-event": "catalog:default",
         "@types/lodash-es": "catalog:default",
         "@types/react": "catalog:default",
+        "@types/three": "0.186.0",
         "node-mocks-http": "1.17.2",
         "typescript": "catalog:default",
         "vitest": "catalog:default"

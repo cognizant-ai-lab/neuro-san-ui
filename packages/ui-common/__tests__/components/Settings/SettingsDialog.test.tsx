@@ -116,6 +116,41 @@ describe("SettingsDialog", () => {
         expect(onCloseMock).toHaveBeenCalledTimes(1)
     })
 
+    it("renders a section nav that scrolls to each section", async () => {
+        const originalScrollIntoView = window.HTMLElement.prototype.scrollIntoView
+        window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
+        try {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const nav = await screen.findByRole("navigation", {name: "Settings sections"})
+            const navButtons = within(nav).getAllByRole("button")
+            const sectionNames = ["External Services", "API Keys", "Behavior", "Appearance"]
+            expect(navButtons.map((button) => button.textContent)).toEqual(sectionNames)
+            expect(navButtons[0]).toHaveAttribute("aria-current", "location")
+
+            // Each nav item has a matching section region containing the section heading
+            sectionNames.forEach((sectionName) => {
+                const region = screen.getByRole("region", {name: sectionName})
+                expect(within(region).getByRole("heading", {name: sectionName})).toBeInTheDocument()
+            })
+
+            await user.click(within(nav).getByRole("button", {name: "Appearance"}))
+            expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+            expect(vi.mocked(window.HTMLElement.prototype.scrollIntoView).mock.contexts[0]).toBe(
+                screen.getByRole("region", {name: "Appearance"})
+            )
+            expect(within(nav).getByRole("button", {name: "Appearance"})).toHaveAttribute("aria-current", "location")
+        } finally {
+            window.HTMLElement.prototype.scrollIntoView = originalScrollIntoView
+        }
+    })
+
     describe("External services", () => {
         it("allows user to input, test and save a Neuro SAN URL", async () => {
             render(

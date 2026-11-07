@@ -23,6 +23,7 @@ import {render, screen} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {OPEN_COMMAND_PALETTE_EVENT_NAME} from "../../../components/CommandPalette/CommandPalette"
 import {Navbar} from "../../../components/Common/Navbar"
 import {getContactUsConfirmationText} from "../../../const"
 import {useSettingsStore} from "../../../state/Settings"
@@ -39,15 +40,18 @@ describe("Navbar", () => {
 
     let user: UserEvent
 
-    const renderNavbar = (pathName: string = "/projects") =>
+    const theme = createTheme({colorSchemes: {light: true, dark: true}})
+
+    const renderNavbar = (pathName: string = "/projects", onNavigate?: (path: string) => void) =>
         render(
-            <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
+            <ThemeProvider theme={theme}>
                 <Navbar
                     authenticationType=""
                     enableAuthentication={true}
                     id="mock-id"
                     logo={LOGO}
                     logoServiceToken={MOCK_LOGO_SERVICE_TOKEN}
+                    onNavigate={onNavigate}
                     pathname={pathName}
                     query={undefined}
                     signOut={vi.fn()}
@@ -89,8 +93,8 @@ describe("Navbar", () => {
 
         screen.getByTestId("settings-dialog")
         screen.getByRole("heading", {name: "Settings"})
-        screen.getByText("Appearance")
-        screen.getByText("Network animation")
+        expect(screen.getAllByText("Appearance").length).toBeGreaterThan(0)
+        expect(screen.getAllByText("Network animation").length).toBeGreaterThan(0)
 
         // Close it
         const closeButton = await screen.findByLabelText("close")
@@ -202,12 +206,64 @@ describe("Navbar", () => {
 
         const darkModeToggle = await screen.findByTestId("DarkModeIcon")
 
-        // Check initial color (light mode)
-        expect(darkModeToggle).toHaveStyle("color: var(--bs-gray-dark)")
+        // Light mode: muted icon
+        expect(darkModeToggle).toHaveStyle({color: createTheme({palette: {mode: "light"}}).palette.text.secondary})
 
         await user.click(darkModeToggle)
 
-        // Check color after toggle (dark mode)
-        expect(darkModeToggle).toHaveStyle("color: var(--bs-yellow)")
+        // Dark mode: icon lights up in the secondary (amber) accent
+        expect(darkModeToggle).toHaveStyle({color: createTheme({palette: {mode: "dark"}}).palette.secondary.main})
+    })
+
+    it("renders as a floating sticky pill with text in the primary text color", async () => {
+        renderNavbar()
+
+        const navBar = document.getElementById("nav-bar-container")
+        expect(navBar).toHaveStyle({position: "sticky", top: "12px", borderRadius: "999px"})
+
+        const exploreToggle = await screen.findByText("Explore")
+        expect(exploreToggle).toHaveStyle({color: theme.palette.text.primary})
+    })
+
+    it("uses the branding primary color for the menu icons when set", async () => {
+        useSettingsStore.getState().updateSettings({branding: {primary: "#123456"}})
+        renderNavbar()
+
+        expect(document.getElementById("nav-explore-dropdown-arrow")).toHaveStyle({color: "#123456"})
+    })
+
+    it("renders page links and marks the current page", async () => {
+        renderNavbar("/multiAgentAccelerator")
+
+        // The links only show on wide screens (a media query jsdom doesn't match), so include hidden elements
+        const nav = document.getElementById("nav-bar-links")
+        expect(nav.tagName).toBe("NAV")
+        expect(nav).toHaveAttribute("aria-label", "Main")
+
+        const maaLink = screen.getByRole("link", {hidden: true, name: "Multi-Agent Accelerator"})
+        expect(maaLink).toHaveAttribute("aria-current", "page")
+        expect(maaLink).toHaveAttribute("href", "/multiAgentAccelerator")
+        expect(screen.getByRole("link", {hidden: true, name: "User Guide"})).not.toHaveAttribute("aria-current")
+        expect(screen.getByRole("link", {hidden: true, name: "Home"})).toHaveAttribute("href", "/")
+    })
+
+    it("uses client-side navigation for page links when available", async () => {
+        const onNavigate = vi.fn()
+        renderNavbar("/multiAgentAccelerator", onNavigate)
+
+        await user.click(screen.getByRole("link", {hidden: true, name: "User Guide"}))
+
+        expect(onNavigate).toHaveBeenCalledWith("/UserGuide")
+    })
+
+    it("opens the command palette from the search pill", async () => {
+        const onOpen = vi.fn()
+        window.addEventListener(OPEN_COMMAND_PALETTE_EVENT_NAME, onOpen)
+        renderNavbar()
+
+        await user.click(screen.getByRole("button", {name: "Open command palette"}))
+
+        expect(onOpen).toHaveBeenCalledTimes(1)
+        window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT_NAME, onOpen)
     })
 })

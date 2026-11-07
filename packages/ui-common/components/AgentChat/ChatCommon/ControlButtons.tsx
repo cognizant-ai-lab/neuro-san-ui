@@ -19,10 +19,39 @@ import Loop from "@mui/icons-material/Loop"
 import SaveIcon from "@mui/icons-material/Save"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
+import {Theme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
+import {getSheen, glassSurface, SHEEN_EASE, spinningBorder} from "../../../Theme/sheen"
 import {SmallLlmChatButton} from "../Common/LlmChatButton"
+
+// Diameter of the stop button
+const STOP_BUTTON_SIZE = 34
+
+/**
+ * Stop button: glass disc ringed by the rotating iridescent border (the request is "live"), with an error-colored
+ * icon and halo on hover so it reads clearly as "cancel".
+ */
+const stopButtonSx = (theme: Theme) => {
+    const errorMain = (theme.vars ?? theme).palette.error.main
+    return {
+        ...glassSurface(theme, STOP_BUTTON_SIZE / 2),
+        ...spinningBorder(theme, STOP_BUTTON_SIZE / 2, 1.5),
+        border: "none",
+        borderRadius: "50%",
+        boxShadow: `inset 0 1px 0 ${getSheen(theme).highlight}, 0 0 24px -6px ${getSheen(theme).glow}`,
+        color: "error.main",
+        height: STOP_BUTTON_SIZE,
+        transition: `box-shadow 0.3s ${SHEEN_EASE}, transform 0.3s ${SHEEN_EASE}`,
+        width: STOP_BUTTON_SIZE,
+        "&:hover": {
+            backgroundColor: getSheen(theme).glassBg,
+            boxShadow: `0 0 0 4px color-mix(in srgb, ${errorMain} 18%, transparent), 0 0 28px -4px ${errorMain}`,
+            transform: "scale(1.06)",
+        },
+    }
+}
 
 //#region: Types
 interface ControlButtonsProps {
@@ -62,6 +91,7 @@ export const ControlButtons: FC<ControlButtonsProps> = ({
                     disabled={!isAwaitingLlm}
                     id="stop-output-button"
                     onClick={() => handleStop()}
+                    sx={stopButtonSx}
                 >
                     <StopCircle
                         fontSize="small"

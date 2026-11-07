@@ -1,9 +1,10 @@
-import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
+import {createTheme, Theme, ThemeProvider} from "@mui/material/styles"
 import {render, screen, waitFor} from "@testing-library/react"
 import userEvent, {UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatBot} from "../../../components/ChatBot/ChatBot"
+import {SHEEN_DARK, SHEEN_LIGHT, SHEEN_RADIUS_SURFACE} from "../../../Theme/sheen"
 import {useAuthentication} from "../../../utils/Authentication"
 
 // Mock dependencies
@@ -14,6 +15,7 @@ vi.mock("../../../utils/Authentication", () => ({
 vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     ChatCommon: (props: {id: string; title: string; onClose: () => void; backgroundColor: string}) => (
         <div
+            data-background-color={props.backgroundColor}
             data-testid="chat-common"
             id={props.id}
             style={{backgroundColor: props.backgroundColor}}
@@ -30,29 +32,17 @@ vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     ),
 }))
 
-// Mock MUI theming
-vi.mock("@mui/material/styles", async () => ({
-    ...(await vi.importActual("@mui/material/styles")),
-    useColorScheme: vi.fn(),
-}))
-
-vi.mock("@mui/material/Grow", () => ({
-    default: ({children, in: inProp}: {children: unknown; in: boolean}) => (inProp ? children : null),
-}))
-
 const mockUseAuthentication = vi.mocked(useAuthentication)
 
-const getUseColorSchemeMockReturnValue = (mode: "light" | "dark", systemMode: "light" | "dark" = "light") =>
-    ({
-        allColorSchemes: ["light", "dark"],
-        mode,
-        systemMode,
-        lightColorScheme: "light",
-        darkColorScheme: "light",
-        colorScheme: "light",
-        setMode: vi.fn(),
-        setColorScheme: vi.fn(),
-    }) satisfies ReturnType<typeof useColorScheme>
+// jsdom normalizes colors in computed styles to rgb() notation
+const hexToRgb = (hex: string) => {
+    const value = Number.parseInt(hex.slice(1), 16)
+
+    return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`
+}
+
+const LIGHT_THEME = createTheme({palette: {mode: "light", sheen: SHEEN_LIGHT.sheen}})
+const DARK_THEME = createTheme({palette: {mode: "dark", sheen: SHEEN_DARK.sheen}})
 
 describe("ChatBot", () => {
     withStrictMocks()
@@ -75,14 +65,12 @@ describe("ChatBot", () => {
             },
         })
 
-        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("light"))
-
         user = userEvent.setup()
     })
 
-    const renderChatBot = (props = mockProps) =>
+    const renderChatBot = (props = mockProps, theme: Theme = LIGHT_THEME) =>
         render(
-            <ThemeProvider theme={createTheme({colorSchemes: {light: true, dark: true}})}>
+            <ThemeProvider theme={theme}>
                 <ChatBot {...props} />
             </ThemeProvider>
         )
@@ -135,27 +123,37 @@ describe("ChatBot", () => {
         await waitFor(() => expect(screen.queryByTestId("ContactSupportIcon")).not.toBeInTheDocument())
     })
 
-    it("Should apply dark mode styling", () => {
-        // Set MUI to dark mode
-        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("dark", "dark"))
-
-        renderChatBot()
+    it.each([
+        {mode: "light", theme: LIGHT_THEME, sheen: SHEEN_LIGHT.sheen},
+        {mode: "dark", theme: DARK_THEME, sheen: SHEEN_DARK.sheen},
+    ])("Should render the launcher icon with the sheen gradient in $mode mode", ({theme, sheen}) => {
+        renderChatBot(mockProps, theme)
 
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
 
-        expect(iconContainer).toHaveStyle({
-            backgroundColor: "var(--bs-dark-mode-dim)",
-        })
+        // Gradient comes from the mode's palette tokens rather than hand-written dark/light branches
+        const {backgroundImage} = getComputedStyle(iconContainer)
+        expect(backgroundImage).toContain("linear-gradient")
+        expect(backgroundImage).toContain(hexToRgb(sheen.gradientStart))
+        expect(backgroundImage).toContain(hexToRgb(sheen.gradientEnd))
+        expect(iconContainer).toHaveStyle({borderRadius: "50%"})
     })
 
-    it("Should apply light mode styling", () => {
-        renderChatBot()
+    it.each([
+        {mode: "light", theme: LIGHT_THEME, sheen: SHEEN_LIGHT.sheen},
+        {mode: "dark", theme: DARK_THEME, sheen: SHEEN_DARK.sheen},
+    ])("Should render the chat window as a glass surface in $mode mode", async ({theme, sheen}) => {
+        renderChatBot(mockProps, theme)
 
-        const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
+        await user.click(screen.getByTestId("ContactSupportIcon").closest("div"))
+        await screen.findByTestId("chat-common")
 
-        expect(iconContainer).toHaveStyle({
-            backgroundColor: "var(--bs-white)",
+        const chatContainer = document.getElementById(mockProps.id)
+        expect(chatContainer).toHaveStyle({
+            backgroundColor: sheen.glassBg,
+            borderRadius: `${SHEEN_RADIUS_SURFACE}px`,
         })
+        expect(chatContainer).toHaveStyle({border: `1px solid ${sheen.glassBorder}`})
     })
 
     it("Should pass correct props to ChatCommon component", async () => {
@@ -172,20 +170,17 @@ describe("ChatBot", () => {
         expect(screen.getByText("Cognizant Neuro AI Assistant")).toBeInTheDocument()
     })
 
-    it("Should set correct dark mode background for ChatCommon", async () => {
-        // Set MUI to dark mode
-        vi.mocked(useColorScheme).mockReturnValue(getUseColorSchemeMockReturnValue("dark"))
-
-        renderChatBot()
+    it("Should make the ChatCommon background transparent so the glass panel shows through", async () => {
+        renderChatBot(mockProps, DARK_THEME)
 
         // Open chat to trigger ChatCommon render
         const iconContainer = screen.getByTestId("ContactSupportIcon").closest("div")
         expect(iconContainer).not.toBeNull()
         await user.click(iconContainer)
 
-        // Check that ChatCommon renders with dark mode background
+        // Check that ChatCommon is told not to paint its own background
         const chatWindow = await screen.findByTestId("chat-common")
-        expect(chatWindow).toHaveStyle({backgroundColor: "var(--bs-gray-dark)"})
+        expect(chatWindow).toHaveAttribute("data-background-color", "transparent")
     })
 
     it("Should use the provided id for the chatbot container", async () => {

@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 import SendIcon from "@mui/icons-material/Send"
+import {Theme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {FC} from "react"
 
+import {getSheen, glowShadow, SHEEN_EASE, sheenGradient, shimmerOnHover} from "../../../Theme/sheen"
 import {LlmChatButton} from "../Common/LlmChatButton"
 
 //#region: Types
@@ -49,6 +51,37 @@ export const SendButton: FC<SendButtonProps> = ({enableSendButton, id, onClickCa
                 disabled={!enableSendButton}
                 id={id}
                 onClick={onClickCallback}
+                sx={(theme: Theme) => ({
+                    // Glossy gradient orb: light sweep on hover, accent glow, specular top edge
+                    ...shimmerOnHover(),
+                    backgroundImage: sheenGradient(theme),
+                    backgroundPosition: "0% 50%",
+                    backgroundSize: "180% 100%",
+                    border: "none",
+                    borderRadius: "50%",
+                    boxShadow: `inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 18px -6px ${getSheen(theme).glow}`,
+                    color: "primary.contrastText",
+                    height: 40,
+                    minWidth: 0,
+                    transition: [
+                        `box-shadow 0.3s ${SHEEN_EASE}`,
+                        `transform 0.3s ${SHEEN_EASE}`,
+                        `background-position 0.6s ${SHEEN_EASE}`,
+                        "filter 0.3s ease",
+                    ].join(", "),
+                    width: 40,
+                    "&:hover": {
+                        backgroundPosition: "100% 50%",
+                        boxShadow: glowShadow(theme),
+                        transform: "translateY(-1px) scale(1.05)",
+                    },
+                    "&:active": {transform: "scale(0.95)"},
+                    "&.Mui-disabled": {
+                        boxShadow: "none",
+                        color: "primary.contrastText",
+                        filter: "saturate(0.35)",
+                    },
+                })}
                 tabIndex={0}
             >
                 <SendIcon

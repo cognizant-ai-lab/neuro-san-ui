@@ -53,6 +53,10 @@ export type Layout = "radial" | "linear"
 
 export type GraphColoringOption = "depth" | "heatmap"
 
+// "lite" turns off the expensive glass blur and the 3D splash scene; "auto" does so only when the browser is rendering
+// without a GPU (e.g. in a VM), see Theme/effects.ts
+export type VisualEffects = "auto" | "full" | "lite"
+
 /**
  * User preference settings
  */
@@ -68,6 +72,7 @@ interface Settings {
         readonly showRadialGuides: boolean
         readonly showThoughtBubbles: boolean
         readonly useNativeNames: boolean
+        readonly visualEffects: VisualEffects
     }
     readonly branding: {
         readonly customer: string | null
@@ -118,17 +123,18 @@ export const LLM_PROVIDER_API_KEY_FIELD = {
  */
 export const DEFAULT_SETTINGS: Settings = {
     appearance: {
-        // CSS variables like --bs-green don't work here. TBD why.
-        agentIconColor: "black",
-        agentNodeColor: "#2db81f",
+        // CSS variables don't work here: these values feed <input type="color"> and canvas drawing.
+        agentIconColor: "#FFFFFF",
+        agentNodeColor: "#9D7BFF",
         autoAgentIconColor: true,
         graphColoringOption: "depth",
         layout: "radial",
-        plasmaColor: "#2db81f",
-        rangePalette: "blue",
+        plasmaColor: "#9D7BFF",
+        rangePalette: "sheen",
         showRadialGuides: true,
         showThoughtBubbles: true,
         useNativeNames: false,
+        visualEffects: "auto",
     },
     branding: {
         background: null,
@@ -152,6 +158,15 @@ export const DEFAULT_SETTINGS: Settings = {
     },
 }
 
+// Appearance defaults from before the "sheen" reskin. Persisted values still equal to these were never customized by
+// the user, so they are upgraded to the new defaults on rehydration.
+export const LEGACY_APPEARANCE_DEFAULTS: Partial<Settings["appearance"]> = {
+    agentIconColor: "black",
+    agentNodeColor: "#2db81f",
+    plasmaColor: "#2db81f",
+    rangePalette: "blue",
+}
+
 // Name for key where main app settings are saved
 export const APP_SETTINGS_STORAGE_KEY = "app-settings"
 
@@ -170,6 +185,22 @@ const hasPersistedSettings = (state: unknown): state is {settings: DeepPartial<S
     "settings" in state &&
     typeof state.settings === "object" &&
     state.settings !== null
+
+/**
+ * Drops persisted appearance values that still match the pre-reskin defaults, so the new defaults apply.
+ * Values the user explicitly changed are kept.
+ */
+const upgradeLegacyAppearance = (settings: DeepPartial<Settings>): DeepPartial<Settings> => {
+    if (!settings.appearance) {
+        return settings
+    }
+    const appearance = Object.fromEntries(
+        Object.entries(settings.appearance).filter(
+            ([key, value]) => LEGACY_APPEARANCE_DEFAULTS[key as keyof Settings["appearance"]] !== value
+        )
+    )
+    return {...settings, appearance}
+}
 
 /**
  * Purges any persisted API keys from localStorage. This cleans up from previous versions of the code.
@@ -260,7 +291,9 @@ export const useSettingsStore = create<SettingsStore>()(
 
                 sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(sessionApiKeys))
 
-                const persistedSettings = hasPersistedSettings(persistedState) ? persistedState.settings : {}
+                const persistedSettings = hasPersistedSettings(persistedState)
+                    ? upgradeLegacyAppearance(persistedState.settings)
+                    : {}
 
                 // Merge persisted settings with defaults to fill in any missing fields,
                 // then explicitly replace apiKeys with sessionStorage-backed keys.
