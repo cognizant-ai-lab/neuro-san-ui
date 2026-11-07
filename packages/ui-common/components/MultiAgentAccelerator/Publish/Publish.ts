@@ -20,10 +20,11 @@ import {
     fetchBundle,
     isPublishNameTaken,
     listPublishedNetworks,
+    PublishedNetwork,
     publishNetwork,
     unpublishNetwork,
 } from "../../../controller/publish/Publish"
-import {Published, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
+import {Published, PublishState, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
 import {PublishedDeployment, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {downloadFile} from "../../../utils/File"
 import {NotificationType, sendNotification} from "../../Common/notification"
@@ -64,49 +65,51 @@ export const openInNewTab = (url: string): boolean => {
  * The deployment this browser published the network to, unless Settings has since changed the publishing server or
  * org, since its id only means something there
  */
-const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null => {
-    const published = useTempNetworksStore
+const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null =>
+    useTempNetworksStore
         .getState()
-        .tempNetworks.find((network) => network.agentInfo.agent_name === networkId)?.published
-    const isSameTarget = published?.serverUrl === serverUrl && published.orgName.toLowerCase() === orgName.toLowerCase()
-    return isSameTarget ? published : null
+        .tempNetworks.find(
+            ({agentInfo, deployment}) =>
+                agentInfo.agent_name === networkId &&
+                deployment?.serverUrl === serverUrl &&
+                deployment.orgName.toLowerCase() === orgName.toLowerCase()
+        )?.deployment ?? null
+
+/**
+ * Lists the server's published networks. Every network on screen checks its publish state, so they share one request.
+ */
+const listPublishedNetworksShared = (serverUrl: string): Promise<PublishedNetwork[]> => {
+    const {publishedList, setPublishedList} = usePublishStore.getState()
+    if (publishedList?.serverUrl === serverUrl) return publishedList.request
+
+    const request = listPublishedNetworks(serverUrl)
+    setPublishedList({serverUrl, request})
+    // Drop a failed request, so the next check asks the server again
+    request.catch(() => setPublishedList(null))
+    return request
 }
 
 /**
- * Asks the server how the network this browser published is doing, for example after a reload, and remembers it.
- * Does nothing if we already know the network's publish state, or if this browser hasn't published it.
+ * Asks the server for the publish state of the deployment this browser saved for the network, for example after a
+ * reload.
+ * @returns The publish state, or null if this browser hasn't published the network or the server doesn't list it
  */
-export const checkIfPublished = async (network: PublishNetwork, target: PublishTarget): Promise<void> => {
-    const {serverUrl} = target
-    const {networks, publishedList, setPublishedList} = usePublishStore.getState()
-    const deployment = getPublishedDeployment(network.id, target)
-    if (networks[network.id] || !deployment) return
+export const fetchPublishState = async (networkId: string, target: PublishTarget): Promise<PublishState | null> => {
+    const deployment = getPublishedDeployment(networkId, target)
+    if (!deployment) return null
 
-    // Every network on screen asks, so they share one request for the server's list
-    let request = publishedList?.serverUrl === serverUrl ? publishedList.request : null
-    if (!request) {
-        request = listPublishedNetworks(serverUrl)
-        setPublishedList({serverUrl, request})
-    }
+    const publishedNetworks = await listPublishedNetworksShared(target.serverUrl)
+    const publishedNetwork = publishedNetworks.find((candidate) => candidate.id === deployment.deploymentId)
+    if (!publishedNetwork) return null
 
-    try {
-        const published = (await request).find((candidate) => candidate.id === deployment.deploymentId)
-
-        // Don't overwrite a publish the user started while we were asking
-        if (!published || usePublishStore.getState().networks[network.id]) return
-
-        usePublishStore
-            .getState()
-            .setPublishState(
-                network.id,
-                published.url
-                    ? {status: PublishStatus.Published, serverUrl, publishId: published.id, url: published.url}
-                    : {status: PublishStatus.Unpublished}
-            )
-    } catch (e) {
-        setPublishedList(null)
-        console.warn(`Unable to check whether "${network.name}" is published:`, e)
-    }
+    return publishedNetwork.url
+        ? {
+              status: PublishStatus.Published,
+              serverUrl: target.serverUrl,
+              publishId: publishedNetwork.id,
+              url: publishedNetwork.url,
+          }
+        : {status: PublishStatus.Unpublished}
 }
 
 /**
@@ -116,18 +119,28 @@ export const checkIfPublished = async (network: PublishNetwork, target: PublishT
 const makePublishName = async (networkName: string, {serverUrl, orgName}: PublishTarget): Promise<string> =>
     (await isPublishNameTaken(serverUrl, orgName, networkName)) ? `${networkName}_${uuid().slice(0, 8)}` : networkName
 
+/** How a publish went: live at the URL, or failed with an error */
+export interface PublishResult {
+    readonly url?: string
+    readonly error?: string
+}
+
+/** How an unpublish went: an error if it failed */
+export interface UnpublishResult {
+    readonly error?: string
+}
+
 /**
- * Publishes the network's HOCON, the same file Download gives, waits for it to go live, then opens it in a new tab.
- * Republishing is the same, and replaces what this network published before. Tells the user how it went either
- * way.
- * @param refreshTheme Has the server make a new theme instead of keeping the one it made before
+ * Publishes the network's HOCON, the same file Download gives, and waits for the network to go live. Republishing is
+ * the same, and replaces what this network published before.
+ * @param refreshTheme Has the server make a new theme instead of keeping the theme it made before
  */
 export const publish = async (
     network: PublishNetwork,
     hocon: string,
     target: PublishTarget,
     refreshTheme: boolean
-): Promise<void> => {
+): Promise<PublishResult> => {
     const {clearPublishState, networks, setPublishState, setPublishedList} = usePublishStore.getState()
     const previousState = networks[network.id]
     setPublishState(network.id, {status: PublishStatus.Publishing})
@@ -137,56 +150,72 @@ export const publish = async (
         // Publishing again goes to the same deployment, under the name it was first published under
         const publishName =
             getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(network.name, target))
-        const ready = await publishNetwork({
+        const liveNetwork = await publishNetwork({
             serverUrl,
             orgName,
             networkName: publishName,
             hocon,
             refreshTheme,
-            // Remembered as soon as the server has it, so a publish that fails can still be published again. On the
-            // network that's there now, in case it was edited while publishing.
+            // Save the deployment id as soon as the server accepts the publish, so MAUI can still find the deployment
+            // if the build fails. Saved on the current network, since the user may have edited the network while
+            // publishing.
             onAccepted: (deploymentId) =>
-                useTempNetworksStore.getState().setTempNetworkPublished(resolveNetworkId(network.id), {
-                    serverUrl,
-                    orgName,
-                    deploymentId,
-                    name: publishName,
+                useTempNetworksStore.getState().updateTempNetwork(resolveNetworkId(network.id), {
+                    deployment: {serverUrl, orgName, deploymentId, name: publishName},
                 }),
         })
-        setPublishState(network.id, {status: PublishStatus.Published, serverUrl, publishId: ready.id, url: ready.url})
-
-        const message = openInNewTab(ready.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
-        sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})
+        setPublishState(network.id, {
+            status: PublishStatus.Published,
+            serverUrl,
+            publishId: liveNetwork.id,
+            url: liveNetwork.url,
+        })
+        return {url: liveNetwork.url}
     } catch (e) {
-        sendNotification(NotificationType.error, `Failed to publish "${network.name}".`, String(e))
-        // A failed republish can leave it live, unpublished, or never published, so ask the server which
-        clearPublishState(network.id)
+        // A failed republish can leave the network live, unpublished, or never published, so ask the server which
         setPublishedList(null)
-        await checkIfPublished({...network, id: resolveNetworkId(network.id)}, target)
-
-        // If the server couldn't be asked either, it was published before, so keep offering to recreate its theme
-        if (previousState && !usePublishStore.getState().networks[resolveNetworkId(network.id)]) {
-            setPublishState(network.id, {status: PublishStatus.Unpublished})
+        const serverState = await fetchPublishState(resolveNetworkId(network.id), target).catch((): null => null)
+        // If the server couldn't say and the network was published before, keep offering to recreate its theme
+        const stateNow = serverState ?? (previousState ? {status: PublishStatus.Unpublished} : null)
+        if (stateNow) {
+            setPublishState(network.id, stateNow)
+        } else {
+            clearPublishState(network.id)
         }
+        return {error: String(e)}
     }
 }
 
 /**
- * Stops a live network, which takes it off the map, on the server it was published to. The server keeps it, so it can
- * be published again.
+ * Opens a network that was just published in a new tab, and tells the user how publishing went.
  */
-export const unpublish = async (network: PublishNetwork, published: Published): Promise<void> => {
+export const showPublishResult = (networkName: string, result: PublishResult): void => {
+    if (result.error) {
+        sendNotification(NotificationType.error, `Failed to publish "${networkName}".`, result.error)
+        return
+    }
+
+    const message = openInNewTab(result.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
+    sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})
+}
+
+/**
+ * Stops a live network, which takes the network off the map, on the server it was published to. The server keeps the
+ * network, so it can be published again.
+ */
+export const unpublish = async (network: PublishNetwork, published: Published): Promise<UnpublishResult> => {
     const {setPublishState, setPublishedList} = usePublishStore.getState()
     setPublishState(network.id, {...published, isUnpublishing: true})
 
     try {
         await unpublishNetwork(published.serverUrl, published.publishId)
         setPublishState(network.id, {status: PublishStatus.Unpublished})
-        // The shared list still has it as live, so drop the list too
+        // The shared list still has the network as live, so drop the list too
         setPublishedList(null)
+        return {}
     } catch (e) {
         setPublishState(network.id, {...published, isUnpublishing: false})
-        sendNotification(NotificationType.error, `Failed to unpublish "${network.name}".`, String(e))
+        return {error: String(e)}
     }
 }
 

@@ -8,7 +8,7 @@ import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import TextField from "@mui/material/TextField"
 import Tooltip from "@mui/material/Tooltip"
-import {FC, ChangeEvent as ReactChangeEvent, useEffect, useState} from "react"
+import {FC, ChangeEvent as ReactChangeEvent, useEffect, useRef, useState} from "react"
 
 import {isKeyValidationFailure, KeyValidationFailure, KeyValidationResult} from "../../controller/llm/Providers"
 import {LLMProvider} from "../../state/Settings"
@@ -20,7 +20,8 @@ interface ApiKeyInputProps {
     readonly id: string
     readonly logo: string
     readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
-    readonly onSave: (key: string) => void
+    readonly onSave: (key: string) => Promise<boolean>
+    readonly onSaveUnverified?: (key: string) => Promise<boolean>
     readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly onValueChange?: (vendor: LLMProvider, value: string) => void
     readonly persistedValue: string
@@ -37,12 +38,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     logo,
     onResultChange,
     onSave,
+    onSaveUnverified,
     onTest,
     onValueChange,
     persistedValue,
     placeholder,
     vendor,
 }) => {
+    // Edits and unmounts invalidate a pending test, even if the same key is entered again.
+    const ignoreTestResult = useRef(false)
     const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
@@ -51,6 +55,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
 
     const handleValueChange = (e: ReactChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
+        ignoreTestResult.current = true
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         setInputValue(newValue)
@@ -61,8 +66,12 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setIsValidating(true)
         setKeyValidated(null)
         onResultChange?.(vendor, null)
+        ignoreTestResult.current = false
         try {
             const result = await onTest(inputValue)
+            if (ignoreTestResult.current) {
+                return
+            }
             setKeyValidated(result.ok)
             onResultChange?.(vendor, isKeyValidationFailure(result) ? result : null)
         } finally {
@@ -78,9 +87,13 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         onValueChange?.(vendor, persistedValue ?? "")
+        return () => {
+            ignoreTestResult.current = true
+        }
     }, [persistedValue, vendor, onResultChange, onValueChange])
 
     const handleClearInput = () => {
+        ignoreTestResult.current = true
         setInputValue("")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
@@ -90,7 +103,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     return (
         <Box
             data-testid={`${id}-input`}
-            sx={{display: "flex", alignItems: "center", width: "100%", gap: 2}}
+            sx={{display: "flex", flexWrap: "wrap", alignItems: "center", width: "100%", gap: 2}}
         >
             {confirmationDialogOpen ? (
                 <ConfirmationModal
@@ -196,7 +209,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 Test
             </Button>
             <Button
-                onClick={() => onSave(inputValue)}
+                loading={isValidating}
+                onClick={async () => {
+                    setIsValidating(true)
+                    try {
+                        await onSave(inputValue)
+                    } finally {
+                        setIsValidating(false)
+                    }
+                }}
                 size="small"
                 variant="contained"
                 disabled={disableActions}
@@ -211,6 +232,23 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 Forget
             </Button>
+            {onSaveUnverified && !disableActions ? (
+                <Box sx={{display: "flex", gap: 1, width: "100%", justifyContent: "flex-end"}}>
+                    <Button
+                        onClick={() => onResultChange?.(vendor, null)}
+                        size="small"
+                    >
+                        Keep editing
+                    </Button>
+                    <Button
+                        onClick={() => onSaveUnverified(inputValue)}
+                        size="small"
+                        variant="outlined"
+                    >
+                        Save anyway
+                    </Button>
+                </Box>
+            ) : null}
         </Box>
     )
 }

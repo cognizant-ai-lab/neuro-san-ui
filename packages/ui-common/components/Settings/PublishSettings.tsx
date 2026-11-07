@@ -21,6 +21,7 @@ import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import MenuItem from "@mui/material/MenuItem"
 import Select from "@mui/material/Select"
+import {styled} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import {FC, useState} from "react"
 
@@ -39,8 +40,18 @@ export const PUBLISH_SERVER_HOST_LABEL = "Publishing server host"
 export const SAVE_PUBLISHING_LABEL = "Save publishing settings"
 export const TEST_PUBLISH_SERVER_LABEL = "Test publishing server"
 
-// Just wide enough for the longest label, "Org name *", so the fields get the rest of the row
-const LABEL_WIDTH = "5.5rem"
+// #region: Styled Components
+
+// Lines up the rows' labels, fields and info icons, with the label column as wide as the longest label
+const RowsGrid = styled(Box)(({theme}) => ({
+    alignItems: "center",
+    columnGap: theme.spacing(2),
+    display: "grid",
+    gridTemplateColumns: "max-content 1fr auto",
+    rowGap: theme.spacing(2.5),
+}))
+
+// #endregion: Styled Components
 
 interface PublishSettingsProps {
     readonly id: string
@@ -93,103 +104,105 @@ export const PublishSettings: FC<PublishSettingsProps> = ({id}) => {
 
     return (
         <SettingsSubsection title="Publishing Server">
-            <SettingsRow
-                id={`${id}-server-row`}
-                label="Server"
-                labelWidth={LABEL_WIDTH}
-                tooltip="URL for the publishing server, where networks are published."
-            >
-                <Select<Protocol>
-                    aria-label="Publishing server protocol"
-                    onChange={(e) => {
-                        setProtocol(e.target.value)
-                        setIsServerReachable(null)
-                    }}
-                    size="small"
-                    sx={{minWidth: 100, flexShrink: 0}}
-                    value={protocol}
+            <RowsGrid>
+                <SettingsRow
+                    id={`${id}-server-row`}
+                    label="Server"
+                    sx={{display: "contents"}}
+                    tooltip="URL for the publishing server, where networks are published."
                 >
-                    <MenuItem value="https">https://</MenuItem>
-                    <MenuItem value="http">http://</MenuItem>
-                </Select>
-                <TextField
-                    onBlur={() => {
-                        setHostInput(normalized.host)
-                        setProtocol(normalized.protocol)
-                    }}
-                    onChange={(e) => handleHostChange(e.target.value)}
-                    placeholder="publish.example.com"
-                    size="small"
-                    slotProps={{
-                        htmlInput: {"aria-label": PUBLISH_SERVER_HOST_LABEL},
-                        input: {
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label="Clear publishing server"
-                                        edge="end"
-                                        onClick={() => handleHostChange("")}
-                                        size="small"
-                                    >
-                                        <ClearIcon fontSize="small" />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                        },
-                    }}
-                    sx={{flex: 1}}
-                    value={hostInput}
-                />
-                <StatusLight
-                    id={`${id}-status-light`}
-                    statusValue={isServerReachable === null ? "unknown" : isServerReachable ? "green" : "red"}
-                />
-                <Button
-                    aria-label={TEST_PUBLISH_SERVER_LABEL}
-                    disabled={!serverUrl}
-                    onClick={handleTest}
-                    size="small"
-                    variant="contained"
-                >
-                    Test
-                </Button>
-                {defaultServerUrl && (
+                    <Select<Protocol>
+                        aria-label="Publishing server protocol"
+                        onChange={(e) => {
+                            setProtocol(e.target.value)
+                            setIsServerReachable(null)
+                        }}
+                        size="small"
+                        sx={{minWidth: 100, flexShrink: 0}}
+                        value={protocol}
+                    >
+                        <MenuItem value="https">https://</MenuItem>
+                        <MenuItem value="http">http://</MenuItem>
+                    </Select>
+                    <TextField
+                        onBlur={() => {
+                            setHostInput(normalized.host)
+                            setProtocol(normalized.protocol)
+                        }}
+                        onChange={(e) => handleHostChange(e.target.value)}
+                        placeholder="publish.example.com"
+                        size="small"
+                        slotProps={{
+                            htmlInput: {"aria-label": PUBLISH_SERVER_HOST_LABEL},
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="Clear publishing server"
+                                            edge="end"
+                                            onClick={() => handleHostChange("")}
+                                            size="small"
+                                        >
+                                            <ClearIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        sx={{flex: 1}}
+                        value={hostInput}
+                    />
+                    <StatusLight
+                        id={`${id}-status-light`}
+                        statusValue={isServerReachable === null ? "unknown" : isServerReachable ? "green" : "red"}
+                    />
                     <Button
-                        aria-label={DEFAULT_PUBLISH_SERVER_LABEL}
-                        disabled={serverUrl === defaultServerUrl}
-                        onClick={handleDefault}
+                        aria-label={TEST_PUBLISH_SERVER_LABEL}
+                        disabled={!serverUrl}
+                        onClick={handleTest}
                         size="small"
                         variant="contained"
                     >
-                        Default
+                        Test
                     </Button>
-                )}
-            </SettingsRow>
-            <SettingsRow
-                id={`${id}-org-name-row`}
-                label={
-                    <>
-                        {ORG_NAME_LABEL}
-                        <Box
-                            aria-hidden={true}
-                            component="span"
-                            sx={{color: "error.main"}}
+                    {defaultServerUrl && (
+                        <Button
+                            aria-label={DEFAULT_PUBLISH_SERVER_LABEL}
+                            disabled={serverUrl === defaultServerUrl}
+                            onClick={handleDefault}
+                            size="small"
+                            variant="contained"
                         >
-                            {" *"}
-                        </Box>
-                    </>
-                }
-                labelWidth={LABEL_WIDTH}
-                tooltip="Your team or organization. Networks are published under it, and it's needed to publish."
-            >
-                <TextField
-                    onChange={(e) => setOrgNameInput(e.target.value)}
-                    size="small"
-                    slotProps={{htmlInput: {"aria-label": ORG_NAME_LABEL}}}
-                    sx={{flex: 1}}
-                    value={orgNameInput}
-                />
-            </SettingsRow>
+                            Default
+                        </Button>
+                    )}
+                </SettingsRow>
+                <SettingsRow
+                    id={`${id}-org-name-row`}
+                    label={
+                        <>
+                            {ORG_NAME_LABEL}
+                            <Box
+                                aria-hidden={true}
+                                component="span"
+                                sx={{color: "error.main"}}
+                            >
+                                {" *"}
+                            </Box>
+                        </>
+                    }
+                    sx={{display: "contents"}}
+                    tooltip="Your team or organization. Networks are published under it, and it's needed to publish."
+                >
+                    <TextField
+                        onChange={(e) => setOrgNameInput(e.target.value)}
+                        size="small"
+                        slotProps={{htmlInput: {"aria-label": ORG_NAME_LABEL}}}
+                        sx={{flex: 1}}
+                        value={orgNameInput}
+                    />
+                </SettingsRow>
+            </RowsGrid>
             <Box sx={{alignItems: "center", display: "flex", gap: 1}}>
                 <Button
                     aria-label={SAVE_PUBLISHING_LABEL}

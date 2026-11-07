@@ -23,8 +23,8 @@ import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../
 // Read the raw body so multipart uploads pass through unchanged
 export const config = {api: {bodyParser: false}}
 
-// How long to wait for the publish server. While a network builds, the publish client asks the server to hold each
-// /wait request open for up to WAIT_TIMEOUT_SECONDS, so this allows that plus some slack.
+// How long to wait for the publishing server. While a network builds, the publishing client asks the server to hold
+// each /wait request open for up to WAIT_TIMEOUT_SECONDS, so this allows that plus some slack.
 const UPSTREAM_TIMEOUT_MS = (WAIT_TIMEOUT_SECONDS + 30) * 1000
 
 const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> => {
@@ -83,7 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const contentType = req.headers["content-type"]
     // Outside the try, so an error here, like the browser dropping the upload, isn't blamed on the publishing server
-    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await readBody(req)
+    const body = req.method === "GET" ? undefined : await readBody(req)
 
     let upstream: Response
     let upstreamBody: Buffer

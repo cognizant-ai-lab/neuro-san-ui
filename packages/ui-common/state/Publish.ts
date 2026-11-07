@@ -26,29 +26,25 @@ export enum PublishStatus {
     Unpublished = "Unpublished",
 }
 
-interface Publishing {
-    readonly status: PublishStatus.Publishing
-}
-
 export interface Published {
     readonly status: PublishStatus.Published
-    /** The publish server it's published on, so it's unpublished from the same one */
+    /** The publishing server the network is published on, so it's unpublished from the same server */
     readonly serverUrl: string
-    /** The server's id for it, needed to unpublish */
+    /** The server's id for the deployment, needed to unpublish */
     readonly publishId: string
     readonly url: string
-    /** Set while it's being unpublished, when it can't be republished */
+    /** Set while the network is being unpublished, when it can't be republished */
     readonly isUnpublishing?: boolean
     /** Set while the server builds a bundle of it to download, when it can't be unpublished */
     readonly isDownloadingBundle?: boolean
 }
 
-/** Published before and now unpublished, or its publish failed. The server keeps it, so it can be published again. */
-interface Unpublished {
-    readonly status: PublishStatus.Unpublished
-}
-
-export type PublishState = Publishing | Published | Unpublished
+export type PublishState =
+    | {readonly status: PublishStatus.Publishing}
+    | Published
+    // Published before and now unpublished, or the publish failed. The server keeps the network, so it can be published
+    // again.
+    | {readonly status: PublishStatus.Unpublished}
 
 /** A server's published networks, as one request every network can share */
 interface PublishedList {
@@ -107,7 +103,7 @@ export const usePublishStore = create<PublishStore>()((set) => ({
 }))
 
 /**
- * The network that's there now for one that may have been replaced by edits since
+ * Follows a network id through any edits that replaced the network, to the id of the network the user has now
  */
 export const resolveNetworkId = (networkId: string): string =>
     followReplacements(usePublishStore.getState().replacedBy, networkId)

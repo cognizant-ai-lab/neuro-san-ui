@@ -16,6 +16,11 @@ const ORG_NAME = "cailville"
 const HOCON = "{ tools: [] }"
 const PUBLISH_ID = "dep-123"
 const PUBLISHED_URL = "https://publish.test/sites/cailville_bakery"
+const DEPLOYMENTS_ROUTE = `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`
+
+// Matches a FormData body whose fields have these values
+const formWith = (fields: Record<string, string>) =>
+    expect.toSatisfy((form: FormData) => Object.entries(fields).every(([field, value]) => form.get(field) === value))
 
 // Covers each publish server endpoint the client calls. The comment on each test names the endpoints it exercises.
 describe("Publish", () => {
@@ -50,10 +55,13 @@ describe("Publish", () => {
         const isHealthy = await checkHealth(SERVER_URL)
 
         expect(isHealthy).toBe(true)
-        expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            1,
             `/api/publish/health?server=${encodeURIComponent(SERVER_URL)}`,
-            `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`,
-        ])
+            expect.anything()
+        )
+        expect(fetchMock).toHaveBeenNthCalledWith(2, DEPLOYMENTS_ROUTE, expect.anything())
     })
 
     // GET /health, then GET /deployments
@@ -89,15 +97,16 @@ describe("Publish", () => {
 
         await create()
 
-        const [url, init] = fetchMock.mock.calls[0]
-        expect(url).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(init?.method).toBe("POST")
-        const form = init?.body as FormData
-        expect(form.get("name")).toBe(NETWORK_NAME)
-        expect(form.get("org_name")).toBe(ORG_NAME)
-        const file = form.get("file") as File
-        expect(file.name).toBe(`${NETWORK_NAME}.hocon`)
-        expect(await file.text()).toBe(HOCON)
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(DEPLOYMENTS_ROUTE, {
+            method: "POST",
+            body: expect.toSatisfy(
+                (form: FormData) =>
+                    form.get("name") === NETWORK_NAME &&
+                    form.get("org_name") === ORG_NAME &&
+                    (form.get("file") as File).name === `${NETWORK_NAME}.hocon` &&
+                    (form.get("file") as File).size === HOCON.length
+            ),
+        })
     })
 
     // POST /deployments
@@ -106,9 +115,10 @@ describe("Publish", () => {
 
         await create()
 
-        const form = fetchMock.mock.calls[0][1]?.body as FormData
-        expect(form.get("theme")).toBe("true")
-        expect(form.get("theme_refresh")).toBe("false")
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(DEPLOYMENTS_ROUTE, {
+            method: "POST",
+            body: formWith({theme: "true", theme_refresh: "false"}),
+        })
     })
 
     // POST /deployments
@@ -117,8 +127,10 @@ describe("Publish", () => {
 
         await create(true)
 
-        const form = fetchMock.mock.calls[0][1]?.body as FormData
-        expect(form.get("theme_refresh")).toBe("true")
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(DEPLOYMENTS_ROUTE, {
+            method: "POST",
+            body: formWith({theme_refresh: "true"}),
+        })
     })
 
     // POST /deployments, then GET /deployments/{id}/wait until it's ready
@@ -130,11 +142,14 @@ describe("Publish", () => {
                 Response.json({id: PUBLISH_ID, name: NETWORK_NAME, status: "ready", url: PUBLISHED_URL})
             )
 
-        const ready = await create()
+        const liveNetwork = await create()
 
-        expect(ready).toEqual({id: PUBLISH_ID, url: PUBLISHED_URL})
+        expect(liveNetwork).toEqual({id: PUBLISH_ID, url: PUBLISHED_URL})
         expect(fetchMock).toHaveBeenCalledTimes(3)
-        expect(fetchMock.mock.calls[1][0]).toContain(`/api/publish/deployments/${PUBLISH_ID}/wait?`)
+        expect(fetchMock).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining(`/api/publish/deployments/${PUBLISH_ID}/wait?`)
+        )
     })
 
     // POST /deployments, then GET /deployments/{id}/wait ends as failed
@@ -223,12 +238,8 @@ describe("Publish", () => {
 
         const published = await listPublishedNetworks(SERVER_URL)
 
-        expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(published).toEqual([
-            {id: "other-org", url: "x"},
-            {id: "stopped", url: null},
-            {id: PUBLISH_ID, url: PUBLISHED_URL},
-        ])
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(DEPLOYMENTS_ROUTE)
+        expect(published).toEqual([{id: "other-org", url: "x"}, {id: "stopped"}, {id: PUBLISH_ID, url: PUBLISHED_URL}])
     })
 
     // GET /deployments
@@ -240,7 +251,7 @@ describe("Publish", () => {
             })
         )
 
-        await expect(listPublishedNetworks(SERVER_URL)).resolves.toEqual([{id: "failed", url: null}])
+        await expect(listPublishedNetworks(SERVER_URL)).resolves.toEqual([{id: "failed"}])
     })
 
     it("should leave out networks that are still building", async () => {
@@ -269,7 +280,7 @@ describe("Publish", () => {
         fetchMock.mockResolvedValue(Response.json({capacity: {}, deployments: [{id: "x", ...network}]}))
 
         await expect(isPublishNameTaken(SERVER_URL, ORG_NAME, NETWORK_NAME)).resolves.toBe(isTaken)
-        expect(fetchMock.mock.calls[0][0]).toBe(`/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`)
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(DEPLOYMENTS_ROUTE)
     })
 
     // GET /deployments rejected
@@ -287,9 +298,10 @@ describe("Publish", () => {
 
         await unpublishNetwork(SERVER_URL, PUBLISH_ID)
 
-        const [url, init] = fetchMock.mock.calls[0]
-        expect(url).toBe(`/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`)
-        expect(init?.method).toBe("DELETE")
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            `/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`,
+            {method: "DELETE"}
+        )
     })
 
     // GET /deployments/{id}/bundle

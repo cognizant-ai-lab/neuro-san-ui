@@ -44,7 +44,7 @@ export type TemporaryNetwork = {
     readonly agentNetworkName: string
     readonly networkHocon?: string | null
     readonly agentNetworkDefinition?: AgentNetworkDefinitionEntry[]
-    readonly published?: PublishedDeployment
+    readonly deployment?: PublishedDeployment
 }
 
 /**
@@ -57,15 +57,15 @@ interface TempNetworksStore {
      * Upsert new networks into the store. Networks are matched by the UUID-stripped portion of
      * their `reservation_id` (e.g. `"travel_agency_ops"` from `"travel_agency_ops-{uuid}"`), or, just
      * `agentNetworkName` which is the same as having the UUID-stripped. If an incoming network
-     * matches an existing one, the existing entry is replaced, keeping where it was published. Returns the final list
-     * of upserted networks (those that were added or replaced).
+     * matches an existing one, the incoming fields replace the existing ones. Returns the final list of upserted
+     * networks (those that were added or replaced).
      */
     readonly upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]) => TemporaryNetwork[]
     readonly updateTempNetworkDefinition: (
         networkName: string,
         agentNetworkDefinition: AgentNetworkDefinitionEntry[]
     ) => void
-    readonly setTempNetworkPublished: (networkId: string, published: PublishedDeployment) => void
+    readonly updateTempNetwork: (networkId: string, changes: Partial<TemporaryNetwork>) => void
 }
 
 /**
@@ -79,9 +79,8 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
             upsertTempNetworks: (incomingNetworks: TemporaryNetwork[]): TemporaryNetwork[] => {
                 set((state) => {
                     const existing = keyBy(state.tempNetworks, "agentNetworkName")
-                    // An edit replaces the network, so the replacement keeps where the original was published
                     const incoming = incomingNetworks.map((network) => ({
-                        published: existing[network.agentNetworkName]?.published,
+                        ...existing[network.agentNetworkName],
                         ...network,
                     }))
                     return {
@@ -98,10 +97,10 @@ export const useTempNetworksStore = create<TempNetworksStore>()(
                         network.agentInfo.agent_name === networkName ? {...network, agentNetworkDefinition} : network
                     ),
                 })),
-            setTempNetworkPublished: (networkId: string, published: PublishedDeployment) =>
+            updateTempNetwork: (networkId: string, changes: Partial<TemporaryNetwork>) =>
                 set(({tempNetworks}) => ({
                     tempNetworks: tempNetworks.map((network) =>
-                        network.agentInfo.agent_name === networkId ? {...network, published} : network
+                        network.agentInfo.agent_name === networkId ? {...network, ...changes} : network
                     ),
                 })),
         }),
