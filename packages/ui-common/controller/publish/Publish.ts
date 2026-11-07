@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import httpStatus from "http-status"
+
 /**
  * Client for the publish server. Requests go through our `/api/publish` route because the server doesn't allow
  * requests from browsers.
@@ -81,7 +83,9 @@ const throwIfNotOk = async (response: Response, action: string): Promise<void> =
     try {
         // The server is FastAPI, which explains errors in `detail`
         const {detail} = await response.json()
-        reason = typeof detail === "string" ? detail : JSON.stringify(detail)
+        if (detail) {
+            reason = typeof detail === "string" ? detail : JSON.stringify(detail)
+        }
     } catch {
         // Not JSON, so keep the status text
     }
@@ -172,8 +176,10 @@ export const publishNetwork = async ({
         const waitResponse = await fetch(
             publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
         )
-        // When the wait times out, the server answers with the network still building, so this asks again
-        await throwIfNotOk(waitResponse, "Waiting for the network to go live")
+        // When the wait times out, the server answers 504 with the network still building, so this asks again
+        if (waitResponse.status !== httpStatus.GATEWAY_TIMEOUT) {
+            await throwIfNotOk(waitResponse, "Waiting for the network to go live")
+        }
         network = await waitResponse.json()
     }
 

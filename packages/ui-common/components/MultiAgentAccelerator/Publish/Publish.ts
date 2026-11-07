@@ -182,7 +182,7 @@ export const publish = async (
         } else {
             clearPublishState(network.id)
         }
-        return {error: String(e)}
+        return {error: e instanceof Error ? e.message : String(e)}
     }
 }
 
@@ -215,7 +215,7 @@ export const unpublish = async (network: PublishNetwork, published: Published): 
         return {}
     } catch (e) {
         setPublishState(network.id, {...published, isUnpublishing: false})
-        return {error: String(e)}
+        return {error: e instanceof Error ? e.message : String(e)}
     }
 }
 

@@ -41,6 +41,11 @@ const NETWORK_NAME = "cailville_bakery"
 const PUBLISH_NAME = `${NETWORK_NAME}_1a2b3c4d`
 const ORG_NAME = "cailville"
 const SERVER_ERROR = "Publish server unavailable"
+// The server's error, as an Error or as anything else that gets thrown
+const FAILURES = [
+    {desc: "an error", failure: new Error(SERVER_ERROR)},
+    {desc: "a plain message", failure: SERVER_ERROR},
+]
 const SERVER_URL = "https://publish.test"
 const BUNDLE_FILE_NAME = "cailville_bakery.tar.gz"
 
@@ -392,7 +397,7 @@ describe("PublishButton", () => {
             expect(sendNotification).toHaveBeenCalledWith(
                 NotificationType.error,
                 `Failed to publish "${NETWORK_NAME}".`,
-                expect.stringContaining(SERVER_ERROR)
+                SERVER_ERROR
             )
         )
         expect(mockPublishNetwork).not.toHaveBeenCalled()
@@ -684,8 +689,8 @@ describe("PublishButton", () => {
         expect(republishButton).toBeDisabled()
     })
 
-    it("should report the error and stay live when unpublishing fails", async () => {
-        vi.mocked(unpublishNetwork).mockRejectedValue(new Error(SERVER_ERROR))
+    it.each(FAILURES)("should report the error and stay live when unpublishing fails with $desc", async ({failure}) => {
+        vi.mocked(unpublishNetwork).mockRejectedValue(failure)
         renderPublishButton()
         await publishAndWaitUntilLive()
 
@@ -695,7 +700,7 @@ describe("PublishButton", () => {
             expect(sendNotification).toHaveBeenCalledWith(
                 NotificationType.error,
                 `Failed to unpublish "${NETWORK_NAME}".`,
-                expect.stringContaining(SERVER_ERROR)
+                SERVER_ERROR
             )
         )
         await openDetails()
@@ -837,22 +842,25 @@ describe("PublishButton", () => {
         expect(within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})).not.toBeChecked()
     })
 
-    it("should report the error and offer to publish again when publishing fails", async () => {
-        mockPublishNetwork.mockRejectedValue(new Error(SERVER_ERROR))
-        renderPublishButton()
+    it.each(FAILURES)(
+        "should report the error and offer to publish again when publishing fails with $desc",
+        async ({failure}) => {
+            mockPublishNetwork.mockRejectedValue(failure)
+            renderPublishButton()
 
-        await clickPublishAndConfirm()
+            await clickPublishAndConfirm()
 
-        await waitFor(() =>
-            expect(sendNotification).toHaveBeenCalledWith(
-                NotificationType.error,
-                `Failed to publish "${NETWORK_NAME}".`,
-                expect.stringContaining(SERVER_ERROR)
+            await waitFor(() =>
+                expect(sendNotification).toHaveBeenCalledWith(
+                    NotificationType.error,
+                    `Failed to publish "${NETWORK_NAME}".`,
+                    SERVER_ERROR
+                )
             )
-        )
-        await screen.findByRole("button", {name: "Publish"})
-        expect(openSpy).not.toHaveBeenCalled()
-    })
+            await screen.findByRole("button", {name: "Publish"})
+            expect(openSpy).not.toHaveBeenCalled()
+        }
+    )
 
     it("should show it as unpublished when the server took the network but it failed to go live", async () => {
         mockPublishNetwork.mockImplementation(async ({onAccepted}) => {
