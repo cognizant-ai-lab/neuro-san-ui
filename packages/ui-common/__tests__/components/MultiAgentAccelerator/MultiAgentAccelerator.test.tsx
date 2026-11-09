@@ -615,7 +615,7 @@ describe("MultiAgentAccelerator", () => {
             const original = Element.prototype.getBoundingClientRect
             /* eslint-disable unicorn/no-this-outside-of-class */
             return vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
-                return this.getAttribute("aria-hidden") === "true" ? (rect) : original.call(this)
+                return this.getAttribute("aria-hidden") === "true" ? rect : original.call(this)
             })
             /* eslint-enable unicorn/no-this-outside-of-class */
         }
