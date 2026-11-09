@@ -17,7 +17,7 @@ limitations under the License.
 import {useEffect} from "react"
 
 import {checkIfPublished, PublishTarget} from "./Publish"
-import {usePublishServerUrl} from "../../../state/Publish"
+import {usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useSettingsStore} from "../../../state/Settings"
 
 /**
@@ -27,12 +27,13 @@ import {useSettingsStore} from "../../../state/Settings"
 export const usePublishTarget = (networkId: string, networkName: string): PublishTarget | null => {
     const serverUrl = usePublishServerUrl()
     const orgName = useSettingsStore((state) => state.settings.publish.orgName)
+    const publishedListRevision = usePublishStore((state) => state.publishedListRevision)
 
     useEffect(() => {
         if (serverUrl && orgName) {
             void checkIfPublished({id: networkId, name: networkName}, {serverUrl, orgName})
         }
-    }, [networkId, networkName, orgName, serverUrl])
+    }, [networkId, networkName, orgName, serverUrl, publishedListRevision])
 
     return serverUrl && orgName ? {serverUrl, orgName} : null
 }

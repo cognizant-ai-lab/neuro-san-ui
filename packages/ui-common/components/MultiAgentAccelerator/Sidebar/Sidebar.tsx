@@ -33,6 +33,7 @@ import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {StatusLight} from "../../Common/StatusLight"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
+import {PublishedNetworksButton} from "../Publish/PublishedNetworksButton"
 
 //#region Constants
 
@@ -398,6 +399,7 @@ export const Sidebar: FC<SidebarProps> = ({
     return (
         <SidebarAside id={`${id}-sidebar`}>
             {getSidebarHeading()}
+            <PublishedNetworksButton />
             {getSidebarNetworksTree()}
         </SidebarAside>
     )
