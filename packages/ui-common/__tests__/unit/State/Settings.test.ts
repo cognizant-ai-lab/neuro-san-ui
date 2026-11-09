@@ -161,6 +161,20 @@ describe("Settings", () => {
             expect(JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) ?? "{}").version).toBe(1)
         })
 
+        it.each([
+            {label: "no appearance settings", state: {settings: {behavior: {enableZenMode: false}}}},
+            {label: "no settings", state: {}},
+        ])("migrates pre-reskin settings with $label", async ({state}) => {
+            localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify({state, version: 0}))
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {settings} = freshUseSettingsStore.getState()
+
+            expect(settings.appearance).toEqual(DEFAULT_SETTINGS.appearance)
+            expect(settings.behavior.enableZenMode).toBe(!("settings" in state))
+        })
+
         it("keeps legacy appearance values chosen after the reskin", async () => {
             localStorage.setItem(
                 APP_SETTINGS_STORAGE_KEY,
