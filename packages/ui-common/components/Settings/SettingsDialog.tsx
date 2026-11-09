@@ -28,7 +28,13 @@ import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
 import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
-import {glassSurface, gradientBorder, SHEEN_FONT_DISPLAY, SHEEN_RADIUS_SURFACE} from "../../Theme/sheen"
+import {
+    glassSurface,
+    gradientBorder,
+    SHEEN_FONT_DISPLAY,
+    SHEEN_RADIUS_SURFACE,
+    unbrandedPalette,
+} from "../../Theme/sheen"
 import {normalizeUrlInput, Protocol, stripProtocol} from "../../utils/Url"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
@@ -179,6 +185,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const statusLightValue = neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"
 
     const theme = useTheme()
+
+    // Settings (and its confirmation modals) ignore the user's branding colors, so it stays readable whatever they
+    // picked and they can always reset it
+    const unbrandedSx = unbrandedPalette(theme)
 
     const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
         if (newPalette) {
@@ -347,6 +357,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getConfirmationModal = () => (
         <ConfirmationModal
+            dialogSx={unbrandedSx}
             id={`${id}-reset-to-default-settings-confirmation-modal`}
             content={
                 "This will reset all settings to their default values and cannot be undone. " +
@@ -378,6 +389,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 >
                     <Select<Protocol>
                         aria-label="protocol-select"
+                        // The menu is portaled outside the dialog, so it needs the unbranded colors too
+                        MenuProps={{slotProps: {paper: {sx: unbrandedSx}}}}
                         onChange={handleNeuroSanProtocolChange}
                         size="small"
                         sx={{minWidth: 100, flexShrink: 0}}
@@ -911,6 +924,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
             {showUnsavedChangesModal ? (
                 <ByokUnsavedChangesModal
+                    dialogSx={unbrandedSx}
                     id={id}
                     onDiscard={handleDiscardUnsavedKeys}
                     onSave={handleSaveUnsavedKeys}
@@ -935,6 +949,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 onClose={handleSettingsClose}
                 paperProps={getDialogPaperSx(theme)}
                 contentSx={SETTINGS_CONTENT_SX}
+                dialogSx={unbrandedSx}
             >
                 <SettingsNavLayout
                     id={id}

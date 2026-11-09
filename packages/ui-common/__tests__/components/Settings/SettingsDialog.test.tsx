@@ -84,6 +84,24 @@ describe("SettingsDialog", () => {
         await screen.findByText("Settings")
     })
 
+    it("ignores branding text colors so the dialog stays readable", async () => {
+        const brandedTheme = createTheme({
+            colorSchemes: {dark: {palette: {text: {primary: "#010101"}}}},
+            cssVariables: true,
+            defaultColorScheme: "dark",
+        })
+        render(
+            <ThemeProvider theme={brandedTheme}>
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            </ThemeProvider>
+        )
+        const dialog = await screen.findByTestId("settings-dialog")
+        expect(getComputedStyle(dialog).getPropertyValue("--mui-palette-text-primary")).toBe("#F2F0FF")
+    })
+
     it("handles nullish logoSource", async () => {
         useSettingsStore.getState().updateSettings({
             branding: {

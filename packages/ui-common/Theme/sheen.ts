@@ -126,6 +126,31 @@ export const getSheen = (theme: Theme): SheenPalette =>
     (theme.palette as {sheen?: SheenPalette}).sheen ??
     (theme.palette.mode === "light" ? SHEEN_LIGHT.sheen : SHEEN_DARK.sheen)
 
+// "#RRGGBB" -> "R G B", the format MUI uses for its *Channel CSS variables
+const toChannel = (hex: string): string =>
+    [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16)).join(" ")
+
+const paletteVars = (tokens: typeof SHEEN_DARK | typeof SHEEN_LIGHT): CSSObject => ({
+    "--mui-palette-text-primary": tokens.text.primary,
+    "--mui-palette-text-primaryChannel": toChannel(tokens.text.primary),
+    "--mui-palette-text-secondary": tokens.text.secondary,
+    "--mui-palette-text-secondaryChannel": toChannel(tokens.text.secondary),
+    "--mui-palette-background-default": tokens.background.default,
+    "--mui-palette-background-defaultChannel": toChannel(tokens.background.default),
+    "--mui-palette-background-paper": tokens.background.paper,
+    "--mui-palette-background-paperChannel": toChannel(tokens.background.paper),
+})
+
+/**
+ * Resets the branding-overridable palette colors (text and background) to the default sheen values for the active
+ * color scheme, by redefining MUI's CSS variables on the element this is applied to. Used for surfaces that must stay
+ * readable whatever branding the user picked, e.g. the settings dialog, where branding is reset.
+ */
+export const unbrandedPalette = (theme: Theme): CSSObject => ({
+    ...paletteVars(SHEEN_DARK),
+    ...theme.applyStyles("light", paletteVars(SHEEN_LIGHT)),
+})
+
 /**
  * The signature iridescent gradient: indigo → purple → electric blue.
  */
