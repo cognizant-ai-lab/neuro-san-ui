@@ -1,5 +1,5 @@
 import {createTheme, Theme, ThemeProvider} from "@mui/material/styles"
-import {render, screen, waitFor} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 import userEvent, {UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
@@ -30,6 +30,13 @@ vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
             </button>
         </div>
     ),
+}))
+
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
 }))
 
 const mockUseAuthentication = vi.mocked(useAuthentication)
@@ -68,6 +75,10 @@ describe("ChatBot", () => {
         user = userEvent.setup()
     })
 
+    afterEach(() => {
+        reducedMotion.value = false
+    })
+
     const renderChatBot = (props = mockProps, theme: Theme = LIGHT_THEME) =>
         render(
             <ThemeProvider theme={theme}>
@@ -83,6 +94,16 @@ describe("ChatBot", () => {
 
         // Chat window should not be visible initially
         expect(screen.queryByTestId("chat-common")).not.toBeInTheDocument()
+    })
+
+    it("Should track the pointer over the launcher orb and reset on leave", () => {
+        renderChatBot()
+
+        const orb = document.getElementById(`chatbot-icon-${mockProps.id}`)
+        fireEvent.pointerMove(orb, {clientX: 20, clientY: 20})
+        fireEvent.pointerLeave(orb)
+
+        expect(orb).toBeInTheDocument()
     })
 
     it("Should open chat window when icon is clicked", async () => {
@@ -208,5 +229,21 @@ describe("ChatBot", () => {
         // Verify chat window renders (which confirms all state management is working)
         await screen.findByTestId("chat-common")
         expect(screen.getByText("Cognizant Neuro AI Assistant")).toBeInTheDocument()
+    })
+
+    it("Should skip the magnetic pull and use plain fade animations when reduced motion is preferred", async () => {
+        reducedMotion.value = true
+        renderChatBot()
+
+        const orb = document.getElementById(`chatbot-icon-${mockProps.id}`)
+        fireEvent.pointerMove(orb, {clientX: 20, clientY: 20})
+        fireEvent.pointerLeave(orb)
+
+        // Open then close so both the reduced-motion initial and exit variants are used
+        await user.click(screen.getByTestId("ContactSupportIcon").closest("div"))
+        await screen.findByTestId("chat-common")
+        await user.click(screen.getByTestId("close-button"))
+        await waitFor(() => expect(screen.queryByTestId("chat-common")).not.toBeInTheDocument())
+        expect(screen.getByTestId("ContactSupportIcon")).toBeInTheDocument()
     })
 })

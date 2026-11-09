@@ -123,4 +123,17 @@ describe("useTempNetworksStore / upsertTempNetworks", () => {
             "temporary/brand_new_name-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
         )
     })
+
+    it("updates the definition of only the named network", () => {
+        const first = makeNetwork("first-aaaa0001-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "first")
+        const second = makeNetwork("second-bbbb0001-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "second")
+        useTempNetworksStore.getState().setTempNetworks([first, second])
+
+        const definition = [{originator: "x", tools: [], instructions: "hi"}] as never
+        useTempNetworksStore.getState().updateTempNetworkDefinition(first.agentInfo.agent_name, definition)
+
+        const stored = useTempNetworksStore.getState().tempNetworks
+        expect(stored[0]?.agentNetworkDefinition).toEqual(definition)
+        expect(stored[1]?.agentNetworkDefinition).toEqual([])
+    })
 })

@@ -38,6 +38,7 @@ import {
     TEST_DEEP_AGENT_DISPLAY,
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {AGENT_NETWORK_DESIGNER_ID} from "../../../../components/MultiAgentAccelerator/const"
 import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
@@ -81,6 +82,17 @@ vi.mock("@mui/x-tree-view/RichTreeView", async (importOriginal) => {
                 </>
             )
         },
+    }
+})
+
+// Allow individual tests to turn on "reduced motion"
+let mockReducedMotion = false
+vi.mock("motion/react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("motion/react")>()
+
+    return {
+        ...actual,
+        useReducedMotion: () => mockReducedMotion,
     }
 })
 
@@ -152,6 +164,7 @@ describe("SideBar", () => {
         }
 
         mockSelectedTreeItemId = undefined
+        mockReducedMotion = false
 
         user = userEvent.setup()
         const testConnectionMock = vi.mocked(testConnection)
@@ -189,6 +202,61 @@ describe("SideBar", () => {
         // setSelectedNetwork should be called
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+    })
+
+    it("ignores a connection test result that arrives after the server URL changed", async () => {
+        const testConnectionMock = vi.mocked(testConnection)
+        let resolveStale!: (result: TestConnectionResult) => void
+        testConnectionMock.mockImplementationOnce(
+            () =>
+                new Promise<TestConnectionResult>((resolve) => {
+                    resolveStale = resolve
+                })
+        )
+
+        const {rerender} = renderSidebarComponent({})
+
+        // Change URL: the first (still pending) request is now superseded. Second request succeeds (default mock).
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                neuroSanServerURL="different-url"
+            />
+        )
+        const statusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+        await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "green"))
+
+        // The stale request now fails, but its result must be ignored
+        await act(async () => {
+            resolveStale({success: false, statusText: "stale", httpStatus: httpStatus.IM_A_TEAPOT})
+            await Promise.resolve()
+        })
+
+        expect(statusLight).toHaveAttribute("data-status", "green")
+    })
+
+    it("selects the Agent Network Designer when the Add New Network button is clicked", async () => {
+        const {props} = renderSidebarComponent({})
+
+        await user.click(await screen.findByRole("button", {name: "Add New Network"}))
+
+        expect(props.setSelectedNetwork).toHaveBeenCalledExactlyOnceWith(AGENT_NETWORK_DESIGNER_ID)
+    })
+
+    it("disables the Add New Network button while awaiting the LLM", async () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+
+        expect(await screen.findByRole("button", {name: "Add New Network"})).toBeDisabled()
+    })
+
+    it("renders the selection indicator without animation when reduced motion is preferred", async () => {
+        mockReducedMotion = true
+        renderSidebarComponent({})
+
+        await user.click(await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY))
+        await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+        expect(document.querySelector(".agent-network-selection-indicator")).toBeInTheDocument()
     })
 
     it("should show correct Neuro SAN status", async () => {
@@ -373,6 +441,25 @@ describe("SideBar", () => {
         const networkElement = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         const networkContainer = networkElement.closest('[role="treeitem"]')
         expect(within(networkContainer as HTMLElement).queryByTestId("BookmarkIcon")).not.toBeInTheDocument()
+    })
+
+    it("keeps the temporary folder expanded when another temporary network is added", async () => {
+        const {rerender} = renderSidebarComponent({
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            temporaryNetworks: [TEMPORARY_NETWORK],
+        })
+        await screen.findByText("Agent Networks")
+
+        // A new Set instance re-runs the effect while the folder is already in the expanded list
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                newlyAddedTemporaryNetworks={new Set([TEMPORARY_NETWORK.agentInfo.agent_name])}
+                temporaryNetworks={[TEMPORARY_NETWORK]}
+            />
+        )
+
+        expect(await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))).toBeInTheDocument()
     })
 
     it("Should render uncategorized networks correctly", async () => {

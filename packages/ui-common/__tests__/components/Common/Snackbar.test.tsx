@@ -33,6 +33,13 @@ vi.mock("notistack", async (importOriginal) => {
     }
 })
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 describe("Snackbar Component", () => {
     withStrictMocks()
 
@@ -64,6 +71,10 @@ describe("Snackbar Component", () => {
             enqueueSnackbar: undefined,
             closeSnackbar: mockCloseSnackbar,
         })
+    })
+
+    afterEach(() => {
+        reducedMotion.value = false
     })
 
     it("renders all elements", () => {
@@ -136,6 +147,18 @@ describe("Snackbar Component", () => {
         expect(screen.queryByTestId("test-id-snackbar-progress")).not.toBeInTheDocument()
     })
 
+    it("renders anchored to the left edge", () => {
+        renderSnackbar({anchorOrigin: {vertical: "bottom", horizontal: "left"}})
+
+        expect(screen.getByTestId("test-id-snackbar-box")).toBeInTheDocument()
+    })
+
+    it("renders when no anchor origin is given", () => {
+        renderSnackbar({anchorOrigin: undefined})
+
+        expect(screen.getByTestId("test-id-snackbar-box")).toBeInTheDocument()
+    })
+
     it("renders the correct variant class for info", () => {
         renderSnackbar({variant: "info"})
 
@@ -180,5 +203,18 @@ describe("Snackbar Component", () => {
         // Sits in a softly tinted circle of the same status color
         expect(iconBox).toHaveStyle({borderRadius: "50%"})
         expect(window.getComputedStyle(iconBox).backgroundColor).not.toBe("")
+    })
+
+    it("renders with plain fade transitions when reduced motion is preferred", () => {
+        reducedMotion.value = true
+        renderSnackbar()
+
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+    })
+
+    it("shows the variant icon by default when hideIconVariant is not specified", () => {
+        renderSnackbar({hideIconVariant: undefined})
+
+        expect(screen.getByText("Test message")).toBeInTheDocument()
     })
 })

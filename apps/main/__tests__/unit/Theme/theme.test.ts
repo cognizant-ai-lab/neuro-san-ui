@@ -129,3 +129,78 @@ describe("createAppTheme color schemes", () => {
         expect(style?.["backgroundImage"]).toMatch(/^linear-gradient\(/u)
     })
 })
+
+describe("createAppTheme component style overrides", () => {
+    withStrictMocks()
+
+    type StyleFn = (props: {theme: Theme; ownerState: Record<string, unknown>}) => Record<string, unknown>
+
+    // Collect every callback-valued style override (and the variant style callbacks) from the theme
+    const collectOverrideFns = (theme: Theme): [string, StyleFn][] => {
+        const fns: [string, StyleFn][] = []
+        Object.entries(theme.components ?? {}).forEach(([component, config]) => {
+            Object.entries(config?.styleOverrides ?? {}).forEach(([slot, value]) => {
+                if (typeof value === "function") {
+                    fns.push([`${component}.${slot}`, value as unknown as StyleFn])
+                }
+            })
+            ;(config as {variants?: {style: unknown}[]})?.variants?.forEach((variant, idx) => {
+                if (typeof variant.style === "function") {
+                    fns.push([`${component}.variants[${idx}]`, variant.style as StyleFn])
+                }
+            })
+        })
+        return fns
+    }
+
+    it("every style override callback returns styles", () => {
+        const theme = createAppTheme("", "", "")
+        const fns = collectOverrideFns(theme)
+
+        // Sanity check that we are actually exercising the overrides we care about
+        const names = fns.map(([overrideName]) => overrideName)
+        expect(names).toEqual(
+            expect.arrayContaining([
+                "MuiPaper.outlined",
+                "MuiCard.root",
+                "MuiPopover.paper",
+                "MuiMenu.paper",
+                "MuiDialog.paper",
+                "MuiBackdrop.root",
+                "MuiAppBar.root",
+                "MuiOutlinedInput.root",
+                "MuiTooltip.tooltip",
+                "MuiTooltip.arrow",
+                "MuiChip.filled",
+                "MuiChip.outlined",
+                "MuiTabs.indicator",
+                "MuiSwitch.switchBase",
+                "MuiLinearProgress.root",
+                "MuiLinearProgress.bar",
+                "MuiDivider.root",
+                "MuiStepIcon.root",
+            ])
+        )
+
+        const results = fns.map(([overrideName, fn]) => [overrideName, fn({theme, ownerState: {invisible: false}})])
+        const notStyles = results.filter(([, styles]) => !(styles instanceof Object))
+        expect(notStyles.map(([overrideName]) => overrideName)).toEqual([])
+    })
+
+    it("only blurs and dims the backdrop when it is visible", () => {
+        const theme = createAppTheme("", "", "")
+        const backdrop = theme.components?.MuiBackdrop?.styleOverrides?.["root"] as unknown as StyleFn
+
+        expect(backdrop({theme, ownerState: {invisible: true}})).toEqual({})
+        expect(backdrop({theme, ownerState: {invisible: false}})).toMatchObject({
+            backdropFilter: expect.stringContaining("blur"),
+        })
+    })
+
+    it("keeps dialogs more opaque than other glass surfaces", () => {
+        const theme = createAppTheme("", "", "")
+        const paper = theme.components?.MuiDialog?.styleOverrides?.["paper"] as unknown as StyleFn
+
+        expect(paper({theme, ownerState: {}})["backgroundColor"]).toBe(theme.vars?.palette.background.paper)
+    })
+})

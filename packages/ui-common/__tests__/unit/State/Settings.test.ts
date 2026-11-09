@@ -1,3 +1,5 @@
+import {renderHook} from "@testing-library/react"
+
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     APP_SETTINGS_STORAGE_KEY,
@@ -5,8 +7,10 @@ import {
     getApiKey,
     LEGACY_APPEARANCE_DEFAULTS,
     SESSION_API_KEYS_STORAGE_KEY,
+    usePalette,
     useSettingsStore,
 } from "../../../state/Settings"
+import {PALETTES} from "../../../Theme/Palettes"
 
 describe("Settings", () => {
     withStrictMocks()
@@ -150,6 +154,24 @@ describe("Settings", () => {
             // ...while values the user changed are preserved
             expect(appearance.agentNodeColor).toBe(customNodeColor)
             expect(appearance.layout).toBe("linear")
+        })
+    })
+
+    describe("usePalette", () => {
+        it("returns the selected built-in palette", () => {
+            useSettingsStore.getState().updateSettings({appearance: {rangePalette: "blue"}})
+            const {result} = renderHook(() => usePalette())
+            expect(result.current).toBe(PALETTES.blue)
+        })
+
+        it("returns the brand palette when brand is selected and defined", () => {
+            const rangePalette = ["#111111", "#222222"]
+            useSettingsStore.getState().updateSettings({
+                appearance: {rangePalette: "brand"},
+                branding: {rangePalette},
+            })
+            const {result} = renderHook(() => usePalette())
+            expect(result.current).toEqual(rangePalette)
         })
     })
 })

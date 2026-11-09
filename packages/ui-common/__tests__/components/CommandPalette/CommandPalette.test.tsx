@@ -27,6 +27,13 @@ import {
 import {useSettingsStore} from "../../../state/Settings"
 import * as BrowserNavigation from "../../../utils/BrowserNavigation"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 const SUPPORT_EMAIL = "support@example.com"
 
 describe("CommandPalette", () => {
@@ -66,6 +73,10 @@ describe("CommandPalette", () => {
     beforeEach(() => {
         user = userEvent.setup()
         useSettingsStore.getState().resetSettings()
+    })
+
+    afterEach(() => {
+        reducedMotion.value = false
     })
 
     it("is closed until opened", () => {
@@ -222,6 +233,52 @@ describe("CommandPalette", () => {
         expect(openSpy).toHaveBeenCalledWith("https://github.com/cognizant-ai-lab/neuro-san", "_blank", "noopener")
     })
 
+    it("toggles lite visual effects", async () => {
+        useSettingsStore.getState().updateSettings({appearance: {visualEffects: "full"}})
+        renderPalette()
+        await openWithShortcut()
+
+        await user.click(screen.getByRole("option", {name: /Use lite visual effects/u}))
+        await waitForClosed()
+
+        expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("lite")
+        await openWithShortcut()
+        expect(screen.getByRole("option", {name: /Use full visual effects/u})).toBeInTheDocument()
+    })
+
+    it("opens the Neuro-san studio examples in a new tab", async () => {
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null)
+        renderPalette()
+        await openWithShortcut()
+
+        await user.click(screen.getByRole("option", {name: /Neuro-san studio/u}))
+
+        expect(openSpy).toHaveBeenCalledWith(
+            "https://github.com/cognizant-ai-lab/neuro-san-studio",
+            "_blank",
+            "noopener"
+        )
+    })
+
+    it("closes the Settings dialog", async () => {
+        renderPalette()
+        await openWithShortcut()
+        await user.click(screen.getByRole("option", {name: /Open settings/u}))
+        await screen.findByTestId("command-palette-settings-dialog")
+
+        await user.click(screen.getByRole("button", {name: /close|cancel/iu}))
+
+        await waitFor(() => expect(screen.queryByTestId("command-palette-settings-dialog")).not.toBeInTheDocument())
+    })
+
+    it("shows the ⌘ modifier label on Apple platforms", async () => {
+        vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")
+        renderPalette()
+        await openWithShortcut()
+
+        expect(screen.getAllByText("⌘").length).toBeGreaterThan(0)
+    })
+
     it("closes on Escape", async () => {
         renderPalette()
         await openWithShortcut()
@@ -251,5 +308,42 @@ describe("CommandPalette", () => {
         await openWithShortcut()
 
         expect(screen.getByRole("combobox")).toHaveValue("")
+    })
+
+    it("toggles the color scheme back to light from dark mode", async () => {
+        renderPalette()
+        await openWithShortcut()
+        await user.click(screen.getByRole("option", {name: /Switch to dark mode/u}))
+        await waitForClosed()
+
+        await openWithShortcut()
+        await user.click(screen.getByRole("option", {name: /Switch to light mode/u}))
+        await waitForClosed()
+
+        await openWithShortcut()
+        expect(screen.getByRole("option", {name: /Switch to dark mode/u})).toBeInTheDocument()
+    })
+
+    it("turns full visual effects back on from lite mode", async () => {
+        useSettingsStore.getState().updateSettings({appearance: {visualEffects: "lite"}})
+        renderPalette()
+        await openWithShortcut()
+
+        await user.click(screen.getByRole("option", {name: /Use full visual effects/u}))
+        await waitForClosed()
+
+        expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("full")
+    })
+
+    it("opens, highlights and closes with plain transitions when reduced motion is preferred", async () => {
+        reducedMotion.value = true
+        renderPalette()
+        await openWithShortcut()
+
+        await user.keyboard("{ArrowDown}")
+        expect(screen.getByRole("combobox")).toBeInTheDocument()
+
+        await user.keyboard("{Escape}")
+        await waitForClosed()
     })
 })

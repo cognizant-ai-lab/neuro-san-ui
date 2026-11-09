@@ -101,4 +101,22 @@ describe("idbStorage", () => {
         await expect(indexedDBStorage.setItem("key", "value")).rejects.toBeDefined()
         await expect(indexedDBStorage.removeItem("key")).rejects.toBeDefined()
     })
+
+    it("does not recreate the object store on upgrade when it already exists", async () => {
+        const createObjectStore = vi.fn()
+        const fakeDB = {objectStoreNames: {contains: () => true}, createObjectStore}
+        const fakeRequest = {error: new DOMException("open failed"), result: fakeDB} as unknown as IDBOpenDBRequest
+        globalThis.indexedDB = {
+            open: () => {
+                setTimeout(() => {
+                    fakeRequest.onupgradeneeded(new Event("upgradeneeded") as IDBVersionChangeEvent)
+                    fakeRequest.onerror(new Event("error"))
+                }, 0)
+                return fakeRequest
+            },
+        } as unknown as IDBFactory
+
+        await expect(indexedDBStorage.getItem("key")).rejects.toBeDefined()
+        expect(createObjectStore).not.toHaveBeenCalled()
+    })
 })
