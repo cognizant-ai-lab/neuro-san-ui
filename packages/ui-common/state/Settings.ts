@@ -165,6 +165,10 @@ export const LEGACY_APPEARANCE_DEFAULTS: Partial<Settings["appearance"]> = {
 export const APP_SETTINGS_STORAGE_KEY = "app-settings"
 
 // Name for key where API keys are saved in sessionStorage.
+// Version of the persisted settings shape. Bump it (and handle the old version in `migrate`) for one-off upgrades.
+// 0: pre-reskin, 1: reskin (legacy appearance defaults dropped)
+const SETTINGS_STORAGE_VERSION = 1
+
 export const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
 
 // TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
@@ -182,7 +186,8 @@ const hasPersistedSettings = (state: unknown): state is {settings: DeepPartial<S
 
 /**
  * Drops persisted appearance values that still match the pre-reskin defaults, so the new defaults apply.
- * Values the user explicitly changed are kept.
+ * Values the user explicitly changed are kept. Runs once, when migrating settings saved before the reskin (version 0),
+ * so legacy values chosen afterwards are left alone.
  */
 const upgradeLegacyAppearance = (settings: DeepPartial<Settings>): DeepPartial<Settings> => {
     if (!settings.appearance) {
@@ -258,6 +263,14 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: APP_SETTINGS_STORAGE_KEY,
+            version: SETTINGS_STORAGE_VERSION,
+
+            // One-off upgrades of settings persisted by older versions of the app. The migrated state is written back
+            // with the current version, so this doesn't run again.
+            migrate: (persistedState, version) =>
+                version < 1 && hasPersistedSettings(persistedState)
+                    ? {...persistedState, settings: upgradeLegacyAppearance(persistedState.settings)}
+                    : persistedState,
 
             // We don't want to persist API keys in localStorage, so we remove them before saving the state.
             partialize: (state) => {
@@ -285,9 +298,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
                 sessionStorage.setItem(SESSION_API_KEYS_STORAGE_KEY, JSON.stringify(sessionApiKeys))
 
-                const persistedSettings = hasPersistedSettings(persistedState)
-                    ? upgradeLegacyAppearance(persistedState.settings)
-                    : {}
+                const persistedSettings = hasPersistedSettings(persistedState) ? persistedState.settings : {}
 
                 // Merge persisted settings with defaults to fill in any missing fields,
                 // then explicitly replace apiKeys with sessionStorage-backed keys.

@@ -139,6 +139,8 @@ describe("Settings", () => {
                             },
                         },
                     },
+                    // Settings saved before the reskin
+                    version: 0,
                 })
             )
 
@@ -154,6 +156,24 @@ describe("Settings", () => {
             // ...while values the user changed are preserved
             expect(appearance.agentNodeColor).toBe(customNodeColor)
             expect(appearance.layout).toBe("linear")
+
+            // The migrated settings are saved with the current version, so the upgrade doesn't run again
+            expect(JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) ?? "{}").version).toBe(1)
+        })
+
+        it("keeps legacy appearance values chosen after the reskin", async () => {
+            localStorage.setItem(
+                APP_SETTINGS_STORAGE_KEY,
+                JSON.stringify({state: {settings: {appearance: LEGACY_APPEARANCE_DEFAULTS}}, version: 1})
+            )
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {appearance} = freshUseSettingsStore.getState().settings
+
+            expect(appearance.rangePalette).toBe(LEGACY_APPEARANCE_DEFAULTS.rangePalette)
+            expect(appearance.plasmaColor).toBe(LEGACY_APPEARANCE_DEFAULTS.plasmaColor)
+            expect(appearance.agentIconColor).toBe(LEGACY_APPEARANCE_DEFAULTS.agentIconColor)
         })
     })
 
