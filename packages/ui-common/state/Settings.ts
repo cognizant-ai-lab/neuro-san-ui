@@ -53,10 +53,6 @@ export type Layout = "radial" | "linear"
 
 export type GraphColoringOption = "depth" | "heatmap"
 
-// "lite" turns off the expensive glass blur and the 3D splash scene; "auto" does so only when the browser is rendering
-// without a GPU (e.g. in a VM), see Theme/effects.ts
-export type VisualEffects = "auto" | "full" | "lite"
-
 /**
  * User preference settings
  */
@@ -72,7 +68,6 @@ interface Settings {
         readonly showRadialGuides: boolean
         readonly showThoughtBubbles: boolean
         readonly useNativeNames: boolean
-        readonly visualEffects: VisualEffects
     }
     readonly branding: {
         readonly customer: string | null
@@ -134,7 +129,6 @@ export const DEFAULT_SETTINGS: Settings = {
         showRadialGuides: true,
         showThoughtBubbles: true,
         useNativeNames: false,
-        visualEffects: "auto",
     },
     branding: {
         background: null,

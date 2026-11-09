@@ -172,15 +172,14 @@ describe("Snackbar Component", () => {
         expect(screen.queryByText("Test description")).not.toBeInTheDocument()
     })
 
-    it("renders as a frosted-glass toast with the sheen glass shadow", () => {
+    it("renders as a glass toast with the sheen glass shadow", () => {
         renderSnackbar()
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
         const glass = glassSurface(createTheme({palette: {mode: "light"}}), SHEEN_RADIUS)
 
-        // Translucent light glass background from the sheen tokens
+        // Light glass background from the sheen tokens
         expect(computed.backgroundColor).toBe(SHEEN_LIGHT.sheen.glassBg)
-        expect(box).toHaveStyle({backdropFilter: glass.backdropFilter})
         expect(computed.borderRadius).toBe(`${SHEEN_RADIUS}px`)
 
         // Depth comes from the shared glass shadow (specular top edge + soft drop shadow)

@@ -17,7 +17,7 @@ limitations under the License.
 import {createTheme} from "@mui/material/styles"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {glassSurface, gradientBorder, SHEEN_RADIUS_SURFACE, spinningBorder} from "../../../Theme/sheen"
+import {getSheen, glassSurface, gradientBorder, SHEEN_RADIUS_SURFACE, spinningBorder} from "../../../Theme/sheen"
 
 describe("sheen helpers", () => {
     withStrictMocks()
@@ -43,8 +43,9 @@ describe("sheen helpers", () => {
         expect(spinningBorder(theme, 4, 2)["&::before"].borderRadius).toBe("4px")
     })
 
-    it("glassSurface has a backdrop blur", () => {
-        expect(glassSurface(theme).backdropFilter).toContain("blur")
+    it("glassSurface is a tinted fill with no backdrop blur", () => {
+        expect(glassSurface(theme).backgroundColor).toBe(getSheen(theme).glassBg)
+        expect(glassSurface(theme)).not.toHaveProperty("backdropFilter")
         expect(glassSurface(theme, 5).borderRadius).toBe("5px")
     })
 })

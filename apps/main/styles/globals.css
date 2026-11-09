@@ -180,36 +180,6 @@ svg.react-flow__background #pattern-react-flow circle {
     }
 }
 
-/* --------------- Lite visual effects (see packages/ui-common/Theme/effects.ts) ---------------
-   Set on <html> when the user picks "Lite" or when the browser renders without a GPU. Frosted glass (backdrop-filter)
-   and large blurs are the costliest effects in software rendering, so drop them and make glass surfaces near-opaque. */
-html[data-effects="lite"] *,
-html[data-effects="lite"] *::before,
-html[data-effects="lite"] *::after {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-
-html[data-effects="lite"][data-mui-color-scheme="dark"] {
-    --mui-palette-sheen-glassBg: rgba(17, 16, 30, 0.94);
-}
-
-html[data-effects="lite"][data-mui-color-scheme="light"] {
-    --mui-palette-sheen-glassBg: rgba(255, 255, 255, 0.95);
-}
-
-/* Splash orb: swap the huge blur filter for a radial gradient, which is soft without any filtering */
-html[data-effects="lite"] #splash-hero-orb {
-    background-image: radial-gradient(
-        circle,
-        var(--mui-palette-sheen-auroraA),
-        var(--mui-palette-sheen-auroraB) 40%,
-        transparent 70%
-    ) !important;
-    filter: none !important;
-    opacity: 1 !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

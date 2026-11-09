@@ -21,7 +21,7 @@ limitations under the License.
 import {styled} from "@mui/material/styles"
 import {FC} from "react"
 
-import {getSheen, SHEEN_DARK, SHEEN_LIGHT, sheenConic} from "../../../../packages/ui-common/Theme/sheen"
+import {getSheen, SHEEN_DARK, SHEEN_LIGHT} from "../../../../packages/ui-common/Theme/sheen"
 
 // #region: Constellation geometry
 
@@ -92,21 +92,24 @@ const Layer = styled("div")({
     zIndex: 0,
 })
 
-// Soft iridescent glow behind the constellation
-const Orb = styled("div")(({theme}) => ({
-    aspectRatio: "1",
-    backgroundImage: sheenConic(theme),
-    borderRadius: "50%",
-    filter: "blur(70px)",
-    left: "72%",
-    opacity: 0.32,
-    position: "absolute",
-    top: "48%",
-    transform: "translate(-50%, -50%)",
-    width: "min(46vmax, 680px)",
-    ...theme.applyStyles("light", {opacity: 0.26}),
-    [theme.breakpoints.down("lg")]: {left: "50%", top: "38%", width: "90vmin"},
-}))
+// Soft iridescent glow behind the constellation. A radial gradient rather than a blur filter: just as soft, and free to
+// repaint.
+const Orb = styled("div")(({theme}) => {
+    const {auroraA, auroraB} = getSheen(theme)
+    return {
+        aspectRatio: "1",
+        backgroundImage: `radial-gradient(circle, ${auroraA}, ${auroraB} 40%, transparent 70%)`,
+        borderRadius: "50%",
+        left: "72%",
+        opacity: 0.8,
+        position: "absolute",
+        top: "48%",
+        transform: "translate(-50%, -50%)",
+        width: "min(46vmax, 680px)",
+        ...theme.applyStyles("light", {opacity: 0.6}),
+        [theme.breakpoints.down("lg")]: {left: "50%", top: "38%", width: "90vmin"},
+    }
+})
 
 // Faint dot grid, fading out radially around the constellation
 const Grid = styled("div")(({theme}) => {

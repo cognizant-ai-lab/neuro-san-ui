@@ -1093,18 +1093,6 @@ describe("SettingsDialog", () => {
                 />
             )
 
-        it("changes the visual effects level, and ignores clicking the already-selected level", async () => {
-            renderDialog()
-            const group = screen.getByRole("group", {name: "visual-effects-selection"})
-
-            await user.click(within(group).getByRole("button", {name: "Lite"}))
-            expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("lite")
-
-            // Clicking the selected button deselects it (value null), which must be ignored
-            await user.click(within(group).getByRole("button", {name: "Lite"}))
-            expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("lite")
-        })
-
         it("shows the publish settings when publishing is enabled", async () => {
             useEnvironmentStore.getState().setEnablePublishing(true)
             const {unmount} = renderDialog()

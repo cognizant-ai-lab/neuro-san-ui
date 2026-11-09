@@ -16,7 +16,7 @@ limitations under the License.
 
 // "Sheen" design tokens: deep blue-black / lavender-white surfaces, an iridescent indigo → purple → electric-blue
 // accent, luminous
-// glows, specular frosted glass with gradient hairlines, animated aurora mesh + film grain.
+// glows, specular glass surfaces with gradient hairlines, aurora mesh + film grain.
 // The tokens live in the MUI palette (palette.sheen) so that, with CSS theme variables enabled, they are emitted as
 // --mui-palette-sheen-* variables and flip automatically with the active color scheme.
 // Keyframes referenced here (sheenSpin, sheenShimmer, sheenFlow, auroraDrift) and the --sheen-angle custom property
@@ -27,7 +27,7 @@ import type {CSSObject, Theme} from "@mui/material/styles"
 export interface SheenPalette {
     // Accent glow color (focus rings, hover halos)
     glow: string
-    // Translucent background for frosted-glass surfaces
+    // Background for glass surfaces
     glassBg: string
     // Hairline border for glass surfaces
     glassBorder: string
@@ -78,7 +78,7 @@ export const SHEEN_DARK = {
     divider: "rgba(200, 190, 255, 0.09)",
     sheen: {
         glow: "rgba(140, 100, 255, 0.55)",
-        glassBg: "rgba(14, 13, 28, 0.58)",
+        glassBg: "rgba(17, 16, 30, 0.9)",
         glassBorder: "rgba(200, 190, 255, 0.11)",
         highlight: "rgba(255, 255, 255, 0.07)",
         gradientStart: "#6A4CFF",
@@ -103,7 +103,7 @@ export const SHEEN_LIGHT = {
     divider: "rgba(18, 16, 31, 0.08)",
     sheen: {
         glow: "rgba(91, 63, 224, 0.35)",
-        glassBg: "rgba(255, 255, 255, 0.62)",
+        glassBg: "rgba(255, 255, 255, 0.9)",
         glassBorder: "rgba(18, 16, 31, 0.08)",
         highlight: "rgba(255, 255, 255, 0.85)",
         gradientStart: "#6A4CFF",
@@ -201,16 +201,15 @@ export const spinningBorder = (theme: Theme, radius: number = SHEEN_RADIUS_SURFA
 }
 
 /**
- * Specular frosted-glass surface: translucent, heavily blurred and saturated, with a bright top edge highlight,
- * hairline border and soft depth shadow.
+ * Specular glass surface: a nearly opaque tinted fill with a bright top edge highlight, hairline border and soft depth
+ * shadow. No backdrop-filter blur on purpose: it makes every repaint of the window very expensive, especially in
+ * Firefox and in browsers without GPU acceleration, which pins the CPU whenever anything on screen animates.
  */
 export const glassSurface = (theme: Theme, radius: number = SHEEN_RADIUS_SURFACE): CSSObject => {
     const sheen = getSheen(theme)
     return {
         backgroundColor: sheen.glassBg,
         backgroundImage: `linear-gradient(180deg, ${sheen.highlight}, transparent 38%)`,
-        backdropFilter: "blur(24px) saturate(180%)",
-        WebkitBackdropFilter: "blur(24px) saturate(180%)",
         border: `1px solid ${sheen.glassBorder}`,
         boxShadow: `inset 0 1px 0 ${sheen.highlight}, 0 10px 40px -12px rgba(0, 0, 0, 0.45)`,
         // Explicit px: a bare number would be multiplied by theme.shape.borderRadius when spread into sx

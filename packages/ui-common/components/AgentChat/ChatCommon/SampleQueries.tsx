@@ -90,8 +90,6 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                                     return {
                                         ...glassSurface(theme, CHIP_RADIUS),
                                         ...border,
-                                        backdropFilter: "blur(12px)",
-                                        WebkitBackdropFilter: "blur(12px)",
                                         color: "text.primary",
                                         marginRight: "0.75rem",
                                         marginBottom: "0.75rem",

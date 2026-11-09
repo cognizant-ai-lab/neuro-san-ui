@@ -21,7 +21,6 @@ limitations under the License.
  */
 
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded"
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded"
 import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded"
 import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded"
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded"
@@ -32,7 +31,6 @@ import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded"
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded"
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded"
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded"
-import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded"
 import Box from "@mui/material/Box"
 import Modal from "@mui/material/Modal"
 import {Theme, useColorScheme, useTheme} from "@mui/material/styles"
@@ -41,7 +39,6 @@ import {AnimatePresence, motion, useReducedMotion} from "motion/react"
 import {ReactNode, useCallback, useEffect, useMemo, useState} from "react"
 
 import {useSettingsStore} from "../../state/Settings"
-import {useLiteEffects} from "../../Theme/effects"
 import {
     getSheen,
     glassSurface,
@@ -353,8 +350,6 @@ export const CommandPalette = ({
 
     // Same rule as the Navbar toggle: the color scheme is locked while customer branding is active
     const customer = useSettingsStore((state) => state.settings.branding.customer)
-    const updateSettings = useSettingsStore((state) => state.updateSettings)
-    const liteEffects = useLiteEffects()
     const hasCustomer = customer?.trim().length > 0
 
     const closePalette = useCallback(() => setIsOpen(false), [])
@@ -428,16 +423,6 @@ export const CommandPalette = ({
                 handleSelect: run(() => setMode(darkMode ? "light" : "dark")),
             },
             {
-                id: "toggle-effects",
-                label: liteEffects ? "Use full visual effects" : "Use lite visual effects",
-                hint: liteEffects
-                    ? "Turn glass blur and the 3D splash back on"
-                    : "Turn off glass blur and the 3D splash to save CPU (e.g. in a VM)",
-                icon: liteEffects ? <AutoAwesomeRoundedIcon /> : <SpeedRoundedIcon />,
-                keywords: ["performance", "cpu", "lite", "effects", "blur", "animation", "slow", "vm"],
-                handleSelect: run(() => updateSettings({appearance: {visualEffects: liteEffects ? "full" : "lite"}})),
-            },
-            {
                 id: "settings",
                 label: "Open settings",
                 hint: "Appearance, branding and API keys",
@@ -501,18 +486,7 @@ export const CommandPalette = ({
             {heading: "Preferences", actions: preferences},
             {heading: "Help & resources", actions: help},
         ]
-    }, [
-        darkMode,
-        hasCustomer,
-        liteEffects,
-        onNavigate,
-        onStartTour,
-        pathname,
-        run,
-        setMode,
-        supportEmailAddress,
-        updateSettings,
-    ])
+    }, [darkMode, hasCustomer, onNavigate, onStartTour, pathname, run, setMode, supportEmailAddress])
 
     const panelSx = useMemo(() => getPanelSx(theme), [theme])
 
@@ -551,11 +525,9 @@ export const CommandPalette = ({
                                 initial={{opacity: 0}}
                                 onClick={closePalette}
                                 style={{
-                                    backdropFilter: "blur(10px) saturate(140%)",
-                                    backgroundColor: "rgba(8, 7, 6, 0.42)",
+                                    backgroundColor: "rgba(6, 6, 12, 0.6)",
                                     inset: 0,
                                     position: "fixed",
-                                    WebkitBackdropFilter: "blur(10px) saturate(140%)",
                                 }}
                                 transition={{duration: 0.22, ease: "easeOut"}}
                             />

@@ -233,19 +233,6 @@ describe("CommandPalette", () => {
         expect(openSpy).toHaveBeenCalledWith("https://github.com/cognizant-ai-lab/neuro-san", "_blank", "noopener")
     })
 
-    it("toggles lite visual effects", async () => {
-        useSettingsStore.getState().updateSettings({appearance: {visualEffects: "full"}})
-        renderPalette()
-        await openWithShortcut()
-
-        await user.click(screen.getByRole("option", {name: /Use lite visual effects/u}))
-        await waitForClosed()
-
-        expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("lite")
-        await openWithShortcut()
-        expect(screen.getByRole("option", {name: /Use full visual effects/u})).toBeInTheDocument()
-    })
-
     it("opens the Neuro-san studio examples in a new tab", async () => {
         const openSpy = vi.spyOn(window, "open").mockImplementation(() => null)
         renderPalette()
@@ -322,17 +309,6 @@ describe("CommandPalette", () => {
 
         await openWithShortcut()
         expect(screen.getByRole("option", {name: /Switch to dark mode/u})).toBeInTheDocument()
-    })
-
-    it("turns full visual effects back on from lite mode", async () => {
-        useSettingsStore.getState().updateSettings({appearance: {visualEffects: "lite"}})
-        renderPalette()
-        await openWithShortcut()
-
-        await user.click(screen.getByRole("option", {name: /Use full visual effects/u}))
-        await waitForClosed()
-
-        expect(useSettingsStore.getState().settings.appearance.visualEffects).toBe("full")
     })
 
     it("opens, highlights and closes with plain transitions when reduced motion is preferred", async () => {

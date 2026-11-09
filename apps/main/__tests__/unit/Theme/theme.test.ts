@@ -187,14 +187,12 @@ describe("createAppTheme component style overrides", () => {
         expect(notStyles.map(([overrideName]) => overrideName)).toEqual([])
     })
 
-    it("only blurs and dims the backdrop when it is visible", () => {
+    it("only dims the backdrop when it is visible", () => {
         const theme = createAppTheme("", "", "")
         const backdrop = theme.components?.MuiBackdrop?.styleOverrides?.["root"] as unknown as StyleFn
 
         expect(backdrop({theme, ownerState: {invisible: true}})).toEqual({})
-        expect(backdrop({theme, ownerState: {invisible: false}})).toMatchObject({
-            backdropFilter: expect.stringContaining("blur"),
-        })
+        expect(backdrop({theme, ownerState: {invisible: false}})).toHaveProperty("backgroundColor")
     })
 
     it("keeps dialogs more opaque than other glass surfaces", () => {
