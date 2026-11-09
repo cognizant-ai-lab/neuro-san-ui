@@ -42,9 +42,9 @@ interface Orbit {
 // All coordinates are in a 200 x 200 viewBox centered on the core. Agent angles are chosen so no two agents crowd
 // each other or the core.
 const ORBITS: Orbit[] = [
-    {agents: [65, 220, 350], rx: 44, ry: 20, tilt: -28},
-    {agents: [25, 175, 230, 275, 320], rx: 68, ry: 34, tilt: 18},
-    {agents: [80, 125, 170, 235, 305, 345], rx: 90, ry: 46, tilt: -10},
+    {agents: [65, 220, 350], rx: 44, ry: 26, tilt: -28},
+    {agents: [25, 175, 230, 275, 320], rx: 68, ry: 44, tilt: 18},
+    {agents: [105, 125, 170, 235, 305, 345], rx: 92, ry: 60, tilt: -10},
 ]
 
 const CORE_RADIUS = 9
@@ -100,14 +100,14 @@ const Orb = styled("div")(({theme}) => {
         aspectRatio: "1",
         backgroundImage: `radial-gradient(circle, ${auroraA}, ${auroraB} 40%, transparent 70%)`,
         borderRadius: "50%",
-        left: "72%",
+        left: "69%",
         opacity: 0.8,
         position: "absolute",
-        top: "48%",
+        top: "44%",
         transform: "translate(-50%, -50%)",
-        width: "min(46vmax, 680px)",
+        width: "min(54vmax, 880px)",
         ...theme.applyStyles("light", {opacity: 0.6}),
-        [theme.breakpoints.down("lg")]: {left: "50%", top: "38%", width: "90vmin"},
+        [theme.breakpoints.down("lg")]: {left: "50%", top: "38%", width: "110vmin"},
     }
 })
 
@@ -128,12 +128,12 @@ const Grid = styled("div")(({theme}) => {
 
 const Constellation = styled("svg")(({theme}) => ({
     aspectRatio: "1",
-    left: "72%",
+    left: "69%",
     overflow: "visible",
     position: "absolute",
-    top: "48%",
+    top: "44%",
     transform: "translate(-50%, -50%)",
-    width: "min(52vmax, 760px)",
+    width: "min(58vmax, 940px)",
 
     "& .stop-start": {stopColor: SHEEN_DARK.sheen.gradientStart},
     "& .stop-mid": {stopColor: SHEEN_DARK.sheen.gradientMid},
@@ -153,7 +153,7 @@ const Constellation = styled("svg")(({theme}) => ({
     }),
 
     // In the centered (narrower) layout the constellation sits behind the copy, so recede it
-    [theme.breakpoints.down("lg")]: {left: "50%", opacity: 0.4, top: "38%", width: "100vmin"},
+    [theme.breakpoints.down("lg")]: {left: "50%", opacity: 0.4, top: "38%", width: "125vmin"},
 }))
 
 // Darkens / lightens the left side so the copy always reads over the backdrop
