@@ -78,7 +78,6 @@ import {
     SHEEN_FONT_DISPLAY,
     SHEEN_RADIUS,
     SHEEN_RADIUS_SURFACE,
-    sheenConic,
     sheenGradient,
     spinningBorder,
 } from "../../Theme/sheen"
@@ -1069,20 +1068,19 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         style={{maxWidth: 520, padding: "0 16px", position: "relative", textAlign: "center"}}
                         transition={{type: "spring", stiffness: 200, damping: 26}}
                     >
-                        {/* Halo: a heavily blurred conic gradient behind the text (static: animating it is costly) */}
+                        {/* Halo: a soft radial gradient behind the text (no blur filter: costly to repaint) */}
                         <Box
                             aria-hidden={true}
                             sx={{
-                                background: sheenConic(theme),
+                                background: `radial-gradient(circle, ${getSheen(theme).auroraA}, transparent 70%)`,
                                 borderRadius: "50%",
-                                filter: "blur(70px)",
-                                height: 260,
+                                height: 420,
                                 left: "50%",
-                                opacity: 0.35,
+                                opacity: 0.8,
                                 position: "absolute",
                                 top: "50%",
                                 transform: "translate(-50%, -50%)",
-                                width: 260,
+                                width: 420,
                                 zIndex: -1,
                             }}
                         />

@@ -110,10 +110,8 @@ export const createAppTheme = (primary?: string | null, secondary?: string | nul
                         fontFeatureSettings: '"cv11", "ss01", "ss03"',
                         isolation: "isolate",
                     },
-                    // Aurora mesh behind everything. Deliberately static: a drifting, blurred full-screen layer
-                    // repaints every frame and forces all the glass (backdrop-filter) above it to re-blur, which pins
-                    // the CPU when the browser renders without a GPU. The radial gradients are already soft, so no
-                    // blur filter is needed.
+                    // Aurora mesh behind everything. Deliberately static, and no blur filter (the radial gradients
+                    // are already soft): a drifting or filtered full-screen layer is costly to repaint on every frame.
                     "body::before": {
                         content: '""',
                         position: "fixed",
@@ -218,7 +216,6 @@ export const createAppTheme = (primary?: string | null, secondary?: string | nul
                         props: {variant: "outlined"},
                         style: ({theme}) => ({
                             borderRadius: 999,
-                            backdropFilter: "blur(12px)",
                             backgroundColor: getSheen(theme).glassBg,
                             transition: `border-color 0.2s ease, box-shadow 0.3s ${SHEEN_EASE}`,
                             "&:hover": {
@@ -275,10 +272,14 @@ export const createAppTheme = (primary?: string | null, secondary?: string | nul
             },
             MuiBackdrop: {
                 styleOverrides: {
-                    root: ({ownerState}) =>
+                    root: ({ownerState, theme}) =>
                         ownerState.invisible
                             ? {}
-                            : {backdropFilter: "blur(10px) saturate(120%)", backgroundColor: "rgba(8, 7, 6, 0.5)"},
+                            : {
+                                  backgroundColor: "rgba(6, 6, 12, 0.6)",
+                                  // A lighter dim in light mode, so the page behind reads as receded rather than muddy
+                                  ...theme.applyStyles("light", {backgroundColor: "rgba(18, 16, 31, 0.3)"}),
+                              },
                 },
             },
             MuiAppBar: {
@@ -298,7 +299,6 @@ export const createAppTheme = (primary?: string | null, secondary?: string | nul
                         "& .MuiOutlinedInput-notchedOutline": {borderColor: getSheen(theme).glassBorder},
                         "&:hover .MuiOutlinedInput-notchedOutline": {borderColor: theme.vars?.palette.text.secondary},
                         backgroundColor: getSheen(theme).glassBg,
-                        backdropFilter: "blur(12px)",
                         "&.Mui-focused": {
                             boxShadow: `0 0 0 4px ${getSheen(theme).tint}, 0 0 32px -8px ${getSheen(theme).glow}`,
                         },

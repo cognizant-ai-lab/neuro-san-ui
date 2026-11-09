@@ -46,7 +46,6 @@ import {DEFAULT_USER_IMAGE, DEFAULT_USERNAME, LOGO} from "../../../packages/ui-c
 import {useEnvironmentStore} from "../../../packages/ui-common/state/Environment"
 import {useSettingsStore} from "../../../packages/ui-common/state/Settings"
 import {useUserInfoStore} from "../../../packages/ui-common/state/UserInfo"
-import {useApplyVisualEffects} from "../../../packages/ui-common/Theme/effects"
 import {getAuthenticationType, smartSignOut, useAuthentication} from "../../../packages/ui-common/utils/Authentication"
 import {getTitleBase} from "../../../packages/ui-common/utils/title"
 import {UserInfoResponse} from "../../../packages/ui-common/utils/types"
@@ -115,9 +114,6 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
 
 // Main function.
 export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJSX.Element => {
-    // Switch off expensive effects (glass blur, 3D) app-wide when requested or when rendering without a GPU
-    useApplyVisualEffects()
-
     const {
         auth0ClientId,
         auth0Domain,

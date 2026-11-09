@@ -108,7 +108,9 @@ const getConversationSx = (theme: Theme): SxProps<Theme> => {
             overflowWrap: "anywhere",
             padding: "0.75rem 1.1rem 0.75rem 2.6rem",
             position: "relative",
-            // Assistant "orb": spinning conic gradient with a specular highlight and a soft glow
+            // Assistant "orb": conic gradient with a specular highlight and a soft glow. Deliberately static: one orb
+            // per message stays on screen indefinitely, and any never-ending animation makes Firefox recomposite the
+            // whole (glass and blur heavy) window every frame, i.e. 100%+ CPU while idle.
             "&::before": {
                 content: '""',
                 position: "absolute",
@@ -122,7 +124,6 @@ const getConversationSx = (theme: Theme): SxProps<Theme> => {
                     sheenConic(theme),
                 ].join(", "),
                 boxShadow: `0 0 12px 1px ${sheen.glow}`,
-                animation: "sheenSpin 6s linear infinite",
                 pointerEvents: "none",
             },
             "& > :first-of-type": {marginTop: 0},

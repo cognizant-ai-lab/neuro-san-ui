@@ -112,8 +112,6 @@ const SidebarAside = styled("aside")(({theme}) => ({
 // Styled component for the sidebar heading, which is sticky at the top of the sidebar.
 const SidebarHeading = styled("h2")(({theme}) => ({
     alignItems: "center",
-    // Frosted so list items scrolling beneath the sticky heading blur out
-    backdropFilter: "blur(16px)",
     backgroundColor: getSheen(theme).glassBg,
     borderBottomColor: getSheen(theme).glassBorder,
     borderBottomStyle: "solid",

@@ -26,7 +26,7 @@ import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
-import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore, VisualEffects} from "../../state/Settings"
+import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
 import {glassSurface, gradientBorder, SHEEN_FONT_DISPLAY, SHEEN_RADIUS_SURFACE} from "../../Theme/sheen"
 import {normalizeUrlInput, Protocol, stripProtocol} from "../../utils/Url"
@@ -109,10 +109,6 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const agentIconColor = useSettingsStore((state) => state.settings.appearance.agentIconColor)
     const agentIconColorCheckmark = useCheckmarkFade()
     const autoAgentIconColor = useSettingsStore((state) => state.settings.appearance.autoAgentIconColor)
-
-    // Visual effects level (lite drops glass blur and the 3D splash, for browsers without GPU acceleration)
-    const visualEffects = useSettingsStore((state) => state.settings.appearance.visualEffects)
-    const visualEffectsCheckmark = useCheckmarkFade()
 
     // Which palette to use for heatmaps and depth display?
     const paletteKey = useSettingsStore((state) => state.settings.appearance.rangePalette)
@@ -883,42 +879,9 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SettingsSubsection>
     )
 
-    const getVisualEffectsSubsection = () => (
-        <SettingsSubsection title="Visual effects">
-            <SettingsRow
-                checkmark={visualEffectsCheckmark}
-                label="Effects:"
-                tooltip={
-                    "Lite turns off frosted-glass blur and the 3D splash scene, which are costly when the browser " +
-                    "has no GPU acceleration (for example in a virtual machine). Auto picks Lite only when that is " +
-                    "detected."
-                }
-            >
-                <ToggleButtonGroup
-                    aria-label="visual-effects-selection"
-                    exclusive={true}
-                    id="visual-effects-toggle"
-                    onChange={(_event, value: VisualEffects | null) => {
-                        if (value) {
-                            updateSettings({appearance: {visualEffects: value}})
-                            visualEffectsCheckmark.trigger()
-                        }
-                    }}
-                    size="small"
-                    value={visualEffects}
-                >
-                    <ToggleButton value="auto">Auto</ToggleButton>
-                    <ToggleButton value="full">Full</ToggleButton>
-                    <ToggleButton value="lite">Lite</ToggleButton>
-                </ToggleButtonGroup>
-            </SettingsRow>
-        </SettingsSubsection>
-    )
-
     const getAppearanceSection = () => (
         <Section>
             <SettingsSectionTitle>Appearance</SettingsSectionTitle>
-            {getVisualEffectsSubsection()}
             {getNamingSubsection()}
             {getBrandingSubsection()}
             {getNetworkDisplaySubsection()}
