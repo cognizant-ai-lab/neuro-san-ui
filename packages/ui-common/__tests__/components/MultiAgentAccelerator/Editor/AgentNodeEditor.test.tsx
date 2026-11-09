@@ -14,16 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {act, render, screen, waitFor} from "@testing-library/react"
+import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
+import {NotificationType, sendNotification} from "../../../../components/Common/notification"
 import {
     AgentNodeEditor,
     AgentNodeEditorProps,
 } from "../../../../components/MultiAgentAccelerator/Editor/AgentNodeEditor"
 import {useTempNetworksStore} from "../../../../state/TemporaryNetworks"
+
+// Mock notification system
+vi.mock("../../../../components/Common/notification")
 
 const AGENT_NAME = "Audit Risk Manager"
 const INITIAL_INSTRUCTIONS = "Evaluate operational risks and detect anomalies."
@@ -350,6 +354,15 @@ describe("AgentNodeEditor", () => {
         )
     })
 
+    it("closes the dialog when Escape is pressed from the instructions field", async () => {
+        const {setIsPopupOpen} = renderPopup()
+
+        await user.click(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD}))
+        await user.keyboard("{Escape}")
+
+        expect(setIsPopupOpen).toHaveBeenCalledExactlyOnceWith(false)
+    })
+
     it("closes the dialog when Escape is pressed from the description field", async () => {
         const {setIsPopupOpen} = renderPopup()
 
@@ -468,6 +481,78 @@ describe("AgentNodeEditor", () => {
             if (backdrop) await user.click(backdrop)
 
             expect(setIsPopupOpen).toHaveBeenCalledExactlyOnceWith(false)
+        })
+
+        it("passes through definition entries for other agents unchanged when saving", async () => {
+            const otherEntry = {origin: "other_agent", tools: [] as string[]}
+            const network = makeTempNetwork(
+                NETWORK_ID,
+                [{origin: AGENT_ID, tools: []}, otherEntry],
+                NETWORK_NAME
+            )
+            useTempNetworksStore.getState().setTempNetworks([network])
+
+            const {onSaveAgent} = renderPopup()
+            await initiateSave()
+
+            await waitFor(() => {
+                expect(onSaveAgent).toHaveBeenCalledWith(
+                    AGENT_NAME,
+                    [expect.objectContaining({origin: AGENT_ID, instructions: "Changed instructions"}), otherEntry],
+                    NETWORK_NAME,
+                    expect.any(AbortSignal)
+                )
+            })
+        })
+
+        it("does nothing when saving without an agent id", async () => {
+            const {onSaveAgent, setIsPopupOpen} = renderPopup({agentId: ""})
+            await initiateSave()
+
+            expect(onSaveAgent).not.toHaveBeenCalled()
+            expect(setIsPopupOpen).not.toHaveBeenCalled()
+        })
+
+        it("aborts the save request when it times out", async () => {
+            const {onSaveAgent} = renderSavingPopup()
+
+            await user.clear(screen.getByRole("textbox", {name: INSTRUCTIONS_FIELD}))
+            await user.paste("Changed instructions")
+
+            // Only fake timers once typing is done, so the save's timeout is the only thing we need to drive
+            vi.useFakeTimers()
+            fireEvent.click(screen.getByRole("button", {name: SAVE_BUTTON}))
+
+            const signal = vi.mocked(onSaveAgent).mock.calls[0][3]
+            expect(signal.aborted).toBe(false)
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(60_000)
+            })
+
+            expect(signal.aborted).toBe(true)
+        })
+
+        it("reports an error and closes the dialog when the save fails", async () => {
+            const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+            const onSaveAgent = vi
+                .fn<AgentNodeEditorProps["onSaveAgent"]>()
+                .mockRejectedValue(new Error("save exploded"))
+            const {setIsPopupOpen} = renderPopup({onSaveAgent})
+
+            await initiateSave()
+
+            await waitFor(() => {
+                expect(setIsPopupOpen).toHaveBeenCalledExactlyOnceWith(false)
+            })
+            expect(errorSpy).toHaveBeenCalled()
+            expect(sendNotification).toHaveBeenCalledWith(
+                NotificationType.error,
+                `Failed to save agent "${AGENT_NAME}".`,
+                "Error: save exploded",
+                undefined,
+                null
+            )
         })
 
         it("handles missing networkID", async () => {

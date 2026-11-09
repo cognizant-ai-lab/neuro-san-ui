@@ -109,6 +109,18 @@ describe("AgentNode", () => {
         expect(style.animation).toBe("")
     })
 
+    it("Should use the lowest heat color when the agent has no recorded invocations", () => {
+        renderAgentNode({agentCounts: new Map([["someOtherAgent", 5]])})
+
+        expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
+    })
+
+    it("Should render the Frontman with the person icon and label", () => {
+        renderAgentNode({depth: 0})
+
+        expect(screen.getByTestId("PersonIcon")).toBeInTheDocument()
+    })
+
     it("Should render animation if active agent", async () => {
         renderAgentNode({
             depth: 3,

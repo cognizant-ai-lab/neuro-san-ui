@@ -20,6 +20,13 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {getSectionAnchorId, SettingsNavLayout} from "../../../components/Settings/SettingsNav"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 const ID = "test-settings"
 
 const SECTIONS = [
@@ -91,6 +98,7 @@ describe("SettingsNavLayout", () => {
         window.HTMLElement.prototype.scrollIntoView = originalScrollIntoView
         vi.unstubAllGlobals()
         MockIntersectionObserver.instances = []
+        reducedMotion.value = false
     })
 
     it("renders one nav button per section, with the first one current", () => {
@@ -202,6 +210,32 @@ describe("SettingsNavLayout", () => {
         expect(screen.getByRole("button", {name: "Section Three"})).toHaveAttribute("aria-current", "location")
     })
 
+    it("scrolls the active chip into view when the horizontal nav overflows", async () => {
+        const scrollToMock = vi.fn()
+        Object.defineProperty(window.HTMLElement.prototype, "scrollTo", {configurable: true, value: scrollToMock})
+        vi.spyOn(window.HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(500)
+        vi.spyOn(window.HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100)
+        try {
+            renderNav()
+
+            await user.click(screen.getByRole("button", {name: "Section Two"}))
+
+            expect(scrollToMock).toHaveBeenCalledWith(expect.objectContaining({behavior: "smooth"}))
+        } finally {
+            Reflect.deleteProperty(window.HTMLElement.prototype, "scrollTo")
+        }
+    })
+
+    it("does nothing when the clicked section's anchor is missing", async () => {
+        renderNav()
+        document.getElementById(getSectionAnchorId(ID, "three")).removeAttribute("id")
+
+        await user.click(screen.getByRole("button", {name: "Section Three"}))
+
+        expect(window.HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled()
+        expect(screen.getByRole("button", {name: "Section One"})).toHaveAttribute("aria-current", "location")
+    })
+
     it("disconnects the observer on unmount", () => {
         vi.stubGlobal("IntersectionObserver", MockIntersectionObserver)
         const {unmount} = renderNav()
@@ -210,5 +244,40 @@ describe("SettingsNavLayout", () => {
 
         unmount()
         expect(spy.disconnect).toHaveBeenCalled()
+    })
+
+    it("uses instant scrolling when reduced motion is preferred", async () => {
+        reducedMotion.value = true
+        const scrollToMock = vi.fn()
+        Object.defineProperty(window.HTMLElement.prototype, "scrollTo", {configurable: true, value: scrollToMock})
+        vi.spyOn(window.HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(500)
+        vi.spyOn(window.HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100)
+        try {
+            renderNav()
+
+            await user.click(screen.getByRole("button", {name: "Section Two"}))
+
+            expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith(
+                expect.objectContaining({behavior: "auto"})
+            )
+            expect(scrollToMock).toHaveBeenCalledWith(expect.objectContaining({behavior: "auto"}))
+        } finally {
+            Reflect.deleteProperty(window.HTMLElement.prototype, "scrollTo")
+        }
+    })
+
+    it("skips observing sections whose anchor element can't be found", () => {
+        vi.stubGlobal("IntersectionObserver", MockIntersectionObserver)
+        const missingId = getSectionAnchorId(ID, "two")
+        const realGetElementById = document.getElementById.bind(document)
+        vi.spyOn(document, "getElementById").mockImplementation((elementId: string) =>
+            elementId === missingId ? null : realGetElementById(elementId)
+        )
+
+        renderNav()
+
+        const scrollColumn = realGetElementById(`${ID}-sections`)
+        const spy = MockIntersectionObserver.instances.find((instance) => isScrollSpy(instance, scrollColumn))
+        expect(spy.observed.map((element) => element.id)).not.toContain(missingId)
     })
 })

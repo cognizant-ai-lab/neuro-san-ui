@@ -19,6 +19,13 @@ import {render, screen} from "@testing-library/react"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {FloatingPanel} from "../../../../components/MultiAgentAccelerator/Workspace/FloatingPanel"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 describe("FloatingPanel", () => {
     withStrictMocks()
 
@@ -52,5 +59,30 @@ describe("FloatingPanel", () => {
         expect(card).toHaveAttribute("inert")
         expect(card).toHaveStyle({pointerEvents: "none", left: "0px"})
         expect(screen.queryByRole("button", {name: "Inside"})).not.toBeInTheDocument()
+    })
+
+    it("renders without spring animation under prefers-reduced-motion", () => {
+        reducedMotion.value = true
+        try {
+            renderPanel(false, "right", true)
+            expect(document.getElementById("card")).toHaveAttribute("data-collapsed", "false")
+        } finally {
+            reducedMotion.value = false
+        }
+    })
+
+    it("slides a collapsed left panel out when isTransitioning is omitted", () => {
+        render(
+            <FloatingPanel
+                collapsed={true}
+                id="card"
+                minWidth={300}
+                side="left"
+            >
+                <button type="button">Inside</button>
+            </FloatingPanel>
+        )
+
+        expect(document.getElementById("card")).toHaveAttribute("data-collapsed", "true")
     })
 })

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
+import {NotificationType, sendNotification} from "../../../components/Common/notification"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_RESERVATIONS_KEY,
@@ -27,8 +28,18 @@ import {
     isEditableAgent,
     isTemporaryNetwork,
     mergeNetworks,
+    notifySaveError,
+    streamNetworkDesignerUpsert,
 } from "../../../components/MultiAgentAccelerator/TemporaryNetworks"
+import {sendNetworkDesignerRequest} from "../../../controller/agent/Agent"
 import {ChatMessage, ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+
+vi.mock("../../../controller/agent/Agent", () => ({sendNetworkDesignerRequest: vi.fn()}))
+
+vi.mock("../../../components/Common/notification", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../components/Common/notification")>()),
+    sendNotification: vi.fn(),
+}))
 
 const makeReservation = (id: string): AgentReservation => ({
     reservation_id: id,
@@ -307,5 +318,94 @@ describe("mergeNetworks", () => {
         mergeNetworks(target, [incoming])
 
         expect(target).toHaveLength(1)
+    })
+})
+
+describe("notifySaveError", () => {
+    withStrictMocks()
+
+    it("ignores AbortError", () => {
+        notifySaveError("net", new DOMException("aborted", "AbortError"))
+
+        expect(sendNotification).not.toHaveBeenCalled()
+    })
+
+    it("shows a timeout-specific message for TimeoutError", () => {
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+
+        notifySaveError("net", new DOMException("timeout", "TimeoutError"))
+
+        expect(errorSpy).toHaveBeenCalled()
+        expect(sendNotification).toHaveBeenCalledWith(
+            NotificationType.error,
+            'Failed to update network "net".',
+            expect.stringContaining("timed out")
+        )
+    })
+
+    it("stringifies other errors", () => {
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
+
+        notifySaveError("net", new Error("boom"))
+
+        expect(errorSpy).toHaveBeenCalled()
+        expect(sendNotification).toHaveBeenCalledWith(
+            NotificationType.error,
+            'Failed to update network "net".',
+            "Error: boom"
+        )
+    })
+})
+
+describe("streamNetworkDesignerUpsert", () => {
+    withStrictMocks()
+
+    const reservationChunk = (reservationId: string) =>
+        JSON.stringify({
+            response: {
+                type: ChatMessageType.AGENT_FRAMEWORK,
+                sly_data: {[AGENT_RESERVATIONS_KEY]: [makeReservation(reservationId)]},
+            },
+        })
+
+    // Feeds the given chunks to the streaming callback, as the real request would
+    const streamChunks = async (chunks: string[]) => {
+        vi.mocked(sendNetworkDesignerRequest).mockImplementation(async (...args) => {
+            const onChunk = args[6]
+            chunks.forEach((chunk) => onChunk(chunk))
+        })
+        return streamNetworkDesignerUpsert("http://x", new AbortController().signal, "front", [], "net", "user")
+    }
+
+    it("collapses repeated echoes of the same reservation into one network", async () => {
+        const networks = await streamChunks([reservationChunk("abc"), reservationChunk("abc")])
+
+        expect(networks).toHaveLength(1)
+    })
+
+    it("ignores chunks that are not chat messages or carry no reservations", async () => {
+        const noReservations = JSON.stringify({
+            response: {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: {}},
+        })
+
+        // A reservation without an id is dropped during conversion, leaving nothing to merge
+        const noReservationId = JSON.stringify({
+            response: {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: {[AGENT_RESERVATIONS_KEY]: [{}]}},
+        })
+
+        expect(await streamChunks(["not json", noReservations, noReservationId])).toEqual([])
+    })
+
+    it("keeps what it has and warns when a chunk cannot be processed", async () => {
+        const warnSpy = vi.spyOn(console, "warn").mockImplementation(vi.fn())
+        // Reservations is not an array, so conversion throws
+        const badChunk = JSON.stringify({
+            response: {type: ChatMessageType.AGENT_FRAMEWORK, sly_data: {[AGENT_RESERVATIONS_KEY]: 5}},
+        })
+
+        const networks = await streamChunks([reservationChunk("abc"), badChunk])
+
+        expect(networks).toHaveLength(1)
+        expect(warnSpy).toHaveBeenCalledWith("Failed to process chunk from network designer:", expect.anything())
     })
 })

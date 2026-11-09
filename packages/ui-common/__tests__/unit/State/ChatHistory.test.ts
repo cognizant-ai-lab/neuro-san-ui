@@ -1,7 +1,7 @@
 // Include mock for IndexedDB
 import "fake-indexeddb/auto"
 
-import {AIMessage, HumanMessage, SystemMessage} from "@langchain/core/messages"
+import {AIMessage, HumanMessage, mapChatMessagesToStoredMessages, SystemMessage} from "@langchain/core/messages"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ChatContext} from "../../../generated/neuro-san/NeuroSanClient"
@@ -184,5 +184,58 @@ describe("ChatHistory", () => {
         getItemSpy.mockResolvedValueOnce(null)
         await useAgentChatHistoryStore.persist.rehydrate()
         expect(getItemSpy).toHaveBeenCalled()
+    })
+
+    it("should rehydrate stored history, including entries without chat history", async () => {
+        const stored = {
+            state: {
+                history: {
+                    withMessages: {
+                        chatHistory: mapChatMessagesToStoredMessages([new HumanMessage("hello")]),
+                        chatContext: null as unknown,
+                    },
+                    withoutMessages: {chatContext: null as unknown},
+                },
+            },
+            version: 0,
+        }
+        vi.spyOn(indexedDBStorage, "getItem").mockResolvedValueOnce(stored)
+        await useAgentChatHistoryStore.persist.rehydrate()
+
+        const rehydrated = useAgentChatHistoryStore.getState().history
+        expect(rehydrated["withMessages"]?.chatHistory?.[0]?.content).toBe("hello")
+        expect(rehydrated["withoutMessages"]?.chatHistory).toEqual([])
+    })
+
+    it("should rehydrate to empty history when the stored value has no history", async () => {
+        vi.spyOn(indexedDBStorage, "getItem").mockResolvedValueOnce({state: {}, version: 0})
+        await useAgentChatHistoryStore.persist.rehydrate()
+        expect(useAgentChatHistoryStore.getState().history).toEqual({})
+    })
+
+    it("should serialize history entries without chat history when persisting", async () => {
+        const setItemSpy = vi.spyOn(indexedDBStorage, "setItem").mockResolvedValue()
+        useAgentChatHistoryStore.getState().setSlyData("agent-no-chat", {foo: "bar"})
+        await vi.waitFor(() => expect(setItemSpy).toHaveBeenCalled())
+        const stored = setItemSpy.mock.calls.at(-1)?.[1] as {state: {history: Record<string, unknown>}}
+        expect(stored.state.history["agent-no-chat"]).toBeDefined()
+    })
+
+    it("should persist a state that has no history", async () => {
+        const setItemSpy = vi.spyOn(indexedDBStorage, "setItem").mockResolvedValue()
+
+        await useAgentChatHistoryStore.persist.getOptions().storage.setItem("chat-history", {state: {}} as never)
+
+        expect(setItemSpy).toHaveBeenCalledWith("chat-history", expect.objectContaining({state: {history: {}}}))
+    })
+
+    it("should copy history for an entry that has no sly_data", () => {
+        useAgentChatHistoryStore.setState({history: {agentX: {chatHistory: TEST_MESSAGES, chatContext: null}} as never})
+
+        useAgentChatHistoryStore.getState().copyHistory("agentX", "agentY")
+
+        const copied = useAgentChatHistoryStore.getState().history["agentY"]
+        expect(copied?.chatHistory).toEqual(TEST_MESSAGES)
+        expect(copied?.slyData).toEqual({})
     })
 })

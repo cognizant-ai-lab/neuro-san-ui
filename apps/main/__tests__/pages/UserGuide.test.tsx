@@ -51,4 +51,11 @@ describe("User Guide", () => {
 
         await screen.findByText(/Unable to load user guide/u)
     })
+
+    it("Displays an error message when fetch throws", async () => {
+        window.fetch = vi.fn().mockRejectedValue(new Error("network down"))
+        render(<UserGuide />)
+
+        await screen.findByText(/network down/u)
+    })
 })

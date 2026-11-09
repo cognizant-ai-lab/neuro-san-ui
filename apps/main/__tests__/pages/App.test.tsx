@@ -25,7 +25,8 @@ import {mockFetch} from "../../../../__tests__/common/TestUtils"
 import {GOOGLE_ANALYTICS_URL} from "../../../../packages/ui-common/components/Common/GoogleAnalytics"
 import {TRIGGER_APP_TOUR_EVENT_NAME} from "../../../../packages/ui-common/components/MultiAgentAccelerator/const"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
+import {useUserInfoStore} from "../../../../packages/ui-common/state/UserInfo"
+import {smartSignOut, useAuthentication} from "../../../../packages/ui-common/utils/Authentication"
 import {NeuroSanUI} from "../../pages/_app"
 
 //#region Constants
@@ -69,6 +70,7 @@ const APP_COMPONENT = (
 
 vi.mock("next-auth/react", () => ({
     SessionProvider: ({children}: {children: ReactNode}) => <>{children}</>,
+    useSession: () => ({data: {user: {name: "mock-user"}}, status: "authenticated"}),
 }))
 
 vi.mock("../../../../packages/ui-common/const")
@@ -85,6 +87,7 @@ vi.mock("../../../../packages/ui-common/utils/Authentication", async () => {
     return {
         ...actual,
         useAuthentication: vi.fn(),
+        smartSignOut: vi.fn(),
     }
 })
 
@@ -277,6 +280,34 @@ describe("Main App Component", () => {
         expect(consoleSpy).toHaveBeenCalledTimes(1)
     })
 
+    it("Should use the ALB user info when the OIDC header was found", async () => {
+        window.fetch = vi
+            .fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue(mockEnvironment({enableAuthentication: true})),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: vi.fn().mockResolvedValue({
+                    oidcHeaderFound: true,
+                    oidcHeaderValid: true,
+                    oidcProvider: "Github",
+                    picture: "https://example.com/pic.png",
+                    username: "alb-user",
+                }),
+            })
+
+        render(APP_COMPONENT)
+
+        await screen.findByText(COMPONENT_BODY)
+
+        await waitFor(() => {
+            expect(useUserInfoStore.getState().currentUser).toBe("alb-user")
+        })
+        expect(useUserInfoStore.getState().oidcProvider).toBe("Github")
+    })
+
     it("Should render the splash page correctly", async () => {
         vi.mocked(useRouter).mockReturnValue(
             createMockRouter({
@@ -350,5 +381,45 @@ describe("Main App Component", () => {
         await user.click(await screen.findByRole("link", {hidden: true, name: "User Guide"}))
 
         expect(push).toHaveBeenCalledWith("/UserGuide")
+    })
+
+    it("Should sign the user out from the user menu", async () => {
+        vi.mocked(smartSignOut).mockResolvedValue(undefined)
+
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        await user.click(await screen.findByRole("button", {name: "User dropdown toggle"}))
+        await user.click(await screen.findByText("Sign out"))
+
+        await waitFor(() => {
+            expect(smartSignOut).toHaveBeenCalledTimes(1)
+        })
+        expect(useUserInfoStore.getState().currentUser).toBeUndefined()
+        expect(useUserInfoStore.getState().picture).toBeUndefined()
+    })
+
+    it("Should not override the page title for nested paths", async () => {
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({pathname: "/projects/nested"}))
+        document.title = "Original title"
+
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        expect(document.title).toBe("Original title")
+    })
+
+    it("Should wrap the page in the auth component when the page requires authentication", async () => {
+        const AuthRequiredComponent = Object.assign(() => <div>{COMPONENT_BODY}</div>, {authRequired: true})
+
+        render(
+            <NeuroSanUI
+                Component={AuthRequiredComponent}
+                pageProps={{url: "TestComponentURL", session: {user: {}}}}
+                router={createMockRouter() as unknown as Router}
+            />
+        )
+
+        await screen.findByText(COMPONENT_BODY)
     })
 })

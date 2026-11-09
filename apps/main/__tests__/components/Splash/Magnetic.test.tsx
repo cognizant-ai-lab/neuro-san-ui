@@ -20,6 +20,13 @@ import {MotionGlobalConfig} from "motion/react"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Magnetic} from "../../../components/Splash/Magnetic"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 MotionGlobalConfig.skipAnimations = true
 
 describe("Magnetic", () => {
@@ -49,5 +56,26 @@ describe("Magnetic", () => {
         fireEvent.pointerLeave(wrapper)
 
         expect(screen.getByText("Launch")).toBeInTheDocument()
+    })
+
+    it("ignores pointer movement under prefers-reduced-motion", () => {
+        reducedMotion.value = true
+
+        try {
+            render(
+                <Magnetic>
+                    <span>Reduced</span>
+                </Magnetic>
+            )
+
+            const wrapper = screen.getByText("Reduced").parentElement
+            const rectSpy = vi.spyOn(wrapper, "getBoundingClientRect")
+
+            fireEvent.pointerMove(wrapper, {clientX: 200, clientY: 50})
+
+            expect(rectSpy).not.toHaveBeenCalled()
+        } finally {
+            reducedMotion.value = false
+        }
     })
 })

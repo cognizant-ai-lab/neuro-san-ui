@@ -19,6 +19,13 @@ import {render, screen} from "@testing-library/react"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {NetworkHud} from "../../../../components/MultiAgentAccelerator/AgentFlow/NetworkHud"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 describe("NetworkHud", () => {
     withStrictMocks()
 
@@ -49,5 +56,25 @@ describe("NetworkHud", () => {
 
         const bar = document.getElementById("hud-network-title-bar")
         expect(bar).toHaveStyle({top: "90px", left: "calc(50% + -50px)"})
+    })
+
+    it("shows static thinking dots under prefers-reduced-motion", () => {
+        reducedMotion.value = true
+        try {
+            render(
+                <NetworkHud
+                    agentCount={2}
+                    centerOffset={0}
+                    id="hud"
+                    networkDisplayName="Math Guy"
+                    status="thinking"
+                    top={90}
+                />
+            )
+
+            expect(document.getElementById("hud-hud-dots")).toBeInTheDocument()
+        } finally {
+            reducedMotion.value = false
+        }
     })
 })

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import {render} from "@testing-library/react"
+import {renderToString} from "react-dom/server"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {useSettingsStore, VisualEffects} from "../../../state/Settings"
@@ -80,4 +81,24 @@ describe("visual effects", () => {
             expect(await applyEffects(setting)).toBe(lite ? "lite" : undefined)
         }
     )
+    it("treats a throwing WebGL probe as software rendering", async () => {
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => {
+            throw new Error("webgl blew up")
+        })
+        expect(await applyEffects("auto")).toBe("lite")
+    })
+
+    it("treats a context without renderer info as hardware rendering", async () => {
+        const gl = {getExtension: (): null => null, getParameter: (): string => ""}
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() =>
+            gl) as unknown as HTMLCanvasElement["getContext"])
+        expect(await applyEffects("auto")).toBeUndefined()
+    })
+
+    it("reports no software rendering on the server snapshot", async () => {
+        const {useLiteEffects, useFreshSettingsStore} = await loadEffects()
+        useFreshSettingsStore.getState().updateSettings({appearance: {visualEffects: "auto"}})
+        const Probe = () => <span>{String(useLiteEffects())}</span>
+        expect(renderToString(<Probe />)).toContain("false")
+    })
 })

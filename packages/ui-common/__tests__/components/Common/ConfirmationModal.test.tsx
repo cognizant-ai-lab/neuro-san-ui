@@ -16,6 +16,7 @@ limitations under the License.
 
 import {render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
+import {ComponentProps} from "react"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {ConfirmationModal} from "../../../components/Common/ConfirmationModal"
@@ -141,5 +142,55 @@ describe("ConfirmationModal", () => {
         // @ts-expect-error - Have to expect TS error, even though this works as is.
         await user.click(parentElement.firstChild)
         expect(modalText).not.toBeVisible()
+    })
+
+    it("should use custom button labels", () => {
+        render(
+            <ConfirmationModal
+                cancelBtnLabel="Nope"
+                content="confirmation-content"
+                handleCancel={handleCancelMock}
+                handleOk={handleConfirmMock}
+                id={id}
+                okBtnLabel="Yep"
+                title="confirmation-title"
+            />
+        )
+
+        expect(screen.getByText("Nope")).toBeInTheDocument()
+        expect(screen.getByText("Yep")).toBeInTheDocument()
+        expect(screen.queryByText("Cancel")).not.toBeInTheDocument()
+        expect(screen.queryByText("Confirm")).not.toBeInTheDocument()
+    })
+
+    it("should close without error when Confirm is clicked and no handleOk is given", async () => {
+        const user = userEvent.setup()
+        render(
+            <ConfirmationModal
+                content="confirmation-text"
+                id={id}
+                title="confirmation-title"
+            />
+        )
+
+        await user.click(screen.getByText("Confirm").closest("button"))
+
+        expect(screen.getByText("confirmation-text")).not.toBeVisible()
+    })
+
+    it("should call handleCancel and close when Escape is pressed", async () => {
+        const user = userEvent.setup()
+        render(defaultConfirmationModalComponent)
+
+        await user.keyboard("{Escape}")
+
+        expect(handleCancelMock).toHaveBeenCalledTimes(1)
+        expect(screen.getByText("confirmation-text")).not.toBeVisible()
+    })
+
+    it("should render with the default id and title when none are provided", () => {
+        render(<ConfirmationModal {...({content: "confirmation-text"} as ComponentProps<typeof ConfirmationModal>)} />)
+
+        expect(screen.getByText("confirmation-text")).toBeInTheDocument()
     })
 })
