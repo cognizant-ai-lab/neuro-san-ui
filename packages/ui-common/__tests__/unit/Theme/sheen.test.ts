@@ -17,7 +17,16 @@ limitations under the License.
 import {createTheme} from "@mui/material/styles"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {getSheen, glassSurface, gradientBorder, SHEEN_RADIUS_SURFACE, spinningBorder} from "../../../Theme/sheen"
+import {
+    getSheen,
+    glassSurface,
+    gradientBorder,
+    SHEEN_DARK,
+    SHEEN_LIGHT,
+    SHEEN_RADIUS_SURFACE,
+    spinningBorder,
+    unbrandedPalette,
+} from "../../../Theme/sheen"
 
 describe("sheen helpers", () => {
     withStrictMocks()
@@ -41,6 +50,15 @@ describe("sheen helpers", () => {
     it("spinningBorder animates the border", () => {
         expect(spinningBorder(theme)["&::before"].animation).toContain("sheenSpin")
         expect(spinningBorder(theme, 4, 2)["&::before"].borderRadius).toBe("4px")
+    })
+
+    it("unbrandedPalette resets text and background variables per color scheme", () => {
+        const vars = unbrandedPalette(createTheme({colorSchemes: {light: true, dark: true}, cssVariables: true}))
+        expect(vars["--mui-palette-text-primary"]).toBe(SHEEN_DARK.text.primary)
+        expect(vars["--mui-palette-background-paperChannel"]).toBe("17 16 28")
+        const light = Object.values(vars).find((value) => typeof value === "object") as Record<string, string>
+        expect(light["--mui-palette-text-primary"]).toBe(SHEEN_LIGHT.text.primary)
+        expect(light["--mui-palette-text-primaryChannel"]).toBe("18 16 31")
     })
 
     it("glassSurface is a tinted fill with no backdrop blur", () => {
