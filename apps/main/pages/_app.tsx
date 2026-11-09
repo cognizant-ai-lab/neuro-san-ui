@@ -84,7 +84,7 @@ const PageTransition = ({children, fill = false}: PageTransitionProps): ReactJSX
     <motion.div
         animate={{opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: {filter: "none"}}}
         exit={{opacity: 0, y: -6, filter: "blur(4px)", transition: {duration: 0.14, ease: "easeIn"}}}
-        initial={{opacity: 0, y: 14, filter: "blur(8px)"}}
+        initial={{opacity: 0, filter: "blur(8px)"}}
         style={fill ? {height: "100%"} : {display: "flex", flex: 1, flexDirection: "column", minHeight: 0, minWidth: 0}}
         transition={{...PAGE_SPRING, opacity: {duration: 0.35}, filter: {duration: 0.45, ease: "easeOut"}}}
     >
