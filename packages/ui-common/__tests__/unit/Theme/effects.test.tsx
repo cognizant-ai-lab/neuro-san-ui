@@ -90,8 +90,9 @@ describe("visual effects", () => {
 
     it("treats a context without renderer info as hardware rendering", async () => {
         const gl = {getExtension: (): null => null, getParameter: (): string => ""}
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() =>
-            gl) as unknown as HTMLCanvasElement["getContext"])
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
+            (() => gl) as unknown as HTMLCanvasElement["getContext"]
+        )
         expect(await applyEffects("auto")).toBeUndefined()
     })
 

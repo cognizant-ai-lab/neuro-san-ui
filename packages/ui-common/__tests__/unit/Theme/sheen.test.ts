@@ -17,12 +17,7 @@ limitations under the License.
 import {createTheme} from "@mui/material/styles"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {
-    glassSurface,
-    gradientBorder,
-    SHEEN_RADIUS_SURFACE,
-    spinningBorder,
-} from "../../../Theme/sheen"
+import {glassSurface, gradientBorder, SHEEN_RADIUS_SURFACE, spinningBorder} from "../../../Theme/sheen"
 
 describe("sheen helpers", () => {
     withStrictMocks()

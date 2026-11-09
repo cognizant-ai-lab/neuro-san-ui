@@ -485,11 +485,7 @@ describe("AgentNodeEditor", () => {
 
         it("passes through definition entries for other agents unchanged when saving", async () => {
             const otherEntry = {origin: "other_agent", tools: [] as string[]}
-            const network = makeTempNetwork(
-                NETWORK_ID,
-                [{origin: AGENT_ID, tools: []}, otherEntry],
-                NETWORK_NAME
-            )
+            const network = makeTempNetwork(NETWORK_ID, [{origin: AGENT_ID, tools: []}, otherEntry], NETWORK_NAME)
             useTempNetworksStore.getState().setTempNetworks([network])
 
             const {onSaveAgent} = renderPopup()

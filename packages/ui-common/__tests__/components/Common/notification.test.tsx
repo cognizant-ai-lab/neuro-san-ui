@@ -61,13 +61,7 @@ describe("notification", () => {
     })
 
     it("honours a duration override, placement and JSX description", () => {
-        sendNotification(
-            NotificationType.error,
-            "Oops",
-            <b>bold</b>,
-            {vertical: "bottom", horizontal: "left"},
-            null
-        )
+        sendNotification(NotificationType.error, "Oops", <b>bold</b>, {vertical: "bottom", horizontal: "left"}, null)
 
         expect(console.debug).toHaveBeenCalledWith(expect.stringContaining("<b>bold</b>"))
         expect(enqueueSnackbar).toHaveBeenCalledWith(
