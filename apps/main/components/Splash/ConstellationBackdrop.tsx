@@ -14,53 +14,73 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Full-bleed backdrop for the splash page: a CSS gradient "constellation" that is always painted, with the WebGL
-// Agent Constellation scene fading in over it once it has drawn its first frame. The 3D bundle is loaded client-side
-// only, and only if WebGL is available; any failure (load error, render error, lost context) leaves the CSS layer.
+// Full-bleed, static backdrop for the splash page: a soft iridescent glow and dot grid with an "agent constellation"
+// drawn over them in SVG: a glowing core, three tilted orbits and the agents on them, linked to each other. Nothing
+// animates or tracks the pointer, so it costs nothing after the first paint.
 
-import {styled, useColorScheme} from "@mui/material/styles"
-import {useReducedMotion} from "motion/react"
-import dynamic from "next/dynamic"
-import {Component, ErrorInfo, FC, ReactNode, useCallback, useEffect, useRef, useState} from "react"
+import {styled} from "@mui/material/styles"
+import {FC} from "react"
 
-import {isWebGLAvailable} from "./webgl"
-import {useLiteEffects} from "../../../../packages/ui-common/Theme/effects"
-import {getSheen, sheenConic} from "../../../../packages/ui-common/Theme/sheen"
+import {getSheen, SHEEN_DARK, SHEEN_LIGHT, sheenConic} from "../../../../packages/ui-common/Theme/sheen"
 
-const ConstellationScene = dynamic(() => import("./ConstellationScene").then((scene) => scene.ConstellationScene), {
-    loading: () => null,
-    ssr: false,
-})
+// #region: Constellation geometry
 
-// #region: Error boundary
-
-interface BoundaryProps {
-    children: ReactNode
-    onError: () => void
+interface Point {
+    x: number
+    y: number
 }
 
-// Contains any failure in the 3D scene so the page itself can never crash because of it
-class SceneErrorBoundary extends Component<BoundaryProps, {failed: boolean}> {
-    static getDerivedStateFromError() {
-        return {failed: true}
-    }
+interface Orbit {
+    // Parametric angles (degrees) of the agents placed on this orbit
+    agents: number[]
+    rx: number
+    ry: number
+    // Tilt of the orbit (degrees)
+    tilt: number
+}
 
-    constructor(props: BoundaryProps) {
-        super(props)
-        this.state = {failed: false}
-    }
+// All coordinates are in a 200 x 200 viewBox centered on the core. Agent angles are chosen so no two agents crowd
+// each other or the core.
+const ORBITS: Orbit[] = [
+    {agents: [65, 220, 350], rx: 44, ry: 20, tilt: -28},
+    {agents: [25, 175, 230, 275, 320], rx: 68, ry: 34, tilt: 18},
+    {agents: [80, 125, 170, 235, 305, 345], rx: 90, ry: 46, tilt: -10},
+]
 
-    override componentDidCatch(error: Error, info: ErrorInfo) {
-        console.warn("Splash 3D scene unavailable, using fallback", error, info.componentStack)
-        this.props.onError()
-    }
+const CORE_RADIUS = 9
 
-    override render() {
-        return this.state.failed ? null : this.props.children
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180
+
+// Point at parametric angle t on an ellipse centered on the origin, rotated by tilt
+const pointOnOrbit = ({rx, ry, tilt}: Orbit, t: number): Point => {
+    const x = rx * Math.cos(toRadians(t))
+    const y = ry * Math.sin(toRadians(t))
+    const rotation = toRadians(tilt)
+    return {
+        x: x * Math.cos(rotation) - y * Math.sin(rotation),
+        y: x * Math.sin(rotation) + y * Math.cos(rotation),
     }
 }
 
-// #endregion: Error boundary
+// Agents per orbit, innermost first
+const AGENTS: Point[][] = ORBITS.map((orbit) => orbit.agents.map((t) => pointOnOrbit(orbit, t)))
+
+const nearest = (from: Point, candidates: Point[]): Point =>
+    candidates.reduce((best, candidate) =>
+        Math.hypot(candidate.x - from.x, candidate.y - from.y) < Math.hypot(best.x - from.x, best.y - from.y)
+            ? candidate
+            : best
+    )
+
+// The core talks to every inner agent; every other agent is linked to its nearest agent one orbit in
+const LINKS: [Point, Point][] = [
+    ...AGENTS[0].map((agent): [Point, Point] => [{x: 0, y: 0}, agent]),
+    ...AGENTS.slice(1).flatMap((orbit, index) =>
+        orbit.map((agent): [Point, Point] => [nearest(agent, AGENTS[index]), agent])
+    ),
+]
+
+// #endregion: Constellation geometry
 
 // #region: Styled components
 
@@ -72,27 +92,24 @@ const Layer = styled("div")({
     zIndex: 0,
 })
 
-// CSS fallback: a soft iridescent orb on the right, where the 3D core sits. Static: animating a heavily blurred layer
-// repaints it every frame, which is very expensive without a GPU.
-const FallbackOrb = styled("div")(({theme}) => ({
+// Soft iridescent glow behind the constellation
+const Orb = styled("div")(({theme}) => ({
     aspectRatio: "1",
     backgroundImage: sheenConic(theme),
     borderRadius: "50%",
     filter: "blur(70px)",
     left: "72%",
-    opacity: 0.5,
+    opacity: 0.32,
     position: "absolute",
     top: "48%",
     transform: "translate(-50%, -50%)",
-    transition: "opacity 1.2s ease",
-    width: "min(52vmax, 760px)",
-    "&[data-scene-ready='true']": {opacity: 0.16},
-    ...theme.applyStyles("light", {opacity: 0.38}),
+    width: "min(46vmax, 680px)",
+    ...theme.applyStyles("light", {opacity: 0.26}),
     [theme.breakpoints.down("lg")]: {left: "50%", top: "38%", width: "90vmin"},
 }))
 
 // Faint dot grid, fading out radially around the constellation
-const FallbackGrid = styled("div")(({theme}) => {
+const Grid = styled("div")(({theme}) => {
     const fade = "radial-gradient(ellipse 60% 65% at 65% 45%, #000 0%, transparent 75%)"
     const dot = (theme.vars ?? theme).palette.text.primary
     return {
@@ -106,17 +123,37 @@ const FallbackGrid = styled("div")(({theme}) => {
     }
 })
 
-const CanvasLayer = styled("div")(({theme}) => ({
-    inset: 0,
-    opacity: 0,
+const Constellation = styled("svg")(({theme}) => ({
+    aspectRatio: "1",
+    left: "72%",
+    overflow: "visible",
     position: "absolute",
-    transition: "opacity 1.6s cubic-bezier(0.22, 1, 0.36, 1)",
-    "&[data-scene-ready='true']": {opacity: 1},
+    top: "48%",
+    transform: "translate(-50%, -50%)",
+    width: "min(52vmax, 760px)",
+
+    "& .stop-start": {stopColor: SHEEN_DARK.sheen.gradientStart},
+    "& .stop-mid": {stopColor: SHEEN_DARK.sheen.gradientMid},
+    "& .stop-end": {stopColor: SHEEN_DARK.sheen.gradientEnd},
+    "& .orbit": {opacity: 0.22},
+    "& .link": {opacity: 0.45},
+    "& .agent-halo": {fill: getSheen(theme).tint},
+    "& .agent": {fill: SHEEN_DARK.text.primary},
+
+    ...theme.applyStyles("light", {
+        "& .stop-start": {stopColor: SHEEN_LIGHT.sheen.gradientStart},
+        "& .stop-mid": {stopColor: SHEEN_LIGHT.sheen.gradientMid},
+        "& .stop-end": {stopColor: SHEEN_LIGHT.sheen.gradientEnd},
+        "& .orbit": {opacity: 0.3},
+        "& .link": {opacity: 0.5},
+        "& .agent": {fill: SHEEN_LIGHT.background.paper},
+    }),
+
     // In the centered (narrower) layout the constellation sits behind the copy, so recede it
-    [theme.breakpoints.down("lg")]: {"&[data-scene-ready='true']": {opacity: 0.5}},
+    [theme.breakpoints.down("lg")]: {left: "50%", opacity: 0.4, top: "38%", width: "100vmin"},
 }))
 
-// Darkens / lightens the left side so the copy always reads over the scene
+// Darkens / lightens the left side so the copy always reads over the backdrop
 const Scrim = styled("div")(({theme}) => {
     const {glassBg} = getSheen(theme)
     return {
@@ -130,95 +167,132 @@ const Scrim = styled("div")(({theme}) => {
 
 // #endregion: Styled components
 
-/**
- * Tracks whether an element is worth animating: the tab is visible and the element intersects the viewport.
- */
-const useOnScreen = (element: HTMLElement | null): boolean => {
-    const [intersecting, setIntersecting] = useState(true)
-    const [tabVisible, setTabVisible] = useState(true)
-
-    useEffect(() => {
-        const update = () => setTabVisible(document.visibilityState !== "hidden")
-        update()
-        document.addEventListener("visibilitychange", update)
-        return () => document.removeEventListener("visibilitychange", update)
-    }, [])
-
-    useEffect(() => {
-        if (!element || typeof IntersectionObserver === "undefined") return undefined
-        const observer = new IntersectionObserver(([entry]) => setIntersecting(entry.isIntersecting))
-        observer.observe(element)
-        return () => observer.disconnect()
-    }, [element])
-
-    return intersecting && tabVisible
-}
-
-export const ConstellationBackdrop: FC = () => {
-    const {mode, systemMode} = useColorScheme()
-    const isLight = (mode === "system" ? systemMode : mode) === "light"
-    const reducedMotion = useReducedMotion() ?? false
-
-    // null until checked on the client, so server and first client render agree
-    const [webGL, setWebGL] = useState<boolean | null>(null)
-    const [failed, setFailed] = useState(false)
-    const [ready, setReady] = useState(false)
-    const [layer, setLayer] = useState<HTMLDivElement | null>(null)
-    const active = useOnScreen(layer)
-    const mounted = useRef(true)
-
-    useEffect(() => {
-        mounted.current = true
-        setWebGL(isWebGLAvailable())
-        return () => {
-            mounted.current = false
-        }
-    }, [])
-
-    const handleReady = useCallback(() => {
-        if (mounted.current) setReady(true)
-    }, [])
-    const handleError = useCallback(() => {
-        if (mounted.current) {
-            setFailed(true)
-            setReady(false)
-        }
-    }, [])
-
-    // Lite effects (user setting, or auto when the browser renders without a GPU): keep the static CSS fallback only
-    const liteEffects = useLiteEffects()
-
-    const showScene = webGL === true && !failed && !liteEffects
-
-    return (
-        <Layer
-            aria-hidden={true}
-            data-testid="constellation-backdrop"
-            id="splash-constellation"
-            ref={setLayer}
+export const ConstellationBackdrop: FC = () => (
+    <Layer
+        aria-hidden={true}
+        data-testid="constellation-backdrop"
+        id="splash-constellation"
+    >
+        <Grid id="splash-hero-grid" />
+        <Orb id="splash-hero-orb" />
+        <Constellation
+            data-testid="constellation-svg"
+            id="splash-hero-constellation"
+            viewBox="-100 -100 200 200"
         >
-            <FallbackGrid id="splash-hero-grid" />
-            <FallbackOrb
-                data-scene-ready={ready}
-                id="splash-hero-orb"
-            />
-            {showScene ? (
-                <CanvasLayer
-                    data-scene-ready={ready}
-                    data-testid="constellation-canvas-layer"
+            <defs>
+                <linearGradient
+                    gradientUnits="userSpaceOnUse"
+                    id="constellation-stroke"
+                    x1="-100"
+                    x2="100"
+                    y1="-60"
+                    y2="60"
                 >
-                    <SceneErrorBoundary onError={handleError}>
-                        <ConstellationScene
-                            active={active}
-                            isLight={isLight}
-                            onError={handleError}
-                            onReady={handleReady}
-                            reducedMotion={reducedMotion}
+                    <stop
+                        className="stop-start"
+                        offset="0%"
+                    />
+                    <stop
+                        className="stop-mid"
+                        offset="55%"
+                    />
+                    <stop
+                        className="stop-end"
+                        offset="100%"
+                    />
+                </linearGradient>
+                <radialGradient id="constellation-core">
+                    <stop
+                        offset="0%"
+                        stopColor="#FFFFFF"
+                    />
+                    <stop
+                        className="stop-mid"
+                        offset="45%"
+                    />
+                    <stop
+                        className="stop-start"
+                        offset="100%"
+                    />
+                </radialGradient>
+                <filter
+                    height="300%"
+                    id="constellation-glow"
+                    width="300%"
+                    x="-100%"
+                    y="-100%"
+                >
+                    <feGaussianBlur stdDeviation="4" />
+                </filter>
+            </defs>
+
+            {ORBITS.map(({rx, ry, tilt}) => (
+                <ellipse
+                    className="orbit"
+                    fill="none"
+                    key={`${rx}-${ry}`}
+                    rx={rx}
+                    ry={ry}
+                    stroke="url(#constellation-stroke)"
+                    strokeWidth={0.35}
+                    transform={`rotate(${tilt})`}
+                />
+            ))}
+
+            {LINKS.map(([from, to]) => (
+                <line
+                    className="link"
+                    key={`${from.x},${from.y}-${to.x},${to.y}`}
+                    stroke="url(#constellation-stroke)"
+                    strokeLinecap="round"
+                    strokeWidth={0.6}
+                    x1={from.x}
+                    x2={to.x}
+                    y1={from.y}
+                    y2={to.y}
+                />
+            ))}
+
+            {AGENTS.flat().map(({x, y}, index) => {
+                // Inner agents are a little larger, as if nearer
+                const radius = index < ORBITS[0].agents.length ? 2.6 : 2
+                return (
+                    <g key={`${x},${y}`}>
+                        <circle
+                            className="agent-halo"
+                            cx={x}
+                            cy={y}
+                            r={radius * 2.6}
                         />
-                    </SceneErrorBoundary>
-                </CanvasLayer>
-            ) : null}
-            <Scrim />
-        </Layer>
-    )
-}
+                        <circle
+                            cx={x}
+                            cy={y}
+                            fill="url(#constellation-stroke)"
+                            r={radius}
+                        />
+                        <circle
+                            className="agent"
+                            cx={x}
+                            cy={y}
+                            r={radius * 0.45}
+                        />
+                    </g>
+                )
+            })}
+
+            {/* The core: a blurred bloom under a bright gradient sphere */}
+            <circle
+                fill="url(#constellation-stroke)"
+                filter="url(#constellation-glow)"
+                opacity={0.8}
+                r={CORE_RADIUS * 1.6}
+            />
+            <circle
+                fill="url(#constellation-core)"
+                r={CORE_RADIUS}
+            />
+        </Constellation>
+        <Scrim />
+    </Layer>
+)

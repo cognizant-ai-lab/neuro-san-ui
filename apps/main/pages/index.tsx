@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 import {styled} from "@mui/material/styles"
-import {motion, MotionConfig, Variants} from "motion/react"
 import NextImage from "next/image"
 import Link from "next/link"
 import {useRouter} from "next/router"
@@ -37,39 +36,7 @@ import {
     sheenGradient,
 } from "../../../packages/ui-common/Theme/sheen"
 import {ConstellationBackdrop} from "../components/Splash/ConstellationBackdrop"
-import {Magnetic} from "../components/Splash/Magnetic"
 import {CustomPageProps} from "../Types/Types"
-
-// #region: Motion choreography
-const SPRING = {type: "spring", stiffness: 80, damping: 18, mass: 0.9} as const
-
-// Parent: staggers its children in
-const stagger = (delayChildren: number, staggerChildren = 0.09): Variants => ({
-    hidden: {},
-    show: {transition: {delayChildren, staggerChildren}},
-})
-
-// Child: rises, fades and un-blurs on a soft spring
-const blurRise: Variants = {
-    hidden: {filter: "blur(12px)", opacity: 0, y: 28},
-    show: {filter: "blur(0px)", opacity: 1, transition: SPRING, transitionEnd: {filter: "none"}, y: 0},
-}
-
-// The headline arrives a little more dramatically: from further down, more blurred, with its tracking tightening
-const headlineRise: Variants = {
-    hidden: {filter: "blur(20px)", letterSpacing: "0em", opacity: 0, scale: 0.96, y: 48},
-    show: {
-        filter: "blur(0px)",
-        letterSpacing: "-0.035em",
-        opacity: 1,
-        scale: 1,
-        transition: {...SPRING, stiffness: 55, damping: 16},
-        transitionEnd: {filter: "none"},
-        y: 0,
-    },
-}
-
-// #endregion: Motion choreography
 
 // #region: Styled Components
 const PILL_RADIUS = 999
@@ -103,7 +70,7 @@ const BodyContent = styled("div")({
 })
 
 // Mini navbar: a floating glass pill
-const Navbar = styled(motion.div)(({theme}) => ({
+const Navbar = styled("div")(({theme}) => ({
     ...glassSurface(theme, PILL_RADIUS),
     alignItems: "center",
     display: "flex",
@@ -150,7 +117,7 @@ const Hero = styled("div")(({theme}) => ({
     },
 }))
 
-const Copy = styled(motion.div)(({theme}) => ({
+const Copy = styled("div")(({theme}) => ({
     alignItems: "center",
     display: "flex",
     flexDirection: "column",
@@ -158,8 +125,8 @@ const Copy = styled(motion.div)(({theme}) => ({
     [theme.breakpoints.up("lg")]: {alignItems: "flex-start", alignSelf: "center"},
 }))
 
-// Small glass pill above the headline with a rotating iridescent border
-const EyebrowPill = styled(motion.div)(({theme}) => {
+// Small glass pill above the headline with an iridescent border
+const EyebrowPill = styled("div")(({theme}) => {
     const sheen = getSheen(theme)
     return {
         ...glassSurface(theme, PILL_RADIUS),
@@ -174,7 +141,7 @@ const EyebrowPill = styled(motion.div)(({theme}) => {
         letterSpacing: "0.02em",
         padding: "0.4rem 1rem 0.4rem 0.75rem",
 
-        // Glowing, gently breathing status dot
+        // Glowing status dot
         "& .eyebrow-dot": {
             backgroundImage: sheenGradient(theme),
             borderRadius: "50%",
@@ -185,22 +152,22 @@ const EyebrowPill = styled(motion.div)(({theme}) => {
     }
 })
 
-const HeaderLineOne = styled(motion.h1)(({theme}) => ({
+const HeaderLineOne = styled("h1")(({theme}) => ({
     color: (theme.vars ?? theme).palette.text.primary,
     fontFamily: SHEEN_FONT_DISPLAY,
     fontSize: "clamp(3.5rem, 7.6vw, 8rem)",
     fontWeight: 500,
     lineHeight: 0.92,
     margin: 0,
+    letterSpacing: "-0.035em",
     marginTop: "1.75rem",
     maxWidth: "11ch",
     textWrap: "balance",
-    transformOrigin: "0% 100%",
 }))
 
 // The key phrase of the headline, filled with the flowing signature gradient
 // Display-size gradient: the UI accent (indigo → purple → blue) reads as flat violet at this size and its indigo end is
-// dim on near-black, so the headline uses lighter, more separated stops. Ends match so the flowing animation loops.
+// dim on near-black, so the headline uses lighter, more separated stops.
 const HEADLINE_GRADIENT_DARK =
     "linear-gradient(100deg, #B8A4FF 0%, #E3A6FF 30%, #8FB8FF 62%, #6FE0FF 82%, #B8A4FF 100%)"
 const HEADLINE_GRADIENT_LIGHT =
@@ -217,7 +184,7 @@ const SubHeaderTitle = styled("span")(({theme}) => ({
     paddingBottom: "0.12em",
 }))
 
-const NeuroAIDescriptionBox = styled(motion.div)(({theme}) => ({
+const NeuroAIDescriptionBox = styled("div")(({theme}) => ({
     color: (theme.vars ?? theme).palette.text.secondary,
     fontSize: "clamp(1.1rem, 1.6vw, 1.4rem)",
     letterSpacing: "-0.005em",
@@ -227,7 +194,7 @@ const NeuroAIDescriptionBox = styled(motion.div)(({theme}) => ({
     textWrap: "balance",
 }))
 
-const ActionsRow = styled(motion.div)(({theme}) => ({
+const ActionsRow = styled("div")(({theme}) => ({
     alignItems: "center",
     display: "flex",
     flexWrap: "wrap",
@@ -286,19 +253,6 @@ const LaunchButton = styled("div")(({theme}) => ({
         cursor: "pointer",
     },
 
-    // Light sweep across the button on hover (::after is taken by the arrow icon)
-    "& .cta-shimmer": {
-        background: "linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%)",
-        inset: 0,
-        pointerEvents: "none",
-        position: "absolute",
-        transform: "translateX(-120%)",
-        zIndex: -1,
-    },
-    "&:hover .cta-shimmer": {
-        animation: "sheenShimmer 0.9s ease",
-    },
-
     // Arrow glyph from the Cognizant icon font, nudging forward on hover
     "&::after": {
         WebkitFontFeatureSettings: '"liga"',
@@ -323,7 +277,7 @@ const LaunchButton = styled("div")(({theme}) => ({
 }))
 
 // Secondary action: glass pill button
-const ActionLink = styled(motion.a)(({theme}) => {
+const ActionLink = styled("a")(({theme}) => {
     const palette = (theme.vars ?? theme).palette
     return {
         ...glassSurface(theme, PILL_RADIUS),
@@ -346,8 +300,8 @@ const ActionLink = styled(motion.a)(({theme}) => {
     }
 })
 
-// The GitHub callout floats over the constellation on wide screens
-const CalloutContainer = styled(motion.div)(({theme}) => ({
+// The GitHub callout sits under the constellation on wide screens
+const CalloutContainer = styled("div")(({theme}) => ({
     gridArea: "callout",
     justifySelf: "center",
     maxWidth: "100%",
@@ -374,139 +328,90 @@ export const Index: FC & CustomPageProps = Object.assign(
         }
 
         return (
-            // Under prefers-reduced-motion, motion skips transforms and only fades
-            <MotionConfig reducedMotion="user">
-                <SplashContainer
-                    id="splash-page__container"
-                    sx={LOGO_LIGHT_MODE_SX}
-                >
-                    <ConstellationBackdrop />
-                    <OuterContainer id="outer-container">
-                        <BodyContent id="body-content">
-                            <Navbar
-                                animate="show"
-                                id="nav-bar"
-                                initial="hidden"
-                                variants={blurRise}
-                            >
-                                <NavbarLogo id="logo">
+            <SplashContainer
+                id="splash-page__container"
+                sx={LOGO_LIGHT_MODE_SX}
+            >
+                <ConstellationBackdrop />
+                <OuterContainer id="outer-container">
+                    <BodyContent id="body-content">
+                        <Navbar id="nav-bar">
+                            <NavbarLogo id="logo">
+                                <Link
+                                    id="splash-logo-link"
+                                    href="https://www.cognizant.com/us/en"
+                                    target="_blank"
+                                >
+                                    <NextImage
+                                        id="logo-img"
+                                        width={200}
+                                        height={45}
+                                        src="/cognizant-logo-white.svg"
+                                        alt="Cognizant Logo"
+                                    />
+                                </Link>
+                            </NavbarLogo>
+                            <NavbarMiddleSection id="nav-bar-middle" />
+                        </Navbar>
+                        <Hero id="main-div">
+                            <Copy>
+                                <EyebrowPill id="headline-eyebrow-pill">
+                                    <span
+                                        aria-hidden={true}
+                                        className="eyebrow-dot"
+                                    />
+                                    <span id="headline-eyebrow">{LOGO}</span>
+                                </EyebrowPill>
+                                <HeaderLineOne id="header-line">
+                                    <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
+                                </HeaderLineOne>
+                                <NeuroAIDescriptionBox id="neuro-ai-description-box">
+                                    Low-code framework for rapidly agentifying your business.
+                                </NeuroAIDescriptionBox>
+                                <ActionsRow id="multi-agent-accelerator-container">
                                     <Link
-                                        id="splash-logo-link"
-                                        href="https://www.cognizant.com/us/en"
-                                        target="_blank"
+                                        id="agent-network-link"
+                                        // Use the URL object form of `href` to pass along the query string
+                                        href={`/multiAgentAccelerator?${buildQueryString()}`}
+                                        /* eslint-disable-next-line @typescript-eslint/no-deprecated */
+                                        legacyBehavior={true}
+                                        passHref
                                     >
-                                        <NextImage
-                                            id="logo-img"
-                                            width={200}
-                                            height={45}
-                                            src="/cognizant-logo-white.svg"
-                                            alt="Cognizant Logo"
-                                        />
-                                    </Link>
-                                </NavbarLogo>
-                                <NavbarMiddleSection id="nav-bar-middle" />
-                            </Navbar>
-                            <Hero id="main-div">
-                                <Copy
-                                    animate="show"
-                                    initial="hidden"
-                                    variants={stagger(0.15)}
-                                >
-                                    <EyebrowPill
-                                        id="headline-eyebrow-pill"
-                                        variants={blurRise}
-                                    >
-                                        <motion.span
-                                            animate={{opacity: [0.55, 1, 0.55], scale: [0.85, 1.15, 0.85]}}
-                                            aria-hidden={true}
-                                            className="eyebrow-dot"
-                                            // A few breaths on arrival, then rest: an endless loop recomposites the
-                                            // page every frame, which is very costly without a GPU
-                                            transition={{duration: 2.4, ease: "easeInOut", repeat: 2}}
-                                        />
-                                        <span id="headline-eyebrow">{LOGO}</span>
-                                    </EyebrowPill>
-                                    <HeaderLineOne
-                                        id="header-line"
-                                        variants={headlineRise}
-                                    >
-                                        <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
-                                    </HeaderLineOne>
-                                    <NeuroAIDescriptionBox
-                                        id="neuro-ai-description-box"
-                                        variants={blurRise}
-                                    >
-                                        Low-code framework for rapidly agentifying your business.
-                                    </NeuroAIDescriptionBox>
-                                    <ActionsRow
-                                        id="multi-agent-accelerator-container"
-                                        variants={blurRise}
-                                    >
-                                        <Link
-                                            id="agent-network-link"
-                                            // Use the URL object form of `href` to pass along the query string
-                                            href={`/multiAgentAccelerator?${buildQueryString()}`}
-                                            /* eslint-disable-next-line @typescript-eslint/no-deprecated */
-                                            legacyBehavior={true}
-                                            passHref
-                                        >
-                                            <a
-                                                id="explore-agent-networks-link-anchor"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                href="#"
-                                            >
-                                                <Magnetic>
-                                                    <CtaHalo>
-                                                        <LaunchButton id="neuro-san-button">
-                                                            <span
-                                                                aria-hidden={true}
-                                                                className="cta-shimmer"
-                                                            />
-                                                            Explore agent networks
-                                                        </LaunchButton>
-                                                    </CtaHalo>
-                                                </Magnetic>
-                                            </a>
-                                        </Link>
-                                        <ActionLink
-                                            id="explore-more-link"
-                                            href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                                        <a
+                                            id="explore-agent-networks-link-anchor"
                                             target="_blank"
-                                            rel="noreferrer"
-                                            whileHover={{y: -3}}
-                                            whileTap={{scale: 0.97}}
+                                            rel="noopener noreferrer"
+                                            href="#"
                                         >
-                                            Explore more.
-                                        </ActionLink>
-                                    </ActionsRow>
-                                </Copy>
-                                <CalloutContainer
-                                    animate="show"
-                                    initial="hidden"
-                                    variants={{
-                                        hidden: {filter: "blur(12px)", opacity: 0, x: 40},
-                                        show: {
-                                            filter: "blur(0px)",
-                                            opacity: 1,
-                                            transition: {...SPRING, delay: 0.75},
-                                            transitionEnd: {filter: "none"},
-                                            x: 0,
-                                        },
-                                    }}
-                                >
-                                    <NeuroSanStudioCallout />
-                                </CalloutContainer>
-                            </Hero>
-                        </BodyContent>
-                        <Footer
-                            supportEmailAddress={supportEmailAddress}
-                            logoLinkUrl="https://www.cognizant.com/"
-                            logoUrl="/cognizant-logo-white.svg"
-                        />
-                    </OuterContainer>
-                </SplashContainer>
-            </MotionConfig>
+                                            <CtaHalo>
+                                                <LaunchButton id="neuro-san-button">
+                                                    Explore agent networks
+                                                </LaunchButton>
+                                            </CtaHalo>
+                                        </a>
+                                    </Link>
+                                    <ActionLink
+                                        id="explore-more-link"
+                                        href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Explore more.
+                                    </ActionLink>
+                                </ActionsRow>
+                            </Copy>
+                            <CalloutContainer>
+                                <NeuroSanStudioCallout />
+                            </CalloutContainer>
+                        </Hero>
+                    </BodyContent>
+                    <Footer
+                        supportEmailAddress={supportEmailAddress}
+                        logoLinkUrl="https://www.cognizant.com/"
+                        logoUrl="/cognizant-logo-white.svg"
+                    />
+                </OuterContainer>
+            </SplashContainer>
         )
     },
     // Explicitly want to leave this splash page open
