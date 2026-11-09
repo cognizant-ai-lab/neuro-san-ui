@@ -16,14 +16,10 @@ limitations under the License.
 
 import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
-import {MotionGlobalConfig} from "motion/react"
 import {NextRouter, useRouter} from "next/router"
-import {FC, useEffect} from "react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
-import {ConstellationScene} from "../../components/Splash/ConstellationScene"
-import {isWebGLAvailable} from "../../components/Splash/webgl"
 import {Index} from "../../pages"
 
 const createMockRouter = (overrides: Partial<NextRouter> = {}): NextRouter => ({
@@ -56,29 +52,6 @@ vi.mock("next/router", () => ({
     useRouter: vi.fn(),
 }))
 
-// jsdom has no WebGL: stand in for the three.js scene and the capability check
-vi.mock("../../components/Splash/ConstellationScene", () => ({
-    ConstellationScene: vi.fn(),
-}))
-
-vi.mock("../../components/Splash/webgl", () => ({
-    isWebGLAvailable: vi.fn(),
-}))
-
-// jsdom has no GPU, so "auto" effects would otherwise always pick lite mode and skip the 3D scene
-vi.mock("../../../../packages/ui-common/Theme/effects", () => ({
-    useLiteEffects: vi.fn(() => false),
-}))
-
-// Run motion's entrance animations instantly
-MotionGlobalConfig.skipAnimations = true
-
-// Stand-in scene that reports its first frame (or, if asked, a lost WebGL context) after mounting
-const MockScene: FC<{onError: () => void; onReady: () => void; lose?: boolean}> = ({onError, onReady, lose}) => {
-    useEffect(() => (lose ? onError() : onReady()), [lose, onError, onReady])
-    return <div data-testid="mock-constellation-scene" />
-}
-
 describe("Index Page", () => {
     withStrictMocks()
 
@@ -87,8 +60,6 @@ describe("Index Page", () => {
             supportEmailAddress: "support@example.com",
         })
         vi.mocked(useRouter).mockReturnValue(createMockRouter())
-        vi.mocked(isWebGLAvailable).mockReturnValue(false)
-        vi.mocked(ConstellationScene).mockImplementation(MockScene)
     })
 
     it("renders the page correctly", async () => {
@@ -168,64 +139,17 @@ describe("Index Page", () => {
         expect(document.getElementById("splash-logo-link")).toHaveAttribute("href", "https://www.cognizant.com/us/en")
     })
 
-    it("shows only the CSS fallback when WebGL is unavailable", async () => {
+    it("draws a static constellation backdrop", async () => {
         render(<Index />)
 
         await screen.findByText("Explore agent networks")
-        expect(screen.getByTestId("constellation-backdrop")).toBeInTheDocument()
+        expect(screen.getByTestId("constellation-backdrop")).toHaveAttribute("aria-hidden", "true")
         expect(document.getElementById("splash-hero-orb")).toBeInTheDocument()
-        expect(screen.queryByTestId("constellation-canvas-layer")).not.toBeInTheDocument()
-        expect(ConstellationScene).not.toHaveBeenCalled()
-    })
 
-    it("loads the 3D scene when WebGL is available and reveals it once drawn", async () => {
-        vi.mocked(isWebGLAvailable).mockReturnValue(true)
-        render(<Index />)
-
-        await screen.findByTestId("mock-constellation-scene")
-        await waitFor(() =>
-            expect(screen.getByTestId("constellation-canvas-layer")).toHaveAttribute("data-scene-ready", "true")
-        )
-        expect(ConstellationScene).toHaveBeenLastCalledWith(
-            expect.objectContaining({active: true, isLight: false, reducedMotion: false}),
-            undefined
-        )
-    })
-
-    it("falls back to the CSS backdrop if the 3D scene crashes", async () => {
-        vi.mocked(isWebGLAvailable).mockReturnValue(true)
-        vi.mocked(ConstellationScene).mockImplementation(() => {
-            throw new Error("WebGL context could not be created")
-        })
-        // React and the error boundary both report the caught error
-        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined)
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined)
-
-        render(<Index />)
-
-        await waitFor(() => expect(screen.queryByTestId("constellation-canvas-layer")).not.toBeInTheDocument())
-        expect(warnSpy).toHaveBeenCalledWith(
-            "Splash 3D scene unavailable, using fallback",
-            expect.any(Error),
-            expect.anything()
-        )
-        expect(document.getElementById("splash-hero-orb")).toBeInTheDocument()
-        expect(screen.getByText("Multi-Agent Accelerator")).toBeInTheDocument()
-        errorSpy.mockRestore()
-    })
-
-    it("falls back to the CSS backdrop if the WebGL context is lost", async () => {
-        vi.mocked(isWebGLAvailable).mockReturnValue(true)
-        vi.mocked(ConstellationScene).mockImplementation((props) => (
-            <MockScene
-                {...props}
-                lose={true}
-            />
-        ))
-        render(<Index />)
-
-        await screen.findByText("Explore agent networks")
-        await waitFor(() => expect(screen.queryByTestId("constellation-canvas-layer")).not.toBeInTheDocument())
-        expect(document.getElementById("splash-hero-orb")).toBeInTheDocument()
+        // Three orbits, fourteen agents on them, and a link to each agent
+        const svg = screen.getByTestId("constellation-svg")
+        expect(svg.querySelectorAll("ellipse.orbit")).toHaveLength(3)
+        expect(svg.querySelectorAll("circle.agent")).toHaveLength(14)
+        expect(svg.querySelectorAll("line.link")).toHaveLength(14)
     })
 })
