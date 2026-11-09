@@ -103,6 +103,7 @@ describe("Publish API route", () => {
             {desc: "missing", server: undefined},
             {desc: "not a URL", server: "not a url"},
             {desc: "not http(s)", server: "file:///etc/passwd"},
+            {desc: "has a username or password", server: SERVER_URL.replace("://", "://user:pass@")},
         ])("should refuse a server URL that's $desc", async ({server}) => {
             const res = await callProxy("GET", {path: ["health"], ...(server ? {server} : {})})
 

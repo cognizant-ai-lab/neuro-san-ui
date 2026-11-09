@@ -42,14 +42,14 @@ const readBody = async (req: NextApiRequest): Promise<Uint8Array<ArrayBuffer>> =
 
 /**
  * Parses the publish server URL the browser sent.
- * @returns The URL, or null if it's missing or not http(s)
+ * @returns The URL, or null if it's missing, not http(s), or has a username or password
  */
 const parseServerUrl = (server: string | string[] | undefined): URL | null => {
     if (typeof server !== "string") return null
 
     try {
         const url = new URL(server.endsWith("/") ? server : `${server}/`)
-        return url.protocol === "http:" || url.protocol === "https:" ? url : null
+        return (url.protocol === "http:" || url.protocol === "https:") && !url.username && !url.password ? url : null
     } catch {
         return null
     }
