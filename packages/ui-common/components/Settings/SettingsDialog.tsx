@@ -15,6 +15,7 @@ import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
+import {startCase} from "lodash-es"
 import {FC, ChangeEvent as ReactChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ByokInputs, ByokStorageTooltip, ByokUnsavedChangesModal, useByokKeyManager} from "./Byok"
@@ -59,6 +60,8 @@ const SETTINGS_CONTENT_SX = {
     ].join(", ")]: {fontSize: COMPACT_FONT_SIZE},
     "& .MuiTypography-subtitle1": {fontSize: "0.875rem"},
     "& .MuiTypography-body2, & .MuiTypography-caption, & .MuiFormHelperText-root": {fontSize: "0.75rem"},
+    // Rows hold several short action buttons ("Test", "Save"...), so drop MUI's 64px minimum to leave room for inputs
+    "& .MuiButton-sizeSmall": {minWidth: 0, paddingInline: "0.85em"},
     // The nav and the section column scroll independently, so the content area itself doesn't scroll
     display: "flex",
     overflow: "hidden",
@@ -72,7 +75,7 @@ const getDialogPaperSx = (theme: Theme): SxProps => ({
     height: "min(860px, calc(100% - 64px))",
     maxWidth: "none",
     overflow: "hidden",
-    width: "min(1040px, calc(100% - 64px))",
+    width: "min(1180px, calc(100% - 64px))",
     [theme.breakpoints.down("sm")]: {
         height: "calc(100% - 24px)",
         margin: "12px",
@@ -546,26 +549,29 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     <ToggleButton value="native">Native</ToggleButton>
                     <ToggleButton value="beautified">Beautified</ToggleButton>
                 </ToggleButtonGroup>
-                <FormLabel>Preview: </FormLabel>
-                <FormLabel
-                    sx={{
-                        border: "1px solid",
-                        borderRadius: 1,
-                        backgroundColor: "background.paper",
-                        ml: 0.5,
-                        px: 1,
-                        py: 0.25,
-                        lineHeight: 0,
-                        fontSize: "0.7rem",
-                        maxWidth: "100%",
-                    }}
-                >
-                    <pre>
-                        {`category/some_agent_name → ${
-                            useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
-                        }`}
-                    </pre>
-                </FormLabel>
+                <Box sx={{alignItems: "center", display: "flex", gap: 1, maxWidth: "100%", minWidth: 0}}>
+                    <FormLabel>Preview:</FormLabel>
+                    <FormLabel
+                        sx={{
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            backgroundColor: "background.paper",
+                            px: 1,
+                            py: 0.25,
+                            lineHeight: 0,
+                            fontSize: "0.7rem",
+                            minWidth: 0,
+                            overflowX: "auto",
+                        }}
+                    >
+                        <pre>
+                            {`category/some_agent_name → ${
+                                useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
+                            }`}
+                        </pre>
+                    </FormLabel>
+                </Box>
             </SettingsRow>
         </SettingsSubsection>
     )
@@ -591,7 +597,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     value={customerInput}
                     placeholder="Company or organization name"
                     size="small"
-                    sx={{width: "100%"}}
+                    sx={{flex: 1}}
                     variant="outlined"
                 />
                 <Button
@@ -713,7 +719,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 <Tooltip title={customer ? "Palette is determined by customer branding and cannot be changed" : ""}>
                     {/*"span" required for tooltip when child is disabled. See:*/}
                     {/*https://github.com/mui/material-ui/issues/8416*/}
-                    <span>
+                    <Box
+                        component="span"
+                        sx={{flex: 1, minWidth: 0}}
+                    >
                         <ToggleButtonGroup
                             aria-label="depth-heatmap-palette-selection"
                             disabled={Boolean(customer)}
@@ -722,7 +731,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             size="small"
                             sx={{
                                 cursor: customer ? "not-allowed" : "pointer",
+                                display: "grid",
+                                gap: 1,
+                                gridTemplateColumns: "repeat(auto-fill, minmax(6.5rem, 1fr))",
                                 opacity: customer ? 0.5 : 1,
+                                // Tiles in a grid, so each one gets its own full border and radius
+                                "& .MuiToggleButtonGroup-grouped.MuiToggleButton-root": {
+                                    border: 1,
+                                    borderColor: "divider",
+                                    borderRadius: 1.5,
+                                    margin: 0,
+                                },
+                                "& .MuiToggleButtonGroup-grouped.Mui-selected": {borderColor: "primary.main"},
                             }}
                             value={paletteKey}
                         >
@@ -747,10 +767,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                             }}
                                         >
                                             <Typography
+                                                noWrap={true}
                                                 variant="caption"
-                                                sx={{textTransform: "capitalize"}}
                                             >
-                                                {key}
+                                                {startCase(key)}
                                             </Typography>
                                             <Box sx={{display: "flex", gap: 0.5}}>
                                                 {Array.from({length: 5}, (_, i) => {
@@ -774,7 +794,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 )
                             })}
                         </ToggleButtonGroup>
-                    </span>
+                    </Box>
                 </Tooltip>
             </SettingsRow>
         </SettingsSubsection>
