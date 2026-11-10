@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {act, render, screen, within} from "@testing-library/react"
+import {act, fireEvent, render, screen, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
@@ -374,5 +374,37 @@ describe("SlyDataDialog", () => {
         await user.click(screen.getByRole("button", {name: "Clear sly data"}))
 
         expect(getEditor()).toHaveValue('{\n  "x": 0,\n  "y": 0\n}')
+    })
+
+    it("opens the file picker when the import button is clicked", async () => {
+        renderDialog()
+        const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => undefined)
+
+        await user.click(screen.getByRole("button", {name: "Import sly data"}))
+
+        expect(clickSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it("ignores a file selection that contains no file", () => {
+        renderDialog()
+
+        fireEvent.change(screen.getByTestId(`${DIALOG_ID}-file-input`), {target: {files: []}})
+
+        expect(getEditor()).toHaveValue("{}")
+        expect(screen.getByRole("button", {name: "Save"})).toBeEnabled()
+    })
+
+    it("renders an empty editor when no network is selected", () => {
+        render(
+            <SlyDataDialog
+                id={DIALOG_ID}
+                isOpen={true}
+                networkDisplayName="None"
+                networkId={undefined as unknown as string}
+                onClose={onCloseMock}
+            />
+        )
+
+        expect(getEditor()).toHaveValue("{}")
     })
 })

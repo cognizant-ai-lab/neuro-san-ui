@@ -21,14 +21,14 @@ import {styled} from "@mui/material/styles"
  * The small action buttons on a sidebar network row (publish, download, edit, delete), all the same size. Disabled
  * buttons keep their color and only dim.
  */
-export const ActionIconButton = styled(IconButton)({
+export const ActionIconButton = styled(IconButton)(({theme}) => ({
     padding: 0,
-    color: "var(--bs-secondary)",
-    "&:hover": {color: "var(--bs-secondary-dark)"},
+    color: (theme.vars ?? theme).palette.primary.main,
+    "&:hover": {color: (theme.vars ?? theme).palette.primary.dark},
     "&.Mui-disabled": {
         opacity: 0.3,
     },
     "& .MuiSvgIcon-root": {
         fontSize: "0.75rem",
     },
-})
+}))

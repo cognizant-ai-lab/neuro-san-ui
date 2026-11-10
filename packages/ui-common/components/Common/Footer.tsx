@@ -1,22 +1,32 @@
-import {styled, SxProps} from "@mui/material/styles"
+import {styled, SxProps, Theme} from "@mui/material/styles"
 import {FC, useState} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
+import {LOGO_LIGHT_MODE_SX} from "./Navbar"
 import {getContactUsConfirmationText} from "../../const"
+import {getSheen, SHEEN_EASE, sheenGradient} from "../../Theme/sheen"
 import {navigateToUrl} from "../../utils/BrowserNavigation"
 
-const HeaderLine = styled("h6")({
-    fontWeight: "bold",
-    fontSize: "smaller",
+const HeaderLine = styled("h6")(({theme}) => ({
+    color: (theme.vars ?? theme).palette.text.secondary,
+    fontWeight: 600,
+    fontSize: "0.7rem",
+    letterSpacing: "0.12em",
     margin: 0,
-    marginBottom: "0.9rem",
-})
+    marginBottom: "0.75rem",
+    opacity: 0.8,
+    textTransform: "uppercase",
+}))
 
-const LinkDivider = styled("div")({
-    border: "1px solid var(--bs-accent3-medium)",
-    marginBottom: "0.5rem",
-    width: "2.4rem",
-})
+// Short iridescent tick under each section header
+const LinkDivider = styled("div")(({theme}) => ({
+    backgroundImage: sheenGradient(theme, 90),
+    borderRadius: 999,
+    height: "2px",
+    marginBottom: "0.6rem",
+    opacity: 0.8,
+    width: "1.6rem",
+}))
 
 const FooterSectionHeader = styled("div")({
     display: "inline-flex",
@@ -25,35 +35,82 @@ const FooterSectionHeader = styled("div")({
     marginTop: "0.1rem",
 })
 
-const FooterItemLink = styled("a")(({theme}) => ({
-    color: theme.palette.grey[500],
-    display: "block",
-    marginBottom: "0.37rem",
-    width: "fit-content",
-    fontSize: "smaller",
-    "&:hover": {
-        color: theme.palette.text.primary,
-    },
-}))
+// Muted links; on hover the text brightens and a gradient underline draws in from the left
+const FooterItemLink = styled("a")(({theme}) => {
+    const palette = (theme.vars ?? theme).palette
+    return {
+        backgroundImage: sheenGradient(theme, 90),
+        backgroundPosition: "0 100%",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "0% 1px",
+        color: palette.text.secondary,
+        display: "block",
+        fontSize: "0.8rem",
+        fontWeight: 400,
+        marginBottom: "0.45rem",
+        paddingBottom: "2px",
+        textDecoration: "none",
+        transition: `color 0.25s ease, background-size 0.4s ${SHEEN_EASE}`,
+        width: "fit-content",
+        "&:hover": {
+            backgroundSize: "100% 1px",
+            color: palette.text.primary,
+        },
+    }
+})
 
-const FooterContainer = styled("footer")({
-    backgroundColor: "var(--bs-primary)",
-    borderTop: "var(--bs-border-width) var(--bs-border-style) var(--bs-gray-lighter)",
-    alignItems: "flex-start",
-    columnGap: "60px",
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "1rem",
-    paddingTop: "2rem",
-    paddingBottom: "1rem",
-    width: "100%",
+const FooterContainer = styled("footer")(({theme}) => {
+    const sheen = getSheen(theme)
+    return {
+        alignItems: "flex-start",
+        backgroundColor: "transparent",
+        columnGap: "64px",
+        display: "flex",
+        isolation: "isolate",
+        justifyContent: "center",
+        marginTop: "1rem",
+        paddingBottom: "1.25rem",
+        paddingTop: "2.25rem",
+        position: "relative",
+        width: "100%",
+
+        "& #logo-img": {opacity: 0.7, transition: "opacity 0.25s ease"},
+        "& a:hover #logo-img": {opacity: 1},
+
+        // Iridescent hairline that fades out toward both edges...
+        "&::before": {
+            background:
+                `linear-gradient(90deg, transparent, ${sheen.gradientStart} 25%, ${sheen.gradientMid} 50%, ` +
+                `${sheen.gradientEnd} 75%, transparent)`,
+            content: '""',
+            height: "1px",
+            left: "8%",
+            opacity: 0.45,
+            pointerEvents: "none",
+            position: "absolute",
+            right: "8%",
+            top: 0,
+        },
+        // ...with a soft glow bleeding down from it
+        "&::after": {
+            background: `radial-gradient(50% 100% at 50% 0%, ${sheen.tint}, transparent 70%)`,
+            content: '""',
+            height: "64px",
+            left: "15%",
+            pointerEvents: "none",
+            position: "absolute",
+            right: "15%",
+            top: 0,
+            zIndex: -1,
+        },
+    }
 })
 
 interface FooterProps {
     readonly logoUrl: string
     readonly logoLinkUrl: string
     readonly supportEmailAddress: string
-    readonly sx?: SxProps
+    readonly sx?: SxProps<Theme>
 }
 
 /**
@@ -86,7 +143,7 @@ export const Footer: FC<FooterProps> = ({logoLinkUrl, logoUrl, supportEmailAddre
             )}
             <FooterContainer
                 id="additional-links-container"
-                sx={sx}
+                sx={[LOGO_LIGHT_MODE_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]}
             >
                 <a
                     href={logoLinkUrl}

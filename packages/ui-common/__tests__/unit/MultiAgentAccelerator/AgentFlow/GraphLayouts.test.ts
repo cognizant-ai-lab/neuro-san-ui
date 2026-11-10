@@ -297,6 +297,73 @@ describe("GraphLayouts", () => {
         )
     })
 
+    describe("Node data", () => {
+        const network: ConnectivityInfo[] = [
+            {origin: "front_man", tools: ["sub_agent"], display_as: "llm_agent"},
+            {origin: "sub_agent", tools: [], display_as: "llm_agent"},
+        ]
+
+        it.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout exposes native or cleaned names and live conversations", ({layoutFunction}) => {
+            const conversations = [
+                {
+                    agents: new Set(["front_man"]),
+                    id: "c1",
+                    startedAt: undefined as unknown as Date,
+                    type: ChatMessageType.AI,
+                },
+            ]
+
+            const native = layoutFunction({
+                ...defaultLayoutParams,
+                agentsInNetwork: network,
+                currentConversations: conversations,
+                useNativeNames: true,
+            })
+            const cleaned = layoutFunction({...defaultLayoutParams, agentsInNetwork: network, useNativeNames: false})
+
+            expect(native.nodes.map((node) => node.data.agentName)).toEqual(["front_man", "sub_agent"])
+            expect(cleaned.nodes.map((node) => node.data.agentName)).not.toEqual(["front_man", "sub_agent"])
+
+            // The conversations getter hands back the live conversations it was given
+            expect(native.nodes[0].data.getConversations()).toBe(conversations)
+            expect(cleaned.nodes[0].data.getConversations()).toEqual([])
+        })
+
+        it.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout creates no animated edges when there are no conversations", ({layoutFunction}) => {
+            const {edges} = layoutFunction({
+                ...defaultLayoutParams,
+                agentsInNetwork: network,
+                currentConversations: null,
+            })
+
+            expect(edges).toHaveLength(1)
+            expect(edges[0].type).toBeUndefined()
+        })
+
+        it.each([
+            {layoutFunction: layoutRadial, name: "radial"},
+            {layoutFunction: layoutLinear, name: "linear"},
+        ])("$name layout marks LLM agents editable only in temporary networks", ({layoutFunction}) => {
+            // Omit isTemporaryNetwork entirely to exercise its default
+            const {isTemporaryNetwork: _omitted, ...withoutTemporaryFlag} = defaultLayoutParams
+            const permanent = layoutFunction({...withoutTemporaryFlag, agentsInNetwork: network})
+            const temporary = layoutFunction({
+                ...defaultLayoutParams,
+                agentsInNetwork: network,
+                isTemporaryNetwork: true,
+            })
+
+            expect(permanent.nodes.every((node) => node.data.isEditable === false)).toBe(true)
+            expect(temporary.nodes.every((node) => node.data.isEditable === true)).toBe(true)
+        })
+    })
+
     describe("Plasma edges and known message types", () => {
         it.each([
             {layoutFunction: layoutRadial, name: "radial"},

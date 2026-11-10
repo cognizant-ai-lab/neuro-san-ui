@@ -14,11 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {SxProps} from "@mui/material/styles"
 import {FC} from "react"
 
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
 
 export interface ByokUnsavedChangesModalProps {
+    /** Optional styles for the dialog root. */
+    readonly dialogSx?: SxProps
     /** Base element ID for DOM and testing references. */
     readonly id: string
     /** Whether the modal is open. Defaults to true. */
@@ -34,13 +37,20 @@ export interface ByokUnsavedChangesModalProps {
  * Offers options to save changes or discard them before closing.
  *
  * @param props Component properties
+ * @param props.dialogSx Optional styles for the dialog root
  * @param props.id Base ID for the modal
  * @param props.isOpen Whether the modal is currently open
  * @param props.onDiscard Callback to discard unsaved changes and proceed
  * @param props.onSave Callback to save unsaved changes and proceed
  * @return Confirmation modal element, or null if not open
  */
-export const ByokUnsavedChangesModal: FC<ByokUnsavedChangesModalProps> = ({id, isOpen = true, onDiscard, onSave}) => {
+export const ByokUnsavedChangesModal: FC<ByokUnsavedChangesModalProps> = ({
+    dialogSx,
+    id,
+    isOpen = true,
+    onDiscard,
+    onSave,
+}) => {
     if (!isOpen) {
         return null
     }
@@ -49,6 +59,7 @@ export const ByokUnsavedChangesModal: FC<ByokUnsavedChangesModalProps> = ({id, i
         <ConfirmationModal
             cancelBtnLabel="Discard changes"
             closeable={false}
+            dialogSx={dialogSx}
             content={<p>You have unsaved edits. Would you like to save your changes, or discard them?</p>}
             handleCancel={onDiscard}
             handleOk={onSave}

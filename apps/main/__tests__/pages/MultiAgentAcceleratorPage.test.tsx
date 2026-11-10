@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import {render, screen} from "@testing-library/react"
+import {NextRouter, useRouter} from "next/router"
 import {useSession} from "next-auth/react"
 
 import {withStrictMocks} from "../../../../__tests__/common/strictMocks"
@@ -32,6 +33,7 @@ const MAA_TEXT = "Mock MultiAgentAccelerator component."
 
 // Mock dependencies
 vi.mock("next-auth/react")
+vi.mock("next/router", () => ({useRouter: vi.fn()}))
 
 vi.mock("../../../../packages/ui-common/controller/agent/Agent")
 
@@ -56,6 +58,7 @@ describe("Multi Agent Accelerator Page", () => {
                 expires: "",
             },
         })
+        vi.mocked(useRouter).mockReturnValue({query: {}} as unknown as NextRouter)
     })
 
     it("Should render correctly", async () => {
@@ -69,7 +72,37 @@ describe("Multi Agent Accelerator Page", () => {
             expect.objectContaining<MultiAgentAcceleratorProps>({
                 username: MOCK_USER,
                 defaultNeuroSanUrl: NEURO_SAN_SERVER_URL,
+                startTour: false,
             })
         )
+    })
+
+    it("Should ask the accelerator to start the tour for ?tour=true, then drop it from the URL", async () => {
+        const replace = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue({
+            pathname: "/multiAgentAccelerator",
+            query: {other: "kept", tour: "true"},
+            replace,
+        } as unknown as NextRouter)
+
+        render(<MultiAgentAcceleratorPage />)
+        await screen.findByText(MAA_TEXT)
+
+        expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(expect.objectContaining({startTour: true}))
+
+        // So a reload doesn't start the tour again
+        expect(replace).toHaveBeenCalledWith({pathname: "/multiAgentAccelerator", query: {other: "kept"}}, undefined, {
+            shallow: true,
+        })
+    })
+
+    it("Should leave the URL alone when there's no tour request", async () => {
+        const replace = vi.fn()
+        vi.mocked(useRouter).mockReturnValue({query: {}, replace} as unknown as NextRouter)
+
+        render(<MultiAgentAcceleratorPage />)
+        await screen.findByText(MAA_TEXT)
+
+        expect(replace).not.toHaveBeenCalled()
     })
 })

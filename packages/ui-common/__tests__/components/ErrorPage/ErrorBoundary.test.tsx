@@ -65,4 +65,31 @@ describe("ErrorBoundary", () => {
         // Now the child should render and fallback gone
         expect(await screen.findByText("There was an error")).toBeInTheDocument()
     })
+
+    it("includes file, line and column details when the error provides them", () => {
+        const Thrower = () => {
+            throw Object.assign(new Error("detailed"), {fileName: "foo.ts", lineNumber: 12, columnNumber: 7})
+        }
+        render(
+            <ErrorBoundary id="test-boundary">
+                <Thrower />
+            </ErrorBoundary>
+        )
+
+        expect(screen.getByTestId("mock-error")).toHaveTextContent("detailed in foo.ts line 12 column 7")
+    })
+
+    it("handles thrown values that are not Error instances", () => {
+        const Thrower = () => {
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
+            throw "just a string"
+        }
+        render(
+            <ErrorBoundary id="test-boundary">
+                <Thrower />
+            </ErrorBoundary>
+        )
+
+        expect(screen.getByTestId("mock-error")).toHaveTextContent("in Unknown line null column null")
+    })
 })

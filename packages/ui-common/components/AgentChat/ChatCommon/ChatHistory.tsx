@@ -4,7 +4,7 @@ import {FC} from "react"
 
 import {Conversation} from "./Conversation"
 import {ConversationTurn, MessageRole} from "./ConversationTurn"
-import {adjustBrightness} from "../../../Theme/Theme"
+import {glassSurface, SHEEN_RADIUS} from "../../../Theme/sheen"
 import {AccordionLite} from "../../Common/AccordionLite"
 
 // #region: Types
@@ -56,9 +56,10 @@ export const ChatHistory: FC<ChatHistoryProps> = ({id, messages}) => {
             id={`${id}-history-items`}
             items={conversation}
             contentSx={{
-                // Slightly darker background to differentiate from main chat
-                backgroundColor: adjustBrightness(theme.palette.background.paper, -5),
+                // Frosted-glass panel to set past conversations apart from the live chat
+                ...glassSurface(theme, SHEEN_RADIUS),
                 opacity: 0.5,
+                px: 2,
             }}
             title="Chat History"
         />

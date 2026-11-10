@@ -19,7 +19,7 @@ import Box from "@mui/material/Box"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, showPublishResult} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {useEnvironmentStore} from "../../../state/Environment"
@@ -38,8 +38,8 @@ interface PublishIconButtonProps {
 }
 
 /**
- * Small globe button for publishing a network from the sidebar. Publishes after asking, spins while publishing, and
- * turns green once the network is live, when it opens the live site instead.
+ * Small globe button for publishing a network from the sidebar. Publishes after asking and spins while publishing.
+ * Once the network is live it turns green and opens the live site.
  */
 export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, isExpired, networkId}) => {
     const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
@@ -50,21 +50,20 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
     const networkName = network?.agentNetworkName
     const hocon = network?.networkHocon
     const canPublish = enablePublishing && Boolean(publishServerUrl) && Boolean(networkName) && Boolean(hocon)
-    const publishStatus = usePublishStore((state) => state.networks[networkId]?.status)
-    const publishedUrl = usePublishStore((state) => {
-        const publishState = state.networks[networkId]
-        return publishState?.status === PublishStatus.Published ? publishState.url : null
-    })
+    const publishState = usePublishStore((state) => state.networks[networkId])
+    const publishStatus = publishState?.status
+    const publishedUrl = publishState?.status === PublishStatus.Published ? publishState.url : null
     // Without a name the hook doesn't ask the server, which it shouldn't while publishing isn't available
     const target = usePublishTarget(networkId, canPublish ? networkName : undefined)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
     const getLabel = () => {
-        if (publishedUrl) return "View live"
         if (publishStatus === PublishStatus.Publishing) return "Publishing..."
+        if (publishedUrl) return "View live"
         if (isExpired) return "Expired"
-        return target ? "Publish" : PUBLISH_SETTINGS_REQUIRED_MESSAGE
+        if (!target) return PUBLISH_SETTINGS_REQUIRED_MESSAGE
+        return "Publish"
     }
 
     const label = getLabel()
@@ -113,10 +112,17 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, 
                     <PublishConfirmation
                         displayName={displayName}
                         id={`${id}-confirm`}
+                        hasTheme={Boolean(publishState)}
                         onCancel={() => setIsConfirmOpen(false)}
-                        onConfirm={() => {
+                        onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)
-                            void publish({id: networkId, name: networkName}, displayName, hocon, target)
+                            void publish(
+                                {id: networkId, name: networkName},
+                                displayName,
+                                hocon,
+                                target,
+                                refreshTheme
+                            ).then((result) => showPublishResult(networkName, result))
                         }}
                         target={target}
                     />

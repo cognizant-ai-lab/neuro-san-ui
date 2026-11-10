@@ -1,6 +1,19 @@
 // Palettes for progressive coloring of nodes based on depth or heatmap value
 
 export const PALETTES = {
+    // Iridescent "sheen" ramp: ice → electric blue → indigo → purple → deep night. Default for the app.
+    sheen: [
+        "#EEF2FF",
+        "#C9D7FF",
+        "#9DB8FF",
+        "#6E9BFF",
+        "#3D7BFF",
+        "#6A4CFF",
+        "#8B4DFF",
+        "#A64DFF",
+        "#5B2AA8",
+        "#1E1446",
+    ],
     blue: [
         "#f7fbff",
         "#deebf7",

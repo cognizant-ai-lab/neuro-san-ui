@@ -247,11 +247,12 @@ vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     },
 }))
 
-const renderMultiAgentAccelerator = () =>
+const renderMultiAgentAccelerator = ({startTour}: {startTour?: boolean} = {}) =>
     render(
         <SnackbarProvider>
             <MultiAgentAccelerator
                 defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
+                startTour={startTour}
                 username={MOCK_USER}
             />
         </SnackbarProvider>
@@ -461,6 +462,56 @@ describe("MultiAgentAccelerator", () => {
         })
     })
 
+    describe("Workspace layout", () => {
+        it("renders the canvas full-bleed behind floating panels", async () => {
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            const container = document.getElementById("multi-agent-accelerator-container")
+            const canvas = document.getElementById("multi-agent-accelerator-canvas")
+            expect(canvas?.parentElement).toBe(container)
+            expect(canvas).toContainElement(document.getElementById("multi-agent-accelerator-agent-flow-container"))
+
+            // Sidebar and chat live in floating cards inside the resizable panels
+            expect(document.getElementById("multi-agent-accelerator-left-card")).toContainElement(
+                document.getElementById("multi-agent-accelerator-sidebar-sidebar")
+            )
+            expect(document.getElementById("multi-agent-accelerator-right-card")).toContainElement(
+                screen.getByTestId("test-chat-common")
+            )
+            expect(document.getElementById("multi-agent-accelerator-left-card")).toHaveAttribute(
+                "data-collapsed",
+                "false"
+            )
+
+            // AgentFlow is told which part of the canvas the panels leave uncovered
+            expect(agentFlowMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    safeArea: expect.objectContaining({bottom: 14}),
+                })
+            )
+        })
+
+        it("shows the empty state prompt until a network is selected, and can open the designer", async () => {
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            expect(document.getElementById("multi-agent-accelerator-empty-state")).toBeInTheDocument()
+            expect(screen.getByText(/Pick one from Agent Networks/u)).toBeInTheDocument()
+
+            await user.click(screen.getByRole("button", {name: "Open Agent Network Designer"}))
+
+            await waitFor(() => {
+                expect(chatCommonMock).toHaveBeenLastCalledWith(
+                    expect.objectContaining({selectedNetwork: AGENT_NETWORK_DESIGNER_ID})
+                )
+            })
+            await waitFor(() => {
+                expect(document.getElementById("multi-agent-accelerator-empty-state")).not.toBeInTheDocument()
+            })
+        })
+    })
+
     describe("Zen Mode", () => {
         const expectPanelState = (panelTestId: string, expectedState: "expanded" | "collapsed") => {
             const panel = screen.getByTestId(panelTestId)
@@ -510,6 +561,18 @@ describe("MultiAgentAccelerator", () => {
             // Right panel: Chat window should be hidden in Zen mode
             expectPanelState("multi-agent-accelerator-right-panel", "collapsed")
 
+            // Floating cards slide out and become inert while their panels are collapsed
+            await waitFor(() => {
+                expect(document.getElementById("multi-agent-accelerator-left-card")).toHaveAttribute(
+                    "data-collapsed",
+                    "true"
+                )
+            })
+            expect(document.getElementById("multi-agent-accelerator-right-card")).toHaveAttribute(
+                "data-collapsed",
+                "true"
+            )
+
             // Simulate "end streaming"
             await act(async () => {
                 setIsAwaitingLlm(false)
@@ -525,6 +588,58 @@ describe("MultiAgentAccelerator", () => {
 
             // Right panel
             expectPanelState("multi-agent-accelerator-right-panel", "expanded")
+        })
+
+        it("should clear the panel transition flag once the transition timeout elapses", async () => {
+            vi.useFakeTimers()
+            renderMultiAgentAccelerator()
+            await screen.findByText("Agent Networks")
+
+            await act(async () => {
+                setIsAwaitingLlm(true)
+                onStreamingStarted()
+            })
+            // Restart the transition to exercise the clear-existing-timer path too
+            await act(async () => {
+                setIsAwaitingLlm(false)
+                onStreamingComplete()
+            })
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000)
+            })
+
+            expectPanelState("multi-agent-accelerator-center-panel", "expanded")
+        })
+
+        // Make only the zero-size workspace marker (aria-hidden) report the given rect; everything else is real.
+        const mockMarkerRect = (rect: DOMRect | undefined) => {
+            const original = Element.prototype.getBoundingClientRect
+            /* eslint-disable unicorn/no-this-outside-of-class */
+            return vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+                return this.getAttribute("aria-hidden") === "true" ? rect : original.call(this)
+            })
+            /* eslint-enable unicorn/no-this-outside-of-class */
+        }
+
+        it("should tolerate a missing bounding rect for the workspace marker", async () => {
+            const spy = mockMarkerRect(undefined)
+            try {
+                renderMultiAgentAccelerator()
+                await screen.findByText("Agent Networks")
+            } finally {
+                spy.mockRestore()
+            }
+        })
+
+        it("should keep the existing offset when the workspace marker rect is unchanged", async () => {
+            // Exactly the component's default offset (top 76, left 0)
+            const spy = mockMarkerRect({top: 76, left: 0} as DOMRect)
+            try {
+                renderMultiAgentAccelerator()
+                await screen.findByText("Agent Networks")
+            } finally {
+                spy.mockRestore()
+            }
         })
 
         it("should correctly handle Zen mode being disabled", async () => {
@@ -1343,6 +1458,16 @@ describe("MultiAgentAccelerator", () => {
             }
         )
 
+        it("upserts the returned network without navigating when no network is selected", async () => {
+            mockDesignerStream(JSON.stringify(RESERVATION_CHAT_MESSAGE))
+            await renderAndWaitForSidebar()
+
+            await saveAgent()
+
+            expect(useTempNetworksStore.getState().tempNetworks).toHaveLength(1)
+            expect(document.getElementById("multi-agent-accelerator-empty-state")).toBeInTheDocument()
+        })
+
         it("notifies a save error when the network designer stream throws", async () => {
             const debugSpy = vi.spyOn(console, "debug").mockImplementation(vi.fn())
             const errorSpy = vi.spyOn(console, "error").mockImplementation(vi.fn())
@@ -1783,6 +1908,78 @@ describe("MultiAgentAccelerator", () => {
                 await screen.findByText(tourStepText(step.content))
             }
         }, 10_000)
+
+        it("should start the tour once the networks have loaded when startTour is set", async () => {
+            // e.g. Help > Take a tour clicked on the User Guide page, which navigates here with ?tour=true
+            renderMultiAgentAccelerator({startTour: true})
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+            expect(useTourStore.getState().status).toEqual(TourPromptState.Taken)
+        })
+
+        it("should start the tour when startTour is only set after the first render", async () => {
+            // On a direct load of ?tour=true, the router fills in the query after the page first renders
+            const {rerender} = renderMultiAgentAccelerator()
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            rerender(
+                <SnackbarProvider>
+                    <MultiAgentAccelerator
+                        defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
+                        startTour={true}
+                        username={MOCK_USER}
+                    />
+                </SnackbarProvider>
+            )
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+        })
+
+        it("should dismiss the tour prompt when the dialog is closed", async () => {
+            vi.useFakeTimers()
+            const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+            renderMultiAgentAccelerator()
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            act(() => {
+                vi.advanceTimersByTime(SHOW_TOUR_DELAY_MS + 1)
+            })
+            await screen.findByRole("dialog")
+
+            await localUser.keyboard("{Escape}")
+
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+        })
+
+        it("should not re-select a network when the tour is requested with one already selected", async () => {
+            renderMultiAgentAccelerator()
+            await user.click(await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY))
+            await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+            await act(async () => {
+                window.dispatchEvent(new Event(TRIGGER_APP_TOUR_EVENT_NAME))
+            })
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+        })
+
+        it("should start the tour from the prompt when a network is already selected", async () => {
+            vi.useFakeTimers()
+            const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
+            renderMultiAgentAccelerator()
+            await localUser.click(await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY))
+            await localUser.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+            act(() => {
+                vi.advanceTimersByTime(SHOW_TOUR_DELAY_MS + 1)
+            })
+            await localUser.click(screen.getByRole("button", {name: "Take the tour"}))
+            act(() => {
+                vi.advanceTimersByTime(100)
+            })
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+        })
 
         it.each<TourScenario>([
             {

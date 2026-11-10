@@ -118,14 +118,14 @@ export const LLM_PROVIDER_API_KEY_FIELD = {
  */
 export const DEFAULT_SETTINGS: Settings = {
     appearance: {
-        // CSS variables like --bs-green don't work here. TBD why.
-        agentIconColor: "black",
-        agentNodeColor: "#2db81f",
+        // CSS variables don't work here: these values feed <input type="color"> and canvas drawing.
+        agentIconColor: "#FFFFFF",
+        agentNodeColor: "#9D7BFF",
         autoAgentIconColor: true,
         graphColoringOption: "depth",
         layout: "radial",
-        plasmaColor: "#2db81f",
-        rangePalette: "blue",
+        plasmaColor: "#9D7BFF",
+        rangePalette: "sheen",
         showRadialGuides: true,
         showThoughtBubbles: true,
         useNativeNames: false,
@@ -152,10 +152,23 @@ export const DEFAULT_SETTINGS: Settings = {
     },
 }
 
+// Appearance defaults from before the "sheen" reskin. Persisted values still equal to these were never customized by
+// the user, so they are upgraded to the new defaults on rehydration.
+export const LEGACY_APPEARANCE_DEFAULTS: Partial<Settings["appearance"]> = {
+    agentIconColor: "black",
+    agentNodeColor: "#2db81f",
+    plasmaColor: "#2db81f",
+    rangePalette: "blue",
+}
+
 // Name for key where main app settings are saved
 export const APP_SETTINGS_STORAGE_KEY = "app-settings"
 
 // Name for key where API keys are saved in sessionStorage.
+// Version of the persisted settings shape. Bump it (and handle the old version in `migrate`) for one-off upgrades.
+// 0: pre-reskin, 1: reskin (legacy appearance defaults dropped)
+const SETTINGS_STORAGE_VERSION = 1
+
 export const SESSION_API_KEYS_STORAGE_KEY = "app-settings-api-keys"
 
 // TTL for API keys in sessionStorage. After this time, the keys will be cleared from sessionStorage.
@@ -170,6 +183,23 @@ const hasPersistedSettings = (state: unknown): state is {settings: DeepPartial<S
     "settings" in state &&
     typeof state.settings === "object" &&
     state.settings !== null
+
+/**
+ * Drops persisted appearance values that still match the pre-reskin defaults, so the new defaults apply.
+ * Values the user explicitly changed are kept. Runs once, when migrating settings saved before the reskin (version 0),
+ * so legacy values chosen afterwards are left alone.
+ */
+const upgradeLegacyAppearance = (settings: DeepPartial<Settings>): DeepPartial<Settings> => {
+    if (!settings.appearance) {
+        return settings
+    }
+    const appearance = Object.fromEntries(
+        Object.entries(settings.appearance).filter(
+            ([key, value]) => LEGACY_APPEARANCE_DEFAULTS[key as keyof Settings["appearance"]] !== value
+        )
+    )
+    return {...settings, appearance}
+}
 
 /**
  * Purges any persisted API keys from localStorage. This cleans up from previous versions of the code.
@@ -233,6 +263,14 @@ export const useSettingsStore = create<SettingsStore>()(
         }),
         {
             name: APP_SETTINGS_STORAGE_KEY,
+            version: SETTINGS_STORAGE_VERSION,
+
+            // One-off upgrades of settings persisted by older versions of the app. The migrated state is written back
+            // with the current version, so this doesn't run again.
+            migrate: (persistedState, version) =>
+                version < 1 && hasPersistedSettings(persistedState)
+                    ? {...persistedState, settings: upgradeLegacyAppearance(persistedState.settings)}
+                    : persistedState,
 
             // We don't want to persist API keys in localStorage, so we remove them before saving the state.
             partialize: (state) => {

@@ -39,10 +39,12 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
+import {AGENT_NETWORK_DESIGNER_ID} from "../../../../components/MultiAgentAccelerator/const"
 import {
     ASK_TO_KEEP_WAITING_MS,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {PublishWaitPrompts} from "../../../../components/MultiAgentAccelerator/Publish/PublishWaitPrompts"
 import {
     DELETE_NETWORK_LABEL,
@@ -55,7 +57,7 @@ import {
     SPARKLE_HIGHLIGHT_CLASS,
 } from "../../../../components/MultiAgentAccelerator/Sidebar/Sidebar"
 import {testConnection, TestConnectionResult} from "../../../../controller/agent/Agent"
-import {listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
+import {isPublishNameTaken, listPublishedNetworks, publishNetwork} from "../../../../controller/publish/Publish"
 import {NetworkIconSuggestions} from "../../../../controller/Types/NetworkIconSuggestions"
 import {AgentInfo} from "../../../../generated/neuro-san/NeuroSanClient"
 import {useEnvironmentStore} from "../../../../state/Environment"
@@ -88,6 +90,17 @@ vi.mock("@mui/x-tree-view/RichTreeView", async (importOriginal) => {
                 </>
             )
         },
+    }
+})
+
+// Allow individual tests to turn on "reduced motion"
+let mockReducedMotion = false
+vi.mock("motion/react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("motion/react")>()
+
+    return {
+        ...actual,
+        useReducedMotion: () => mockReducedMotion,
     }
 })
 
@@ -159,6 +172,7 @@ describe("SideBar", () => {
         }
 
         mockSelectedTreeItemId = undefined
+        mockReducedMotion = false
 
         user = userEvent.setup()
         const testConnectionMock = vi.mocked(testConnection)
@@ -196,6 +210,61 @@ describe("SideBar", () => {
         // setSelectedNetwork should be called
         expect(setSelectedNetwork).toHaveBeenCalledTimes(1)
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+    })
+
+    it("ignores a connection test result that arrives after the server URL changed", async () => {
+        const testConnectionMock = vi.mocked(testConnection)
+        let resolveStale!: (result: TestConnectionResult) => void
+        testConnectionMock.mockImplementationOnce(
+            () =>
+                new Promise<TestConnectionResult>((resolve) => {
+                    resolveStale = resolve
+                })
+        )
+
+        const {rerender} = renderSidebarComponent({})
+
+        // Change URL: the first (still pending) request is now superseded. Second request succeeds (default mock).
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                neuroSanServerURL="different-url"
+            />
+        )
+        const statusLight = await screen.findByTestId(`${DEFAULT_PROPS.id}-agent-network-status-light`)
+        await waitFor(() => expect(statusLight).toHaveAttribute("data-status", "green"))
+
+        // The stale request now fails, but its result must be ignored
+        await act(async () => {
+            resolveStale({success: false, statusText: "stale", httpStatus: httpStatus.IM_A_TEAPOT})
+            await Promise.resolve()
+        })
+
+        expect(statusLight).toHaveAttribute("data-status", "green")
+    })
+
+    it("selects the Agent Network Designer when the Add New Network button is clicked", async () => {
+        const {props} = renderSidebarComponent({})
+
+        await user.click(await screen.findByRole("button", {name: "Add New Network"}))
+
+        expect(props.setSelectedNetwork).toHaveBeenCalledExactlyOnceWith(AGENT_NETWORK_DESIGNER_ID)
+    })
+
+    it("disables the Add New Network button while awaiting the LLM", async () => {
+        renderSidebarComponent({isAwaitingLlm: true})
+
+        expect(await screen.findByRole("button", {name: "Add New Network"})).toBeDisabled()
+    })
+
+    it("renders the selection indicator without animation when reduced motion is preferred", async () => {
+        mockReducedMotion = true
+        renderSidebarComponent({})
+
+        await user.click(await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY))
+        await user.click(await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY))
+
+        expect(document.querySelector(".agent-network-selection-indicator")).toBeInTheDocument()
     })
 
     it("should show correct Neuro SAN status", async () => {
@@ -380,6 +449,25 @@ describe("SideBar", () => {
         const networkElement = await screen.findByText(TEST_AGENT_MATH_GUY_DISPLAY)
         const networkContainer = networkElement.closest('[role="treeitem"]')
         expect(within(networkContainer as HTMLElement).queryByTestId("BookmarkIcon")).not.toBeInTheDocument()
+    })
+
+    it("keeps the temporary folder expanded when another temporary network is added", async () => {
+        const {rerender} = renderSidebarComponent({
+            newlyAddedTemporaryNetworks: new Set([TEMPORARY_NETWORK.agentInfo.agent_name]),
+            temporaryNetworks: [TEMPORARY_NETWORK],
+        })
+        await screen.findByText("Agent Networks")
+
+        // A new Set instance re-runs the effect while the folder is already in the expanded list
+        rerender(
+            <Sidebar
+                {...DEFAULT_PROPS}
+                newlyAddedTemporaryNetworks={new Set([TEMPORARY_NETWORK.agentInfo.agent_name])}
+                temporaryNetworks={[TEMPORARY_NETWORK]}
+            />
+        )
+
+        expect(await screen.findByText(cleanUpAgentName(TEMPORARY_NETWORK_NAME))).toBeInTheDocument()
     })
 
     it("Should render uncategorized networks correctly", async () => {
@@ -661,6 +749,11 @@ describe("SideBar", () => {
             },
         }
 
+        const markUnpublished = () =>
+            usePublishStore.setState({
+                networks: {[TEMPORARY_NETWORK.agentInfo.agent_name]: {status: PublishStatus.Unpublished}},
+            })
+
         const markLive = () =>
             usePublishStore.setState({
                 networks: {
@@ -678,11 +771,8 @@ describe("SideBar", () => {
             useSettingsStore.getState().updateSettings({publish: {serverUrl: SERVER_URL, orgName: "cailville"}})
             usePublishStore.setState(usePublishStore.getInitialState())
             vi.mocked(listPublishedNetworks).mockResolvedValue([])
-            vi.mocked(publishNetwork).mockResolvedValue({
-                id: "dep-123",
-                name: TEMPORARY_NETWORK.agentNetworkName,
-                url: PUBLISHED_URL,
-            })
+            vi.mocked(isPublishNameTaken).mockResolvedValue(false)
+            vi.mocked(publishNetwork).mockResolvedValue({id: "dep-123", url: PUBLISHED_URL})
             vi.spyOn(window, "open").mockReturnValue({opener: window} as Window)
         })
 
@@ -800,7 +890,7 @@ describe("SideBar", () => {
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
         })
 
-        it("Should open the live site once the temporary network is live", async () => {
+        it("Should open the live site once the temporary network is live, without opening the network", async () => {
             markLive()
             renderWithTemporaryNetwork()
             const viewLiveButton = await screen.findByRole("button", {name: "View live"})
@@ -808,6 +898,47 @@ describe("SideBar", () => {
             await user.click(viewLiveButton)
 
             expect(window.open).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should ask before publishing an unpublished temporary network again, without opening it", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+            const confirmation = await screen.findByRole("dialog")
+            const confirmButton = within(confirmation).getByRole("button", {name: "Publish"})
+            await user.click(confirmButton)
+
+            await waitFor(() =>
+                expect(publishNetwork).toHaveBeenCalledWith(expect.objectContaining({refreshTheme: false}))
+            )
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should offer to recreate the theme when publishing an unpublished temporary network again", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+
+            await user.click(publishButton)
+
+            const confirmation = await screen.findByRole("dialog")
+            within(confirmation).getByRole("checkbox", {name: REFRESH_THEME_LABEL})
+        })
+
+        it("Should cancel publishing again with Escape, without publishing or opening the network", async () => {
+            markUnpublished()
+            renderWithTemporaryNetwork()
+            const publishButton = await screen.findByRole("button", {name: "Publish"})
+            await user.click(publishButton)
+            await screen.findByRole("dialog")
+
+            await user.keyboard("{Escape}")
+
+            await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+            expect(publishNetwork).not.toHaveBeenCalled()
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 

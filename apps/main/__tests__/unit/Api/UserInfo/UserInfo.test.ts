@@ -105,4 +105,25 @@ describe("UserInfo API handler", () => {
             oidcProvider: "AD",
         })
     })
+
+    it("handles user info with no recognizable provider fields", async () => {
+        const {req, res} = createMocks({
+            headers: {
+                [AWS_OIDC_HEADER]: "header.payload.signature",
+            },
+        })
+
+        vi.spyOn(Buffer, "from").mockImplementationOnce(() => Buffer.from(JSON.stringify({sub: "abc"})))
+
+        await handler(req, res)
+
+        expect(res._getStatusCode()).toBe(httpStatus.OK)
+        expect(res._getJSONData()).toEqual({
+            username: null,
+            picture: null,
+            oidcHeaderFound: true,
+            oidcHeaderValid: true,
+            oidcProvider: null,
+        })
+    })
 })
