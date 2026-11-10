@@ -61,10 +61,8 @@ type ExtendedAppProps = AppProps & {
 
 const DEFAULT_APP_NAME = `Cognizant ${LOGO}`
 
-const onStartTour = () => {
-    // Dispatches the "start tour" event
-    window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
-}
+// Page that hosts the app tour
+const TOUR_PAGE_PATH = "/multiAgentAccelerator"
 
 // Page entrance: fade up out of a soft blur. Filter and transform are cleared afterwards (transitionEnd) so the page
 // wrapper doesn't become the containing block for position: fixed descendants (chat launcher, dialogs, panels).
@@ -107,7 +105,6 @@ const NavbarWrapper = (props: Omit<NavbarProps, "userInfo">): ReactElement => {
             {...props}
             id="nav-bar"
             userInfo={userInfo}
-            onStartTour={onStartTour}
         />
     )
 }
@@ -142,6 +139,16 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
         },
         [router]
     )
+
+    // Help > Take a tour. The tour lives on the Multi-Agent Accelerator page: if we're already there, tell it to
+    // start; otherwise go there and ask it to start the tour once it has loaded.
+    const onStartTour = useCallback(() => {
+        if (router.pathname === TOUR_PAGE_PATH) {
+            window.dispatchEvent(new CustomEvent(TRIGGER_APP_TOUR_EVENT_NAME))
+        } else {
+            void router.push(`${TOUR_PAGE_PATH}?tour=true`)
+        }
+    }, [router])
 
     // Access user info store
     const {currentUser, setCurrentUser, setPicture, oidcProvider, setOidcProvider} = useUserInfoStore()
@@ -367,6 +374,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     logo={LOGO}
                     logoServiceToken={logoServiceToken}
                     onNavigate={navigate}
+                    onStartTour={onStartTour}
                     pathname={pathname}
                     query={query}
                     signOut={handleSignOut}
@@ -390,7 +398,7 @@ export const NeuroSanUI: FC<ExtendedAppProps> = ({Component, pageProps}): ReactJ
                     </AnimatePresence>
                 </Container>
                 {/* The multi-agent workspace is a full-viewport canvas, so it has no footer */}
-                {pathname !== "/multiAgentAccelerator" && (
+                {pathname !== TOUR_PAGE_PATH && (
                     <Footer
                         supportEmailAddress={supportEmailAddress}
                         logoLinkUrl="https://www.cognizant.com/"

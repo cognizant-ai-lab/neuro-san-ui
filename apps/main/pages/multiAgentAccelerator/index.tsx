@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {useRouter} from "next/router"
 import {FC, JSX as ReactJSX} from "react"
 
 import {MultiAgentAccelerator} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
@@ -29,10 +30,14 @@ export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
 
         const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
+        // "?tour=true": sent here by Help > Take a tour from another page
+        const startTour = useRouter().query["tour"] === "true"
+
         return (
             <MultiAgentAccelerator
                 username={username}
                 defaultNeuroSanUrl={backendNeuroSanApiUrl}
+                startTour={startTour}
             />
         )
     },

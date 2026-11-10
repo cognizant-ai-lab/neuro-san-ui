@@ -96,6 +96,8 @@ import {closeNotification, NotificationType, sendNotification} from "../Common/n
 export interface MultiAgentAcceleratorProps {
     readonly username: string
     readonly defaultNeuroSanUrl: string
+    /** Start the tour as soon as the networks have loaded (e.g. "Take a tour" clicked on another page) */
+    readonly startTour?: boolean
 }
 
 // Gap (px) between the floating panels and the workspace edges
@@ -153,6 +155,7 @@ const getSupportedLlmProviders = (agentLlmConfig: unknown): ReadonlySet<LLMProvi
  */
 export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     defaultNeuroSanUrl,
+    startTour = false,
     username,
 }): ReactJSX.Element => {
     // MUI theme
@@ -248,7 +251,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Introductory tour
 
     // Track that the user requested the tour, and we should start it once network data is available
-    const [tourRequested, setTourRequested] = useState<boolean>(false)
+    const [tourRequested, setTourRequested] = useState<boolean>(startTour)
 
     // Tour persisted status
     const tourStatus = useTourStore((s) => s.status)
@@ -882,6 +885,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     useEffect(() => {
         if (!tourRequested) return
+
+        // If nothing is selected yet, pick the first network to show once the list has loaded
+        if (selectedNetwork == null && networks?.length > 0) {
+            setSelectedNetwork(networks[0].agent_name)
+            return
+        }
 
         // Determine whether the sample network for the tour is ready
         const networkReady = selectedNetwork != null && agentsInNetwork?.length > 0
