@@ -19,7 +19,7 @@ limitations under the License.
  */
 
 import {createTheme, ThemeProvider} from "@mui/material/styles"
-import {act, fireEvent, render, screen, waitFor} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ComponentProps} from "react"
 
@@ -315,10 +315,15 @@ describe("Navbar", () => {
         await user.unhover(link)
         await user.hover(link)
         await user.unhover(nav)
-        act(() => link.focus())
-        act(() => link.blur())
-
-        expect(link).not.toHaveFocus()
+        // The links are hidden at jsdom's window width, and hidden elements can't take real focus, so dispatch the
+        // events. The highlight pill (an aria-hidden sibling of the link) follows the focused link, then returns to the
+        // active one.
+        const hasIndicator = (element: HTMLElement) =>
+            element.parentElement.querySelector(":scope > [aria-hidden=true]") !== null
+        fireEvent.focus(link)
+        expect(hasIndicator(link)).toBe(true)
+        fireEvent.blur(link)
+        expect(hasIndicator(link)).toBe(false)
     })
 
     it("opens the command palette from the search pill", async () => {
