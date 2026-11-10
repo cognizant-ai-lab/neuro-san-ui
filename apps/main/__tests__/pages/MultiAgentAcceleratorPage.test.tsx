@@ -91,11 +91,9 @@ describe("Multi Agent Accelerator Page", () => {
         expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(expect.objectContaining({startTour: true}))
 
         // So a reload doesn't start the tour again
-        expect(replace).toHaveBeenCalledWith(
-            {pathname: "/multiAgentAccelerator", query: {other: "kept"}},
-            undefined,
-            {shallow: true}
-        )
+        expect(replace).toHaveBeenCalledWith({pathname: "/multiAgentAccelerator", query: {other: "kept"}}, undefined, {
+            shallow: true,
+        })
     })
 
     it("Should leave the URL alone when there's no tour request", async () => {
