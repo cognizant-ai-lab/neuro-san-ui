@@ -35,7 +35,7 @@ describe("PanelSeparator", () => {
         const separator = screen.getByRole("separator")
         const grip = separator.querySelector<HTMLElement>(".separator-grip")
 
-        expect(separator).toHaveStyle({width: "18px"})
-        expect(grip).toHaveStyle({width: "18px"})
+        expect(separator).toHaveStyle({width: "14px", pointerEvents: "auto"})
+        expect(grip).toHaveStyle({width: "4px"})
     })
 })

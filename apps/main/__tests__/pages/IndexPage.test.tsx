@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {render, screen} from "@testing-library/react"
+import {render, screen, waitFor} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 import {NextRouter, useRouter} from "next/router"
 
@@ -78,7 +78,7 @@ describe("Index Page", () => {
         await screen.findByText("Skygrade")
         await screen.findByText("Cognizant Ignition")
         const title = await screen.findByText(/Star us on GitHub/u)
-        expect(title).toBeVisible()
+        await waitFor(() => expect(title).toBeVisible())
 
         const link = title.closest("a")
 
@@ -106,5 +106,50 @@ describe("Index Page", () => {
         await user.click(cancelButton)
 
         expect(screen.queryByText("Confirm")).not.toBeInTheDocument()
+    })
+
+    it("keeps the element ids and link targets used by the user tour", async () => {
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({query: {demo: "1"}}))
+        render(<Index />)
+
+        for (const id of [
+            "splash-page__container",
+            "nav-bar",
+            "main-div",
+            "headline-eyebrow",
+            "header-line",
+            "neuro-ai-maa-box",
+            "neuro-ai-description-box",
+            "multi-agent-accelerator-container",
+            "neuro-san-button",
+            "splash-hero-orb",
+            "splash-hero-grid",
+        ]) {
+            expect(document.getElementById(id)).toBeInTheDocument()
+        }
+
+        expect(document.getElementById("explore-agent-networks-link-anchor")).toHaveAttribute(
+            "href",
+            "/multiAgentAccelerator?demo=1"
+        )
+        expect(document.getElementById("explore-more-link")).toHaveAttribute(
+            "href",
+            "https://github.com/cognizant-ai-lab/neuro-san-studio"
+        )
+        expect(document.getElementById("splash-logo-link")).toHaveAttribute("href", "https://www.cognizant.com/us/en")
+    })
+
+    it("draws a static constellation backdrop", async () => {
+        render(<Index />)
+
+        await screen.findByText("Explore agent networks")
+        expect(screen.getByTestId("constellation-backdrop")).toHaveAttribute("aria-hidden", "true")
+        expect(document.getElementById("splash-hero-orb")).toBeInTheDocument()
+
+        // Three orbits, fourteen agents on them, and a link to each agent
+        const svg = screen.getByTestId("constellation-svg")
+        expect(svg.querySelectorAll("ellipse.orbit")).toHaveLength(3)
+        expect(svg.querySelectorAll("circle.agent")).toHaveLength(14)
+        expect(svg.querySelectorAll("line.link")).toHaveLength(14)
     })
 })

@@ -27,6 +27,19 @@ describe("Footer", () => {
         screen.getByText("Contact Us")
     })
 
+    it("Accepts sx as an array", () => {
+        render(
+            <Footer
+                logoLinkUrl="www.example.com/"
+                logoUrl="/logo.svg"
+                supportEmailAddress="test@example.com"
+                sx={[{color: "red"}]}
+            />
+        )
+
+        screen.getByText("Team")
+    })
+
     it("Handles Contact Us click", async () => {
         const supportEmailAddress = "test@example.com"
 

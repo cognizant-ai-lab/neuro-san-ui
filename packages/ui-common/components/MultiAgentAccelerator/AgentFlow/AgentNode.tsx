@@ -22,6 +22,7 @@ import EditIcon from "@mui/icons-material/Edit"
 import HandymanIcon from "@mui/icons-material/Handyman"
 import PersonIcon from "@mui/icons-material/Person"
 import TravelExploreIcon from "@mui/icons-material/TravelExplore"
+import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
 import {keyframes, styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
@@ -31,7 +32,17 @@ import type {Node as RFNode} from "@xyflow/react"
 import {FC} from "react"
 
 import {usePalette, useSettingsStore} from "../../../state/Settings"
-import {isLightColor} from "../../../Theme/Theme"
+import {
+    getSheen,
+    glassSurface,
+    glowShadow,
+    gradientBorder,
+    SHEEN_EASE,
+    SHEEN_FONT_DISPLAY,
+    SHEEN_RADIUS,
+    sheenConic,
+    sheenGradient,
+} from "../../../Theme/sheen"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AgentConversation} from "../AgentConversations"
 import {DisplayAs} from "../const"
@@ -61,35 +72,74 @@ export const FRONTMAN_SIZE_MULTIPLIER = 1.25
 const AGENT_ICON_SIZE = "2.25rem"
 const FRONTMAN_ICON_SIZE = "4.5rem"
 
-// Pulsing glow animation for when an agent is active.
+// Glossy "glass disc" shading layered over the node's fill color: a specular hotspot near the top-left, a soft
+// top-to-bottom sheen and a darker rim at the bottom for depth.
+const NODE_SPECULAR =
+    "radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 42%), " +
+    "linear-gradient(170deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 48%, rgba(0, 0, 0, 0.22))"
+
+// Inner bevel + resting drop shadow for the disc
+const NODE_DEPTH_SHADOW =
+    "inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -6px 14px rgba(0, 0, 0, 0.22), " +
+    "0 10px 24px -10px rgba(0, 0, 0, 0.55)"
+
+// Pulsing glow animation for when an agent is active (keeps the disc's bevel while the halo breathes).
 const glowKeyFrames = (color: string) => keyframes`
     0% {
-        box-shadow: 0 0 10px 4px ${color};
-        opacity: 0.6;
+        box-shadow: ${NODE_DEPTH_SHADOW}, 0 0 12px 2px ${color};
     }
     50% {
-        box-shadow: 0 0 30px 12px ${color};
-        opacity: 0.9;
+        box-shadow: ${NODE_DEPTH_SHADOW}, 0 0 36px 12px ${color};
     }
     100% {
-        box-shadow: 0 0 10px 4px ${color};
-        opacity: 1.0;
+        box-shadow: ${NODE_DEPTH_SHADOW}, 0 0 12px 2px ${color};
     }
 `
 
-// Styled component for the agent nodes, applies glow animation if active
+// Human-readable agent types for the hover card
+const DISPLAY_AS_LABELS: Record<string, string> = {
+    [DisplayAs.LLM_AGENT]: "LLM agent",
+    [DisplayAs.CODED_TOOL]: "Coded tool",
+    [DisplayAs.LANGCHAIN_TOOL]: "LangChain tool",
+    [DisplayAs.EXTERNAL_AGENT]: "External agent",
+}
+
+// Width of the rotating iridescent ring around active nodes, and its gap from the disc (px)
+const ACTIVE_RING_WIDTH = 3
+const ACTIVE_RING_OFFSET = 5
+
+// Styled component for the agent nodes: glossy glass disc; active agents get a rotating conic ring + glow pulse
 const AnimatedNode = styled("div", {
     shouldForwardProp: (prop) => prop !== "glowColor" && prop !== "isActive",
-})<{glowColor: string; isActive: boolean}>(({glowColor, isActive}) => ({
+})<{glowColor: string; isActive: boolean}>(({glowColor, isActive, theme}) => ({
     alignItems: "center",
+    backgroundImage: NODE_SPECULAR,
     borderRadius: "50%",
+    boxShadow: NODE_DEPTH_SHADOW,
     display: "flex",
     justifyContent: "center",
     position: "relative",
     shapeOutside: "circle(50%)",
     textAlign: "center",
+    transition: `transform 0.25s ${SHEEN_EASE}`,
+    "&:hover": {transform: "scale(1.04)"},
     ...(isActive && {
         animation: `${glowKeyFrames(glowColor)} 2s infinite`,
+        // Rotating iridescent ring (circular take on spinningBorder). Decorative only: no pointer events, so the
+        // node's hit area and handles are unaffected.
+        "&::before": {
+            content: '""',
+            position: "absolute",
+            inset: `-${ACTIVE_RING_OFFSET + ACTIVE_RING_WIDTH}px`,
+            padding: `${ACTIVE_RING_WIDTH}px`,
+            borderRadius: "50%",
+            background: sheenConic(theme),
+            animation: "sheenSpin 3s linear infinite",
+            pointerEvents: "none",
+            WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            mask: "linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0)",
+        },
     }),
 }))
 
@@ -213,10 +263,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
     // Determine icon color based on settings. If auto color is enabled, use contrasting color for readability.
     const color = autoAgentIconColor ? theme.palette.getContrastText(backgroundColor) : agentNodeIconColor
 
-    // Choose a glow color that contrasts with the background for visibility.
-    const glowColor = isLightColor(theme.palette.background.default)
-        ? theme.palette.common.black
-        : theme.palette.common.white
+    // Active agents pulse with the sheen accent glow (follows the active color scheme)
+    const glowColor = getSheen(theme).glow
 
     // Insert zero-width spaces into the agent name to give the browser hints where to wrap.
     const wrappedAgentName = agentName
@@ -242,20 +290,19 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 aria-hidden={true}
                 tabIndex={-1}
                 sx={{
+                    ...glassSurface(theme, 999),
                     position: "absolute",
                     top: 0,
                     right: 0,
-                    backgroundColor: "rgba(0,0,0,0.45)",
-                    borderRadius: "50%",
                     padding: "3px",
                     zIndex: 2,
                     cursor: "pointer",
-                    "&:hover": {backgroundColor: "rgba(0,0,0,0.65)"},
+                    "&:hover": {boxShadow: glowShadow(theme, 12)},
                 }}
             >
                 <EditIcon
                     id={`${agentId}-edit-icon`}
-                    sx={{fontSize: "1rem", color: "white"}}
+                    sx={{fontSize: "1rem", color: "text.primary"}}
                 />
             </IconButton>
         </Tooltip>
@@ -271,10 +318,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
             <Typography
                 id={`${agentId}-name`}
                 sx={{
-                    backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 1,
-                    color: theme.palette.text.primary,
+                    ...glassSurface(theme, 8),
+                    color: (theme.vars ?? theme).palette.text.primary,
                     display: "-webkit-box",
                     fontSize: "16px",
                     fontWeight: "700",
@@ -297,7 +342,103 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         </Tooltip>
     )
 
-    const getNode = () => (
+    // Rich glass hover card: type, name, depth, invocation count and live status
+    const agentTypeLabel = isFrontman ? "Front man" : (DISPLAY_AS_LABELS[displayAs] ?? "Agent")
+    const invocationCount = agentCounts?.get(agentId) ?? 0
+
+    const getStat = (label: string, value: string) => (
+        <Box sx={{display: "flex", flexDirection: "column"}}>
+            <Typography
+                component="span"
+                sx={{color: "text.secondary", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase"}}
+            >
+                {label}
+            </Typography>
+            <Typography
+                component="span"
+                sx={{fontSize: "0.85rem", fontVariantNumeric: "tabular-nums", fontWeight: 600}}
+            >
+                {value}
+            </Typography>
+        </Box>
+    )
+
+    const getHoverCard = () => (
+        <Box
+            id={`${agentId}-hover-card`}
+            sx={{display: "flex", flexDirection: "column", gap: 0.75, minWidth: 180, maxWidth: 260}}
+        >
+            <Box sx={{alignItems: "center", display: "flex", gap: 0.75}}>
+                <Box
+                    sx={{
+                        backgroundColor,
+                        backgroundImage: NODE_SPECULAR,
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        height: 10,
+                        width: 10,
+                    }}
+                />
+                <Typography
+                    component="span"
+                    sx={{
+                        color: "text.secondary",
+                        fontSize: "0.65rem",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                    }}
+                >
+                    {agentTypeLabel}
+                </Typography>
+                {isActiveAgent && (
+                    <Box
+                        component="span"
+                        sx={{
+                            backgroundImage: sheenGradient(theme),
+                            borderRadius: 999,
+                            color: (theme.vars ?? theme).palette.primary.contrastText,
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.06em",
+                            ml: "auto",
+                            px: 0.75,
+                            py: 0.1,
+                            textTransform: "uppercase",
+                        }}
+                    >
+                        Active
+                    </Box>
+                )}
+            </Box>
+            <Typography
+                component="span"
+                sx={{
+                    color: "text.primary",
+                    fontFamily: SHEEN_FONT_DISPLAY,
+                    fontSize: "1.1rem",
+                    fontWeight: 500,
+                    lineHeight: 1.2,
+                    overflowWrap: "anywhere",
+                }}
+            >
+                {agentName}
+            </Typography>
+            <Box sx={{display: "flex", gap: 2}}>
+                {getStat("Depth", String(depth))}
+                {isHeatmap && getStat("Calls", String(invocationCount))}
+            </Box>
+            {isEditable && (
+                <Typography
+                    component="span"
+                    sx={{color: "primary.main", fontSize: "0.7rem", fontWeight: 600}}
+                >
+                    Click or press Enter to edit
+                </Typography>
+            )}
+        </Box>
+    )
+
+    const getAnimatedNode = () => (
         <AnimatedNode
             id={agentId}
             data-testid={agentId}
@@ -345,6 +486,30 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
                 style={{visibility: handleVisibility}}
             />
         </AnimatedNode>
+    )
+
+    const getNode = () => (
+        <Tooltip
+            enterDelay={250}
+            disableInteractive
+            placement="right"
+            slotProps={{
+                tooltip: {
+                    sx: {
+                        ...glassSurface(theme, SHEEN_RADIUS),
+                        ...gradientBorder(theme, SHEEN_RADIUS, 1, 0.45),
+                        border: 0,
+                        boxShadow: `inset 0 1px 0 ${getSheen(theme).highlight}, 0 18px 50px -16px rgba(0, 0, 0, 0.6)`,
+                        color: "text.primary",
+                        maxWidth: "none",
+                        padding: "10px 14px",
+                    },
+                },
+            }}
+            title={getHoverCard()}
+        >
+            {getAnimatedNode()}
+        </Tooltip>
     )
 
     return (

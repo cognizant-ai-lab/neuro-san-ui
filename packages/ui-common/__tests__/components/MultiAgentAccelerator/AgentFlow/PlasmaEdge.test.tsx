@@ -131,4 +131,25 @@ describe("PlasmaEdge", () => {
         unmount()
         expect(cancelAnimationFrameSpy).toHaveBeenCalled()
     })
+
+    it("falls back to a device pixel ratio of 1 and skips cancelling when no frame was scheduled", () => {
+        const fakeCtx = Object.assign(Object.create(null) as CanvasRenderingContext2D, {
+            setTransform: vi.fn(),
+            scale: vi.fn(),
+            clearRect: vi.fn(),
+        })
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(() => fakeCtx)
+        vi.spyOn(Math, "random").mockReturnValue(1)
+        vi.spyOn(globalThis, "devicePixelRatio", "get").mockReturnValue(0)
+        // A scheduler that never yields a frame id leaves the ref undefined, so cleanup has nothing to cancel
+        vi.spyOn(globalThis, "requestAnimationFrame").mockReturnValue(undefined)
+        const cancelSpy = vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation(vi.fn())
+
+        const {unmount} = renderPlasmaEdge()
+
+        expect(fakeCtx.scale).toHaveBeenCalledWith(1, 1)
+
+        unmount()
+        expect(cancelSpy).not.toHaveBeenCalled()
+    })
 })

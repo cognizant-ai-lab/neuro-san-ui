@@ -202,6 +202,13 @@ describe("ChatCommon", () => {
             await screen.findByText(sampleQueries[4])
             expect(screen.queryByText(sampleQueries[5])).not.toBeInTheDocument()
 
+            // Sample query chips use the outlined, hairline-bordered style
+            const sampleQueryChips = document.querySelectorAll("#sample-queries-box .MuiChip-root")
+            expect(sampleQueryChips).toHaveLength(MAX_SAMPLE_QUERIES)
+            for (const chip of sampleQueryChips) {
+                expect(chip).toHaveClass("MuiChip-outlined")
+            }
+
             for (const query of sampleQueries.slice(0, MAX_SAMPLE_QUERIES - 1)) {
                 mockSendFunction.mockClear()
                 const truncatedQuery =
@@ -330,6 +337,10 @@ describe("ChatCommon", () => {
 
             // "Regenerate" button should be replaced by "Stop" button while awaiting LLM response
             expect(screen.queryByRole("button", {name: "Regenerate"})).not.toBeInTheDocument()
+
+            // Working indicator: gradient label plus pulsing dots exposed as a progress indicator
+            expect(screen.getByText("Working...")).toHaveAttribute("id", "working-span")
+            expect(screen.getByRole("progressbar", {name: "Working"})).toHaveAttribute("id", "awaitingOutputSpinner")
         })
 
         it("Should handle user input correctly and should call Send on click", async () => {
@@ -465,6 +476,15 @@ describe("ChatCommon", () => {
                 cursor: "not-allowed",
                 pointerEvents: "all",
             })
+        })
+
+        it("Should offer to select the network designer when no network is selected", async () => {
+            const setSelectedNetwork = vi.fn()
+            renderChatCommonComponent({selectedNetwork: null, setSelectedNetwork})
+
+            await user.click(screen.getByLabelText("select-network-designer"))
+
+            expect(setSelectedNetwork).toHaveBeenCalledExactlyOnceWith(expect.any(String))
         })
 
         it("Should refuse interaction when API keys are required but not present", async () => {
@@ -1447,6 +1467,56 @@ describe("ChatCommon", () => {
                     value: originalUserAgent,
                     configurable: true,
                 })
+            }
+        })
+    })
+
+    describe("Voice Input - interim results", () => {
+        it("Should show a spinner while speech is being processed", async () => {
+            const win = window as Window & {SpeechRecognition?: typeof SpeechRecognition}
+            const originalSpeechRecognition = win.SpeechRecognition
+            const originalUserAgent = navigator.userAgent
+            let resultHandler: ((event: SpeechRecognitionEvent) => void) | undefined
+
+            class MockSpeechRecognition {
+                start = vi.fn()
+                stop = vi.fn()
+                addEventListener = vi.fn((event: string, handler: (event: SpeechRecognitionEvent) => void) => {
+                    if (event === "result") {
+                        resultHandler = handler
+                    }
+                })
+                removeEventListener = vi.fn()
+            }
+
+            Object.defineProperty(win, "SpeechRecognition", {value: MockSpeechRecognition, configurable: true})
+            Object.defineProperty(navigator, "userAgent", {value: USER_AGENTS.CHROME_MAC, configurable: true})
+            Object.defineProperty(navigator, "mediaDevices", {
+                value: {getUserMedia: vi.fn().mockResolvedValue({getTracks: () => [{stop: vi.fn()}]})},
+                configurable: true,
+            })
+
+            try {
+                renderChatCommonComponent()
+                await user.click(screen.getByTestId("microphone-button"))
+
+                const interim = {isFinal: false, 0: {confidence: 1, transcript: "partial"}, length: 1}
+                act(() => {
+                    const event = {resultIndex: 0, results: {length: 1, 0: interim}}
+                    resultHandler?.(event as unknown as SpeechRecognitionEvent)
+                })
+
+                await screen.findByRole("progressbar")
+            } finally {
+                if (originalSpeechRecognition === undefined) {
+                    delete win.SpeechRecognition
+                } else {
+                    Object.defineProperty(win, "SpeechRecognition", {
+                        value: originalSpeechRecognition,
+                        configurable: true,
+                    })
+                }
+                Object.defineProperty(navigator, "userAgent", {value: originalUserAgent, configurable: true})
             }
         })
     })

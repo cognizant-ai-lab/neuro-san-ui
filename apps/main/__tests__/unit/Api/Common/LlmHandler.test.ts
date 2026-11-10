@@ -75,6 +75,28 @@ describe("LlmHandler", () => {
         expect(res._getJSONData()).toEqual({error: expect.stringContaining("Method not allowed")})
     })
 
+    it("Parses and returns the LLM response content", async () => {
+        const {req, res} = createMocks({
+            method: "POST",
+        })
+
+        process.env["OPENAI_API_KEY"] = "test-api-key"
+
+        // eslint-disable-next-line prefer-arrow-callback,prefer-arrow-functions/prefer-arrow-functions
+        vi.mocked(ChatOpenAI).mockImplementation(function () {
+            return {
+                invoke: vi.fn().mockResolvedValue({content: JSON.stringify({answer: 42})}),
+            }
+        })
+
+        await handleLLMRequest(req, res, {
+            extractVariables: (): Record<string, unknown> => ({}),
+            promptTemplate: ChatPromptTemplate.fromTemplate("Test prompt"),
+        })
+
+        expect(res._getJSONData()).toEqual({answer: 42})
+    })
+
     it("Returns an error if exception is thrown", async () => {
         const {req, res} = createMocks({
             method: "POST",

@@ -64,10 +64,13 @@ export const SettingsRow: FC<SettingsRowProps> = ({
             <Box
                 sx={{
                     alignItems: "center",
+                    columnGap: theme.spacing(1.5),
                     display: "flex",
                     flex: 1,
-                    gap: theme.spacing(2),
+                    // Wide extras (e.g. a preview) drop onto their own line rather than overflowing the card
+                    flexWrap: "wrap",
                     minWidth: 0,
+                    rowGap: theme.spacing(1),
                 }}
             >
                 {children}

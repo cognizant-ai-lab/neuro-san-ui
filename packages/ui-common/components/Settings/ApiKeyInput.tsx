@@ -103,7 +103,15 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     return (
         <Box
             data-testid={`${id}-input`}
-            sx={{display: "flex", flexWrap: "wrap", alignItems: "center", width: "100%", gap: 2}}
+            sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                flex: 1,
+                minWidth: 0,
+                columnGap: 1.5,
+                rowGap: 1,
+            }}
         >
             {confirmationDialogOpen ? (
                 <ConfirmationModal

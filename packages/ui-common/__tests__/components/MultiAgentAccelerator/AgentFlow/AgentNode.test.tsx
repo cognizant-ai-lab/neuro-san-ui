@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {hexToRgb} from "@mui/material/styles"
+import {createTheme, hexToRgb} from "@mui/material/styles"
 import {render, screen} from "@testing-library/react"
 import {NodeProps, Node as RFNode} from "@xyflow/react"
 import {CSSProperties} from "react"
@@ -24,7 +24,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AgentConversation} from "../../../../components/MultiAgentAccelerator/AgentConversations"
 import {AgentNode, AgentNodeProps} from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
 import {ChatMessageType} from "../../../../generated/neuro-san/NeuroSanClient"
-import {useSettingsStore} from "../../../../state/Settings"
+import {DEFAULT_SETTINGS, useSettingsStore} from "../../../../state/Settings"
 import {PALETTES} from "../../../../Theme/Palettes"
 
 // Mock the Handle component since we don't want to invite @xyflow/react to this party
@@ -99,14 +99,26 @@ describe("AgentNode", () => {
         const style = window.getComputedStyle(nodeDiv)
 
         // Heatmap color should be applied based on agent count. No other agents, so it should be the last color
-        // of the default (blue) palette
-        const bluePalette = PALETTES["blue"]
-        const expectedColor = bluePalette[bluePalette.length - 1]
+        // of the default palette
+        const defaultPalette = PALETTES[DEFAULT_SETTINGS.appearance.rangePalette as keyof typeof PALETTES]
+        const expectedColor = defaultPalette[defaultPalette.length - 1]
 
         expect(style.backgroundColor).toBe(hexToRgb(expectedColor))
 
         // Inactive node should not have animation
         expect(style.animation).toBe("")
+    })
+
+    it("Should use the lowest heat color when the agent has no recorded invocations", () => {
+        renderAgentNode({agentCounts: new Map([["someOtherAgent", 5]])})
+
+        expect(screen.getByText(AGENT_NAME)).toBeInTheDocument()
+    })
+
+    it("Should render the Frontman with the person icon and label", () => {
+        renderAgentNode({depth: 0})
+
+        expect(screen.getByTestId("PersonIcon")).toBeInTheDocument()
     })
 
     it("Should render animation if active agent", async () => {
@@ -150,13 +162,16 @@ describe("AgentNode", () => {
         const icon = await screen.findByTestId("AutoAwesomeIcon")
         const iconStyle = window.getComputedStyle(icon)
 
-        // Make sure the icon color matches expected
+        // Make sure the icon color matches expected: auto color is the contrast text for the node's depth color
+        // in the default palette
+        const defaultPalette = PALETTES[DEFAULT_SETTINGS.appearance.rangePalette as keyof typeof PALETTES]
+        const contrastText = createTheme().palette.getContrastText(defaultPalette[depth % defaultPalette.length])
         const expectedIconColor = autoAgentIconColor
-            ? depth === 1
-                ? /rgba\(0, 0, 0, 0\.\d+\)/u // Ignore alpha value (last octet) that MUI generates
-                : /rgb\(255, 255, 255\)/u
+            ? contrastText.startsWith("#")
+                ? hexToRgb(contrastText)
+                : contrastText
             : hexToRgb(agentIconColor)
-        expect(iconStyle.color).toMatch(expectedIconColor)
+        expect(iconStyle.color).toBe(expectedIconColor)
     })
 
     it.each([

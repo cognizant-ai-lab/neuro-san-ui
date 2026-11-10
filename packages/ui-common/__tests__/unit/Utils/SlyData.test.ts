@@ -48,6 +48,16 @@ describe("formatSlyData", () => {
 describe("parseSlyData", () => {
     withStrictMocks()
 
+    it("reports a generic message when JSON.parse throws a non-Error", () => {
+        vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+            // eslint-disable-next-line @typescript-eslint/only-throw-error
+            throw "boom"
+        })
+        const result = parseSlyData("{}")
+        expect(result.error).toBe("Invalid JSON.")
+        expect(result.value).toStrictEqual({})
+    })
+
     it("parses a JSON object", () => {
         const result = parseSlyData('{"charges": 2}')
         expect(result.error).toBeUndefined()
