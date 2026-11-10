@@ -37,11 +37,12 @@ const PanelAction = styled(Button)({
     minWidth: 0,
     padding: 0,
     textTransform: "none",
+    whiteSpace: "nowrap",
 })
 
 const PanelActions = styled(Box)(({theme}) => ({
     display: "flex",
-    gap: theme.spacing(3),
+    gap: theme.spacing(2),
 }))
 
 const PanelNote = styled(Typography)(({theme}) => ({
@@ -76,7 +77,7 @@ interface PublishPanelProps {
 export const PublishPanel: FC<PublishPanelProps> = ({id, onDownloadBundle, onRepublish, onUnpublish, publishState}) => (
     <Box
         id={id}
-        sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "22rem"}}
+        sx={{display: "flex", flexDirection: "column", gap: 1.5, p: 2, width: "24rem"}}
     >
         {publishState.status === PublishStatus.Unpublished && (
             <>
