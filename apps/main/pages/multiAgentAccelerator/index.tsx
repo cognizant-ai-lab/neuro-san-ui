@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import {useRouter} from "next/router"
-import {FC, JSX as ReactJSX} from "react"
+import {FC, JSX as ReactJSX, useEffect} from "react"
 
 import {MultiAgentAccelerator} from "../../../../packages/ui-common/components/MultiAgentAccelerator/MultiAgentAccelerator"
 import {useEnvironmentStore} from "../../../../packages/ui-common/state/Environment"
@@ -31,7 +31,16 @@ export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
         const {backendNeuroSanApiUrl} = useEnvironmentStore()
 
         // "?tour=true": sent here by Help > Take a tour from another page
-        const startTour = useRouter().query["tour"] === "true"
+        const router = useRouter()
+        const startTour = router.query["tour"] === "true"
+
+        // The accelerator has picked up the request by now (child effects run first), so take it out of the URL,
+        // otherwise every reload would start the tour again
+        useEffect(() => {
+            if (!startTour) return
+            const {tour: _tour, ...query} = router.query
+            void router.replace({pathname: router.pathname, query}, undefined, {shallow: true})
+        }, [router, startTour])
 
         return (
             <MultiAgentAccelerator

@@ -77,12 +77,34 @@ describe("Multi Agent Accelerator Page", () => {
         )
     })
 
-    it("Should ask the accelerator to start the tour when the URL has ?tour=true", async () => {
-        vi.mocked(useRouter).mockReturnValue({query: {tour: "true"}} as unknown as NextRouter)
+    it("Should ask the accelerator to start the tour for ?tour=true, then drop it from the URL", async () => {
+        const replace = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue({
+            pathname: "/multiAgentAccelerator",
+            query: {other: "kept", tour: "true"},
+            replace,
+        } as unknown as NextRouter)
 
         render(<MultiAgentAcceleratorPage />)
         await screen.findByText(MAA_TEXT)
 
         expect(mockMultiAgentAcceleratorSpy).toHaveBeenCalledWith(expect.objectContaining({startTour: true}))
+
+        // So a reload doesn't start the tour again
+        expect(replace).toHaveBeenCalledWith(
+            {pathname: "/multiAgentAccelerator", query: {other: "kept"}},
+            undefined,
+            {shallow: true}
+        )
+    })
+
+    it("Should leave the URL alone when there's no tour request", async () => {
+        const replace = vi.fn()
+        vi.mocked(useRouter).mockReturnValue({query: {}, replace} as unknown as NextRouter)
+
+        render(<MultiAgentAcceleratorPage />)
+        await screen.findByText(MAA_TEXT)
+
+        expect(replace).not.toHaveBeenCalled()
     })
 })
