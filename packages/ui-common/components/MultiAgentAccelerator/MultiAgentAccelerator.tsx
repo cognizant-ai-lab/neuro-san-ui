@@ -1407,6 +1407,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         position: "absolute",
                         right: 4,
                         top: 20,
+                        zIndex: 1,
                         "&:hover": {
                             bgcolor: "action.hover",
                         },
