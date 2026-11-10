@@ -185,6 +185,8 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                             sx: (theme: Theme) => ({
                                 ...glassSurface(theme, SHEEN_RADIUS),
                                 ...gradientBorder(theme, SHEEN_RADIUS, 1, 0.4),
+                                // The border sets position: relative, and the popover needs absolute to place the panel
+                                position: "absolute",
                                 mt: 1,
                             }),
                         },
