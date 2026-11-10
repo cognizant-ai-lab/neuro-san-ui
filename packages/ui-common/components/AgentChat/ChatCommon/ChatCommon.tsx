@@ -1236,6 +1236,8 @@ export const ChatCommon = ({ref, ...props}: ChatCommonProps & {ref?: Ref<ChatCom
                 display: "flex",
                 flexGrow: 1,
                 marginLeft: "10px",
+                marginRight: "10px",
+                marginTop: title ? 0 : "10px",
                 position: "relative",
                 overflowY: "auto",
             }}

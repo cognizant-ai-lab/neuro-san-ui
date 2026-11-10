@@ -99,7 +99,7 @@ export const MOCK_CONNECTIVITY_INFO = {
         },
     ],
     metadata: {
-        sample_queries: ["Sample query 1", "Long query ".repeat(10), "Query 3", "Query 4", "Query 5", "Query 6"],
+        sample_queries: ["Sample query 1", "Long query ".repeat(30), "Query 3", "Query 4", "Query 5", "Query 6"],
     },
 }
 

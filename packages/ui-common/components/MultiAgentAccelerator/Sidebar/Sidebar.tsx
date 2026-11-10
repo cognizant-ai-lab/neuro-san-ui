@@ -32,7 +32,6 @@ import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
 import {getSheen, SHEEN_FONT_DISPLAY, SHEEN_RADIUS} from "../../../Theme/sheen"
-import {getZIndex} from "../../../utils/zIndexLayers"
 import {StatusLight} from "../../Common/StatusLight"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
 
@@ -87,11 +86,15 @@ const NEURO_SAN_PING_INTERVAL_MS = 30_000
 
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
-// The aside fills the floating glass card that hosts it (see FloatingPanel in the workspace).
+// The aside fills the floating glass card that hosts it (see FloatingPanel in the workspace). The heading stays put
+// and only the networks tree scrolls, so the heading needs no opaque fill of its own (which would otherwise paint
+// over the card's rounded corners and gradient border).
 const SidebarAside = styled("aside")(({theme}) => ({
     boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
     height: "100%",
-    overflowY: "auto",
+    overflow: "hidden",
     paddingBottom: theme.spacing(1),
     paddingLeft: theme.spacing(1),
     paddingRight: theme.spacing(1),
@@ -109,14 +112,14 @@ const SidebarAside = styled("aside")(({theme}) => ({
     },
 }))
 
-// Styled component for the sidebar heading, which is sticky at the top of the sidebar.
+// Styled component for the sidebar heading, which sits above the scrolling networks tree.
 const SidebarHeading = styled("h2")(({theme}) => ({
     alignItems: "center",
-    backgroundColor: getSheen(theme).glassBg,
     borderBottomColor: getSheen(theme).glassBorder,
     borderBottomStyle: "solid",
     borderBottomWidth: "1px",
     display: "flex",
+    flexShrink: 0,
     fontFamily: SHEEN_FONT_DISPLAY,
     fontSize: "1.25rem",
     fontWeight: 500,
@@ -125,11 +128,17 @@ const SidebarHeading = styled("h2")(({theme}) => ({
     marginTop: 0,
     paddingBottom: "0.75rem",
     paddingLeft: theme.spacing(0.5),
+    paddingRight: theme.spacing(0.5),
     paddingTop: "0.75rem",
-    position: "sticky",
-    top: 0,
-    zIndex: getZIndex(1, theme),
 }))
+
+// Scroll container for the networks tree, filling the space below the heading
+const NetworksScroller = styled("div")({
+    flex: 1,
+    minHeight: 0,
+    overflowX: "hidden",
+    overflowY: "auto",
+})
 
 // For showing server status which can be lengthy
 const ServerStatusTooltip = styled(({className, ...props}: TooltipProps) => (
@@ -413,7 +422,9 @@ export const Sidebar: FC<SidebarProps> = ({
         <SidebarAside id={`${id}-sidebar`}>
             {getSidebarHeading()}
             {/* Shared layout group: the selection highlight glides between network items on select */}
-            <LayoutGroup id={`${id}-networks`}>{getSidebarNetworksTree()}</LayoutGroup>
+            <NetworksScroller>
+                <LayoutGroup id={`${id}-networks`}>{getSidebarNetworksTree()}</LayoutGroup>
+            </NetworksScroller>
         </SidebarAside>
     )
 }

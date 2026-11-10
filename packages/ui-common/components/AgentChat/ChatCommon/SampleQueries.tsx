@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box"
-import Chip from "@mui/material/Chip"
+import Chip, {chipClasses} from "@mui/material/Chip"
 import {Theme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {motion, useReducedMotion, Variants} from "motion/react"
@@ -32,8 +32,9 @@ const CHIP_VARIANTS: Variants = {
 }
 const CHIP_VARIANTS_REDUCED: Variants = {hidden: {opacity: 0}, shown: {opacity: 1}}
 
-// Maximum length of query to show in sample query chips
-export const QUERY_TRUNCATE_LENGTH = 80
+// Maximum length of query to show in sample query chips. Chips wrap, so this only reins in pathologically long
+// queries; the full text is always in the tooltip and is what gets sent.
+export const QUERY_TRUNCATE_LENGTH = 250
 
 interface SampleQueriesProps {
     readonly disabled: boolean
@@ -66,7 +67,7 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                 return (
                     <motion.span
                         key={`chip-${hashedQuery}`}
-                        style={{display: "inline-block"}}
+                        style={{display: "inline-block", maxWidth: "100%"}}
                         variants={reduceMotion ? CHIP_VARIANTS_REDUCED : CHIP_VARIANTS}
                     >
                         <Tooltip
@@ -91,6 +92,20 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                                         ...glassSurface(theme, CHIP_RADIUS),
                                         ...border,
                                         color: "text.primary",
+                                        // Long queries wrap onto multiple lines rather than being cut off at the
+                                        // edge of the chat window
+                                        height: "auto",
+                                        maxWidth: "100%",
+                                        minHeight: "36px",
+                                        [`& .${chipClasses.label}`]: {
+                                            lineHeight: 1.45,
+                                            overflowWrap: "anywhere",
+                                            paddingBottom: "8px",
+                                            paddingLeft: "14px",
+                                            paddingRight: "14px",
+                                            paddingTop: "8px",
+                                            whiteSpace: "normal",
+                                        },
                                         marginRight: "0.75rem",
                                         marginBottom: "0.75rem",
                                         transition: [
