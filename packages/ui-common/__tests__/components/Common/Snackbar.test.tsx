@@ -21,6 +21,7 @@ import {useSnackbar} from "notistack"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {Snackbar, SnackbarProps} from "../../../components/Common/Snackbar"
+import {glassSurface, SHEEN_DARK, SHEEN_LIGHT, SHEEN_RADIUS} from "../../../Theme/sheen"
 
 // Mock useSnackbar hook
 vi.mock("notistack", async (importOriginal) => {
@@ -31,6 +32,13 @@ vi.mock("notistack", async (importOriginal) => {
         useSnackbar: vi.fn(),
     }
 })
+
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
 
 describe("Snackbar Component", () => {
     withStrictMocks()
@@ -63,6 +71,10 @@ describe("Snackbar Component", () => {
             enqueueSnackbar: undefined,
             closeSnackbar: mockCloseSnackbar,
         })
+    })
+
+    afterEach(() => {
+        reducedMotion.value = false
     })
 
     it("renders all elements", () => {
@@ -112,6 +124,41 @@ describe("Snackbar Component", () => {
         expect(iconBox).toHaveClass("warning")
     })
 
+    it("shows a gradient countdown line that drains over the auto-hide duration", () => {
+        renderSnackbar({autoHideDuration: 3000})
+
+        const progress = screen.getByTestId("test-id-snackbar-progress")
+        expect(getComputedStyle(progress).animation).toContain("3000ms")
+        expect(getComputedStyle(progress).backgroundImage).toContain("linear-gradient")
+    })
+
+    it("falls back to notistack's default duration for the countdown line", () => {
+        renderSnackbar()
+
+        expect(getComputedStyle(screen.getByTestId("test-id-snackbar-progress")).animation).toContain("5000ms")
+    })
+
+    it.each([
+        {name: "persistent", props: {persist: true}},
+        {name: "never auto-hidden", props: {autoHideDuration: null}},
+    ])("has no countdown line when $name", ({props}) => {
+        renderSnackbar(props)
+
+        expect(screen.queryByTestId("test-id-snackbar-progress")).not.toBeInTheDocument()
+    })
+
+    it("renders anchored to the left edge", () => {
+        renderSnackbar({anchorOrigin: {vertical: "bottom", horizontal: "left"}})
+
+        expect(screen.getByTestId("test-id-snackbar-box")).toBeInTheDocument()
+    })
+
+    it("renders when no anchor origin is given", () => {
+        renderSnackbar({anchorOrigin: undefined})
+
+        expect(screen.getByTestId("test-id-snackbar-box")).toBeInTheDocument()
+    })
+
     it("renders the correct variant class for info", () => {
         renderSnackbar({variant: "info"})
 
@@ -125,17 +172,48 @@ describe("Snackbar Component", () => {
         expect(screen.queryByText("Test description")).not.toBeInTheDocument()
     })
 
-    it("applies a light-mode shadow by default", () => {
+    it("renders as a glass toast with the sheen glass shadow", () => {
         renderSnackbar()
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(0, 0, 0, 0.08)")
+        const glass = glassSurface(createTheme({palette: {mode: "light"}}), SHEEN_RADIUS)
+
+        // Light glass background from the sheen tokens
+        expect(computed.backgroundColor).toBe(SHEEN_LIGHT.sheen.glassBg)
+        expect(computed.borderRadius).toBe(`${SHEEN_RADIUS}px`)
+
+        // Depth comes from the shared glass shadow (specular top edge + soft drop shadow)
+        expect(computed.boxShadow.replaceAll(/\s/gu, "")).toBe((glass.boxShadow as string).replaceAll(/\s/gu, ""))
     })
 
-    it("switches to a white shadow color in dark mode", () => {
+    it("switches to the dark glass background in dark mode", () => {
         renderSnackbar({}, "dark")
         const box = screen.getByTestId("test-id-snackbar-box")
         const computed = window.getComputedStyle(box)
-        expect(computed.boxShadow).toContain("rgba(255, 255, 255, 0.08)")
+        expect(computed.backgroundColor).toBe(SHEEN_DARK.sheen.glassBg)
+    })
+
+    it.each(["success", "error", "warning", "info"] as const)("colors the %s icon from the palette", (variant) => {
+        const theme = createTheme()
+        renderSnackbar({variant})
+
+        const iconBox = screen.getByTestId("test-id-snackbar-icon-box")
+        expect(iconBox).toHaveStyle({color: theme.palette[variant].main})
+        // Sits in a softly tinted circle of the same status color
+        expect(iconBox).toHaveStyle({borderRadius: "50%"})
+        expect(window.getComputedStyle(iconBox).backgroundColor).not.toBe("")
+    })
+
+    it("renders with plain fade transitions when reduced motion is preferred", () => {
+        reducedMotion.value = true
+        renderSnackbar()
+
+        expect(screen.getByText("Test message")).toBeInTheDocument()
+    })
+
+    it("shows the variant icon by default when hideIconVariant is not specified", () => {
+        renderSnackbar({hideIconVariant: undefined})
+
+        expect(screen.getByText("Test message")).toBeInTheDocument()
     })
 })

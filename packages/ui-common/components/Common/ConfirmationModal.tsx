@@ -16,7 +16,7 @@ limitations under the License.
 
 import Box from "@mui/material/Box"
 import Button, {ButtonProps} from "@mui/material/Button"
-import {styled} from "@mui/material/styles"
+import {styled, SxProps} from "@mui/material/styles"
 import {ComponentType, FC, JSX as ReactJSX, ReactNode, useState} from "react"
 
 import {MUIDialog} from "./MUIDialog"
@@ -34,6 +34,7 @@ interface ConfirmationModalProps {
     cancelBtnLabel?: string
     closeable?: boolean
     content: ReactNode
+    dialogSx?: SxProps
     handleCancel?: () => void
     handleOk?: () => void
     id: string
@@ -47,6 +48,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
     cancelBtnLabel,
     closeable = true,
     content = "",
+    dialogSx,
     handleCancel = null,
     handleOk = null,
     id = "",
@@ -109,6 +111,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
         <MUIDialog
             closeable={closeable}
             contentSx={{fontSize: "0.8rem", minWidth: "550px", paddingTop: "0"}}
+            dialogSx={dialogSx}
             footer={Footer}
             id={`${id}-confirm-main`}
             isOpen={modalOpen}

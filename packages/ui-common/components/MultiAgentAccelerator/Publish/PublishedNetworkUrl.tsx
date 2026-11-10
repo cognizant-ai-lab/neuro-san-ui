@@ -22,6 +22,8 @@ import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC, useState} from "react"
 
+import {SHEEN_FONT_MONO, SHEEN_RADIUS} from "../../../Theme/sheen"
+
 export const COPY_URL_LABEL = "Copy live URL"
 export const OPEN_URL_LABEL = "Open live URL"
 
@@ -59,7 +61,7 @@ export const PublishedNetworkUrl: FC<PublishedNetworkUrlProps> = ({url}) => {
                 backgroundColor: "action.hover",
                 border: 1,
                 borderColor: "divider",
-                borderRadius: 1,
+                borderRadius: `${SHEEN_RADIUS}px`,
                 display: "flex",
                 gap: 0.5,
                 pl: 1.5,
@@ -70,7 +72,7 @@ export const PublishedNetworkUrl: FC<PublishedNetworkUrlProps> = ({url}) => {
             <Typography
                 sx={{
                     flex: 1,
-                    fontFamily: "monospace",
+                    fontFamily: SHEEN_FONT_MONO,
                     fontSize: "0.8rem",
                     overflow: "hidden",
                     textOverflow: "ellipsis",

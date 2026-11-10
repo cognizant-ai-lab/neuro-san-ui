@@ -277,6 +277,69 @@ describe("AgentFlow", () => {
             expect(await screen.findByText(networkName)).toBeInTheDocument()
         })
 
+        it("Should show the network HUD with agent count and idle status", async () => {
+            renderAgentFlowComponent({networkDisplayName: "My Network", currentConversations: null})
+            const hud = await screen.findByRole("status", {name: /My Network: Idle, 3 agents/u})
+            expect(hud).toBeInTheDocument()
+            expect(document.querySelector("#test-flow-id-hud-status")).toHaveAttribute("data-status", "idle")
+            expect(document.querySelector("#test-flow-id-hud-agent-count")).toHaveTextContent("3 agents")
+        })
+
+        it("Should show thinking, then streaming status in the HUD while awaiting the LLM", async () => {
+            const {rerender} = renderAgentFlowComponent({
+                networkDisplayName: "My Network",
+                isAwaitingLlm: true,
+                currentConversations: null,
+            })
+            expect(document.querySelector("#test-flow-id-hud-status")).toHaveAttribute("data-status", "thinking")
+            expect(await screen.findByText("Thinking")).toBeInTheDocument()
+
+            rerender(
+                <ThemeProvider theme={createTheme()}>
+                    <ReactFlowProvider>
+                        <AgentFlow
+                            {...defaultProps}
+                            isAwaitingLlm={true}
+                            networkDisplayName="My Network"
+                        />
+                    </ReactFlowProvider>
+                </ThemeProvider>
+            )
+            expect(document.querySelector("#test-flow-id-hud-status")).toHaveAttribute("data-status", "streaming")
+        })
+
+        it("Should host the view controls and legend in the floating controlPanel, centered in the safe area", () => {
+            const {container} = renderAgentFlowComponent({safeArea: {top: 80, right: 400, bottom: 14, left: 200}})
+            const controlPanel = screen.getByLabelText("Control Panel")
+            expect(controlPanel).toHaveClass("react-flow__controls", "horizontal")
+            for (const buttonId of [
+                "#radial-layout-button",
+                "#linear-layout-button",
+                "#radial-guides-button",
+                "#thought-bubble-button",
+                "#test-flow-id-legend",
+            ]) {
+                expect(controlPanel.querySelector(buttonId)).toBeInTheDocument()
+            }
+            // Built-in zoom / fit view controls are in the same pill
+            expect(controlPanel.querySelector(".react-flow__controls-fitview")).toBeInTheDocument()
+            // Centered on the uncovered part of the canvas: (200 - 400) / 2 = -100px
+            expect(controlPanel).toHaveStyle({left: "calc(50% - 100px)", bottom: "26px"})
+            expect(container.querySelector("#radial-layout-button")).toHaveAttribute("aria-pressed", "true")
+        })
+
+        it("Should fit the view inside the safe area", async () => {
+            mockFitView.mockClear()
+            renderAgentFlowComponent({safeArea: {top: 80, right: 400, bottom: 14, left: 200}})
+            await waitFor(() =>
+                expect(mockFitView).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        padding: {top: "144px", right: "424px", bottom: "86px", left: "224px"},
+                    })
+                )
+            )
+        })
+
         it("Should show the network title in dark mode", async () => {
             const networkName = "Dark Network"
             renderAgentFlowComponent({networkDisplayName: networkName}, "dark")

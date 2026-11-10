@@ -38,7 +38,7 @@ export const ByokStorageTooltip: FC = () => (
         <Typography
             sx={{
                 alignSelf: "flex-start",
-                color: "var(--bs-secondary)",
+                color: "primary.main",
                 cursor: "help",
                 fontSize: "0.7rem",
                 lineHeight: 1,

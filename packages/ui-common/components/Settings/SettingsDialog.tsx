@@ -9,30 +9,82 @@ import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
 import MenuItem from "@mui/material/MenuItem"
 import Select, {SelectChangeEvent} from "@mui/material/Select"
-import {createTheme, ThemeProvider, useTheme} from "@mui/material/styles"
+import {SxProps, Theme, useTheme} from "@mui/material/styles"
 import TextField from "@mui/material/TextField"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
-import {FC, ChangeEvent as ReactChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useMemo, useState} from "react"
+import {startCase} from "lodash-es"
+import {FC, ChangeEvent as ReactChangeEvent, MouseEvent as ReactMouseEvent, useEffect, useState} from "react"
 
 import {ByokInputs, ByokStorageTooltip, ByokUnsavedChangesModal, useByokKeyManager} from "./Byok"
 import {useCheckmarkFade} from "./FadingCheckmark"
 import {PublishSettings} from "./PublishSettings"
 import {Section, SettingsSectionTitle, SettingsSubsection, SubSection, SubSectionBody} from "./SettingsLayout"
+import {SettingsNavLayout} from "./SettingsNav"
 import {SettingsRow} from "./SettingsRow"
 import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
 import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore} from "../../state/Settings"
 import {PALETTES} from "../../Theme/Palettes"
+import {
+    glassSurface,
+    gradientBorder,
+    SHEEN_FONT_DISPLAY,
+    SHEEN_RADIUS_SURFACE,
+    unbrandedPalette,
+} from "../../Theme/sheen"
 import {normalizeUrlInput, Protocol, stripProtocol} from "../../utils/Url"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {MUIDialog} from "../Common/MUIDialog"
 import {NotificationType, sendNotification} from "../Common/notification"
 import {StatusLight} from "../Common/StatusLight"
 import {CustomerLogo} from "../Logo/CustomerLogo"
+
+//#region: Constants
+
+// The settings dialog is dense, so scale its body text down a notch (inherits the app theme otherwise)
+const COMPACT_FONT_SIZE = "0.8125rem"
+const SETTINGS_CONTENT_SX = {
+    fontSize: COMPACT_FONT_SIZE,
+    [[
+        "& .MuiTypography-body1",
+        "& .MuiInputBase-root",
+        "& .MuiInputLabel-root",
+        "& .MuiFormControlLabel-label",
+        "& .MuiButton-root",
+        "& .MuiToggleButton-root",
+        "& .MuiMenuItem-root",
+    ].join(", ")]: {fontSize: COMPACT_FONT_SIZE},
+    "& .MuiTypography-subtitle1": {fontSize: "0.875rem"},
+    "& .MuiTypography-body2, & .MuiTypography-caption, & .MuiFormHelperText-root": {fontSize: "0.75rem"},
+    // Rows hold several short action buttons ("Test", "Save"...), so drop MUI's 64px minimum to leave room for inputs
+    "& .MuiButton-sizeSmall": {minWidth: 0, paddingInline: "0.85em"},
+    // The nav and the section column scroll independently, so the content area itself doesn't scroll
+    display: "flex",
+    overflow: "hidden",
+    paddingBottom: 0,
+} as const
+
+// Glass dialog surface with a faint iridescent hairline. Near full-screen on phones.
+const getDialogPaperSx = (theme: Theme): SxProps => ({
+    ...glassSurface(theme, SHEEN_RADIUS_SURFACE),
+    ...gradientBorder(theme, SHEEN_RADIUS_SURFACE, 1, 0.35),
+    height: "min(860px, calc(100% - 64px))",
+    maxWidth: "none",
+    overflow: "hidden",
+    width: "min(1180px, calc(100% - 64px))",
+    [theme.breakpoints.down("sm")]: {
+        height: "calc(100% - 24px)",
+        margin: "12px",
+        maxHeight: "none",
+        width: "calc(100% - 24px)",
+    },
+})
+
+//#endregion: Constants
 
 //#region: Types and Interfaces
 
@@ -135,9 +187,11 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const statusLightValue = neuroSanUrlValidated === null ? "unknown" : neuroSanUrlValidated ? "green" : "red"
 
-    // Record user's current theme so at least the settings dialog (with default MUI theme) matches that
     const theme = useTheme()
-    const paletteMode = theme.palette.mode
+
+    // Settings (and its confirmation modals) ignore the user's branding colors, so it stays readable whatever they
+    // picked and they can always reset it
+    const unbrandedSx = unbrandedPalette(theme)
 
     const handlePaletteChange = (_event: ReactMouseEvent<HTMLElement>, newPalette: PaletteKey | null) => {
         if (newPalette) {
@@ -306,6 +360,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
 
     const getConfirmationModal = () => (
         <ConfirmationModal
+            dialogSx={unbrandedSx}
             id={`${id}-reset-to-default-settings-confirmation-modal`}
             content={
                 "This will reset all settings to their default values and cannot be undone. " +
@@ -337,6 +392,8 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 >
                     <Select<Protocol>
                         aria-label="protocol-select"
+                        // The menu is portaled outside the dialog, so it needs the unbranded colors too
+                        MenuProps={{slotProps: {paper: {sx: unbrandedSx}}}}
                         onChange={handleNeuroSanProtocolChange}
                         size="small"
                         sx={{minWidth: 100, flexShrink: 0}}
@@ -492,26 +549,29 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     <ToggleButton value="native">Native</ToggleButton>
                     <ToggleButton value="beautified">Beautified</ToggleButton>
                 </ToggleButtonGroup>
-                <FormLabel>Preview: </FormLabel>
-                <FormLabel
-                    sx={{
-                        border: "1px solid",
-                        borderRadius: 1,
-                        backgroundColor: "background.paper",
-                        ml: 0.5,
-                        px: 1,
-                        py: 0.25,
-                        lineHeight: 0,
-                        fontSize: "0.7rem",
-                        maxWidth: "100%",
-                    }}
-                >
-                    <pre>
-                        {`category/some_agent_name → ${
-                            useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
-                        }`}
-                    </pre>
-                </FormLabel>
+                <Box sx={{alignItems: "center", display: "flex", gap: 1, maxWidth: "100%", minWidth: 0}}>
+                    <FormLabel>Preview:</FormLabel>
+                    <FormLabel
+                        sx={{
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1,
+                            backgroundColor: "background.paper",
+                            px: 1,
+                            py: 0.25,
+                            lineHeight: 0,
+                            fontSize: "0.7rem",
+                            minWidth: 0,
+                            overflowX: "auto",
+                        }}
+                    >
+                        <pre>
+                            {`category/some_agent_name → ${
+                                useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
+                            }`}
+                        </pre>
+                    </FormLabel>
+                </Box>
             </SettingsRow>
         </SettingsSubsection>
     )
@@ -537,7 +597,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     value={customerInput}
                     placeholder="Company or organization name"
                     size="small"
-                    sx={{width: "100%"}}
+                    sx={{flex: 1}}
                     variant="outlined"
                 />
                 <Button
@@ -659,7 +719,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 <Tooltip title={customer ? "Palette is determined by customer branding and cannot be changed" : ""}>
                     {/*"span" required for tooltip when child is disabled. See:*/}
                     {/*https://github.com/mui/material-ui/issues/8416*/}
-                    <span>
+                    <Box
+                        component="span"
+                        sx={{flex: 1, minWidth: 0}}
+                    >
                         <ToggleButtonGroup
                             aria-label="depth-heatmap-palette-selection"
                             disabled={Boolean(customer)}
@@ -668,7 +731,18 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             size="small"
                             sx={{
                                 cursor: customer ? "not-allowed" : "pointer",
+                                display: "grid",
+                                gap: 1,
+                                gridTemplateColumns: "repeat(auto-fill, minmax(6.5rem, 1fr))",
                                 opacity: customer ? 0.5 : 1,
+                                // Tiles in a grid, so each one gets its own full border and radius
+                                "& .MuiToggleButtonGroup-grouped.MuiToggleButton-root": {
+                                    border: 1,
+                                    borderColor: "divider",
+                                    borderRadius: 1.5,
+                                    margin: 0,
+                                },
+                                "& .MuiToggleButtonGroup-grouped.Mui-selected": {borderColor: "primary.main"},
                             }}
                             value={paletteKey}
                         >
@@ -693,10 +767,10 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                             }}
                                         >
                                             <Typography
+                                                noWrap={true}
                                                 variant="caption"
-                                                sx={{textTransform: "capitalize"}}
                                             >
-                                                {key}
+                                                {startCase(key)}
                                             </Typography>
                                             <Box sx={{display: "flex", gap: 0.5}}>
                                                 {Array.from({length: 5}, (_, i) => {
@@ -720,7 +794,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                                 )
                             })}
                         </ToggleButtonGroup>
-                    </span>
+                    </Box>
                 </Tooltip>
             </SettingsRow>
         </SettingsSubsection>
@@ -849,7 +923,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     )
 
     const getResetSettingsSection = () => (
-        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: "4px solid var(--bs-border-color)"}}>
+        <SubSection sx={{marginTop: 4, paddingTop: 2, borderTop: 1, borderColor: "divider"}}>
             <SubSectionBody>
                 <Button
                     variant="text"
@@ -857,7 +931,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                     onClick={() => {
                         setResetToDefaultSettingsOpen(true)
                     }}
-                    sx={{color: "var(--bs-secondary)"}}
+                    sx={{color: "primary.main"}}
                 >
                     Reset to defaults
                 </Button>
@@ -865,26 +939,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
         </SubSection>
     )
 
-    const settingsTheme = useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode: paletteMode,
-                },
-                typography: {
-                    fontSize: 12,
-                },
-            }),
-        [paletteMode]
-    )
-
     return (
-        // Always use the default theme for settings dialog so user can always see to reset. It's possible that with
-        // certain custom themes the dialog would be unreadable.
-        <ThemeProvider theme={settingsTheme}>
+        <>
             {resetToDefaultSettingsOpen ? getConfirmationModal() : null}
             {showUnsavedChangesModal ? (
                 <ByokUnsavedChangesModal
+                    dialogSx={unbrandedSx}
                     id={id}
                     onDiscard={handleDiscardUnsavedKeys}
                     onSave={handleSaveUnsavedKeys}
@@ -892,21 +952,36 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             ) : null}
             <MUIDialog
                 id={id}
-                title={<Box sx={{fontSize: "1.5rem"}}>Settings</Box>}
+                title={
+                    <Box
+                        component="span"
+                        sx={{
+                            fontFamily: SHEEN_FONT_DISPLAY,
+                            fontSize: "1.75rem",
+                            fontWeight: 500,
+                            letterSpacing: "-0.015em",
+                        }}
+                    >
+                        Settings
+                    </Box>
+                }
                 isOpen={isOpen}
                 onClose={handleSettingsClose}
-                paperProps={{
-                    minWidth: "50%",
-                    minHeight: "50%",
-                    border: "1px solid",
-                }}
+                paperProps={getDialogPaperSx(theme)}
+                contentSx={SETTINGS_CONTENT_SX}
+                dialogSx={unbrandedSx}
             >
-                {getServicesSection()}
-                {getApiKeysSection()}
-                {getBehaviorSection()}
-                {getAppearanceSection()}
-                {getResetSettingsSection()}
+                <SettingsNavLayout
+                    id={id}
+                    sections={[
+                        {key: "external-services", label: "External Services", content: getServicesSection()},
+                        {key: "api-keys", label: "API Keys", content: getApiKeysSection()},
+                        {key: "behavior", label: "Behavior", content: getBehaviorSection()},
+                        {key: "appearance", label: "Appearance", content: getAppearanceSection()},
+                    ]}
+                    after={getResetSettingsSection()}
+                />
             </MUIDialog>
-        </ThemeProvider>
+        </>
     )
 }

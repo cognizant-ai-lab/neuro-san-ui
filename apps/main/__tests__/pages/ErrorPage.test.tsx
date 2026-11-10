@@ -77,4 +77,18 @@ describe("ErrorPage", () => {
 
         await waitFor(() => expect(mockSmartSignOut).toHaveBeenCalled())
     })
+
+    it("Should render without a user menu when there is no authentication data", async () => {
+        vi.mocked(useAuthentication).mockReturnValue({data: undefined})
+
+        render(
+            <ErrorPage
+                id="test-error-page"
+                errorText="Error page for testing"
+            />
+        )
+
+        await screen.findByText(new RegExp(LOGO, "u"))
+        expect(screen.queryByRole("button", {name: "User dropdown toggle"})).not.toBeInTheDocument()
+    })
 })

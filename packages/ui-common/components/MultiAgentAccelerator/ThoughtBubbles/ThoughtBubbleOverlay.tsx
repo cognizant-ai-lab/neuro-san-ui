@@ -1,9 +1,11 @@
-import {styled} from "@mui/material/styles"
+import {styled, useTheme} from "@mui/material/styles"
 import type {Node as RFNode} from "@xyflow/react"
+import {motion, useReducedMotion} from "motion/react"
 import {FC, Fragment, useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbleEdge"
 import {ChatMessageType} from "../../../generated/neuro-san/NeuroSanClient"
+import {getSheen, glassSurface, glowShadow, gradientBorder, SHEEN_EASE, SHEEN_RADIUS} from "../../../Theme/sheen"
 
 // #region: Types
 
@@ -13,6 +15,10 @@ interface ThoughtBubbleOverlayProps {
     readonly showThoughtBubbles?: boolean
     readonly isStreaming?: boolean
     readonly onBubbleHoverChange?: (bubbleId: string | null) => void
+    /** Distance (px) to keep bubbles from the right edge of the canvas, e.g. to clear a floating panel */
+    readonly rightInset?: number
+    /** Distance (px) to keep bubbles from the top edge of the canvas, e.g. to clear the navbar */
+    readonly topInset?: number
 }
 interface ThoughtBubbleProps {
     readonly isHovered: boolean
@@ -21,6 +27,8 @@ interface ThoughtBubbleProps {
     readonly bubbleIndex: number
     readonly isVisible?: boolean
     readonly isExiting?: boolean
+    readonly rightInset?: number
+    readonly topInset?: number
 }
 
 // #endregion: Types
@@ -54,27 +62,33 @@ const OverlayContainer = styled("div")({
 
 const ThoughtBubble = styled("div", {
     shouldForwardProp: (prop) =>
-        !["isHovered", "isTruncated", "animationDelay", "bubbleIndex", "isVisible", "isExiting"].includes(
-            prop as string
-        ),
+        ![
+            "isHovered",
+            "isTruncated",
+            "animationDelay",
+            "bubbleIndex",
+            "isVisible",
+            "isExiting",
+            "rightInset",
+            "topInset",
+        ].includes(prop as string),
 })<ThoughtBubbleProps>(
-    ({theme, isHovered, isTruncated, animationDelay, bubbleIndex, isVisible = true, isExiting = false}) => ({
-        // Colors / theme
-        // TODO: Add dark mode support? For now both light and dark mode use the same bubble style and look fine.
-        background: "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(250,250,250,0.95) 100%)",
-        border: "var(--bs-border-width) var(--bs-border-style) var(--bs-border-color)",
-        borderRadius: "var(--bs-border-radius-lg)",
-        color: "var(--bs-primary)",
-        fontFamily: theme.typography.fontFamily, // TODO: Easy to pull from theme. Rest we need to revisit.
-        fontSize: "var(--bs-body-font-size-extra-small)",
-        fontWeight: "var(--bs-body-font-weight)",
+    ({theme, isHovered, isTruncated, bubbleIndex, isVisible = true, rightInset = 0, topInset = 0}) => ({
+        // Colors / theme: frosted glass with an iridescent hairline that brightens on hover
+        ...glassSurface(theme, SHEEN_RADIUS),
+        ...gradientBorder(theme, SHEEN_RADIUS, 1, isHovered ? 0.9 : 0.45),
+        borderColor: "transparent",
+        color: (theme.vars ?? theme).palette.text.primary,
+        fontFamily: theme.typography.fontFamily,
+        fontSize: theme.typography.caption.fontSize,
+        fontWeight: theme.typography.fontWeightRegular,
         padding: "10px 14px",
 
         // Positioning - restore original right-side layout
         position: "absolute",
-        right: BUBBLE_DISTANCE_FROM_RIGHT_EDGE,
-        top: BUBBLE_STACK_OFFSET_TOP + bubbleIndex * BUBBLE_HEIGHT_PLUS_SPACING, // Stack vertically with spacing
-        transform: "none",
+        right: rightInset + BUBBLE_DISTANCE_FROM_RIGHT_EDGE,
+        // Stack vertically with spacing
+        top: topInset + BUBBLE_STACK_OFFSET_TOP + bubbleIndex * BUBBLE_HEIGHT_PLUS_SPACING,
 
         // Dimensions
         // Only expand height when hovered AND text is truncated
@@ -86,21 +100,18 @@ const ThoughtBubble = styled("div", {
 
         // Other styles
         boxShadow: isHovered
-            ? "0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08)"
-            : "0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08)",
+            ? `inset 0 1px 0 ${getSheen(theme).highlight}, ${glowShadow(theme, 24)}`
+            : `inset 0 1px 0 ${getSheen(theme).highlight}, 0 10px 30px -12px rgba(0, 0, 0, 0.45)`,
         zIndex: isHovered ? 10002 : 10000,
         lineHeight: 1.4,
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        transition: `box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        transition: `box-shadow 0.25s ${SHEEN_EASE},
             z-index 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-            transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)`,
+            right 0.55s ${SHEEN_EASE},
+            top 0.55s ${SHEEN_EASE}`,
         cursor: isTruncated ? "pointer" : "default",
         userSelect: isHovered && isTruncated ? "text" : "none",
-        animation: isExiting
-            ? "fadeOutDown 0.4s cubic-bezier(0.4, 0, 0.1, 1) both"
-            : `fadeInUp 0.6s cubic-bezier(0.2, 0, 0.2, 1) ${animationDelay}ms both`,
-        opacity: isVisible ? (isExiting ? 0 : 1) : 0,
+        // Entrance / exit are spring-animated by motion (see MotionThoughtBubble); hidden bubbles stay transparent
+        ...(!isVisible && {opacity: 0}),
         pointerEvents: "auto",
         wordBreak: "break-word",
         overflow: "hidden", // Always hide overflow
@@ -109,6 +120,11 @@ const ThoughtBubble = styled("div", {
         whiteSpace: "normal",
     })
 )
+
+// Spring-animated version of the bubble: pops in (rise + scale) and sinks out
+const MotionThoughtBubble = motion.create(ThoughtBubble)
+
+const BUBBLE_SPRING = {type: "spring", stiffness: 380, damping: 26, mass: 0.8} as const
 
 const TruncatedText = styled("div")<{isHovered: boolean; isTruncated: boolean}>(({isHovered, isTruncated}) => ({
     display: isHovered && isTruncated ? "block" : "-webkit-box",
@@ -126,7 +142,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
     showThoughtBubbles = true,
     isStreaming = false,
     onBubbleHoverChange,
+    rightInset = 0,
+    topInset = 0,
 }) => {
+    const theme = useTheme()
+    const reduceMotion = useReducedMotion()
+    // Connector lines from bubbles to agents use the accent color (CSS variable when available, so it tracks the
+    // active color scheme)
+    const connectingLineColor = (theme.vars ?? theme).palette.primary.main
+
     /**
      * A pure, managed timestamp that can be safely referenced during renders.
      * Instead of calling the impure Date.now() directly in the render phase (which violates React's purity rules
@@ -568,7 +592,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                                         y1={coords.y1}
                                         x2={coords.x2}
                                         y2={coords.y2}
-                                        stroke="var(--thought-bubble-line-color)"
+                                        stroke={connectingLineColor}
                                         strokeWidth="3"
                                         strokeDasharray="3,3"
                                         style={{
@@ -600,8 +624,14 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
 
                 return (
                     <Fragment key={edge.id}>
-                        <ThoughtBubble
+                        <MotionThoughtBubble
+                            animate={
+                                bubbleState.isExiting
+                                    ? {opacity: 0, y: 12, scale: 0.94}
+                                    : {opacity: bubbleState.isVisible ? 1 : 0, y: 0, scale: 1}
+                            }
                             data-bubble-id={edge.id}
+                            initial={reduceMotion ? false : {opacity: 0, y: 22, scale: 0.86}}
                             isHovered={isHovered}
                             isTruncated={isTruncated}
                             animationDelay={animationDelay}
@@ -610,6 +640,15 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                             isExiting={bubbleState.isExiting}
                             onMouseEnter={() => handleHoverChange(edge.id)}
                             onMouseLeave={() => handleHoverChange(null)}
+                            rightInset={rightInset}
+                            topInset={topInset}
+                            transition={
+                                reduceMotion
+                                    ? {duration: 0}
+                                    : bubbleState.isExiting
+                                      ? {duration: 0.35, ease: [0.4, 0, 0.1, 1]}
+                                      : {...BUBBLE_SPRING, delay: animationDelay / 1000}
+                            }
                         >
                             <TruncatedText
                                 isHovered={isHovered}
@@ -625,7 +664,7 @@ export const ThoughtBubbleOverlay: FC<ThoughtBubbleOverlayProps> = ({
                             >
                                 {text}
                             </TruncatedText>
-                        </ThoughtBubble>
+                        </MotionThoughtBubble>
                     </Fragment>
                 )
             })}

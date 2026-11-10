@@ -265,6 +265,34 @@ describe("NetworkEditorDock", () => {
         expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEMPORARY_NETWORK_FOLDER}/${NEW_DOCK_RES_ID}`)
     })
 
+    it("applies an edit to a network that has no stored definition", async () => {
+        const setSelectedNetwork = vi.fn()
+        renderNetworkEditorDock({
+            setSelectedNetwork,
+            tempNetworks: [makeTempNetwork(DOCK_NETWORK_ID, undefined, DOCK_NETWORK_NAME)],
+        })
+
+        await user.click(screen.getByPlaceholderText(PROMPT_PLACEHOLDER))
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        expect(mockSendChatQuery).toHaveBeenCalledTimes(1)
+        expect(setSelectedNetwork).toHaveBeenCalledWith(`${TEMPORARY_NETWORK_FOLDER}/${DOCK_DEFAULT_RES}`)
+    })
+
+    it("does not navigate when applying an edit with no current network id", async () => {
+        const setSelectedNetwork = vi.fn()
+        renderNetworkEditorDock({networkId: undefined, setSelectedNetwork, tempNetworks: []})
+
+        await user.click(screen.getByPlaceholderText(PROMPT_PLACEHOLDER))
+        await user.paste(EDIT_PROMPT)
+        await user.click(screen.getByRole("button", {name: APPLY_BUTTON}))
+
+        // The returned reservation cannot be matched to a (missing) current network
+        expect(await screen.findByText(FAILED_BANNER)).toBeInTheDocument()
+        expect(setSelectedNetwork).not.toHaveBeenCalled()
+    })
+
     it("shows an error banner when dock apply returns no reservations", async () => {
         mockSendChatQuery.mockResolvedValue({})
 

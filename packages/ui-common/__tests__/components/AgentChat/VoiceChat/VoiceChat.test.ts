@@ -556,4 +556,73 @@ describe("VoiceChat utils", () => {
             }).not.toThrow()
         })
     })
+
+    describe("Edge cases", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals()
+        })
+
+        it("reports no speech support when there is no window (SSR)", () => {
+            vi.stubGlobal("window", undefined)
+            expect(checkSpeechSupport()).toBe(false)
+        })
+
+        it("does nothing when toggled without a recognition instance", async () => {
+            await expect(toggleListening(true, null)).resolves.toBeUndefined()
+            await expect(toggleListening(false, null)).resolves.toBeUndefined()
+        })
+
+        it("does not start recognition outside Chrome", async () => {
+            mockUserAgent(USER_AGENTS.FIREFOX_MAC)
+            const recognition = {start: vi.fn(), stop: vi.fn()}
+            await toggleListening(true, recognition as unknown as SpeechRecognition)
+            expect(recognition.start).not.toHaveBeenCalled()
+        })
+
+        it("does not start recognition when the browser has no media devices", async () => {
+            mockChromeBrowser()
+            Object.defineProperty(navigator, "mediaDevices", {
+                value: {},
+                configurable: true,
+                writable: true,
+            })
+            const recognition = {start: vi.fn(), stop: vi.fn()}
+            await toggleListening(true, recognition as unknown as SpeechRecognition)
+            expect(recognition.start).not.toHaveBeenCalled()
+        })
+
+        it("warns rather than throwing when stopping recognition fails", async () => {
+            const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined)
+            const stopError = new Error("stop failed")
+            const recognition = {
+                start: vi.fn(),
+                stop: vi.fn(() => {
+                    throw stopError
+                }),
+            }
+            await toggleListening(false, recognition as unknown as SpeechRecognition)
+            expect(warnSpy).toHaveBeenCalledWith("Error stopping speech recognition:", stopError)
+        })
+
+        it("falls back to en-US when the browser reports no language", () => {
+            mockChromeBrowser()
+            const recognitionInstance: Record<string, unknown> = {addEventListener: vi.fn()}
+            // eslint-disable-next-line prefer-arrow-callback,prefer-arrow-functions/prefer-arrow-functions
+            const MockSpeechRecognition = vi.fn().mockImplementation(function () {
+                return recognitionInstance
+            })
+            Object.defineProperty(window, "SpeechRecognition", {
+                value: MockSpeechRecognition,
+                configurable: true,
+                writable: true,
+            })
+            vi.stubGlobal("SpeechRecognition", MockSpeechRecognition)
+            vi.spyOn(navigator, "language", "get").mockReturnValue("")
+
+            const ref: RefObject<SpeechRecognition | null> = {current: null}
+            setupSpeechRecognition(vi.fn(), vi.fn(), ref)
+
+            expect(recognitionInstance["lang"]).toBe("en-US")
+        })
+    })
 })

@@ -21,6 +21,7 @@ import Tooltip, {tooltipClasses, TooltipProps} from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {RichTreeView, RichTreeViewSlots} from "@mui/x-tree-view/RichTreeView"
 import httpStatus from "http-status"
+import {LayoutGroup} from "motion/react"
 import {FC, useEffect, useState} from "react"
 
 import {AgentNetworkNodeProps, AgentNetworkTreeItem} from "./AgentNetworkTreeItem"
@@ -30,6 +31,7 @@ import {NetworkIconSuggestions} from "../../../controller/Types/NetworkIconSugge
 import {AgentInfo} from "../../../generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../../state/Settings"
 import {TemporaryNetwork} from "../../../state/TemporaryNetworks"
+import {getSheen, SHEEN_FONT_DISPLAY, SHEEN_RADIUS} from "../../../Theme/sheen"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {StatusLight} from "../../Common/StatusLight"
 import {AGENT_NETWORK_DESIGNER_ID, TEMPORARY_NETWORK_FOLDER} from "../const"
@@ -85,20 +87,24 @@ const NEURO_SAN_PING_INTERVAL_MS = 30_000
 
 // Styled component for Sidebar aside element, including styles for the sparkle highlight animation
 // when a new temporary network is added.
+// The aside fills the floating glass card that hosts it (see FloatingPanel in the workspace).
 const SidebarAside = styled("aside")(({theme}) => ({
-    borderRightStyle: "solid",
-    borderRightWidth: "1px",
+    boxSizing: "border-box",
     height: "100%",
-    marginRight: theme.spacing(1),
     overflowY: "auto",
-    paddingRight: theme.spacing(1.5),
+    paddingBottom: theme.spacing(1),
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
 
     [`& .${SPARKLE_HIGHLIGHT_CLASS}`]: {
-        background: "linear-gradient(90deg, gold, orange, cyan, magenta, gold)",
+        // Sweep through the sheen accent gradient and back
+        background: `linear-gradient(90deg, ${getSheen(theme).gradientStart}, ${getSheen(theme).gradientEnd}, ${
+            (theme.vars ?? theme).palette.info.main
+        }, ${getSheen(theme).gradientStart})`,
         backgroundSize: "400% 100%",
         animation: `${sparkle} 5s ease`,
         backgroundClip: "padding-box",
-        borderRadius: "4px",
+        borderRadius: `${SHEEN_RADIUS}px`,
         opacity: 1,
     },
 }))
@@ -106,15 +112,20 @@ const SidebarAside = styled("aside")(({theme}) => ({
 // Styled component for the sidebar heading, which is sticky at the top of the sidebar.
 const SidebarHeading = styled("h2")(({theme}) => ({
     alignItems: "center",
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: getSheen(theme).glassBg,
+    borderBottomColor: getSheen(theme).glassBorder,
     borderBottomStyle: "solid",
     borderBottomWidth: "1px",
     display: "flex",
-    fontSize: "1.125rem",
-    fontWeight: "bold",
+    fontFamily: SHEEN_FONT_DISPLAY,
+    fontSize: "1.25rem",
+    fontWeight: 500,
     justifyContent: "space-between",
     marginBottom: "0.25rem",
+    marginTop: 0,
     paddingBottom: "0.75rem",
+    paddingLeft: theme.spacing(0.5),
+    paddingTop: "0.75rem",
     position: "sticky",
     top: 0,
     zIndex: getZIndex(1, theme),
@@ -127,13 +138,14 @@ const ServerStatusTooltip = styled(({className, ...props}: TooltipProps) => (
         {...props}
         classes={{popper: className}}
     />
-))({
+))(({theme}) => ({
     [`& .${tooltipClasses.tooltip}`]: {
-        backgroundColor: "rgba(97, 97, 97, 1)",
+        backgroundColor: (theme.vars ?? theme).palette.background.paper,
+        color: (theme.vars ?? theme).palette.text.primary,
         maxWidth: 500,
         opacity: 1,
     },
-})
+}))
 //#endregion: Styled Components
 
 //#region: Types
@@ -361,7 +373,9 @@ export const Sidebar: FC<SidebarProps> = ({
                     <AddBoxRounded
                         id="add-network-icon"
                         sx={(theme) => ({
-                            color: isAwaitingLlm ? theme.palette.action.disabled : "var(--bs-secondary)",
+                            color: isAwaitingLlm
+                                ? (theme.vars ?? theme).palette.action.disabled
+                                : (theme.vars ?? theme).palette.primary.main,
                         })}
                     />
                 </Tooltip>
@@ -398,7 +412,8 @@ export const Sidebar: FC<SidebarProps> = ({
     return (
         <SidebarAside id={`${id}-sidebar`}>
             {getSidebarHeading()}
-            {getSidebarNetworksTree()}
+            {/* Shared layout group: the selection highlight glides between network items on select */}
+            <LayoutGroup id={`${id}-networks`}>{getSidebarNetworksTree()}</LayoutGroup>
         </SidebarAside>
     )
 }

@@ -90,16 +90,16 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                         }}
                         size="small"
                         sx={{
-                            color: "var(--bs-secondary)",
+                            color: "primary.main",
                             p: 0,
-                            "&:hover": {color: "var(--bs-secondary-dark)"},
+                            "&:hover": {color: "primary.dark"},
                             "&.Mui-disabled": {opacity: isPublishing ? 1 : 0.3},
                         }}
                     >
                         {isPublishing ? (
                             <CircularProgress
                                 size="0.75rem"
-                                sx={{color: "var(--bs-secondary)"}}
+                                sx={{color: "primary.main"}}
                             />
                         ) : (
                             // Colored on the icon itself, since the app's global CSS colors icons inside buttons

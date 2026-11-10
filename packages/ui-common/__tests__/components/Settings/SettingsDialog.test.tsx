@@ -6,13 +6,16 @@ import httpStatus from "http-status"
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../__tests__/common/TestUtils"
 import {NotificationType, sendNotification} from "../../../components/Common/notification"
+import {PUBLISH_SERVER_HOST_LABEL} from "../../../components/Settings/PublishSettings"
 import {SettingsDialog} from "../../../components/Settings/SettingsDialog"
 import {BrandingSuggestions} from "../../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../../state/Environment"
 import {DEFAULT_SETTINGS, getApiKey, LogoSource, useSettingsStore} from "../../../state/Settings"
+import {PALETTES} from "../../../Theme/Palettes"
 
 // Mock notification system
 vi.mock("../../../components/Common/notification")
+vi.mock("../../../controller/publish/Publish")
 
 // Fading checkmark behavior is covered by FadingCheckmark.test.tsx.
 vi.mock("../../../components/Settings/FadingCheckmark", () => ({
@@ -81,6 +84,24 @@ describe("SettingsDialog", () => {
         await screen.findByText("Settings")
     })
 
+    it("ignores branding text colors so the dialog stays readable", async () => {
+        const brandedTheme = createTheme({
+            colorSchemes: {dark: {palette: {text: {primary: "#010101"}}}},
+            cssVariables: true,
+            defaultColorScheme: "dark",
+        })
+        render(
+            <ThemeProvider theme={brandedTheme}>
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            </ThemeProvider>
+        )
+        const dialog = await screen.findByTestId("settings-dialog")
+        expect(getComputedStyle(dialog).getPropertyValue("--mui-palette-text-primary")).toBe("#F2F0FF")
+    })
+
     it("handles nullish logoSource", async () => {
         useSettingsStore.getState().updateSettings({
             branding: {
@@ -114,6 +135,41 @@ describe("SettingsDialog", () => {
         const closeButton = await screen.findByLabelText("close")
         await user.click(closeButton)
         expect(onCloseMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("renders a section nav that scrolls to each section", async () => {
+        const originalScrollIntoView = window.HTMLElement.prototype.scrollIntoView
+        window.HTMLElement.prototype.scrollIntoView = vi.fn()
+
+        try {
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+            const nav = await screen.findByRole("navigation", {name: "Settings sections"})
+            const navButtons = within(nav).getAllByRole("button")
+            const sectionNames = ["External Services", "API Keys", "Behavior", "Appearance"]
+            expect(navButtons.map((button) => button.textContent)).toEqual(sectionNames)
+            expect(navButtons[0]).toHaveAttribute("aria-current", "location")
+
+            // Each nav item has a matching section region containing the section heading
+            sectionNames.forEach((sectionName) => {
+                const region = screen.getByRole("region", {name: sectionName})
+                expect(within(region).getByRole("heading", {name: sectionName})).toBeInTheDocument()
+            })
+
+            await user.click(within(nav).getByRole("button", {name: "Appearance"}))
+            expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+            expect(vi.mocked(window.HTMLElement.prototype.scrollIntoView).mock.contexts[0]).toBe(
+                screen.getByRole("region", {name: "Appearance"})
+            )
+            expect(within(nav).getByRole("button", {name: "Appearance"})).toHaveAttribute("aria-current", "location")
+        } finally {
+            window.HTMLElement.prototype.scrollIntoView = originalScrollIntoView
+        }
     })
 
     describe("External services", () => {
@@ -1044,5 +1100,63 @@ describe("SettingsDialog", () => {
         // Hover and make sure we get the tooltip
         await user.hover(autoButtonSpan)
         expect(errorTooltip).toBeVisible()
+    })
+
+    describe("additional coverage", () => {
+        const renderDialog = () =>
+            render(
+                <SettingsDialog
+                    id="settings-dialog"
+                    isOpen={true}
+                />
+            )
+
+        it("shows the publish settings when publishing is enabled", async () => {
+            useEnvironmentStore.getState().setEnablePublishing(true)
+            const {unmount} = renderDialog()
+            try {
+                expect((await screen.findAllByText("External Services")).length).toBeGreaterThan(0)
+                expect(screen.getByRole("textbox", {name: PUBLISH_SERVER_HOST_LABEL})).toBeInTheDocument()
+            } finally {
+                unmount()
+                useEnvironmentStore.setState({enablePublishing: undefined})
+            }
+        })
+
+        it("handles a default server URL that uses plain http", async () => {
+            useEnvironmentStore.getState().setBackendNeuroSanApiUrl("http://localhost:8080")
+            renderDialog()
+            expect(await screen.findByDisplayValue("localhost:8080")).toBeInTheDocument()
+        })
+
+        it("does not apply branding when Enter is pressed with a blank customer name", async () => {
+            global.fetch = vi.fn()
+            renderDialog()
+
+            const customerInput = screen.getByPlaceholderText(/Company or organization name/u)
+            await user.click(customerInput)
+            await user.keyboard("{Enter}")
+            await user.keyboard("a{Backspace}{Enter}")
+
+            expect(global.fetch).not.toHaveBeenCalled()
+        })
+
+        it.each(["generic", "auto"] as const)("renders a logo preview for logoSource=%s without customer", (source) => {
+            useSettingsStore.getState().updateSettings({branding: {logoSource: source}})
+            renderDialog()
+            expect(screen.getAllByText("Preview:").length).toBeGreaterThan(0)
+            expect(screen.queryByText("(None)")).not.toBeInTheDocument()
+        })
+
+        it("skips palettes that are not arrays", () => {
+            const palettes = PALETTES as unknown as Record<string, unknown>
+            palettes["bogus"] = null
+            try {
+                renderDialog()
+                expect(screen.queryByRole("button", {name: "bogus-palette-button"})).not.toBeInTheDocument()
+            } finally {
+                delete palettes["bogus"]
+            }
+        })
     })
 })

@@ -24,6 +24,7 @@ import {FC} from "react"
 
 import {PublishedNetworkUrl} from "./PublishedNetworkUrl"
 import {Published, PublishState, PublishStatus} from "../../../state/Publish"
+import {sheenGradient} from "../../../Theme/sheen"
 import {StatusLight} from "../../Common/StatusLight"
 
 // #region: Styled Components
@@ -114,7 +115,7 @@ export const PublishPanel: FC<PublishPanelProps> = ({id, onRepublish, onUnpublis
                 <PanelTitle>Putting it online...</PanelTitle>
                 <LinearProgress
                     aria-label="Publishing progress"
-                    sx={{"& .MuiLinearProgress-bar": {backgroundColor: "var(--bs-secondary)"}}}
+                    sx={(theme) => ({"& .MuiLinearProgress-bar": {backgroundImage: sheenGradient(theme, 90)}})}
                 />
                 <PanelNote>This can take a few minutes.</PanelNote>
             </>
