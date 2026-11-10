@@ -66,6 +66,7 @@ import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggesti
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {usePublishStore} from "../../state/Publish"
 import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
@@ -763,6 +764,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         useAgentChatHistoryStore
                             .getState()
                             .copyHistory(selectedNetwork, replacement.agentInfo.agent_name)
+                        // Move the publish state to the edited network, which has a new id. A publish that's still
+                        // running finishes on the edited network.
+                        usePublishStore.getState().replaceNetwork(selectedNetwork, replacement.agentInfo.agent_name)
                         setSelectedNetwork(replacement.agentInfo.agent_name)
                     }
                 } else {

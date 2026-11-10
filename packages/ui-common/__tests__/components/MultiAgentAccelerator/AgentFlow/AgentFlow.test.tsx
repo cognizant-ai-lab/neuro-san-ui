@@ -1767,7 +1767,7 @@ describe("AgentFlow", () => {
     describe("Publishing", () => {
         const PUBLISHABLE_NETWORK_NAME = "Published Network"
 
-        const renderPublishableNetwork = () => {
+        const renderPublishableNetwork = (overrides: Partial<AgentFlowProps> = {}) => {
             useTempNetworksStore
                 .getState()
                 .setTempNetworks([
@@ -1777,6 +1777,7 @@ describe("AgentFlow", () => {
                 isTemporaryNetwork: true,
                 networkDisplayName: PUBLISHABLE_NETWORK_NAME,
                 networkId: OLD_NETWORK_ID,
+                ...overrides,
             })
         }
 
@@ -1789,6 +1790,12 @@ describe("AgentFlow", () => {
 
         it("Should offer to publish a temporary network", async () => {
             renderPublishableNetwork()
+
+            await screen.findByRole("button", {name: "Publish"})
+        })
+
+        it("Should still offer to publish while the network editor is open", async () => {
+            renderPublishableNetwork({isEditingNetwork: true})
 
             await screen.findByRole("button", {name: "Publish"})
         })

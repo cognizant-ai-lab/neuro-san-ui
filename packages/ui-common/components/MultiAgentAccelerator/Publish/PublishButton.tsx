@@ -31,6 +31,7 @@ import {
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PublishNetwork,
     PublishTarget,
+    showPublishResult,
     unpublish,
 } from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
@@ -39,6 +40,7 @@ import {usePublishTarget} from "./usePublishTarget"
 import {Published, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {glassSurface, gradientBorder, SHEEN_RADIUS} from "../../../Theme/sheen"
 import {ConfirmationModal} from "../../Common/ConfirmationModal"
+import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const SHOW_DETAILS_LABEL = "Show publish details"
 
@@ -47,7 +49,9 @@ interface PublishButtonProps {
     readonly displayName: string
     readonly hocon: string
     readonly id: string
+    /** The network's id in the app, which its publish state is kept under */
     readonly networkId: string
+    /** The agent network name, which it's published under */
     readonly networkName: string
 }
 
@@ -59,33 +63,40 @@ interface MainAction {
 }
 
 /**
- * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live". The
- * dropdown opens a panel with the progress, or the live URL and Unpublish.
+ * Split button for publishing a network: "Publish", then "Publishing..." while it goes live, then "View live", and
+ * "Publish" again once it's unpublished. The dropdown opens a panel with the progress, or the live URL with Republish
+ * and Unpublish.
  */
 export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkId])
     const target = usePublishTarget(networkId, networkName)
 
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
-    const [isPublishConfirmOpen, setIsPublishConfirmOpen] = useState(false)
-    const [isPanelOpen, setIsPanelOpen] = useState(false)
-    const [isUnpublishing, setIsUnpublishing] = useState(false)
+    const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
+    const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false)
     // The live network waiting on the user to confirm unpublishing it
     const [networkToUnpublish, setNetworkToUnpublish] = useState<Published | null>(null)
 
     const network: PublishNetwork = {id: networkId, name: networkName}
 
-    const handlePublish = async (publishTarget: PublishTarget) => {
+    const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
         setIsPanelOpen(true)
-        await publish(network, hocon, publishTarget)
-        setIsPanelOpen(false)
+        try {
+            showPublishResult(networkName, await publish(network, hocon, publishTarget, refreshTheme))
+        } finally {
+            setIsPanelOpen(false)
+        }
     }
 
     const handleUnpublish = async (published: Published) => {
-        setIsUnpublishing(true)
-        await unpublish(network, published)
-        setIsUnpublishing(false)
-        setIsPanelOpen(false)
+        try {
+            const {error} = await unpublish(network, published)
+            if (error) {
+                sendNotification(NotificationType.error, `Failed to unpublish "${networkName}".`, error)
+            }
+        } finally {
+            setIsPanelOpen(false)
+        }
     }
 
     const getMainAction = (): MainAction => {
@@ -109,18 +120,19 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     label: "View live",
                     handleClick: () => openInNewTab(publishState.url),
                 }
+            case PublishStatus.Unpublished:
             default:
                 return {
                     color: "primary",
                     icon: <PublicIcon />,
                     label: "Publish",
-                    handleClick: () => setIsPublishConfirmOpen(true),
+                    handleClick: () => setIsConfirmOpen(true),
                 }
         }
     }
 
     const mainAction = getMainAction()
-    const isPublishBlocked = !publishState && !target
+    const isPublishBlocked = publishState?.status !== PublishStatus.Publishing && !target
 
     return (
         <>
@@ -173,6 +185,8 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                             sx: (theme: Theme) => ({
                                 ...glassSurface(theme, SHEEN_RADIUS),
                                 ...gradientBorder(theme, SHEEN_RADIUS, 1, 0.4),
+                                // The border sets position: relative, and the popover needs absolute to place the panel
+                                position: "absolute",
                                 mt: 1,
                             }),
                         },
@@ -182,19 +196,24 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     <PublishPanel
                         publishState={publishState}
                         id={`${id}-panel`}
-                        isUnpublishing={isUnpublishing}
+                        onRepublish={() => {
+                            setIsPanelOpen(false)
+                            setIsConfirmOpen(true)
+                        }}
                         onUnpublish={setNetworkToUnpublish}
                     />
                 </Popover>
             )}
-            {isPublishConfirmOpen && target && (
+            {isConfirmOpen && target && (
                 <PublishConfirmation
                     displayName={displayName}
                     id={`${id}-confirm`}
-                    onCancel={() => setIsPublishConfirmOpen(false)}
-                    onConfirm={() => {
-                        setIsPublishConfirmOpen(false)
-                        void handlePublish(target)
+                    hasTheme={Boolean(publishState)}
+                    isRepublish={publishState?.status === PublishStatus.Published}
+                    onCancel={() => setIsConfirmOpen(false)}
+                    onConfirm={(refreshTheme) => {
+                        setIsConfirmOpen(false)
+                        void handlePublish(target, refreshTheme)
                     }}
                     target={target}
                 />

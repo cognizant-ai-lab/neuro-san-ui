@@ -14,6 +14,7 @@ import {FC, useCallback, useEffect, useRef, useState} from "react"
 import {sendChatQuery} from "../../../controller/agent/Agent"
 import {StreamingUnit} from "../../../controller/llm/LlmChat"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
+import {usePublishStore} from "../../../state/Publish"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {getSheen, glassSurface, gradientBorder, sheenGradient} from "../../../Theme/sheen"
 import {getZIndex} from "../../../utils/zIndexLayers"
@@ -183,6 +184,9 @@ export const NetworkEditorDock: FC<NetworkEditorDockProps> = ({
                 useTempNetworksStore.getState().upsertTempNetworks(newNetworksFromSave)
                 if (networkId) {
                     useAgentChatHistoryStore.getState().copyHistory(networkId, replacement.agentInfo.agent_name)
+                    // Move the publish state to the edited network, which has a new id. A publish that's still running
+                    // finishes on the edited network.
+                    usePublishStore.getState().replaceNetwork(networkId, replacement.agentInfo.agent_name)
                     setSelectedNetwork(replacement.agentInfo.agent_name)
                 }
                 return true

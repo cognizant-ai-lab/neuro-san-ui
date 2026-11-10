@@ -757,10 +757,9 @@ export const AgentFlow: FC<AgentFlowProps> = ({
         if (!networkDisplayName) return null
 
         const isPublishingSetUp = enablePublishing && Boolean(publishServerUrl)
-        const isViewingNetwork = !isAgentNetworkDesignerMode && !isEditingNetwork
         const hoconToPublish = currentTempNetwork?.networkHocon
         const showPublishButton =
-            isPublishingSetUp && isViewingNetwork && currentTempNetwork?.agentNetworkName && hoconToPublish
+            isPublishingSetUp && !isAgentNetworkDesignerMode && currentTempNetwork?.agentNetworkName && hoconToPublish
 
         let hudStatus: NetworkHudStatus = "idle"
         if (isAwaitingLlm) {
