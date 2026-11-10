@@ -1917,6 +1917,24 @@ describe("MultiAgentAccelerator", () => {
             expect(useTourStore.getState().status).toEqual(TourPromptState.Taken)
         })
 
+        it("should start the tour when startTour is only set after the first render", async () => {
+            // On a direct load of ?tour=true, the router fills in the query after the page first renders
+            const {rerender} = renderMultiAgentAccelerator()
+            await screen.findByText(TEST_AGENTS_FOLDER_DISPLAY)
+
+            rerender(
+                <SnackbarProvider>
+                    <MultiAgentAccelerator
+                        defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
+                        startTour={true}
+                        username={MOCK_USER}
+                    />
+                </SnackbarProvider>
+            )
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+        })
+
         it("should dismiss the tour prompt when the dialog is closed", async () => {
             vi.useFakeTimers()
             const localUser = userEvent.setup({advanceTimers: vi.advanceTimersByTime})

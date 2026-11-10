@@ -251,7 +251,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Introductory tour
 
     // Track that the user requested the tour, and we should start it once network data is available
-    const [tourRequested, setTourRequested] = useState<boolean>(startTour)
+    const [tourRequested, setTourRequested] = useState<boolean>(false)
+
+    // Asked to start the tour (e.g. "?tour=true" in the URL). An effect rather than the initial state, since on a
+    // direct page load the request only arrives after the first render, once the router has parsed the URL.
+    useEffect(() => {
+        if (startTour) setTourRequested(true)
+    }, [startTour])
 
     // Tour persisted status
     const tourStatus = useTourStore((s) => s.status)
