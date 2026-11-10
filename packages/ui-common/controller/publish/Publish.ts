@@ -51,6 +51,12 @@ interface ServerNetwork {
     readonly error?: string | null
 }
 
+interface Bundle {
+    /** A gzipped tar of the site */
+    readonly archive: Uint8Array
+    readonly fileName: string
+}
+
 //#endregion Types
 
 //#region Constants
@@ -204,4 +210,17 @@ export const publishNetwork = async ({
 export const unpublishNetwork = async (serverUrl: string, publishId: string): Promise<void> => {
     const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}`), {method: "DELETE"})
     await throwIfNotOk(response, "Unpublishing")
+}
+
+/**
+ * Has the server build a static bundle of a published network, which can be hosted without the publish server.
+ */
+export const fetchBundle = async (serverUrl: string, publishId: string): Promise<Bundle> => {
+    const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}/bundle`))
+    await throwIfNotOk(response, "Building the bundle")
+
+    // The server names the file, as in: attachment; filename="<name>.tar.gz"
+    const disposition = response.headers.get("content-disposition") ?? ""
+    const fileName = /filename="(?<name>[^"]+)"/u.exec(disposition)?.groups?.["name"] ?? "bundle.tar.gz"
+    return {archive: new Uint8Array(await response.arrayBuffer()), fileName}
 }

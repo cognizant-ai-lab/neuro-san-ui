@@ -35,6 +35,8 @@ export interface Published {
     readonly url: string
     /** Set while the network is being unpublished, when it can't be republished */
     readonly isUnpublishing?: boolean
+    /** Set while the server builds a bundle of it to download, when it can't be unpublished */
+    readonly isDownloadingBundle?: boolean
 }
 
 export type PublishState =

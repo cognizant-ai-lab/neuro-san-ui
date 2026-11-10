@@ -17,6 +17,7 @@ limitations under the License.
 import {v4 as uuid} from "uuid"
 
 import {
+    fetchBundle,
     isPublishNameTaken,
     listPublishedNetworks,
     PublishedNetwork,
@@ -25,6 +26,7 @@ import {
 } from "../../../controller/publish/Publish"
 import {Published, PublishState, PublishStatus, resolveNetworkId, usePublishStore} from "../../../state/Publish"
 import {PublishedDeployment, useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {downloadFile} from "../../../utils/File"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
@@ -225,5 +227,30 @@ export const unpublish = async (network: PublishNetwork, published: Published): 
     } catch (e) {
         setPublishState(network.id, {...published, isUnpublishing: false})
         return {error: e instanceof Error ? e.message : String(e)}
+    }
+}
+
+/**
+ * Downloads a static bundle of a live network, which can be hosted without the publish server.
+ */
+export const downloadBundle = async (network: PublishNetwork, published: Published): Promise<void> => {
+    const {setPublishState} = usePublishStore.getState()
+    setPublishState(network.id, {...published, isDownloadingBundle: true})
+
+    try {
+        const {archive, fileName} = await fetchBundle(published.serverUrl, published.publishId)
+        downloadFile(archive, fileName, "application/gzip")
+    } catch (e) {
+        sendNotification(
+            NotificationType.error,
+            `Failed to download a bundle of "${network.name}".`,
+            e instanceof Error ? e.message : String(e)
+        )
+    }
+
+    // It can be republished while the bundle builds, so this only clears the flag if it's still live
+    const current = usePublishStore.getState().networks[resolveNetworkId(network.id)]
+    if (current?.status === PublishStatus.Published) {
+        setPublishState(network.id, {...current, isDownloadingBundle: false})
     }
 }

@@ -3,6 +3,7 @@ import httpStatus from "http-status"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {
     checkHealth,
+    fetchBundle,
     isPublishNameTaken,
     listPublishedNetworks,
     publishNetwork,
@@ -340,6 +341,39 @@ describe("Publish", () => {
         expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
             `/api/publish/deployments/${PUBLISH_ID}?server=${encodeURIComponent(SERVER_URL)}`,
             {method: "DELETE"}
+        )
+    })
+
+    // GET /deployments/{id}/bundle
+    it("should fetch the bundle of a published network under the file name the server gave it", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(new Uint8Array([31, 139]), {
+                headers: {"Content-Disposition": 'attachment; filename="cailville_bakery.tar.gz"'},
+            })
+        )
+
+        const bundle = await fetchBundle(SERVER_URL, PUBLISH_ID)
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            `/api/publish/deployments/${PUBLISH_ID}/bundle?server=${encodeURIComponent(SERVER_URL)}`
+        )
+        expect(bundle).toEqual({archive: new Uint8Array([31, 139]), fileName: "cailville_bakery.tar.gz"})
+    })
+
+    it("should name the bundle's file itself when the server doesn't", async () => {
+        fetchMock.mockResolvedValue(new Response(new Uint8Array([31, 139])))
+
+        const {fileName} = await fetchBundle(SERVER_URL, PUBLISH_ID)
+
+        expect(fileName).toBe("bundle.tar.gz")
+    })
+
+    // GET /deployments/{id}/bundle rejected
+    it("should fail with the server's explanation when it can't build the bundle", async () => {
+        fetchMock.mockResolvedValue(Response.json({detail: "cailville_bakery is failed"}, {status: 409}))
+
+        await expect(fetchBundle(SERVER_URL, PUBLISH_ID)).rejects.toThrow(
+            "Building the bundle failed (409): cailville_bakery is failed"
         )
     })
 })

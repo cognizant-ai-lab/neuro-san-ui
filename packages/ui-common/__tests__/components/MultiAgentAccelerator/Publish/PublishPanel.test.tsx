@@ -13,6 +13,7 @@ const renderPanel = (publishState: PublishState) =>
         <PublishPanel
             publishState={publishState}
             id="publish-panel"
+            onDownloadBundle={vi.fn()}
             onRepublish={vi.fn()}
             onUnpublish={vi.fn()}
         />
