@@ -247,11 +247,12 @@ vi.mock("../../../components/AgentChat/ChatCommon/ChatCommon", () => ({
     },
 }))
 
-const renderMultiAgentAccelerator = () =>
+const renderMultiAgentAccelerator = ({startTour}: {startTour?: boolean} = {}) =>
     render(
         <SnackbarProvider>
             <MultiAgentAccelerator
                 defaultNeuroSanUrl={NEURO_SAN_SERVER_URL}
+                startTour={startTour}
                 username={MOCK_USER}
             />
         </SnackbarProvider>
@@ -1907,6 +1908,14 @@ describe("MultiAgentAccelerator", () => {
                 await screen.findByText(tourStepText(step.content))
             }
         }, 10_000)
+
+        it("should start the tour once the networks have loaded when startTour is set", async () => {
+            // e.g. Help > Take a tour clicked on the User Guide page, which navigates here with ?tour=true
+            renderMultiAgentAccelerator({startTour: true})
+
+            await screen.findByText(tourStepText(MAIN_TOUR_STEPS[0].content))
+            expect(useTourStore.getState().status).toEqual(TourPromptState.Taken)
+        })
 
         it("should dismiss the tour prompt when the dialog is closed", async () => {
             vi.useFakeTimers()

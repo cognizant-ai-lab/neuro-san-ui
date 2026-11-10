@@ -323,7 +323,10 @@ describe("Main App Component", () => {
         expect(document.getElementById("body-div")).toBeInTheDocument()
     })
 
-    it("Should launch the tour when the items is selected from the Help menu", async () => {
+    it("Should launch the tour when the item is selected from the Help menu on the tour page", async () => {
+        const push = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({pathname: "/multiAgentAccelerator", push}))
+
         render(APP_COMPONENT)
         await screen.findByText(COMPONENT_BODY)
 
@@ -343,6 +346,24 @@ describe("Main App Component", () => {
                 type: TRIGGER_APP_TOUR_EVENT_NAME,
             })
         )
+        expect(push).not.toHaveBeenCalled()
+    })
+
+    it("Should go to the tour page and ask it to start the tour when selected from another page", async () => {
+        const push = vi.fn().mockResolvedValue(true)
+        vi.mocked(useRouter).mockReturnValue(createMockRouter({pathname: "/UserGuide", push}))
+
+        render(APP_COMPONENT)
+        await screen.findByText(COMPONENT_BODY)
+
+        const dispatchSpy = vi.spyOn(window, "dispatchEvent")
+
+        await user.click(await screen.findByText("Help"))
+        await user.click(await screen.findByText("Take a tour"))
+
+        // No page here listens for the event, so the request goes to the tour page in the URL
+        expect(push).toHaveBeenCalledWith("/multiAgentAccelerator?tour=true")
+        expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({type: TRIGGER_APP_TOUR_EVENT_NAME}))
     })
 
     it("Should open the command palette with the keyboard shortcut and navigate with the router", async () => {
