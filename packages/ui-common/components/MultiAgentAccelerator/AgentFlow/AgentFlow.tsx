@@ -25,10 +25,10 @@ import {alpha, useTheme} from "@mui/material/styles"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import Tooltip from "@mui/material/Tooltip"
-import Typography from "@mui/material/Typography"
 import {
     applyNodeChanges,
     Background,
+    BackgroundVariant,
     ConnectionMode,
     ControlButton,
     Controls,
@@ -63,6 +63,7 @@ import {
     LEVEL_SPACING,
 } from "../const"
 import {addThoughtBubbleEdge, layoutLinear, layoutRadial, LayoutResult} from "./GraphLayouts"
+import {NetworkHud, NetworkHudStatus} from "./NetworkHud"
 import {PlasmaEdge} from "./PlasmaEdge"
 import {AgentIconSuggestions} from "../../../controller/Types/AgentIconSuggestions"
 import {ConnectivityInfo} from "../../../generated/neuro-san/NeuroSanClient"
@@ -70,6 +71,15 @@ import {useEnvironmentStore} from "../../../state/Environment"
 import {usePublishServerUrl} from "../../../state/Publish"
 import {GraphColoringOption, Layout, usePalette, useSettingsStore} from "../../../state/Settings"
 import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {
+    auroraBackground,
+    getSheen,
+    glassSurface,
+    gradientBorder,
+    GRAIN_TEXTURE,
+    SHEEN_EASE,
+    SHEEN_RADIUS_SURFACE,
+} from "../../../Theme/sheen"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AgentNodeEditor} from "../Editor/AgentNodeEditor"
 import {NetworkEditorDock} from "../Editor/NetworkEditorDock"
@@ -79,6 +89,18 @@ import {ThoughtBubbleEdge, ThoughtBubbleEdgeShape} from "../ThoughtBubbles/Thoug
 import {ThoughtBubbleOverlay} from "../ThoughtBubbles/ThoughtBubbleOverlay"
 
 //#region: Types
+
+/**
+ * Insets (px) of the part of the canvas that is not covered by floating UI (side panels, navbar). The canvas itself
+ * is full-bleed; the HUD, toolbar, thought bubbles and fit-view framing are kept inside this "safe area".
+ */
+export interface CanvasSafeArea {
+    readonly top: number
+    readonly right: number
+    readonly bottom: number
+    readonly left: number
+}
+
 export interface AgentFlowProps {
     readonly agentCounts?: Map<string, number>
     readonly agentIconSuggestions?: AgentIconSuggestions
@@ -98,6 +120,10 @@ export interface AgentFlowProps {
     /** The history key for the currently selected network (used to scope sly_data reads/writes per network). */
     readonly networkId?: string
     readonly neuroSanURL?: string
+    /**
+     * Region of the canvas left uncovered by floating panels. Defaults to the whole canvas.
+     */
+    readonly safeArea?: CanvasSafeArea
     /**
      * Called after a popup save triggers a new network reservation that replaces the currently viewed network.
      * @param oldNetworkId The agent_name of the network that was replaced.
@@ -126,6 +152,21 @@ export interface AgentFlowProps {
 //#region: Constants
 
 const THOUGHT_BUBBLE_TIMEOUT_MS = 10_000
+
+const NO_INSETS: CanvasSafeArea = {top: 0, right: 0, bottom: 0, left: 0}
+
+// Gap between the safe-area edge and the floating HUD / toolbar (px)
+const FLOATING_GAP = 12
+
+// Extra room reserved above and below the graph for the HUD and toolbar when fitting the view (px)
+const HUD_CLEARANCE = 64
+const TOOLBAR_CLEARANCE = 72
+
+// Duration of animated fit-view transitions (ms)
+const FIT_VIEW_DURATION_MS = 550
+
+// Specular highlight for the legend's color dots (same glossy look as the agent nodes)
+const LEGEND_DOT_SPECULAR = "radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 55%)"
 
 //#endregion: Constants
 
@@ -166,18 +207,39 @@ export const AgentFlow: FC<AgentFlowProps> = ({
     networkId,
     neuroSanURL,
     onSaveAgent,
+    safeArea = NO_INSETS,
     thoughtBubbleEdges,
     setIsEditingNetwork,
     setSelectedNetwork,
     setThoughtBubbleEdges,
 }) => {
     const theme = useTheme()
+    // CSS-variable references when available, so colors follow the active color scheme
+    const themeVars = theme.vars ?? theme
+
+    // Default (non-plasma) edges: the accent color at reduced strength, so active plasma edges stand out
+    const edgeColor = `color-mix(in srgb, ${themeVars.palette.primary.main} 45%, transparent)`
 
     const {fitView} = useReactFlow()
     const flowWrapperRef = useRef<HTMLDivElement | null>(null)
     const fitViewFrameRef = useRef<number | null>(null)
 
     const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
+
+    // Frame the graph inside the safe area, leaving room for the HUD (top) and toolbar (bottom)
+    const {top: safeTop, right: safeRight, bottom: safeBottom, left: safeLeft} = safeArea
+    const fitViewOptions = useMemo(
+        () => ({
+            duration: FIT_VIEW_DURATION_MS,
+            padding: {
+                top: `${safeTop + HUD_CLEARANCE}px` as const,
+                right: `${safeRight + FLOATING_GAP * 2}px` as const,
+                bottom: `${safeBottom + TOOLBAR_CLEARANCE}px` as const,
+                left: `${safeLeft + FLOATING_GAP * 2}px` as const,
+            },
+        }),
+        [safeBottom, safeLeft, safeRight, safeTop]
+    )
 
     const scheduleFitView = useCallback(() => {
         if (fitViewFrameRef.current !== null) {
@@ -186,9 +248,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
         fitViewFrameRef.current = window.requestAnimationFrame(() => {
             fitViewFrameRef.current = null
-            void fitView()
+            void fitView(fitViewOptions)
         })
-    }, [fitView])
+    }, [fitView, fitViewOptions])
+
+    // Horizontal offset (px) of the safe area's center from the canvas center: floating chrome is centered on it
+    const safeCenterOffset = (safeLeft - safeRight) / 2
 
     useEffect(() => {
         return () => {
@@ -556,9 +621,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 cx={DEFAULT_FRONTMAN_X_POS + NODE_WIDTH / 2}
                 cy={DEFAULT_FRONTMAN_Y_POS + NODE_HEIGHT / 2}
                 r={BASE_RADIUS + (i + 1) * LEVEL_SPACING}
-                stroke="var(--bs-gray-medium)"
+                stroke={themeVars.palette.primary.main}
+                strokeDasharray="2 7"
+                strokeLinecap="round"
                 fill="none"
-                opacity="0.25"
+                opacity="0.35"
             />
         ))
 
@@ -590,17 +657,11 @@ export const AgentFlow: FC<AgentFlowProps> = ({
             <Box
                 id={`${id}-legend`}
                 sx={{
+                    // Lives inside the floating toolbar, after the view controls
                     alignItems: "center",
-                    backgroundColor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    boxShadow: `0 2px 8px ${alpha(theme.palette.text.primary, 0.18)}`,
-                    borderRadius: "5px",
                     display: "flex",
-                    padding: theme.spacing(0.5),
-                    position: "absolute",
-                    right: theme.spacing(2),
-                    top: theme.spacing(4),
-                    zIndex: getZIndex(2, theme),
+                    paddingLeft: theme.spacing(0.25),
+                    paddingRight: theme.spacing(0.5),
                 }}
             >
                 {/* Depth palette */}
@@ -611,11 +672,15 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         sx={{
                             alignItems: "center",
                             backgroundColor: palette[i],
+                            // Same glossy shading as the agent nodes
+                            backgroundImage: LEGEND_DOT_SPECULAR,
                             borderRadius: "50%",
+                            boxShadow: "inset 0 -1px 2px rgba(0, 0, 0, 0.25)",
                             color: theme.palette.getContrastText(palette[i]),
                             display: "flex",
                             fontSize: "0.5rem",
                             justifyContent: "center",
+                            height: "15px",
                             marginLeft: theme.spacing(0.75),
                             width: "15px",
                         }}
@@ -634,22 +699,19 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     }}
                     size="small"
                     sx={{
-                        marginLeft: theme.spacing(2),
+                        marginLeft: theme.spacing(1.25),
                         "& .MuiToggleButton-root": {
-                            borderColor: theme.palette.divider,
-                            color: theme.palette.text.primary,
-                            minHeight: 22,
-                            px: 1,
+                            borderColor: getSheen(theme).glassBorder,
+                            color: themeVars.palette.text.secondary,
+                            minHeight: 24,
+                            px: 1.1,
                             "&:hover": {
-                                backgroundColor: theme.palette.action.hover,
+                                backgroundColor: themeVars.palette.action.hover,
                             },
-                            "&.Mui-selected": {
-                                backgroundColor: theme.palette.action.selected,
-                                borderColor: theme.palette.text.primary,
-                            },
-                            "&.Mui-selected:hover": {
-                                backgroundColor: theme.palette.action.selected,
-                                borderColor: theme.palette.text.primary,
+                            "&.Mui-selected, &.Mui-selected:hover": {
+                                backgroundColor: getSheen(theme).tint,
+                                borderColor: themeVars.palette.primary.main,
+                                color: themeVars.palette.text.primary,
                             },
                         },
                     }}
@@ -658,8 +720,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         id={`${id}-depth-toggle`}
                         value="depth"
                         sx={{
-                            fontSize: "0.5rem",
-                            height: "1rem",
+                            fontSize: "0.55rem",
+                            height: "1.2rem",
                         }}
                     >
                         Depth
@@ -668,8 +730,8 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         id={`${id}-heatmap-toggle`}
                         value="heatmap"
                         sx={{
-                            fontSize: "0.5rem",
-                            height: "1rem",
+                            fontSize: "0.55rem",
+                            height: "1.2rem",
                         }}
                     >
                         Heatmap
@@ -681,154 +743,38 @@ export const AgentFlow: FC<AgentFlowProps> = ({
 
     // Get the background color for the control buttons; differs based on whether the button is active or not
     const getControlButtonBackgroundColor = (isActive: boolean) => {
-        return isActive ? theme.palette.action.selected : undefined
+        return isActive ? getSheen(theme).tint : undefined
     }
 
     // Only show radial guides if radial layout is selected, radial guides are enabled, and it's not just Frontman
     const shouldShowRadialGuides = showRadialGuides && layout === "radial" && maxDepth > 1
 
-    // Generate the control bar for the flow, including layout and radial guides toggles
-    const getControls = () => {
-        return (
-            <Controls
-                position="top-left"
-                style={{
-                    position: "absolute",
-                    top: "0px",
-                    left: "0px",
-                    height: "auto",
-                    width: "auto",
-                }}
-                showInteractive={true}
-            >
-                <Tooltip
-                    id="radial-layout-tooltip"
-                    title="Radial layout"
-                    placement="right"
-                >
-                    <span id="radial-layout-span">
-                        <ControlButton
-                            id="radial-layout-button"
-                            onClick={() => setLayout("radial")}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
-                            }}
-                        >
-                            <HubOutlinedIcon id="radial-layout-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="linear-layout-tooltip"
-                    title="Linear layout"
-                    placement="right"
-                >
-                    <span id="linear-layout-span">
-                        <ControlButton
-                            id="linear-layout-button"
-                            onClick={() => setLayout("linear")}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
-                            }}
-                        >
-                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="radial-guides-tooltip"
-                    title={`Enable/disable radial guides${
-                        layout === "radial" ? "" : " (only available in radial layout)"
-                    }`}
-                    placement="right"
-                >
-                    <span id="radial-guides-span">
-                        <ControlButton
-                            id="radial-guides-button"
-                            onClick={() => setShowRadialGuides(!showRadialGuides)}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(showRadialGuides),
-                            }}
-                            disabled={layout !== "radial"}
-                        >
-                            <AdjustRoundedIcon id="radial-guides-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-                <Tooltip
-                    id="thought-bubble-tooltip"
-                    title={`Toggle thought bubbles ${showThoughtBubbles ? "off" : "on"}`}
-                    placement="right"
-                >
-                    <span id="thought-bubble-span">
-                        <ControlButton
-                            id="thought-bubble-button"
-                            onClick={() => setShowThoughtBubbles(!showThoughtBubbles)}
-                            style={{
-                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
-                            }}
-                        >
-                            <ChatBubbleOutlinedIcon id="thought-bubble-icon" />
-                        </ControlButton>
-                    </span>
-                </Tooltip>
-            </Controls>
-        )
-    }
+    // The coloring legend rides along in the toolbar once there are agents to color
+    const showLegend = agentsInNetwork?.length > 0
 
-    const getTitle = () => {
+    // Floating top-center HUD: network name, live status, agent count, plus the Edit / Publish actions
+    const getHud = () => {
         if (!networkDisplayName) return null
 
         const isPublishingSetUp = enablePublishing && Boolean(publishServerUrl)
-        const isViewingNetwork = !isAgentNetworkDesignerMode && !isEditingNetwork
         const hoconToPublish = currentTempNetwork?.networkHocon
         const showPublishButton =
-            isPublishingSetUp && isViewingNetwork && currentTempNetwork?.agentNetworkName && hoconToPublish
+            isPublishingSetUp && !isAgentNetworkDesignerMode && currentTempNetwork?.agentNetworkName && hoconToPublish
+
+        let hudStatus: NetworkHudStatus = "idle"
+        if (isAwaitingLlm) {
+            hudStatus = currentConversations?.length ? "streaming" : "thinking"
+        }
 
         return (
-            <Box
-                id={`${id}-network-title-bar`}
-                sx={{
-                    alignItems: "center",
-                    display: "flex",
-                    gap: 1,
-                    left: "50%",
-                    pointerEvents: "none",
-                    position: "absolute",
-                    top: theme.spacing(1),
-                    transform: "translateX(-50%)",
-                    zIndex: getZIndex(2, theme),
-                }}
+            <NetworkHud
+                agentCount={agentsInNetwork?.length ?? 0}
+                centerOffset={safeCenterOffset}
+                id={id}
+                networkDisplayName={networkDisplayName}
+                status={hudStatus}
+                top={safeTop + FLOATING_GAP}
             >
-                <Tooltip
-                    title={networkDisplayName}
-                    placement="top"
-                >
-                    <Typography
-                        id={`${id}-network-title`}
-                        variant="subtitle1"
-                        sx={{
-                            backdropFilter: "blur(6px)",
-                            backgroundColor: alpha(theme.palette.background.paper, 0.75),
-                            border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                            borderRadius: 2,
-                            boxShadow: theme.shadows[6],
-                            color: theme.palette.text.primary,
-                            fontWeight: 600,
-                            letterSpacing: "0.01em",
-                            lineHeight: 1.35,
-                            maxWidth: 400,
-                            overflow: "hidden",
-                            pointerEvents: "auto",
-                            px: 2,
-                            py: 0.45,
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        {networkDisplayName}
-                    </Typography>
-                </Tooltip>
                 {isTemporaryNetwork && !isEditingNetwork && !isAwaitingLlm && (
                     <Button
                         id={`${id}-enter-edit-mode-btn`}
@@ -836,10 +782,7 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         size="small"
                         onClick={() => setIsEditingNetwork(true)}
                         startIcon={<EditIcon />}
-                        sx={{
-                            pointerEvents: "auto",
-                            "&:hover": {backgroundColor: theme.palette.primary.main},
-                        }}
+                        sx={{borderRadius: 999, pointerEvents: "auto"}}
                     >
                         Edit
                     </Button>
@@ -855,9 +798,127 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                         />
                     </Box>
                 )}
-            </Box>
+            </NetworkHud>
         )
     }
+
+    // Thin vertical rule between groups of buttons in the toolbar
+    const getToolbarDivider = (key: string) => (
+        <Box
+            aria-hidden={true}
+            key={key}
+            sx={{
+                alignSelf: "stretch",
+                backgroundColor: getSheen(theme).glassBorder,
+                marginX: theme.spacing(0.5),
+                marginY: theme.spacing(0.5),
+                width: "1px",
+            }}
+        />
+    )
+
+    // Floating bottom-center toolbar ("glass pill"): zoom / fit view / lock (built into Controls), then the layout,
+    // radial guides and thought bubble toggles, then the coloring legend.
+    const getControls = () => {
+        return (
+            <Controls
+                aria-label="Control Panel"
+                fitViewOptions={fitViewOptions}
+                orientation="horizontal"
+                position="bottom-center"
+                style={{
+                    bottom: `${safeBottom + FLOATING_GAP}px`,
+                    left: `calc(50% + ${safeCenterOffset}px)`,
+                }}
+                showInteractive={true}
+            >
+                {getToolbarDivider("view-divider")}
+                <Tooltip
+                    id="radial-layout-tooltip"
+                    title="Radial layout"
+                    placement="top"
+                >
+                    <span id="radial-layout-span">
+                        <ControlButton
+                            aria-label="Radial layout"
+                            aria-pressed={layout === "radial"}
+                            id="radial-layout-button"
+                            onClick={() => setLayout("radial")}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(layout === "radial"),
+                            }}
+                        >
+                            <HubOutlinedIcon id="radial-layout-icon" />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
+                <Tooltip
+                    id="linear-layout-tooltip"
+                    title="Linear layout"
+                    placement="top"
+                >
+                    <span id="linear-layout-span">
+                        <ControlButton
+                            aria-label="Linear layout"
+                            aria-pressed={layout === "linear"}
+                            id="linear-layout-button"
+                            onClick={() => setLayout("linear")}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(layout === "linear"),
+                            }}
+                        >
+                            <ScatterPlotOutlinedIcon id="linear-layout-icon" />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
+                <Tooltip
+                    id="radial-guides-tooltip"
+                    title={`Enable/disable radial guides${
+                        layout === "radial" ? "" : " (only available in radial layout)"
+                    }`}
+                    placement="top"
+                >
+                    <span id="radial-guides-span">
+                        <ControlButton
+                            aria-label="Radial guides"
+                            aria-pressed={showRadialGuides}
+                            id="radial-guides-button"
+                            onClick={() => setShowRadialGuides(!showRadialGuides)}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(showRadialGuides),
+                            }}
+                            disabled={layout !== "radial"}
+                        >
+                            <AdjustRoundedIcon id="radial-guides-icon" />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
+                <Tooltip
+                    id="thought-bubble-tooltip"
+                    title={`Toggle thought bubbles ${showThoughtBubbles ? "off" : "on"}`}
+                    placement="top"
+                >
+                    <span id="thought-bubble-span">
+                        <ControlButton
+                            aria-label="Thought bubbles"
+                            aria-pressed={showThoughtBubbles}
+                            id="thought-bubble-button"
+                            onClick={() => setShowThoughtBubbles(!showThoughtBubbles)}
+                            style={{
+                                backgroundColor: getControlButtonBackgroundColor(showThoughtBubbles),
+                            }}
+                        >
+                            <ChatBubbleOutlinedIcon id="thought-bubble-icon" />
+                        </ControlButton>
+                    </span>
+                </Tooltip>
+                {showLegend && getToolbarDivider("legend-divider")}
+                {showLegend && getLegend()}
+            </Controls>
+        )
+    }
+
+    const sheen = getSheen(theme)
 
     return (
         <Box
@@ -868,24 +929,86 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 position: "relative",
                 height: "100%",
                 width: "100%",
-                backgroundColor: theme.palette.background.default,
+                overflow: "hidden",
+                backgroundColor: themeVars.palette.background.default,
+                backgroundImage: auroraBackground(theme),
 
+                // Vignette + film grain over the aurora: pulls the eye to the middle of the canvas
+                "&::before": {
+                    backgroundImage: `radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, ${alpha(
+                        theme.palette.background.default,
+                        0.85
+                    )})`,
+                    content: '""',
+                    inset: 0,
+                    pointerEvents: "none",
+                    position: "absolute",
+                    zIndex: 0,
+                },
+                "&::after": {
+                    backgroundImage: GRAIN_TEXTURE,
+                    content: '""',
+                    inset: 0,
+                    mixBlendMode: "overlay",
+                    opacity: 0.18,
+                    pointerEvents: "none",
+                    position: "absolute",
+                    zIndex: 0,
+                },
+
+                // Default (non-plasma) edges: translucent accent with a soft glow. Arrow markers match via
+                // defaultMarkerColor. Plasma edges draw their own glow.
+                "--xy-edge-stroke": edgeColor,
+                "& .react-flow__edge-default .react-flow__edge-path": {
+                    filter: `drop-shadow(0 0 3px ${sheen.glow})`,
+                    strokeLinecap: "round",
+                },
+
+                // Nodes are custom (glass discs + name pill); no wrapper chrome
                 "& .react-flow__node": {
-                    border: "1px solid divider",
+                    border: "none",
                 },
 
                 "& .react-flow__panel, & .react-flow__controls-button": {
-                    backgroundColor: theme.palette.background.paper,
-                    color: theme.palette.text.primary,
+                    color: themeVars.palette.text.primary,
                 },
 
-                "& .react-flow__panel": {
-                    border: "1px solid divider",
+                // Toolbar: a floating glass pill centered under the graph
+                "& .react-flow__controls": {
+                    ...glassSurface(theme, 999),
+                    ...gradientBorder(theme, 999, 1, 0.35),
+                    // gradientBorder sets position: relative; React Flow panels must stay absolutely positioned
+                    position: "absolute",
+                    alignItems: "center",
+                    animation: `sheenRise 0.6s ${SHEEN_EASE} both`,
+                    border: 0,
+                    boxShadow: `inset 0 1px 0 ${sheen.highlight}, 0 18px 50px -18px rgba(0, 0, 0, 0.6)`,
+                    gap: "2px",
+                    margin: 0,
+                    padding: theme.spacing(0.5),
+                    // Center with `translate` rather than `transform`: the sheenRise entrance animates transform and
+                    // would otherwise wipe out the centering offset
+                    transform: "none",
+                    translate: "-50% 0",
+                    transition: `left 0.55s ${SHEEN_EASE}, bottom 0.55s ${SHEEN_EASE}`,
                 },
 
                 "& .react-flow__controls-button": {
-                    borderBottom: "1px solid divider",
-                    fill: theme.palette.text.primary,
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "50%",
+                    fill: themeVars.palette.text.primary,
+                    height: 30,
+                    transition: `background-color 0.2s ${SHEEN_EASE}, box-shadow 0.2s ${SHEEN_EASE}`,
+                    width: 30,
+                    "& svg": {maxHeight: 16, maxWidth: 16},
+                    "&:hover": {backgroundColor: sheen.tint, boxShadow: `0 0 14px -4px ${sheen.glow}`},
+                    "&:focus-visible": {outline: `2px solid ${themeVars.palette.primary.main}`, outlineOffset: 1},
+                },
+
+                // Dot grid: soft accent dots
+                "& .react-flow__background circle, & .react-flow__background path": {
+                    opacity: 0.9,
                 },
             }}
         >
@@ -898,12 +1021,13 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     flexDirection: "column",
                     minHeight: 0,
                     position: "relative",
-                    pt: theme.spacing(4),
+                    zIndex: 1,
                 }}
             >
-                {getTitle()}
+                {getHud()}
                 <ReactFlow
                     connectionMode={ConnectionMode.Loose}
+                    defaultMarkerColor={edgeColor}
                     edgeTypes={edgeTypes}
                     edges={edges}
                     fitView={true}
@@ -917,10 +1041,12 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                 >
                     {!isAwaitingLlm && (
                         <>
-                            {agentsInNetwork?.length && !isAgentNetworkDesignerMode && !isEditingNetwork
-                                ? getLegend()
-                                : null}
-                            <Background id={`${id}-background`} />
+                            <Background
+                                gap={22}
+                                id={`${id}-background`}
+                                size={1.4}
+                                variant={BackgroundVariant.Dots}
+                            />
                             {!isAgentNetworkDesignerMode && !isEditingNetwork && getControls()}
                             {shouldShowRadialGuides ? getRadialGuides() : null}
                         </>
@@ -932,20 +1058,39 @@ export const AgentFlow: FC<AgentFlowProps> = ({
                     showThoughtBubbles={showThoughtBubbles}
                     isStreaming={isStreaming}
                     onBubbleHoverChange={handleBubbleHoverChange}
+                    rightInset={safeRight}
+                    topInset={safeTop}
                 />
             </Box>
             {isTemporaryNetwork && !isAwaitingLlm && (
-                <NetworkEditorDock
-                    currentUser={currentUser}
-                    extraSlyData={extraSlyData}
-                    id={`${id}-network-editor-dock`}
-                    isEditingNetwork={isEditingNetwork}
-                    networkId={networkId}
-                    neuroSanURL={neuroSanURL}
-                    setIsEditingNetwork={setIsEditingNetwork}
-                    setSelectedNetwork={setSelectedNetwork}
-                    tempNetworks={tempNetworks}
-                />
+                // Floating glass card for the editor dock, kept inside the safe area. Hidden while the dock is closed.
+                <Box
+                    id={`${id}-network-editor-dock-card`}
+                    sx={{
+                        borderRadius: `${SHEEN_RADIUS_SURFACE}px`,
+                        bottom: `${safeBottom + FLOATING_GAP}px`,
+                        boxShadow: `0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 0 0 1px ${sheen.glassBorder}`,
+                        left: `${safeLeft + FLOATING_GAP}px`,
+                        overflow: "hidden",
+                        position: "absolute",
+                        right: `${safeRight + FLOATING_GAP}px`,
+                        transition: `left 0.55s ${SHEEN_EASE}, right 0.55s ${SHEEN_EASE}`,
+                        zIndex: getZIndex(2, theme),
+                        "&:empty": {display: "none"},
+                    }}
+                >
+                    <NetworkEditorDock
+                        currentUser={currentUser}
+                        extraSlyData={extraSlyData}
+                        id={`${id}-network-editor-dock`}
+                        isEditingNetwork={isEditingNetwork}
+                        networkId={networkId}
+                        neuroSanURL={neuroSanURL}
+                        setIsEditingNetwork={setIsEditingNetwork}
+                        setSelectedNetwork={setSelectedNetwork}
+                        tempNetworks={tempNetworks}
+                    />
+                </Box>
             )}
             {selectedAgent && !isAwaitingLlm && (
                 <AgentNodeEditor

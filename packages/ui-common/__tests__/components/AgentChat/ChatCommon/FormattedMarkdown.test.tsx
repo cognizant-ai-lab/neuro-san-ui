@@ -19,8 +19,51 @@ import {render, screen, waitFor} from "@testing-library/react"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {FormattedMarkdown} from "../../../../components/AgentChat/ChatCommon/FormattedMarkdown"
 
+const reducedMotion = vi.hoisted(() => ({value: false}))
+
+vi.mock("motion/react", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("motion/react")>()),
+    useReducedMotion: () => reducedMotion.value,
+}))
+
 describe("FormattedMarkdown component tests", () => {
     withStrictMocks()
+
+    afterEach(() => {
+        reducedMotion.value = false
+    })
+
+    it.each([false, true])("Renders blocks and nodes with reduced motion = %s", (reduced) => {
+        reducedMotion.value = reduced
+        const {container} = render(
+            <FormattedMarkdown
+                id="test-motion"
+                nodesList={["first text", <span key="n">node</span>, "last text"]}
+                style={{}}
+                wrapLongLines={false}
+            />
+        )
+
+        expect(container.querySelector(".formatted-markdown-block")).not.toBeNull()
+        expect(container.querySelector(".formatted-node")).not.toBeNull()
+    })
+
+    it("Marks only the last block as streaming while streaming", () => {
+        const {container} = render(
+            <FormattedMarkdown
+                id="test-streaming"
+                isStreaming={true}
+                nodesList={["first text", <span key="n">node</span>, "last text"]}
+                style={{}}
+                wrapLongLines={false}
+            />
+        )
+
+        const blocks = container.querySelectorAll(".formatted-markdown-block")
+        expect(blocks.length).toBeGreaterThan(1)
+        expect(container.querySelectorAll(".is-streaming")).toHaveLength(1)
+        expect(blocks[blocks.length - 1]).toHaveClass("is-streaming")
+    })
 
     it("Renders markdown correctly", async () => {
         render(

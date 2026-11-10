@@ -110,6 +110,11 @@ export const MicrophoneButton: FC<MicrophoneButtonProps> = ({
                     onClick={handleClick}
                     sx={{
                         backgroundColor: isListeningActive ? "success.main" : "background.paper",
+                        // Circular, to sit alongside the circular send button
+                        borderRadius: "50%",
+                        height: 40,
+                        minWidth: 0,
+                        width: 40,
                     }}
                     tabIndex={0}
                 >

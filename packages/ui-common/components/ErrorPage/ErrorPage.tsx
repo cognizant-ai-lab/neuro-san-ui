@@ -78,12 +78,13 @@ const ErrorPage: FC<ErrorPageProps> = ({id, errorText}: ErrorPageProps): ReactEl
                 sx={{marginLeft: "1rem"}}
             >
                 <NeuroAIBreadcrumbs />
-                <h4
+                <Box
+                    component="h4"
                     id="error-header"
-                    style={{color: "var(--bs-red)", marginTop: "1rem"}}
+                    sx={{color: "error.main", marginTop: "1rem"}}
                 >
                     Oops, an internal error occurred on our end.
-                </h4>
+                </Box>
                 <div id="error-div-1">
                     <Box
                         id="no-need-to-worry"

@@ -1,11 +1,16 @@
+import {renderHook} from "@testing-library/react"
+
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
 import {
     APP_SETTINGS_STORAGE_KEY,
     DEFAULT_SETTINGS,
     getApiKey,
+    LEGACY_APPEARANCE_DEFAULTS,
     SESSION_API_KEYS_STORAGE_KEY,
+    usePalette,
     useSettingsStore,
 } from "../../../state/Settings"
+import {PALETTES} from "../../../Theme/Palettes"
 
 describe("Settings", () => {
     withStrictMocks()
@@ -118,6 +123,89 @@ describe("Settings", () => {
 
             const settings = useSettingsStore.getState().settings
             expect(settings).toEqual(DEFAULT_SETTINGS)
+        })
+
+        it("upgrades untouched pre-reskin appearance defaults but keeps user customizations", async () => {
+            const customNodeColor = "#123456"
+            localStorage.setItem(
+                APP_SETTINGS_STORAGE_KEY,
+                JSON.stringify({
+                    state: {
+                        settings: {
+                            appearance: {
+                                ...LEGACY_APPEARANCE_DEFAULTS,
+                                agentNodeColor: customNodeColor,
+                                layout: "linear",
+                            },
+                        },
+                    },
+                    // Settings saved before the reskin
+                    version: 0,
+                })
+            )
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {appearance} = freshUseSettingsStore.getState().settings
+
+            // Legacy defaults are replaced by the new defaults...
+            expect(appearance.agentIconColor).toBe(DEFAULT_SETTINGS.appearance.agentIconColor)
+            expect(appearance.plasmaColor).toBe(DEFAULT_SETTINGS.appearance.plasmaColor)
+            expect(appearance.rangePalette).toBe(DEFAULT_SETTINGS.appearance.rangePalette)
+
+            // ...while values the user changed are preserved
+            expect(appearance.agentNodeColor).toBe(customNodeColor)
+            expect(appearance.layout).toBe("linear")
+
+            // The migrated settings are saved with the current version, so the upgrade doesn't run again
+            expect(JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) ?? "{}").version).toBe(1)
+        })
+
+        it.each([
+            {label: "no appearance settings", state: {settings: {behavior: {enableZenMode: false}}}},
+            {label: "no settings", state: {}},
+        ])("migrates pre-reskin settings with $label", async ({state}) => {
+            localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify({state, version: 0}))
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {settings} = freshUseSettingsStore.getState()
+
+            expect(settings.appearance).toEqual(DEFAULT_SETTINGS.appearance)
+            expect(settings.behavior.enableZenMode).toBe(!("settings" in state))
+        })
+
+        it("keeps legacy appearance values chosen after the reskin", async () => {
+            localStorage.setItem(
+                APP_SETTINGS_STORAGE_KEY,
+                JSON.stringify({state: {settings: {appearance: LEGACY_APPEARANCE_DEFAULTS}}, version: 1})
+            )
+
+            vi.resetModules()
+            const {useSettingsStore: freshUseSettingsStore} = await import("../../../state/Settings")
+            const {appearance} = freshUseSettingsStore.getState().settings
+
+            expect(appearance.rangePalette).toBe(LEGACY_APPEARANCE_DEFAULTS.rangePalette)
+            expect(appearance.plasmaColor).toBe(LEGACY_APPEARANCE_DEFAULTS.plasmaColor)
+            expect(appearance.agentIconColor).toBe(LEGACY_APPEARANCE_DEFAULTS.agentIconColor)
+        })
+    })
+
+    describe("usePalette", () => {
+        it("returns the selected built-in palette", () => {
+            useSettingsStore.getState().updateSettings({appearance: {rangePalette: "blue"}})
+            const {result} = renderHook(() => usePalette())
+            expect(result.current).toBe(PALETTES.blue)
+        })
+
+        it("returns the brand palette when brand is selected and defined", () => {
+            const rangePalette = ["#111111", "#222222"]
+            useSettingsStore.getState().updateSettings({
+                appearance: {rangePalette: "brand"},
+                branding: {rangePalette},
+            })
+            const {result} = renderHook(() => usePalette())
+            expect(result.current).toEqual(rangePalette)
         })
     })
 })

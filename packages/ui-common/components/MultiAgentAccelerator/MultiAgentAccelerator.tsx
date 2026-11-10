@@ -14,23 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import AddBoxRounded from "@mui/icons-material/AddBoxRounded"
 import Close from "@mui/icons-material/Close"
 import StopCircle from "@mui/icons-material/StopCircle"
 import Box from "@mui/material/Box"
 import IconButton from "@mui/material/IconButton"
 import Slide from "@mui/material/Slide"
 import Snackbar from "@mui/material/Snackbar"
-import {useTheme} from "@mui/material/styles"
+import {alpha, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {ReactFlowProvider} from "@xyflow/react"
-import {FC, JSX as ReactJSX, useCallback, useEffect, useMemo, useRef, useState} from "react"
+import {AnimatePresence, motion} from "motion/react"
+import {FC, JSX as ReactJSX, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react"
 import {useJoyride} from "react-joyride"
-import {Group, Panel, usePanelRef} from "react-resizable-panels"
+import {Group, Panel, PanelSize, usePanelRef} from "react-resizable-panels"
 
 import {AgentConversation, extractConversations} from "./AgentConversations"
 import {getUpdatedAgentCounts} from "./AgentCounts"
-import {AgentFlow} from "./AgentFlow/AgentFlow"
+import {AgentFlow, CanvasSafeArea} from "./AgentFlow/AgentFlow"
 import {extractAgentNetworkDesignerProgress} from "./AgentNetworkDesigner"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
@@ -45,7 +47,7 @@ import {
     TRIGGER_APP_TOUR_EVENT_NAME,
 } from "./const"
 import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
-import {PanelSeparator} from "./PanelSeparator"
+import {PanelSeparator, SEPARATOR_HIT_WIDTH} from "./PanelSeparator"
 import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
@@ -56,6 +58,7 @@ import {
 } from "./TemporaryNetworks"
 import {ThoughtBubbleEdgeShape} from "./ThoughtBubbles/ThoughtBubbleEdge"
 import {MAIN_TOUR_STEPS} from "./Tour/MainTourSteps"
+import {FloatingPanel} from "./Workspace/FloatingPanel"
 import {getAgentFunction, getAgentNetworks, getConnectivity} from "../../controller/agent/Agent"
 import {getAgentIconSuggestions, getNetworkIconSuggestions} from "../../controller/agent/IconSuggestions"
 import {AgentIconSuggestions} from "../../controller/Types/AgentIconSuggestions"
@@ -63,9 +66,22 @@ import {NetworkIconSuggestions} from "../../controller/Types/NetworkIconSuggesti
 import {AgentInfo, ConnectivityInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
+import {usePublishStore} from "../../state/Publish"
 import {ByokKeyField, getApiKey, LLM_PROVIDER_API_KEY_FIELD, LLMProvider, useSettingsStore} from "../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../state/Tour"
+import {
+    getSheen,
+    glassSurface,
+    glowShadow,
+    gradientText,
+    SHEEN_EASE,
+    SHEEN_FONT_DISPLAY,
+    SHEEN_RADIUS,
+    SHEEN_RADIUS_SURFACE,
+    sheenGradient,
+    spinningBorder,
+} from "../../Theme/sheen"
 import {toDisplayName} from "../../utils/AgentName"
 import {getZIndex} from "../../utils/zIndexLayers"
 import {ChatCommon, ChatCommonHandle} from "../AgentChat/ChatCommon/ChatCommon"
@@ -81,6 +97,22 @@ export interface MultiAgentAcceleratorProps {
     readonly username: string
     readonly defaultNeuroSanUrl: string
 }
+
+// Gap (px) between the floating panels and the workspace edges
+const WORKSPACE_GAP = 14
+
+// Widths (px) the side cards keep while sliding in/out, so their content slides rather than squishes
+const SIDEBAR_SLIDE_WIDTH = 280
+const CHAT_SLIDE_WIDTH = 380
+
+// How long the panels' size transition runs when zen mode collapses / expands them (ms)
+const PANEL_TRANSITION_MS = 650
+
+// Before the first measurement: roughly the floating navbar's height plus its margin (px)
+const DEFAULT_TOP_OFFSET = 76
+
+// Treat panels at (or within rounding of) 0% as collapsed
+const isCollapsedSize = (size: PanelSize) => size.asPercentage < 0.5
 
 // Optimization to avoid creating a new empty map on every render
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
@@ -222,20 +254,47 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     const tourStatus = useTourStore((s) => s.status)
     const setTourStatus = useTourStore((s) => s.setStatus)
 
+    // Tour tooltip: specular glass card with a gradient primary button (joyride takes plain inline styles)
+    const sheen = getSheen(theme)
+    const themeVars = theme.vars ?? theme
     const {controls, Tour} = useJoyride({
         continuous: true,
         steps: MAIN_TOUR_STEPS,
         options: {
             buttons: ["back", "close", "primary", "skip"],
-            backgroundColor: "var(--bs-secondary)",
-            textColor: "var(--bs-white)",
-            primaryColor: "var(--bs-accent3-medium)",
-            arrowColor: "var(--bs-secondary)",
-            overlayColor: "rgba(var(--bs-primary-rgb), 0.82)",
+            backgroundColor: themeVars.palette.background.paper,
+            textColor: themeVars.palette.text.primary,
+            primaryColor: themeVars.palette.primary.main,
+            arrowColor: themeVars.palette.background.paper,
+            overlayColor: alpha(theme.palette.background.default, 0.72),
+            spotlightRadius: SHEEN_RADIUS,
             showProgress: true,
             zIndex: getZIndex(3, theme),
             skipBeacon: true,
             skipScroll: true,
+        },
+        styles: {
+            tooltip: {
+                backgroundImage: `linear-gradient(180deg, ${sheen.tint}, transparent 45%)`,
+                border: `1px solid ${sheen.glassBorder}`,
+                borderRadius: SHEEN_RADIUS_SURFACE,
+                boxShadow: `inset 0 1px 0 ${sheen.highlight}, ${glowShadow(theme, 40)}`,
+            },
+            tooltipTitle: {
+                fontFamily: SHEEN_FONT_DISPLAY,
+                fontSize: "1.25rem",
+                fontWeight: 500,
+            },
+            buttonPrimary: {
+                backgroundImage: sheenGradient(theme),
+                borderRadius: 999,
+                boxShadow: glowShadow(theme, 16),
+                color: themeVars.palette.primary.contrastText,
+                fontWeight: 600,
+                padding: "8px 16px",
+            },
+            buttonBack: {color: themeVars.palette.text.secondary},
+            buttonSkip: {color: themeVars.palette.text.secondary},
         },
         locale: {
             last: "End Tour",
@@ -260,6 +319,76 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
     const leftPanelRef = usePanelRef()
     const rightPanelRef = usePanelRef()
+
+    // Workspace geometry. The workspace is full-bleed: it is pulled up under the floating navbar and out to the
+    // viewport edges, so we measure where it would naturally start (via a zero-size sentinel) and offset by that.
+    const sentinelRef = useRef<HTMLDivElement | null>(null)
+    const [naturalOffset, setNaturalOffset] = useState<{top: number; left: number}>({
+        top: DEFAULT_TOP_OFFSET,
+        left: 0,
+    })
+
+    useLayoutEffect(() => {
+        const measure = () => {
+            const rect = sentinelRef.current?.getBoundingClientRect()
+            if (!rect) return
+            const next = {
+                top: Math.max(0, Math.round(rect.top + window.scrollY)),
+                left: Math.max(0, Math.round(rect.left + window.scrollX)),
+            }
+            setNaturalOffset((prev) => (prev.top === next.top && prev.left === next.left ? prev : next))
+        }
+
+        measure()
+        window.addEventListener("resize", measure)
+        // Web fonts can change the navbar's height once they load
+        void document.fonts?.ready?.then(measure)
+        return () => window.removeEventListener("resize", measure)
+    }, [])
+
+    // Current sizes of the side panels, for keeping the canvas chrome inside the uncovered area
+    const [leftPanelSize, setLeftPanelSize] = useState<PanelSize | null>(null)
+    const [rightPanelSize, setRightPanelSize] = useState<PanelSize | null>(null)
+    // Collapsed state of the side panels: follows the panel sizes (e.g. dragged shut), and is set directly by zen mode
+    const [isLeftCollapsed, setIsLeftCollapsed] = useState(false)
+    const [isRightCollapsed, setIsRightCollapsed] = useState(false)
+    const handleLeftPanelResize = useCallback((size: PanelSize) => {
+        setLeftPanelSize(size)
+        setIsLeftCollapsed(isCollapsedSize(size))
+    }, [])
+    const handleRightPanelResize = useCallback((size: PanelSize) => {
+        setRightPanelSize(size)
+        setIsRightCollapsed(isCollapsedSize(size))
+    }, [])
+
+    // True while zen mode is animating the side panels in or out
+    const [isPanelTransitioning, setIsPanelTransitioning] = useState(false)
+    const panelTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const startPanelTransition = useCallback(() => {
+        setIsPanelTransitioning(true)
+        if (panelTransitionTimerRef.current) clearTimeout(panelTransitionTimerRef.current)
+        panelTransitionTimerRef.current = setTimeout(() => {
+            panelTransitionTimerRef.current = null
+            setIsPanelTransitioning(false)
+        }, PANEL_TRANSITION_MS)
+    }, [])
+    useEffect(
+        () => () => {
+            if (panelTransitionTimerRef.current) clearTimeout(panelTransitionTimerRef.current)
+        },
+        []
+    )
+
+    // Region of the canvas not covered by the navbar or the floating panels
+    const safeArea: CanvasSafeArea = useMemo(
+        () => ({
+            top: naturalOffset.top + WORKSPACE_GAP,
+            right: WORKSPACE_GAP + (rightPanelSize?.inPixels ?? 0) + SEPARATOR_HIT_WIDTH,
+            bottom: WORKSPACE_GAP,
+            left: WORKSPACE_GAP + (leftPanelSize?.inPixels ?? 0) + SEPARATOR_HIT_WIDTH,
+        }),
+        [leftPanelSize?.inPixels, naturalOffset.top, rightPanelSize?.inPixels]
+    )
 
     // Clear chat whenever the user navigates to the Agent Network Designer, so they start fresh each time
     useEffect(() => {
@@ -635,6 +764,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         useAgentChatHistoryStore
                             .getState()
                             .copyHistory(selectedNetwork, replacement.agentInfo.agent_name)
+                        // Move the publish state to the edited network, which has a new id. A publish that's still
+                        // running finishes on the edited network.
+                        usePublishStore.getState().replaceNetwork(selectedNetwork, replacement.agentInfo.agent_name)
                         setSelectedNetwork(replacement.agentInfo.agent_name)
                     }
                 } else {
@@ -666,10 +798,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         // Collapse outer panels for Zen mode
         if (enableZenMode) {
+            startPanelTransition()
             leftPanelRef?.current?.collapse()
             rightPanelRef?.current?.collapse()
+            setIsLeftCollapsed(true)
+            setIsRightCollapsed(true)
         }
-    }, [enableZenMode, leftPanelRef, rightPanelRef])
+    }, [enableZenMode, leftPanelRef, rightPanelRef, startPanelTransition])
 
     const onStreamingComplete = useCallback(() => {
         // When streaming is complete, clean up any refs and state
@@ -680,10 +815,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
 
         // Un-collapse outer panels for Zen mode
         if (enableZenMode) {
+            startPanelTransition()
             leftPanelRef?.current?.expand()
             rightPanelRef?.current?.expand()
+            setIsLeftCollapsed(leftPanelRef.current?.isCollapsed() === true)
+            setIsRightCollapsed(rightPanelRef.current?.isCollapsed() === true)
         }
-    }, [enableZenMode, leftPanelRef, resetState, rightPanelRef])
+    }, [enableZenMode, leftPanelRef, resetState, rightPanelRef, startPanelTransition])
 
     const handleDeleteNetwork = (networkId: string, isExpired: boolean) => {
         if (isExpired) {
@@ -769,40 +907,58 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             defaultSize="20%"
             id="multi-agent-accelerator-left-panel"
             minSize="10%"
+            onResize={handleLeftPanelResize}
             panelRef={leftPanelRef}
+            style={{overflow: "visible"}}
         >
-            <Sidebar
-                id="multi-agent-accelerator-sidebar"
-                isAwaitingLlm={isAwaitingLlm}
-                networkIconSuggestions={networkIconSuggestions}
-                networks={networks}
-                neuroSanServerURL={neuroSanURL}
-                newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
-                onDeleteNetwork={handleDeleteNetwork}
-                onEditNetwork={handleEditNetwork}
-                setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
-                temporaryNetworks={temporaryNetworks}
-            />
+            <FloatingPanel
+                collapsed={isLeftCollapsed}
+                id="multi-agent-accelerator-left-card"
+                isTransitioning={isPanelTransitioning}
+                minWidth={SIDEBAR_SLIDE_WIDTH}
+                side="left"
+            >
+                <Sidebar
+                    id="multi-agent-accelerator-sidebar"
+                    isAwaitingLlm={isAwaitingLlm}
+                    networkIconSuggestions={networkIconSuggestions}
+                    networks={networks}
+                    neuroSanServerURL={neuroSanURL}
+                    newlyAddedTemporaryNetworks={newlyAddedTemporaryNetworks}
+                    onDeleteNetwork={handleDeleteNetwork}
+                    onEditNetwork={handleEditNetwork}
+                    setSelectedNetwork={(newNetwork) => changeSelectedNetwork(newNetwork)}
+                    temporaryNetworks={temporaryNetworks}
+                />
+            </FloatingPanel>
         </Panel>
     )
 
+    // The center panel is a transparent window onto the canvas beneath: it only exists to be resized against (and
+    // as a tour anchor). Pointer events pass through to the canvas.
     const getCenterPanel = () => (
         <Panel
             collapsible={true}
             defaultSize="45%"
             id="multi-agent-accelerator-center-panel"
             minSize="10%"
+            style={{pointerEvents: "none"}}
+        />
+    )
+
+    // Full-bleed canvas layer behind the floating panels
+    const getCanvas = () => (
+        <Box
+            id="multi-agent-accelerator-canvas"
+            sx={{inset: 0, position: "absolute", zIndex: 0}}
         >
             <ReactFlowProvider>
                 <Box
                     id="multi-agent-accelerator-agent-flow-container"
                     sx={{
                         display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        width: "100%",
                         height: "100%",
-                        margin: "0 auto",
+                        width: "100%",
                     }}
                 >
                     <AgentFlow
@@ -822,6 +978,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         networkId={isSelectedNetworkTemporary ? selectedNetwork : ""}
                         neuroSanURL={neuroSanURL}
                         onSaveAgent={onSaveAgent}
+                        safeArea={safeArea}
                         setIsEditingNetwork={setIsEditingNetwork}
                         thoughtBubbleEdges={thoughtBubbleEdges}
                         setSelectedNetwork={changeSelectedNetwork}
@@ -829,7 +986,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     />
                 </Box>
             </ReactFlowProvider>
-        </Panel>
+        </Box>
     )
 
     const getRightPanel = () => (
@@ -838,34 +995,137 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             defaultSize="35%"
             id="multi-agent-accelerator-right-panel"
             minSize="15%"
+            onResize={handleRightPanelResize}
             panelRef={rightPanelRef}
+            style={{overflow: "visible"}}
         >
-            <ChatCommon
-                agentPlaceholders={{
-                    [AGENT_NETWORK_DESIGNER_ID]: "Describe in plain language the network you would like to build.",
-                }}
-                currentUser={username}
-                customAgentGreetings={{
-                    [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
-                }}
-                extraSlyData={extraSlyData}
-                id="agent-network-ui"
-                isAwaitingLlm={isAwaitingLlm}
-                key={selectedNetwork ?? "no-network"}
-                hasMissingApiKeys={hasMissingApiKeys}
-                networkDescription={networkDescription}
-                neuroSanURL={neuroSanURL}
-                onChunkReceived={onChunkReceived}
-                onStreamingComplete={onStreamingComplete}
-                onStreamingStarted={onStreamingStarted}
-                ref={chatRef}
-                sampleQueries={sampleQueries}
-                setIsAwaitingLlm={setIsAwaitingLlm}
-                selectedNetwork={selectedNetwork}
-                setSelectedNetwork={changeSelectedNetwork}
-                slyDataSchema={slyDataSchema}
-            />
+            <FloatingPanel
+                collapsed={isRightCollapsed}
+                id="multi-agent-accelerator-right-card"
+                isTransitioning={isPanelTransitioning}
+                minWidth={CHAT_SLIDE_WIDTH}
+                side="right"
+            >
+                <Box sx={{boxSizing: "border-box", height: "100%", p: 1}}>
+                    <ChatCommon
+                        agentPlaceholders={{
+                            [AGENT_NETWORK_DESIGNER_ID]:
+                                "Describe in plain language the network you would like to build.",
+                        }}
+                        currentUser={username}
+                        customAgentGreetings={{
+                            [AGENT_NETWORK_DESIGNER_ID]: "Let's build a network together!",
+                        }}
+                        extraSlyData={extraSlyData}
+                        id="agent-network-ui"
+                        isAwaitingLlm={isAwaitingLlm}
+                        key={selectedNetwork ?? "no-network"}
+                        hasMissingApiKeys={hasMissingApiKeys}
+                        networkDescription={networkDescription}
+                        neuroSanURL={neuroSanURL}
+                        onChunkReceived={onChunkReceived}
+                        onStreamingComplete={onStreamingComplete}
+                        onStreamingStarted={onStreamingStarted}
+                        ref={chatRef}
+                        sampleQueries={sampleQueries}
+                        setIsAwaitingLlm={setIsAwaitingLlm}
+                        selectedNetwork={selectedNetwork}
+                        setSelectedNetwork={changeSelectedNetwork}
+                        slyDataSchema={slyDataSchema}
+                    />
+                </Box>
+            </FloatingPanel>
         </Panel>
+    )
+
+    // Box positioned over the uncovered part of the canvas (between the floating panels)
+    const safeAreaSx = {
+        bottom: `${safeArea.bottom}px`,
+        left: `${safeArea.left}px`,
+        position: "absolute",
+        right: `${safeArea.right}px`,
+        top: `${safeArea.top}px`,
+        transition: `left 0.55s ${SHEEN_EASE}, right 0.55s ${SHEEN_EASE}`,
+    } as const
+
+    /**
+     * Empty state: with no network selected, a glowing prompt floats in the middle of the canvas.
+     */
+    const getEmptyState = () => (
+        <AnimatePresence>
+            {selectedNetwork == null && (
+                <Box
+                    id="multi-agent-accelerator-empty-state"
+                    sx={{
+                        ...safeAreaSx,
+                        alignItems: "center",
+                        display: "flex",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                        zIndex: 1,
+                    }}
+                >
+                    <motion.div
+                        animate={{opacity: 1, y: 0, scale: 1}}
+                        exit={{opacity: 0, y: -12, scale: 0.97}}
+                        initial={{opacity: 0, y: 18, scale: 0.96}}
+                        style={{maxWidth: 520, padding: "0 16px", position: "relative", textAlign: "center"}}
+                        transition={{type: "spring", stiffness: 200, damping: 26}}
+                    >
+                        {/* Halo: a soft radial gradient behind the text (no blur filter: costly to repaint) */}
+                        <Box
+                            aria-hidden={true}
+                            sx={{
+                                background: `radial-gradient(circle, ${getSheen(theme).auroraA}, transparent 70%)`,
+                                borderRadius: "50%",
+                                height: 420,
+                                left: "50%",
+                                opacity: 0.8,
+                                position: "absolute",
+                                top: "50%",
+                                transform: "translate(-50%, -50%)",
+                                width: 420,
+                                zIndex: -1,
+                            }}
+                        />
+                        <Typography
+                            component="h2"
+                            sx={{
+                                ...gradientText(theme),
+                                fontFamily: SHEEN_FONT_DISPLAY,
+                                fontSize: {xs: "1.75rem", md: "2.25rem"},
+                                fontWeight: 500,
+                                letterSpacing: "-0.01em",
+                                lineHeight: 1.15,
+                                mb: 1.5,
+                            }}
+                        >
+                            Select a network
+                        </Typography>
+                        <Typography
+                            sx={{color: "text.secondary", fontSize: "1rem", lineHeight: 1.6, pointerEvents: "auto"}}
+                        >
+                            {/* Short hint: the chat panel already shows the full prompt */}
+                            Pick one from Agent Networks, or click
+                            <IconButton
+                                aria-label="Open Agent Network Designer"
+                                id="multi-agent-accelerator-empty-state-designer-button"
+                                onClick={() => changeSelectedNetwork(AGENT_NETWORK_DESIGNER_ID)}
+                                size="small"
+                                sx={{
+                                    mx: 0.25,
+                                    verticalAlign: "middle",
+                                    "&:hover": {boxShadow: glowShadow(theme, 16)},
+                                }}
+                            >
+                                <AddBoxRounded sx={{color: "primary.main", fontSize: "1.2rem"}} />
+                            </IconButton>
+                            to design your own.
+                        </Typography>
+                    </motion.div>
+                </Box>
+            )}
+        </AnimatePresence>
     )
 
     const getStopButton = () =>
@@ -875,8 +1135,9 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 id="stop-button-container"
                 sx={{
                     position: "absolute",
-                    bottom: "1rem",
-                    right: "1rem",
+                    bottom: `${WORKSPACE_GAP + 12}px`,
+                    right: `${safeArea.right + 12}px`,
+                    transition: `right 0.55s ${SHEEN_EASE}`,
                     zIndex: getZIndex(2, theme),
                 }}
             >
@@ -886,8 +1147,13 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         id="stop-output-button"
                         onClick={handleExternalStop}
                         sx={{
+                            ...glassSurface(theme, 999),
+                            color: "error.main",
+                            transition: "background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
                             "&:hover": {
                                 backgroundColor: "error.main",
+                                boxShadow: `0 0 28px -4px ${themeVars.palette.error.main}`,
+                                color: "error.contrastText",
                             },
                         }}
                     >
@@ -991,34 +1257,42 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
         isStreaming &&
         isNetworkDesignerMode && (
             <Box
+                id="multi-agent-accelerator-network-preview"
                 sx={{
                     position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "600px",
-                    height: "600px",
+                    top: `${safeArea.top + 64}px`,
+                    left: `${safeArea.left + 12}px`,
+                    width: "min(600px, 60vw)",
+                    height: "min(600px, 70vh)",
                     zIndex: getZIndex(2, theme),
                 }}
             >
                 <ReactFlowProvider>
                     <Box
                         sx={{
+                            // Live preview while the designer streams: glass with a rotating iridescent border
+                            ...glassSurface(theme),
+                            ...spinningBorder(theme),
                             alignItems: "center",
-                            background: "var(--bs-secondary)",
-                            border: "4px solid var(--bs-yellow)",
+                            boxShadow: glowShadow(theme),
                             display: "flex",
                             flexDirection: "column",
                             height: "100%",
                             justifyContent: "center",
                             margin: "0 auto",
                             maxWidth: 1000,
-                            opacity: "95%",
+                            overflow: "hidden",
                             width: "100%",
                         }}
                     >
                         <Typography
                             variant="h6"
-                            sx={{padding: "0.5rem 1rem", fontWeight: "bold", color: "white"}}
+                            sx={{
+                                color: "text.primary",
+                                fontFamily: SHEEN_FONT_DISPLAY,
+                                fontWeight: 500,
+                                padding: "0.5rem 1rem",
+                            }}
                         >
                             Network Preview
                         </Typography>
@@ -1035,7 +1309,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                         ) : (
                             <Typography
                                 variant="body1"
-                                sx={{color: "white"}}
+                                sx={{color: "text.secondary"}}
                             >
                                 Awaiting status from Agent Network Designer...
                             </Typography>
@@ -1052,7 +1326,16 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                 id="llm-chat-missing-api-keys-alert"
                 severity="warning"
                 sx={{
-                    my: 1.5,
+                    ...glassSurface(theme, SHEEN_RADIUS),
+                    boxShadow: "0 18px 50px -18px rgba(0, 0, 0, 0.6)",
+                    left: `calc(${safeArea.left}px + (100% - ${safeArea.left + safeArea.right}px) / 2)`,
+                    maxWidth: `min(640px, calc(100% - ${safeArea.left + safeArea.right + 24}px))`,
+                    position: "absolute",
+                    top: `${safeArea.top + 64}px`,
+                    transform: "translateX(-50%)",
+                    transition: `left 0.55s ${SHEEN_EASE}`,
+                    width: "100%",
+                    zIndex: getZIndex(2, theme),
                     "& .MuiAlert-message": {
                         width: "100%",
                         textAlign: "center",
@@ -1125,29 +1408,66 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     return (
         <>
             {getNeuroSanStudioCallout()}
-            {getMissingApiKeysAlert()}
             {Tour}
             {getTourModal()}
-            {getProgressPopper()}
             {getDeleteNetworkConfirmationModal()}
+
+            {/* Zero-size marker for where the workspace would naturally start (below the navbar, inside the page
+                gutters); the workspace below is offset by this to bleed edge-to-edge under the navbar */}
+            <Box
+                aria-hidden={true}
+                ref={sentinelRef}
+                sx={{height: 0, width: "100%"}}
+            />
 
             <Box
                 id="multi-agent-accelerator-container"
                 sx={{
+                    // Full-bleed "mission control" workspace: the canvas fills the viewport, panels float over it
+                    flexShrink: 0,
+                    height: "100dvh",
+                    isolation: "isolate",
+                    marginLeft: `-${naturalOffset.left}px`,
+                    marginTop: `-${naturalOffset.top}px`,
+                    minHeight: 480,
+                    overflow: "hidden",
                     position: "relative",
-                    width: "100%",
-                    height: "100%",
-                    minHeight: 0,
+                    width: `calc(100% + ${naturalOffset.left * 2}px)`,
+                    zIndex: 0,
                 }}
             >
-                <Group>
-                    {getLeftPanel()}
-                    <PanelSeparator />
-                    {getCenterPanel()}
-                    <PanelSeparator />
-                    {getRightPanel()}
-                </Group>
+                {getCanvas()}
+                {getEmptyState()}
 
+                {/* Floating side panels. The resizable Group overlays the canvas; everything but the panel cards and
+                    the separators lets pointer events through to the canvas. */}
+                <Box
+                    id="multi-agent-accelerator-panels"
+                    sx={{
+                        bottom: `${WORKSPACE_GAP}px`,
+                        left: `${WORKSPACE_GAP}px`,
+                        pointerEvents: "none",
+                        position: "absolute",
+                        right: `${WORKSPACE_GAP}px`,
+                        top: `${naturalOffset.top + WORKSPACE_GAP}px`,
+                        zIndex: 2,
+                        // Zen mode: animate the panels' sizes while they collapse / expand
+                        ...(isPanelTransitioning && {
+                            "& [data-panel]": {transition: `flex-grow ${PANEL_TRANSITION_MS}ms ${SHEEN_EASE}`},
+                        }),
+                    }}
+                >
+                    <Group style={{height: "100%", pointerEvents: "none"}}>
+                        {getLeftPanel()}
+                        <PanelSeparator />
+                        {getCenterPanel()}
+                        <PanelSeparator />
+                        {getRightPanel()}
+                    </Group>
+                </Box>
+
+                {getMissingApiKeysAlert()}
+                {getProgressPopper()}
                 {getStopButton()}
             </Box>
         </>

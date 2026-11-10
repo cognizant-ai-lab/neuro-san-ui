@@ -46,6 +46,18 @@ describe("TreeBuilder", () => {
             expect(findTreeItemById(tree, "retail/grocery/macys")).toMatchObject({isNetwork: true})
         })
 
+        it("leaves sibling folders untouched when merging a network into an earlier folder", () => {
+            const tree = buildTreeViewItems(true, [
+                makeAgent("retail/macys"),
+                makeAgent("banking/chase"),
+                makeAgent("retail/target"),
+            ])
+
+            expect(tree.map((node) => node.id).sort()).toEqual(["banking", "retail"])
+            expect(findTreeItemById(tree, "banking")?.children?.map((child) => child.id)).toEqual(["banking/chase"])
+            expect(findTreeItemById(tree, "retail")?.children).toHaveLength(2)
+        })
+
         it("groups networks with no '/' under an 'uncategorized' folder, and omits it otherwise", () => {
             const mixed = buildTreeViewItems(true, [makeAgent("retail/macys"), makeAgent("macys")])
             const uncategorized = mixed.find((node) => node.id === "uncategorized")

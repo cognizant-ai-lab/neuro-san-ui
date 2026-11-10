@@ -87,6 +87,11 @@ Object.defineProperties(global.HTMLElement.prototype, {
     },
 })
 
+// jsdom doesn't implement scrollIntoView (used by cmdk to keep the highlighted command in view)
+if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = () => undefined
+}
+
 // Make tests fail if any output is sent to the console
 failOnConsole({
     shouldFailOnAssert: true,

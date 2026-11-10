@@ -11,12 +11,15 @@
     "dependencies": {
         "@emotion/react": "11.14.0",
         "@emotion/styled": "11.14.1",
+        "@fontsource-variable/inter": "5.2.8",
+        "@fontsource-variable/newsreader": "5.2.10",
         "@langchain/core": "catalog:default",
         "@langchain/openai": "1.2.5",
         "@mui/material": "catalog:default",
         "@xyflow/react": "catalog:default",
         "http-status": "catalog:default",
         "lodash-es": "catalog:default",
+        "motion": "14.6.0",
         "next": "catalog:default",
         "next-auth": "catalog:default",
         "notistack": "catalog:default",
@@ -26,7 +29,7 @@
         "rehype-raw": "catalog:default",
         "rehype-slug": "catalog:default",
         "remark-toc": "9.0.0",
-        "sharp": "0.35.4"
+        "sharp": "0.35.5"
     },
     "devDependencies": {
         "@testing-library/dom": "catalog:default",

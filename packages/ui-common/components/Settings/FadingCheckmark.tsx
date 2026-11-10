@@ -47,7 +47,7 @@ export const FadingCheckmark = ({show}: {show: boolean}) => (
         sx={{
             opacity: show ? 1 : 0,
             transition: "opacity 0.5s ease-out",
-            color: "var(--bs-success)",
+            color: "success.main",
         }}
     >
         <CheckIcon />

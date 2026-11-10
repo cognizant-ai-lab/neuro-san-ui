@@ -16,22 +16,29 @@ limitations under the License.
 
 import {useEffect} from "react"
 
-import {checkIfPublished, PublishTarget} from "./Publish"
-import {usePublishServerUrl} from "../../../state/Publish"
+import {fetchPublishState, PublishTarget} from "./Publish"
+import {usePublishServerUrl, usePublishStore} from "../../../state/Publish"
 import {useSettingsStore} from "../../../state/Settings"
 
 /**
- * Where to publish the network, or null until there's a server and an org name. Also asks the server whether the
- * network is already live, since we only remember that in memory.
+ * Where to publish the network, or null until there's a server and an org name. Also asks the server how the network
+ * is doing if this browser published it, since its publish state is only kept in memory.
  */
 export const usePublishTarget = (networkId: string, networkName: string): PublishTarget | null => {
     const serverUrl = usePublishServerUrl()
     const orgName = useSettingsStore((state) => state.settings.publish.orgName)
 
     useEffect(() => {
-        if (serverUrl && orgName) {
-            void checkIfPublished({id: networkId, name: networkName}, {serverUrl, orgName})
-        }
+        if (!serverUrl || !orgName || usePublishStore.getState().networks[networkId]) return
+
+        fetchPublishState(networkId, {serverUrl, orgName})
+            .then((publishState) => {
+                // Don't overwrite a publish the user started while we were asking
+                if (publishState && !usePublishStore.getState().networks[networkId]) {
+                    usePublishStore.getState().setPublishState(networkId, publishState)
+                }
+            })
+            .catch((e: unknown) => console.warn(`Unable to check whether "${networkName}" is published:`, e))
     }, [networkId, networkName, orgName, serverUrl])
 
     return serverUrl && orgName ? {serverUrl, orgName} : null

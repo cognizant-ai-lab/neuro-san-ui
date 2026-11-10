@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 import Box from "@mui/material/Box"
-import {Fragment, JSX as ReactJSX, ReactNode} from "react"
+import {SxProps, Theme} from "@mui/material/styles"
+import {motion, useReducedMotion} from "motion/react"
+import {JSX as ReactJSX, ReactNode} from "react"
 import ReactMarkdown from "react-markdown"
 import SyntaxHighlighter, {SyntaxHighlighterProps} from "react-syntax-highlighter"
 import rehypeRaw from "rehype-raw"
@@ -44,10 +46,25 @@ interface FormattedMarkdownProps {
     readonly style: SyntaxHighlighterProps["style"]
 
     /**
+     * Optional styles for the container. Aggregated Markdown blocks are wrapped in elements with the
+     * `formatted-markdown-block` class, and code blocks carry a `data-language` attribute, so they can be targeted.
+     */
+    readonly sx?: SxProps<Theme>
+
+    /**
      * Whether to wrap long lines in the Markdown.
      */
     readonly wrapLongLines: boolean
+
+    /**
+     * Whether the last Markdown block is still being streamed into. That block gets the `is-streaming` class, so a
+     * caret can be painted at the end of its text.
+     */
+    readonly isStreaming?: boolean
 }
+
+// Spring for message entrances; layout animations use it too, so earlier messages glide as the list grows
+const MESSAGE_SPRING = {type: "spring", stiffness: 380, damping: 30, mass: 0.8} as const
 
 /**
  * Format the output to ensure that text nodes are formatted as Markdown but other nodes are passed along as-is.
@@ -60,8 +77,13 @@ export const FormattedMarkdown = ({
     id,
     nodesList,
     style,
+    sx,
     wrapLongLines = false,
+    isStreaming = false,
 }: FormattedMarkdownProps): ReactJSX.Element => {
+    const reduceMotion = useReducedMotion()
+    const entrance = reduceMotion ? {opacity: 0} : {opacity: 0, y: 14, scale: 0.98}
+
     /**
      * Get the formatted output for a given string. The string is assumed to be in Markdown format.
      * @param stringToFormat The string to format.
@@ -80,6 +102,7 @@ export const FormattedMarkdown = ({
                     return match ? (
                         <SyntaxHighlighter
                             PreTag="div"
+                            data-language={match.groups["language"]}
                             id={`syntax-highlighter-${match.groups["language"]}`}
                             language={match.groups["language"]}
                             style={style}
@@ -132,6 +155,28 @@ export const FormattedMarkdown = ({
     // Walk through the nodes list. If we encounter a string node, we'll aggregate it with other string nodes.
     const formattedOutput: ReactNode[] = []
     let currentTextNodes: string[] = []
+
+    // Wrap each aggregated Markdown block in an element with a stable key (its ordinal), so that a block being
+    // streamed into doesn't remount (and re-run its entrance animation) every time its text changes.
+    let blockCount = 0
+    let lastIsMarkdown = false
+    const pushMarkdownBlock = (text: string, index: number, isLast: boolean) => {
+        formattedOutput.push(
+            <motion.div
+                animate={{opacity: 1, y: 0, scale: 1}}
+                className={`formatted-markdown-block${isLast && isStreaming ? " is-streaming" : ""}`}
+                initial={entrance}
+                key={`formatted-markdown-block-${blockCount}`}
+                layout={reduceMotion ? false : "position"}
+                transition={MESSAGE_SPRING}
+            >
+                {getFormattedMarkdown(text, index)}
+            </motion.div>
+        )
+        blockCount += 1
+        lastIsMarkdown = isLast
+    }
+
     for (const [i, node] of nodesList.entries()) {
         // If it's a string node, aggregate it with other string nodes
         if (typeof node === "string") {
@@ -139,23 +184,40 @@ export const FormattedMarkdown = ({
         } else {
             // Not a string node. Process any aggregated text nodes
             if (currentTextNodes.length > 0) {
-                const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), i)
-                formattedOutput.push(concatenatedText)
+                pushMarkdownBlock(currentTextNodes.join(""), i, false)
                 currentTextNodes = []
             }
 
             // Not a string node. Add the node as-is
             const key = getNodeKey(node, i)
 
-            formattedOutput.push(<Fragment key={key}>{node}</Fragment>)
+            formattedOutput.push(
+                <motion.div
+                    animate={{opacity: 1, y: 0, scale: 1}}
+                    className="formatted-node"
+                    initial={entrance}
+                    key={key}
+                    layout={reduceMotion ? false : "position"}
+                    transition={MESSAGE_SPRING}
+                >
+                    {node}
+                </motion.div>
+            )
         }
     }
 
     // Process any remaining text nodes
     if (currentTextNodes.length > 0) {
-        const concatenatedText = getFormattedMarkdown(currentTextNodes.join(""), nodesList.length)
-        formattedOutput.push(concatenatedText)
+        pushMarkdownBlock(currentTextNodes.join(""), nodesList.length, true)
     }
 
-    return <Box id={id}>{formattedOutput}</Box>
+    return (
+        <Box
+            data-streaming={isStreaming && lastIsMarkdown ? "true" : undefined}
+            id={id}
+            sx={sx}
+        >
+            {formattedOutput}
+        </Box>
+    )
 }

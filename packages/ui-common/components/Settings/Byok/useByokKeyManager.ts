@@ -15,11 +15,12 @@ limitations under the License.
 */
 
 import {useTheme} from "@mui/material/styles"
-import {useCallback, useMemo, useState} from "react"
+import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {
     isAnthropicKeyValid,
     isGoogleKeyValid,
+    isKeyValidationFailure,
     isOpenAIKeyValid,
     KeyValidationFailure,
     KeyValidationResult,
@@ -93,17 +94,24 @@ export interface UseByokKeyManagerReturn {
     /** Handler for closing the dialog, prompting confirmation if unsaved edits exist. */
     readonly handleClose: () => void
     /** Handler for discarding unsaved changes and closing the dialog. */
+    readonly clearDrafts: () => void
     readonly handleDiscard: () => void
     /** Handler for updating validation failure results for a vendor. */
     readonly handleKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     /** Handler for saving all unsaved changes and closing the dialog. */
-    readonly handleSave: () => void
+    readonly handleSave: () => Promise<void>
     /** Handler for updating draft key values when inputs change. */
     readonly handleValueChange: (vendor: LLMProvider, value: string) => void
     /** Current validation failures for active providers. */
     readonly keyFailures: readonly ApiKeyFailure[]
     /** Persists a single API key to settings store. */
-    readonly persistKey: (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => void
+    readonly persistKey: (
+        vendor: LLMProvider,
+        key: string,
+        checkmark: CheckmarkFade,
+        now: number,
+        allowUnverified?: boolean
+    ) => Promise<boolean>
     /** Whether the unsaved changes confirmation modal is currently visible. */
     readonly showUnsavedChangesModal: boolean
 }
@@ -127,8 +135,19 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const updateSettings = useSettingsStore((state) => state.updateSettings)
 
     const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
+    const currentDrafts = useRef<Record<string, string>>({})
+    const savingKeys = useRef(new Map<LLMProvider, {id: symbol; key: string; result: Promise<boolean>}>())
     const [draftKeys, setDraftKeys] = useState<Record<string, string>>({})
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState<boolean>(false)
+
+    useEffect(
+        () => () => {
+            // Invalidate pending validation so it cannot save a key after this dialog unmounts.
+            savingKeys.current.clear()
+            currentDrafts.current = {}
+        },
+        []
+    )
 
     const checkmarks = useMemo(
         (): Record<LLMProvider, CheckmarkFade> => ({
@@ -160,25 +179,71 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     )
 
     const persistKey = useCallback(
-        (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => {
-            updateSettings({
-                apiKeys: {
-                    [vendor]: {
-                        value: key,
-                        expiresAt: key ? now + API_KEYS_TTL_MS : 0,
+        async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number, allowUnverified = false) => {
+            const id = Symbol("BYOK save")
+            const save = async (): Promise<boolean> => {
+                if (key && !allowUnverified) {
+                    const result = await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
+                    // An edit or discard while testing invalidates this save.
+                    if (savingKeys.current.get(vendor)?.id !== id || currentDrafts.current[vendor] !== key) {
+                        return false
+                    }
+                    setKeyTestResults((prev) => ({
+                        ...prev,
+                        [vendor]: isKeyValidationFailure(result) ? {vendor, result, canSaveUnverified: true} : null,
+                    }))
+                    if (!result.ok) {
+                        return false
+                    }
+                }
+                updateSettings({
+                    apiKeys: {
+                        [vendor]: {
+                            value: key,
+                            expiresAt: key ? now + API_KEYS_TTL_MS : 0,
+                        },
                     },
-                },
-            })
-            checkmark.trigger()
-            setDraftKeys((prev) => {
-                const {[vendor]: _, ...rest} = prev
-                return rest
-            })
+                })
+                const {[vendor]: _savedDraft, ...remainingDrafts} = currentDrafts.current
+                currentDrafts.current = remainingDrafts
+                checkmark.trigger()
+                setDraftKeys((prev) => {
+                    const {[vendor]: _, ...rest} = prev
+                    return rest
+                })
+                return true
+            }
+
+            if (!key) {
+                savingKeys.current.delete(vendor)
+                return save()
+            }
+
+            const existing = savingKeys.current.get(vendor)
+            if (existing?.key === key) {
+                return existing.result
+            }
+
+            const canSaveUnverified = keyTestResults[vendor]?.canSaveUnverified && currentDrafts.current[vendor] === key
+            if (existing || (allowUnverified && !canSaveUnverified)) {
+                return false
+            }
+
+            const pending = {id, key, result: Promise.resolve().then(save)}
+            savingKeys.current.set(vendor, pending)
+            try {
+                return await pending.result
+            } finally {
+                if (savingKeys.current.get(vendor) === pending) {
+                    savingKeys.current.delete(vendor)
+                }
+            }
         },
-        [updateSettings]
+        [keyTestResults, updateSettings]
     )
 
     const handleValueChange = useCallback((vendor: LLMProvider, value: string) => {
+        currentDrafts.current[vendor] = value
         setDraftKeys((prev) => ({...prev, [vendor]: value}))
     }, [])
 
@@ -215,26 +280,45 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         }
     }, [getDirtyDrafts, onClose])
 
-    const handleDiscard = useCallback(() => {
+    const clearDrafts = useCallback(() => {
+        savingKeys.current.clear()
+        setKeyTestResults({})
+        currentDrafts.current = {}
         setDraftKeys({})
         setShowUnsavedChangesModal(false)
-        onClose?.()
-    }, [onClose])
+    }, [])
 
-    const handleSave = useCallback(() => {
-        const now = Date.now()
-        getDirtyDrafts().forEach(({checkmark, vendor}) => {
-            persistKey(vendor, draftKeys[vendor], checkmark, now)
-        })
-        setDraftKeys({})
-        setShowUnsavedChangesModal(false)
+    const handleDiscard = useCallback(() => {
+        clearDrafts()
         onClose?.()
-    }, [getDirtyDrafts, draftKeys, persistKey, onClose])
+    }, [clearDrafts, onClose])
+
+    const handleSave = useCallback(async () => {
+        const now = Date.now()
+        const drafts = getDirtyDrafts().map(({checkmark, vendor}) => ({checkmark, vendor, key: draftKeys[vendor]}))
+        setShowUnsavedChangesModal(false)
+        const saved = await Promise.all(
+            drafts.map(({checkmark, vendor, key}) => persistKey(vendor, key, checkmark, now))
+        )
+        if (
+            saved.every(Boolean) &&
+            activeConfigs.every(
+                ({vendor}) =>
+                    currentDrafts.current[vendor] === undefined ||
+                    currentDrafts.current[vendor] ===
+                        (getApiKey(useSettingsStore.getState().settings.apiKeys, vendor) ?? "")
+            )
+        ) {
+            setDraftKeys({})
+            onClose?.()
+        }
+    }, [activeConfigs, getDirtyDrafts, draftKeys, persistKey, onClose])
 
     return {
         activeConfigs,
         apiKeys,
         handleClose,
+        clearDrafts,
         handleDiscard,
         handleKeyResultChange,
         handleSave,

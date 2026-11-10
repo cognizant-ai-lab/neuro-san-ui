@@ -39,7 +39,13 @@ export interface ByokInputsProps {
     /** Callback when a key validation test produces a result. */
     readonly onKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     /** Callback to persist an API key. */
-    readonly onPersistKey: (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number) => void
+    readonly onPersistKey: (
+        vendor: LLMProvider,
+        key: string,
+        checkmark: CheckmarkFade,
+        now: number,
+        allowUnverified?: boolean
+    ) => Promise<boolean>
     /** Callback when an input value changes. */
     readonly onValueChange: (vendor: LLMProvider, value: string) => void
 }
@@ -84,6 +90,11 @@ export const ByokInputs: FC<ByokInputsProps> = ({
                         id={`${id}-${idSuffix}`}
                         logo={logo}
                         onResultChange={onKeyResultChange}
+                        onSaveUnverified={
+                            keyFailures.some((failure) => failure.vendor === vendor && failure.canSaveUnverified)
+                                ? (key) => onPersistKey(vendor, key, checkmark, Date.now(), true)
+                                : undefined
+                        }
                         onSave={(key) => onPersistKey(vendor, key, checkmark, Date.now())}
                         onTest={onTest}
                         onValueChange={onValueChange}

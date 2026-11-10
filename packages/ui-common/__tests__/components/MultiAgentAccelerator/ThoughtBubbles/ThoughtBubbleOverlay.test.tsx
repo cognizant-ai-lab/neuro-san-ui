@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {createTheme} from "@mui/material/styles"
 import {act, render, screen} from "@testing-library/react"
 import {userEvent} from "@testing-library/user-event"
 
@@ -759,9 +760,9 @@ describe("ThoughtBubbleOverlay", () => {
         const lines = container.querySelectorAll("svg line")
         expect(lines.length).toBe(1)
 
-        // Check that line has the correct stroke attributes for connecting line (uses CSS variable)
+        // Check that line has the correct stroke attributes for connecting line (theme accent color)
         const line = lines[0]
-        expect(line).toHaveAttribute("stroke", "var(--thought-bubble-line-color)")
+        expect(line).toHaveAttribute("stroke", createTheme().palette.primary.main)
         expect(line).toHaveAttribute("stroke-width", "3")
 
         agentEl.remove()
@@ -972,7 +973,7 @@ describe("ThoughtBubbleOverlay", () => {
         const svgs = container.querySelectorAll("svg")
         expect(lines.length > 0 || svgs.length > 0).toBeTruthy()
         const stroke = lines.length > 0 ? lines[0].getAttribute("stroke") : null
-        expect([null, "var(--thought-bubble-line-color)"]).toContain(stroke)
+        expect([null, createTheme().palette.primary.main]).toContain(stroke)
 
         // Cleanup
         agentEl.remove()

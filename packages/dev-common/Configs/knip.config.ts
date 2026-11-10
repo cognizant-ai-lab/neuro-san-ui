@@ -32,6 +32,7 @@ type RawConfiguration = Extract<KnipConfig, Record<string, unknown>>
 const allIssueTypes = Object.keys({
     binaries: true,
     catalog: true,
+    catalogReferences: true,
     cycles: true,
     dependencies: true,
     devDependencies: true,

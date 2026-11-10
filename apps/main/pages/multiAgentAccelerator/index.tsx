@@ -38,6 +38,8 @@ export const MultiAgentAcceleratorPage: FC & CustomPageProps = Object.assign(
     },
     {
         authRequired: true,
+        // Full-bleed "mission control" workspace: no breadcrumbs above the canvas
+        withBreadcrumbs: false,
         pageContext: `The Multi-Agent Accelerator (Neuro-San) UI presents an interactive view of an
     Agent Network. Users can browse different networks from the left menu, while the central graph visualizes how agents
     connect and collaborate to complete tasks. A chat panel on the right allows users to ask questions and receive
