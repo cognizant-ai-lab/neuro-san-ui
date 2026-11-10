@@ -180,10 +180,11 @@ svg.react-flow__background #pattern-react-flow circle {
     }
 }
 
+/* Spinners and progress bars keep moving, since they show that something is still happening */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    :not([role="progressbar"], [role="progressbar"] *),
+    :not([role="progressbar"], [role="progressbar"] *)::before,
+    :not([role="progressbar"], [role="progressbar"] *)::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
     }
