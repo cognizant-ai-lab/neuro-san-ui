@@ -18,9 +18,15 @@ import {act, render, screen, waitFor} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 
 import {withStrictMocks} from "../../../../../__tests__/common/strictMocks"
-import {KEEP_WAITING_LABEL, KeepWaitingPrompt, STOP_WAITING_LABEL} from "../../../components/Common/KeepWaitingPrompt"
+import {
+    CONTINUE_WAITING_LABEL,
+    KeepWaitingPrompt,
+    STOP_WAITING_LABEL,
+    WAIT_REMINDER_QUESTION,
+} from "../../../components/Common/KeepWaitingPrompt"
+import {FIRST_WAIT_REMINDER_MS, REPEATED_WAIT_REMINDER_MS} from "../../../components/Common/useWaitReminder"
 
-const ASK_AFTER_MS = 60_000
+const ACTIVITY = 'Publishing "Cailville Bakery"'
 
 describe("KeepWaitingPrompt", () => {
     withStrictMocks()
@@ -28,17 +34,17 @@ describe("KeepWaitingPrompt", () => {
     let user: UserEvent
     const onStopWaiting = vi.fn()
 
-    const renderPrompt = () =>
+    const renderPrompt = (firstAskMs?: number) =>
         render(
             <KeepWaitingPrompt
-                activity='Publishing "Cailville Bakery"'
-                askAfterMs={ASK_AFTER_MS}
+                activity={ACTIVITY}
+                firstAskMs={firstAskMs}
                 id="keep-waiting"
                 onStopWaiting={onStopWaiting}
             />
         )
 
-    const waitLong = () => act(() => vi.advanceTimersByTime(ASK_AFTER_MS))
+    const waitLong = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 
     beforeEach(() => {
         vi.useFakeTimers({shouldAdvanceTime: true})
@@ -52,38 +58,57 @@ describe("KeepWaitingPrompt", () => {
     it("should not ask before the wait gets long", () => {
         renderPrompt()
 
-        act(() => vi.advanceTimersByTime(ASK_AFTER_MS - 1))
+        waitLong(FIRST_WAIT_REMINDER_MS - 1)
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
 
-    it("should ask whether to keep waiting once the wait gets long", () => {
+    it("should say what is taking long and ask whether to continue waiting", () => {
         renderPrompt()
 
-        waitLong()
+        waitLong(FIRST_WAIT_REMINDER_MS)
 
-        expect(screen.getByRole("dialog")).toHaveTextContent('Publishing "Cailville Bakery" is still in progress.')
+        const waitPrompt = screen.getByRole("dialog")
+        expect(waitPrompt).toHaveTextContent(`${ACTIVITY} is taking longer than expected.`)
+        expect(waitPrompt).toHaveTextContent(WAIT_REMINDER_QUESTION)
     })
 
-    it("should ask again after Keep waiting, once the wait gets long again", async () => {
-        renderPrompt()
-        waitLong()
-        const keepWaitingButton = screen.getByRole("button", {name: KEEP_WAITING_LABEL})
+    it("should ask first after the time it is given", () => {
+        renderPrompt(5000)
 
-        await user.click(keepWaitingButton)
+        waitLong(5000)
+
+        screen.getByRole("dialog")
+    })
+
+    it("should ask again sooner after Continue waiting", async () => {
+        renderPrompt()
+        waitLong(FIRST_WAIT_REMINDER_MS)
+        const continueWaitingButton = screen.getByRole("button", {name: CONTINUE_WAITING_LABEL})
+
+        await user.click(continueWaitingButton)
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
-        waitLong()
+        waitLong(REPEATED_WAIT_REMINDER_MS)
 
         screen.getByRole("dialog")
         expect(onStopWaiting).not.toHaveBeenCalled()
     })
 
-    it("should stop waiting when Stop waiting is clicked", async () => {
+    it("should stop waiting when Cancel is clicked", async () => {
         renderPrompt()
-        waitLong()
-        const stopWaitingButton = screen.getByRole("button", {name: STOP_WAITING_LABEL})
+        waitLong(FIRST_WAIT_REMINDER_MS)
+        const cancelButton = screen.getByRole("button", {name: STOP_WAITING_LABEL})
 
-        await user.click(stopWaitingButton)
+        await user.click(cancelButton)
+
+        expect(onStopWaiting).toHaveBeenCalledTimes(1)
+    })
+
+    it("should stop waiting when Escape is pressed", async () => {
+        renderPrompt()
+        waitLong(FIRST_WAIT_REMINDER_MS)
+
+        await user.keyboard("{Escape}")
 
         expect(onStopWaiting).toHaveBeenCalledTimes(1)
     })

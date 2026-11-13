@@ -39,11 +39,9 @@ import {
 } from "../../../../../../__tests__/common/NetworksListMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
+import {FIRST_WAIT_REMINDER_MS} from "../../../../components/Common/useWaitReminder"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../../../components/MultiAgentAccelerator/const"
-import {
-    ASK_TO_KEEP_WAITING_MS,
-    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
-} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
+import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {PublishWaitPrompts} from "../../../../components/MultiAgentAccelerator/Publish/PublishWaitPrompts"
 import {
@@ -814,7 +812,7 @@ describe("SideBar", () => {
             await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
             await screen.findByRole("button", {name: "Publishing..."})
 
-            act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+            act(() => vi.advanceTimersByTime(FIRST_WAIT_REMINDER_MS))
             const stopWaitingButton = await screen.findByRole("button", {name: STOP_WAITING_LABEL})
             await user.click(stopWaitingButton)
 

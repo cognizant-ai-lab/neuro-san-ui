@@ -29,8 +29,6 @@ import {PublishedDeployment, useTempNetworksStore} from "../../../state/Temporar
 import {downloadFile} from "../../../utils/File"
 import {NotificationType, sendNotification} from "../../Common/notification"
 
-// How long to wait on a publish before asking whether to keep waiting, and again after each "Keep waiting"
-export const ASK_TO_KEEP_WAITING_MS = 3 * 60_000
 export const PUBLISH_SETTINGS_REQUIRED_MESSAGE =
     "Add a publishing server and org name in Settings > External Services to publish"
 export const PUBLISHED_MESSAGE = "Published and opened in a new tab"

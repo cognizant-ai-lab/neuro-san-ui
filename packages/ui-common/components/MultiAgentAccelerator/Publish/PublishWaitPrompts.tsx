@@ -16,12 +16,11 @@ limitations under the License.
 
 import {FC} from "react"
 
-import {ASK_TO_KEEP_WAITING_MS} from "./Publish"
 import {Publishing, PublishStatus, usePublishStore} from "../../../state/Publish"
 import {KeepWaitingPrompt} from "../../Common/KeepWaitingPrompt"
 
 /**
- * Asks every few minutes whether to keep waiting on each network that's publishing. Lives on the page rather than in
+ * Asks every so often whether to keep waiting on each network that's publishing. Lives on the page rather than in
  * a publish button, so the question stays with its network when the user selects another one.
  */
 export const PublishWaitPrompts: FC = () => {
@@ -32,7 +31,6 @@ export const PublishWaitPrompts: FC = () => {
         .map(([networkId, {displayName, waiting}]) => (
             <KeepWaitingPrompt
                 activity={`Publishing "${displayName}"`}
-                askAfterMs={ASK_TO_KEEP_WAITING_MS}
                 id={`publish-wait-${networkId}`}
                 key={networkId}
                 onStopWaiting={() => waiting.abort()}

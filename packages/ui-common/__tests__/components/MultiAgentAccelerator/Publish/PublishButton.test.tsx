@@ -6,9 +6,9 @@ import {makeTempNetwork} from "../../../../../../__tests__/common/NetworksListMo
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {STOP_WAITING_LABEL} from "../../../../components/Common/KeepWaitingPrompt"
 import {NotificationType, sendNotification} from "../../../../components/Common/notification"
+import {FIRST_WAIT_REMINDER_MS} from "../../../../components/Common/useWaitReminder"
 import {TEMPORARY_NETWORK_FOLDER} from "../../../../components/MultiAgentAccelerator/const"
 import {
-    ASK_TO_KEEP_WAITING_MS,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PUBLISHED_MESSAGE,
     PUBLISHED_TAB_BLOCKED_MESSAGE,
@@ -456,7 +456,7 @@ describe("PublishButton", () => {
         await clickPublishAndConfirm()
         await screen.findByText("Putting it online...")
 
-        act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+        act(() => vi.advanceTimersByTime(FIRST_WAIT_REMINDER_MS))
         const stopWaitingButton = await screen.findByRole("button", {name: STOP_WAITING_LABEL})
         await user.click(stopWaitingButton)
 
@@ -502,11 +502,11 @@ describe("PublishButton", () => {
                 <PublishWaitPrompts />
             </>
         )
-        act(() => vi.advanceTimersByTime(ASK_TO_KEEP_WAITING_MS))
+        act(() => vi.advanceTimersByTime(FIRST_WAIT_REMINDER_MS))
         const keepWaitingPrompt = await screen.findByRole("dialog")
         const stopWaitingButton = within(keepWaitingPrompt).getByRole("button", {name: STOP_WAITING_LABEL})
 
-        expect(keepWaitingPrompt).toHaveTextContent(`Publishing "${DISPLAY_NAME}" is still in progress.`)
+        expect(keepWaitingPrompt).toHaveTextContent(`Publishing "${DISPLAY_NAME}" is taking longer than expected.`)
         await user.click(stopWaitingButton)
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 

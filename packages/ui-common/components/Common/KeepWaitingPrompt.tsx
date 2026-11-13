@@ -14,45 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {FC, useEffect, useState} from "react"
+import {FC} from "react"
 
 import {ConfirmationModal} from "./ConfirmationModal"
+import {useWaitReminder} from "./useWaitReminder"
 
-export const KEEP_WAITING_LABEL = "Keep waiting"
-export const STOP_WAITING_LABEL = "Stop waiting"
+export const CONTINUE_WAITING_LABEL = "Continue waiting"
+export const STOP_WAITING_LABEL = "Cancel"
+export const WAIT_REMINDER_QUESTION = "Would you like to continue waiting or cancel?"
 
 interface KeepWaitingPromptProps {
     /** What we're waiting on, as a sentence subject, e.g. `Publishing "Cailville Bakery"` */
     readonly activity: string
-    /** How long to wait before asking, and again after each "Keep waiting" */
-    readonly askAfterMs: number
+    /** How long to wait before asking the first time */
+    readonly firstAskMs?: number
     readonly id: string
     readonly onStopWaiting: () => void
 }
 
 /**
- * While shown, asks every so often whether to keep waiting on something slow, like a browser does for a slow page.
- * Closing the prompt keeps waiting.
+ * While shown, asks every so often whether to keep waiting on something slow. Pressing Escape cancels, like it does
+ * in the network editor.
  */
-export const KeepWaitingPrompt: FC<KeepWaitingPromptProps> = ({activity, askAfterMs, id, onStopWaiting}) => {
-    const [isAsking, setIsAsking] = useState(false)
-
-    useEffect(() => {
-        if (isAsking) return undefined
-
-        const timer = setTimeout(() => setIsAsking(true), askAfterMs)
-        return () => clearTimeout(timer)
-    }, [askAfterMs, isAsking])
+export const KeepWaitingPrompt: FC<KeepWaitingPromptProps> = ({activity, firstAskMs, id, onStopWaiting}) => {
+    const {isAsking, keepWaiting} = useWaitReminder(true, {firstAskMs})
 
     return isAsking ? (
         <ConfirmationModal
-            cancelBtnLabel={KEEP_WAITING_LABEL}
-            content={`${activity} is still in progress.`}
-            handleCancel={() => setIsAsking(false)}
-            handleOk={onStopWaiting}
+            cancelBtnLabel={STOP_WAITING_LABEL}
+            closeable={false}
+            content={WAIT_REMINDER_QUESTION}
+            handleCancel={onStopWaiting}
+            handleOk={keepWaiting}
             id={id}
-            okBtnLabel={STOP_WAITING_LABEL}
-            title="Keep waiting?"
+            okBtnLabel={CONTINUE_WAITING_LABEL}
+            title={`${activity} is taking longer than expected.`}
         />
     ) : null
 }
