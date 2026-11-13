@@ -10,12 +10,15 @@ import {
     unpublishNetwork,
 } from "../../../../controller/publish/Publish"
 
-const SERVER_URL = "https://publish.test"
+const SERVER_URL = "https://publish.example.com"
 const NETWORK_NAME = "cailville_bakery"
 const ORG_NAME = "cailville"
 const HOCON = "{ tools: [] }"
 const PUBLISH_ID = "dep-123"
-const PUBLISHED_URL = "https://publish.test/sites/cailville_bakery"
+const PUBLISHED_URL = "https://publish.example.com/sites/cailville_bakery"
+// The first bytes of a gzip file. Byte 139 isn't valid UTF-8, so reading the archive as text would change it.
+const BUNDLE_ARCHIVE = new Uint8Array([31, 139, 8, 0])
+const BUNDLE_FILE_NAME = "cailville_bakery.tar.gz"
 const DEPLOYMENTS_ROUTE = `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`
 
 // Matches a FormData body whose fields have these values
@@ -181,7 +184,7 @@ describe("Publish", () => {
             })
         ).rejects.toThrow("pip install failed")
 
-        expect(onAccepted).toHaveBeenCalledWith(PUBLISH_ID)
+        expect(onAccepted).toHaveBeenCalledExactlyOnceWith(PUBLISH_ID)
     })
 
     // POST /deployments rejected
@@ -345,23 +348,55 @@ describe("Publish", () => {
     })
 
     // GET /deployments/{id}/bundle
-    it("should fetch the bundle of a published network under the file name the server gave it", async () => {
-        fetchMock.mockResolvedValue(
-            new Response(new Uint8Array([31, 139]), {
-                headers: {"Content-Disposition": 'attachment; filename="cailville_bakery.tar.gz"'},
-            })
+    it("should fetch the bundle of a published network", async () => {
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE))
+
+        const {archive} = await fetchBundle(SERVER_URL, PUBLISH_ID)
+
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            `/api/publish/deployments/${PUBLISH_ID}/bundle?server=${encodeURIComponent(SERVER_URL)}`
         )
+        expect(archive).toEqual(BUNDLE_ARCHIVE)
+    })
+
+    // GET /deployments/{id}/bundle
+    it.each([
+        {form: "a quoted file name", disposition: `attachment; filename="${BUNDLE_FILE_NAME}"`},
+        {form: "a plain file name", disposition: `attachment; filename=${BUNDLE_FILE_NAME}`},
+        {form: "an encoded file name", disposition: `attachment; filename*=UTF-8''${BUNDLE_FILE_NAME}`},
+        {
+            form: "an encoded file name and a fallback",
+            disposition: `attachment; filename="fallback.tar.gz"; filename*=utf-8''${BUNDLE_FILE_NAME}`,
+        },
+        {
+            form: "a file name that isn't the first parameter",
+            disposition: `attachment; size=2; FILENAME="${BUNDLE_FILE_NAME}"`,
+        },
+        {
+            form: "a file name with escaped quotes",
+            disposition: String.raw`attachment; filename="say \"hi\".tar.gz"`,
+            fileName: 'say "hi".tar.gz',
+        },
+        {
+            form: "a file name with encoded characters",
+            disposition: "attachment; filename*=UTF-8''caf%C3%A9%20menu.tar.gz",
+            fileName: "café menu.tar.gz",
+        },
+    ])("should save the bundle under the file name the server gave it as $form", async ({disposition, fileName}) => {
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE, {headers: {"Content-Disposition": disposition}}))
 
         const bundle = await fetchBundle(SERVER_URL, PUBLISH_ID)
 
-        expect(fetchMock.mock.calls[0][0]).toBe(
-            `/api/publish/deployments/${PUBLISH_ID}/bundle?server=${encodeURIComponent(SERVER_URL)}`
-        )
-        expect(bundle).toEqual({archive: new Uint8Array([31, 139]), fileName: "cailville_bakery.tar.gz"})
+        expect(bundle.fileName).toBe(fileName ?? BUNDLE_FILE_NAME)
     })
 
-    it("should name the bundle's file itself when the server doesn't", async () => {
-        fetchMock.mockResolvedValue(new Response(new Uint8Array([31, 139])))
+    // GET /deployments/{id}/bundle
+    it.each([
+        {desc: "doesn't name it", headers: {}},
+        {desc: "names it without a file name", headers: {"Content-Disposition": "attachment"}},
+        {desc: "names it with bad encoding", headers: {"Content-Disposition": "attachment; filename*=UTF-8''%E0%A4%A"}},
+    ])("should name the bundle's file itself when the server $desc", async ({headers}) => {
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE, {headers}))
 
         const {fileName} = await fetchBundle(SERVER_URL, PUBLISH_ID)
 
