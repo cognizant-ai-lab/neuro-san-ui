@@ -21,7 +21,10 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../../Const"
 import handler from "../../../../pages/api/publish/[...path]"
 
-const SERVER_URL = "https://publish.test"
+const SERVER_URL = "https://publish.example.com"
+const BUNDLE_CONTENTS = "bundle contents"
+const BUNDLE_DISPOSITION = 'attachment; filename="cailville_bakery.tar.gz"'
+const HOCON = "hocon contents"
 
 // Each test sends one of the publish server endpoints through the route. The comment on each test or group names it.
 describe("Publish API route", () => {
@@ -57,9 +60,10 @@ describe("Publish API route", () => {
 
         const res = await callProxy("GET", {path: ["deployments", "dep-1", "wait"], server: SERVER_URL, timeout: "60"})
 
-        const [target, init] = fetchMock.mock.calls[0]
-        expect(String(target)).toBe(`${SERVER_URL}/deployments/dep-1/wait?timeout=60`)
-        expect(init?.headers).toMatchObject({Authorization: "Bearer test-token"})
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            new URL(`${SERVER_URL}/deployments/dep-1/wait?timeout=60`),
+            expect.objectContaining({headers: expect.objectContaining({Authorization: "Bearer test-token"})})
+        )
         expect(res._getStatusCode()).toBe(httpStatus.OK)
         expect(JSON.parse(res._getData().toString())).toEqual({id: "dep-1", status: "ready"})
     })
@@ -68,12 +72,16 @@ describe("Publish API route", () => {
     it("should pass the upload body and its content type through unchanged", async () => {
         fetchMock.mockResolvedValue(Response.json({id: "dep-1"}, {status: httpStatus.ACCEPTED}))
 
-        const res = await callProxy("POST", {path: ["deployments"], server: SERVER_URL}, "hocon contents")
+        const res = await callProxy("POST", {path: ["deployments"], server: SERVER_URL}, HOCON)
 
-        const init = fetchMock.mock.calls[0][1]
-        expect(init?.method).toBe("POST")
-        expect(init?.headers).toMatchObject({"Content-Type": "text/plain"})
-        expect(new TextDecoder().decode(init?.body as Uint8Array)).toBe("hocon contents")
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+            expect.anything(),
+            expect.objectContaining({
+                method: "POST",
+                headers: expect.objectContaining({"Content-Type": "text/plain"}),
+                body: expect.toSatisfy((body: Uint8Array) => new TextDecoder().decode(body) === HOCON),
+            })
+        )
         expect(res._getStatusCode()).toBe(httpStatus.ACCEPTED)
     })
 
@@ -83,24 +91,23 @@ describe("Publish API route", () => {
 
         const res = await callProxy("DELETE", {path: ["deployments", "dep-1"], server: `${SERVER_URL}/`})
 
-        expect(String(fetchMock.mock.calls[0][0])).toBe(`${SERVER_URL}/deployments/dep-1`)
+        expect(fetchMock).toHaveBeenCalledExactlyOnceWith(new URL(`${SERVER_URL}/deployments/dep-1`), expect.anything())
         expect(res._getStatusCode()).toBe(httpStatus.NO_CONTENT)
     })
 
     // GET /deployments/{id}/bundle - Build Deployment Bundle
     it("should relay a bundle with the file name the server gave it", async () => {
-        const disposition = 'attachment; filename="cailville_bakery.tar.gz"'
         fetchMock.mockResolvedValue(
-            new Response(new Uint8Array([31, 139]), {
-                headers: {"Content-Type": "application/gzip", "Content-Disposition": disposition},
+            new Response(BUNDLE_CONTENTS, {
+                headers: {"Content-Type": "application/gzip", "Content-Disposition": BUNDLE_DISPOSITION},
             })
         )
 
         const res = await callProxy("GET", {path: ["deployments", "dep-1", "bundle"], server: SERVER_URL})
 
         expect(res.getHeader("Content-Type")).toBe("application/gzip")
-        expect(res.getHeader("Content-Disposition")).toBe(disposition)
-        expect([...res._getData()]).toEqual([31, 139])
+        expect(res.getHeader("Content-Disposition")).toBe(BUNDLE_DISPOSITION)
+        expect(res._getData().toString()).toBe(BUNDLE_CONTENTS)
     })
 
     // GET /health - Health Check. The route doesn't look at the path, so these use the simplest endpoint.
