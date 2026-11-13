@@ -22,7 +22,8 @@ import {ENABLE_PUBLISHING_ENV_VAR, PUBLISH_BEARER_TOKEN_ENV_VAR} from "../../../
 import handler from "../../../../pages/api/publish/[...path]"
 
 const SERVER_URL = "https://publish.example.com"
-const BUNDLE_CONTENTS = "bundle contents"
+// The first bytes of a gzip file. Byte 139 isn't valid UTF-8, so reading the archive as text would change it.
+const BUNDLE_ARCHIVE = new Uint8Array([31, 139, 8, 0])
 const BUNDLE_DISPOSITION = 'attachment; filename="cailville_bakery.tar.gz"'
 const HOCON = "hocon contents"
 
@@ -98,7 +99,7 @@ describe("Publish API route", () => {
     // GET /deployments/{id}/bundle - Build Deployment Bundle
     it("should relay a bundle with the file name the server gave it", async () => {
         fetchMock.mockResolvedValue(
-            new Response(BUNDLE_CONTENTS, {
+            new Response(BUNDLE_ARCHIVE, {
                 headers: {"Content-Type": "application/gzip", "Content-Disposition": BUNDLE_DISPOSITION},
             })
         )
@@ -107,7 +108,7 @@ describe("Publish API route", () => {
 
         expect(res.getHeader("Content-Type")).toBe("application/gzip")
         expect(res.getHeader("Content-Disposition")).toBe(BUNDLE_DISPOSITION)
-        expect(res._getData().toString()).toBe(BUNDLE_CONTENTS)
+        expect([...res._getData()]).toEqual([...BUNDLE_ARCHIVE])
     })
 
     // GET /health - Health Check. The route doesn't look at the path, so these use the simplest endpoint.

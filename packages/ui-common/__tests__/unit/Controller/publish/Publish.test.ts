@@ -16,7 +16,8 @@ const ORG_NAME = "cailville"
 const HOCON = "{ tools: [] }"
 const PUBLISH_ID = "dep-123"
 const PUBLISHED_URL = "https://publish.example.com/sites/cailville_bakery"
-const BUNDLE_CONTENTS = "bundle contents"
+// The first bytes of a gzip file. Byte 139 isn't valid UTF-8, so reading the archive as text would change it.
+const BUNDLE_ARCHIVE = new Uint8Array([31, 139, 8, 0])
 const BUNDLE_FILE_NAME = "cailville_bakery.tar.gz"
 const DEPLOYMENTS_ROUTE = `/api/publish/deployments?server=${encodeURIComponent(SERVER_URL)}`
 
@@ -348,14 +349,14 @@ describe("Publish", () => {
 
     // GET /deployments/{id}/bundle
     it("should fetch the bundle of a published network", async () => {
-        fetchMock.mockResolvedValue(new Response(BUNDLE_CONTENTS))
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE))
 
         const {archive} = await fetchBundle(SERVER_URL, PUBLISH_ID)
 
         expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
             `/api/publish/deployments/${PUBLISH_ID}/bundle?server=${encodeURIComponent(SERVER_URL)}`
         )
-        expect(new TextDecoder().decode(archive)).toBe(BUNDLE_CONTENTS)
+        expect(archive).toEqual(BUNDLE_ARCHIVE)
     })
 
     // GET /deployments/{id}/bundle
@@ -382,7 +383,7 @@ describe("Publish", () => {
             fileName: "café menu.tar.gz",
         },
     ])("should save the bundle under the file name the server gave it as $form", async ({disposition, fileName}) => {
-        fetchMock.mockResolvedValue(new Response(BUNDLE_CONTENTS, {headers: {"Content-Disposition": disposition}}))
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE, {headers: {"Content-Disposition": disposition}}))
 
         const bundle = await fetchBundle(SERVER_URL, PUBLISH_ID)
 
@@ -395,7 +396,7 @@ describe("Publish", () => {
         {desc: "names it without a file name", headers: {"Content-Disposition": "attachment"}},
         {desc: "names it with bad encoding", headers: {"Content-Disposition": "attachment; filename*=UTF-8''%E0%A4%A"}},
     ])("should name the bundle's file itself when the server $desc", async ({headers}) => {
-        fetchMock.mockResolvedValue(new Response(BUNDLE_CONTENTS, {headers}))
+        fetchMock.mockResolvedValue(new Response(BUNDLE_ARCHIVE, {headers}))
 
         const {fileName} = await fetchBundle(SERVER_URL, PUBLISH_ID)
 
