@@ -506,7 +506,7 @@ describe("PublishButton", () => {
         const keepWaitingPrompt = await screen.findByRole("dialog")
         const stopWaitingButton = within(keepWaitingPrompt).getByRole("button", {name: STOP_WAITING_LABEL})
 
-        expect(keepWaitingPrompt).toHaveTextContent(`Publishing "${DISPLAY_NAME}" is taking longer than expected.`)
+        expect(keepWaitingPrompt).toHaveTextContent(`Publishing "${DISPLAY_NAME}"`)
         await user.click(stopWaitingButton)
         await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 

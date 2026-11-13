@@ -22,6 +22,7 @@ import {
     CONTINUE_WAITING_LABEL,
     KeepWaitingPrompt,
     STOP_WAITING_LABEL,
+    TAKING_LONGER_MESSAGE,
     WAIT_REMINDER_QUESTION,
 } from "../../../components/Common/KeepWaitingPrompt"
 import {FIRST_WAIT_REMINDER_MS, REPEATED_WAIT_REMINDER_MS} from "../../../components/Common/useWaitReminder"
@@ -69,7 +70,8 @@ describe("KeepWaitingPrompt", () => {
         waitLong(FIRST_WAIT_REMINDER_MS)
 
         const waitPrompt = screen.getByRole("dialog")
-        expect(waitPrompt).toHaveTextContent(`${ACTIVITY} is taking longer than expected.`)
+        expect(waitPrompt).toHaveTextContent(ACTIVITY)
+        expect(waitPrompt).toHaveTextContent(TAKING_LONGER_MESSAGE)
         expect(waitPrompt).toHaveTextContent(WAIT_REMINDER_QUESTION)
     })
 
