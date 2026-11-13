@@ -7,7 +7,6 @@ import DownloadIcon from "@mui/icons-material/Download"
 import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
-import IconButton from "@mui/material/IconButton"
 import {styled, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
@@ -23,9 +22,8 @@ import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
 import {motion, useReducedMotion} from "motion/react"
 import {FC, useRef} from "react"
 
+import {ActionIconButton} from "./ActionIconButton"
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
-import {useEnvironmentStore} from "../../../state/Environment"
-import {usePublishServerUrl} from "../../../state/Publish"
 import {getSheen, SHEEN_EASE, sheenGradient} from "../../../Theme/sheen"
 import {downloadFile} from "../../../utils/File"
 import {PublishIconButton} from "../Publish/PublishIconButton"
@@ -35,22 +33,21 @@ import {PublishIconButton} from "../Publish/PublishIconButton"
 // Accessible names shared between each action's tooltip title and its aria-label.
 export const EDIT_NETWORK_LABEL = "Edit this network"
 export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
+export const DELETE_NETWORK_LABEL = "Delete network"
 
 // Palette of theme colors we can use for tags (MUI palette keys; each has .main and .contrastText)
 const TAG_COLORS = ["primary", "secondary", "info", "success", "warning", "error"] as const
 
-// Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
-// color and only dims via opacity.
-const ActionIconButton = styled(IconButton)(({theme}) => ({
-    padding: 0,
-    color: (theme.vars ?? theme).palette.primary.main,
-    "&:hover": {color: (theme.vars ?? theme).palette.primary.dark},
-    "&.Mui-disabled": {
-        opacity: 0.3,
-    },
+//#endregion Constants
+
+//#region Styled Components
+
+// Turns red on hover. Set on the icon itself, since the app's global CSS colors icons inside buttons.
+const DeleteIconButton = styled(ActionIconButton)(({theme}) => ({
+    "&:hover .MuiSvgIcon-root": {color: (theme.vars ?? theme).palette.error.main},
 }))
 
-//#endregion Constants
+//#endregion Styled Components
 
 //#region Types and Interfaces
 export interface AgentNetworkNodeProps extends TreeItemProps {
@@ -122,10 +119,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isTemporaryNetwork = Boolean(expirationTime)
     const isExpired = isChild && isTemporaryNetwork && isTemporaryNetworkExpired(expirationTime)
     const networkHocon = item?.temporaryNetworkHocon ?? null
-    const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
-    const publishServerUrl = usePublishServerUrl()
-    const networkName = item?.temporaryNetworkName
-    const showPublishButton = enablePublishing && Boolean(publishServerUrl) && networkHocon && networkName
 
     const iconNameSuggestion = item.iconSuggestion
 
@@ -259,16 +252,12 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                         </Box>
                         {isChild && isTemporaryNetwork && (
                             <Box sx={{display: "flex", alignItems: "center", gap: "0.25rem", marginLeft: "auto"}}>
-                                {showPublishButton && (
-                                    <PublishIconButton
-                                        isExpired={isExpired}
-                                        displayName={item.displayName}
-                                        hocon={networkHocon}
-                                        id={`${itemId}-publish`}
-                                        networkId={itemId}
-                                        networkName={networkName}
-                                    />
-                                )}
+                                <PublishIconButton
+                                    displayName={item.displayName}
+                                    id={`${itemId}-publish`}
+                                    isExpired={isExpired}
+                                    networkId={itemId}
+                                />
                                 {networkHocon && (
                                     <Tooltip title={isExpired ? "Expired" : DOWNLOAD_NETWORK_DEFINITION_LABEL}>
                                         <span>
@@ -282,7 +271,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}
                                                 size="small"
                                             >
-                                                <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                                <DownloadIcon />
                                             </ActionIconButton>
                                         </span>
                                     </Tooltip>
@@ -298,26 +287,21 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             aria-label={EDIT_NETWORK_LABEL}
                                             size="small"
                                         >
-                                            <Edit sx={{fontSize: "0.75rem"}} />
+                                            <Edit />
                                         </ActionIconButton>
                                     </span>
                                 </Tooltip>
-                                <Tooltip title="Delete network">
-                                    <Delete
+                                <Tooltip title={DELETE_NETWORK_LABEL}>
+                                    <DeleteIconButton
+                                        aria-label={DELETE_NETWORK_LABEL}
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             onDeleteNetwork?.(itemId, isExpired)
                                         }}
-                                        sx={{
-                                            color: "primary.main",
-                                            "&:hover": {color: "error.main"},
-                                            "&.Mui-disabled": {
-                                                opacity: 0.3,
-                                            },
-                                            cursor: "pointer",
-                                            fontSize: "0.75rem",
-                                        }}
-                                    />
+                                        size="small"
+                                    >
+                                        <Delete />
+                                    </DeleteIconButton>
                                 </Tooltip>
                             </Box>
                         )}

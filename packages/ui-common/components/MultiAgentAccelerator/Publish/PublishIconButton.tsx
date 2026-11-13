@@ -16,49 +16,47 @@ limitations under the License.
 
 import PublicIcon from "@mui/icons-material/Public"
 import Box from "@mui/material/Box"
-import CircularProgress from "@mui/material/CircularProgress"
-import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishNetwork, showPublishResult} from "./Publish"
+import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, showPublishResult} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
-import {PublishStatus, usePublishStore} from "../../../state/Publish"
+import {useEnvironmentStore} from "../../../state/Environment"
+import {PublishStatus, usePublishServerUrl, usePublishStore} from "../../../state/Publish"
+import {useTempNetworksStore} from "../../../state/TemporaryNetworks"
+import {ActionIconButton} from "../Sidebar/ActionIconButton"
 
 interface PublishIconButtonProps {
     /** The network's name as people read it, for the confirmation */
     readonly displayName: string
-    readonly hocon: string
     readonly id: string
     /** An expired network can't be published, but its live site still opens */
     readonly isExpired: boolean
-    /** The network's id in the app, which its publish state is kept under */
+    /** The temporary network's id, which its name and HOCON are looked up by */
     readonly networkId: string
-    /** The agent network name, which it's published under */
-    readonly networkName: string
 }
 
 /**
  * Small globe button for publishing a network from the sidebar. Publishes after asking and spins while publishing.
  * Once the network is live it turns green and opens the live site.
  */
-export const PublishIconButton: FC<PublishIconButtonProps> = ({
-    displayName,
-    hocon,
-    id,
-    isExpired,
-    networkId,
-    networkName,
-}) => {
+export const PublishIconButton: FC<PublishIconButtonProps> = ({displayName, id, isExpired, networkId}) => {
+    const enablePublishing = useEnvironmentStore((state) => state.enablePublishing)
+    const publishServerUrl = usePublishServerUrl()
+    const network = useTempNetworksStore((state) =>
+        state.tempNetworks.find((tempNetwork) => tempNetwork.agentInfo.agent_name === networkId)
+    )
+    const networkName = network?.agentNetworkName
+    const hocon = network?.networkHocon
+    const canPublish = enablePublishing && Boolean(publishServerUrl) && Boolean(networkName) && Boolean(hocon)
     const publishState = usePublishStore((state) => state.networks[networkId])
     const publishStatus = publishState?.status
     const publishedUrl = publishState?.status === PublishStatus.Published ? publishState.url : null
-    const target = usePublishTarget(networkId, networkName)
+    // Without a name the hook doesn't ask the server, which it shouldn't while publishing isn't available
+    const target = usePublishTarget(networkId, canPublish ? networkName : undefined)
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-
-    const network: PublishNetwork = {id: networkId, name: networkName}
 
     const getLabel = () => {
         if (publishStatus === PublishStatus.Publishing) return "Publishing..."
@@ -71,14 +69,16 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
     const label = getLabel()
     const isPublishing = publishStatus === PublishStatus.Publishing
 
+    if (!canPublish) return null
+
     return (
         <>
             <Tooltip title={label}>
                 {/* A disabled button doesn't fire the hover events the tooltip needs, so it gets a wrapper */}
                 <span>
-                    <IconButton
+                    <ActionIconButton
                         aria-label={label}
-                        disabled={isPublishing || (!publishedUrl && (isExpired || !target))}
+                        disabled={!publishedUrl && (isExpired || !target)}
                         id={id}
                         onClick={(e) => {
                             e.stopPropagation()
@@ -88,33 +88,27 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                                 setIsConfirmOpen(true)
                             }
                         }}
+                        loading={isPublishing}
                         size="small"
                         sx={{
-                            color: "primary.main",
-                            p: 0,
-                            "&:hover": {color: "primary.dark"},
+                            // The spinner stays fully visible, unlike a disabled icon
                             "&.Mui-disabled": {opacity: isPublishing ? 1 : 0.3},
+                            // The app's global CSS keeps icons colored, so hide the globe behind the loading spinner
+                            "&.MuiIconButton-loading .MuiSvgIcon-root": {visibility: "hidden"},
                         }}
                     >
-                        {isPublishing ? (
-                            <CircularProgress
-                                size="0.75rem"
-                                sx={{color: "primary.main"}}
-                            />
-                        ) : (
-                            // Colored on the icon itself, since the app's global CSS colors icons inside buttons
-                            <PublicIcon sx={{fontSize: "0.75rem", ...(publishedUrl && {color: "success.main"})}} />
-                        )}
-                    </IconButton>
+                        {/* Colored on the icon itself, since the app's global CSS colors icons inside buttons */}
+                        <PublicIcon sx={publishedUrl ? {color: "success.main"} : {}} />
+                    </ActionIconButton>
                 </span>
             </Tooltip>
-            {isConfirmOpen && target && (
-                // The dialog is a portal, but its clicks still bubble up the React tree to the sidebar item, which
-                // would select the network
-                <Box
-                    component="span"
-                    onClick={(e) => e.stopPropagation()}
-                >
+            {/* The dialog is a portal, but its clicks still bubble up the React tree to the sidebar item,
+                which would select the network */}
+            <Box
+                component="span"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {isConfirmOpen && target && (
                     <PublishConfirmation
                         displayName={displayName}
                         id={`${id}-confirm`}
@@ -122,14 +116,18 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                         onCancel={() => setIsConfirmOpen(false)}
                         onConfirm={(refreshTheme) => {
                             setIsConfirmOpen(false)
-                            void publish(network, hocon, target, refreshTheme).then((result) =>
-                                showPublishResult(networkName, result)
-                            )
+                            void publish(
+                                {id: networkId, name: networkName},
+                                displayName,
+                                hocon,
+                                target,
+                                refreshTheme
+                            ).then((result) => showPublishResult(networkName, result))
                         }}
                         target={target}
                     />
-                </Box>
-            )}
+                )}
+            </Box>
         </>
     )
 }

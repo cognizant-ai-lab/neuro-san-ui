@@ -26,6 +26,14 @@ export enum PublishStatus {
     Unpublished = "Unpublished",
 }
 
+export interface Publishing {
+    readonly status: PublishStatus.Publishing
+    /** The network's name as people read it, for asking whether to keep waiting */
+    readonly displayName: string
+    /** Stops waiting for this publish */
+    readonly waiting: AbortController
+}
+
 export interface Published {
     readonly status: PublishStatus.Published
     /** The publishing server the network is published on, so it's unpublished from the same server */
@@ -40,7 +48,7 @@ export interface Published {
 }
 
 export type PublishState =
-    | {readonly status: PublishStatus.Publishing}
+    | Publishing
     | Published
     // Published before and now unpublished, or the publish failed. The server keeps the network, so it can be published
     // again.
