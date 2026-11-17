@@ -138,4 +138,3 @@ yarn knip                                   # Unused files/exports/dependencies
 - Explicit "Do Not" rules for common LLM mistakes in this repo:
     - Don't edit `packages/ui-common/generated/` by hand. Run `yarn generate` instead.
     - Don't edit `yarn.lock` by hand.
-    - Don't commit changes to `apps/main/AGENTS.md`. `next dev` rewrites it.
