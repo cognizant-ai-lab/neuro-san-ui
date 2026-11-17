@@ -73,11 +73,11 @@ yarn knip                                   # Unused files/exports/dependencies
 ```
 
 - When addressing linter errors, run `yarn lint --fix` to automatically fix issues where possible.
-- `yarn check-format --write <path>` fixes Prettier issues like long lines, which `yarn lint --fix` won't.
-- Run `nvm use` first to get the Node version in `.nvmrc`.
-- Type-check with `yarn tsc`, not `tsc -p tsconfig.test.json`, which writes a stray `tsconfig.test.tsbuildinfo`.
-- In a new git worktree, copy over `packages/ui-common/generated/` and both `.env` files (root and `apps/main`), since
-  they're gitignored. Without `generated/`, lint and tests fail.
+- Run `yarn check-format --write <path>` to fix Prettier issues. `yarn lint --fix` won't fix long lines.
+- Run `nvm use` first.
+- Type-check with `yarn tsc`. Never run `tsc -p tsconfig.test.json`, which writes a stray build file.
+- In a new git worktree, copy `packages/ui-common/generated/` and the root and `apps/main` `.env` files. They're
+  gitignored, and lint fails without `generated/`.
 
 ## Code Style & Conventions
 
@@ -91,14 +91,15 @@ yarn knip                                   # Unused files/exports/dependencies
 - Use functional components and React hooks. Avoid class components unless necessary.
 - Use TypeScript types and interfaces to define props and state. Avoid heavy casts unless absolutely necessary.
 - Prefer existing DOM and library types (e.g. `KeyboardEvent["key"]`) over a bare `string` or `number`.
-- Fix the root cause rather than working around it. For example, add the missing prop or callback instead of forcing a
-  remount with a `key`.
-- Comments say what the code does, not what it replaced ("now does X instead of Y").
-- Keep `styled()` components in alphabetical order within the `// #region: Styled Components` block. The exception is
-  a component that extends another one, which has to come after it.
+- Fix the root cause, not the symptom. For example, add the missing prop or callback instead of remounting with `key`.
+- Write comments that say what the code does, not what it replaced ("now does X instead of Y").
+- Delete code your change leaves unused.
+- Sort `styled()` components alphabetically in the `// #region: Styled Components` block, except a component that
+  extends another, which goes after it.
 - Ask before changing user-facing copy.
-- For UI changes, check both light and dark themes.
-- No em dashes, in code, comments, or anything written for people (commit messages, PRs, issues).
+- Check UI changes in both light and dark themes.
+- Never use em dashes, in code, comments, commit messages, PRs, or issues. In prose, don't join sentences with
+  semicolons.
 
 ## Testing Guidelines
 
@@ -113,34 +114,38 @@ yarn knip                                   # Unused files/exports/dependencies
   Zustand stores are module singletons and are not reset automatically, so reset the ones a test touches.
 - Coverage thresholds are enforced (`yarn test --coverage`, used by CommitCheck and CI).
 - jsdom does no layout, so visual problems (overlap, clipping, z-order) won't show up in tests.
-- Code drives tests. Don't change production code to make a test pass or raise coverage. The only exception is test
-  ids and selectors.
+- Never change production code to make a test pass or raise coverage. Test ids and selectors are the only exception.
 - Don't copy-paste near-duplicate tests. Use `it.each` or a helper.
 - Name tests for what the user sees or does, not for props or handlers.
-- Query by role and accessible name before falling back to test ids. If an element has no accessible name, add an
-  `aria-label` to the component rather than a test id.
-- Put the query in a const before the interaction, so a failure shows whether the element was missing or the
-  interaction failed.
-- Don't wrap `getBy*` in `toBeInTheDocument()`, since `getBy*` already throws when the element is missing.
+- Query by role and accessible name, not test id. If an element has no accessible name, add an `aria-label`.
+- Put the query in a const before the interaction, not inline in it.
+- Don't wrap `getBy*` in `toBeInTheDocument()`. `getBy*` already throws when the element is missing.
 - Prefer `userEvent` over `fireEvent`, and `user.paste` over `user.type` when individual keystrokes don't matter.
-- Use `toHaveBeenCalledWith` and similar matchers instead of reading `mock.calls` directly.
+- Use `toHaveBeenCalledWith` and similar matchers, not `mock.calls`. Pair `toHaveBeenCalledTimes(1)` with
+  `toHaveBeenCalledWith(...)`.
+- Type deliberately bad test data as `Partial<T>`, and cast to `T` only where it's passed in.
 - Use `vi.mocked()` instead of casting mocks.
 - Use the constants the code exports instead of retyping string literals.
-- When UI is transient (spinners, toasts), assert that it goes away too.
+- For transient UI (spinners, toasts), also assert that it goes away.
 
 ## Git & Pull Requests
 
-- Don't commit or push without asking.
-- Keep commit messages to one or two sentences.
+- Never commit or push without asking, and never commit to `main`.
+- Keep commit messages to one or two sentences of plain text, with no markdown.
 - Open PRs as drafts.
 - PR descriptions describe the final change against the base branch, not how it got there.
 - Don't add extra line breaks at the end of PR descriptions.
+- Don't hard-wrap PR descriptions, comments, or issues. GitHub wraps them.
+- PR screenshots are dark theme and show the full window or a large region, not a thin crop.
 - Don't @-mention people in PR descriptions.
 - Avoid stacked PRs unless they're really needed.
-- Only state what was actually verified in PRs, comments, and issues.
+- In PRs, comments, and issues, state only what you verified.
+- Don't treat a README, doc, or PR description as proof of how something works. Read the code, workflow, or
+  script, or run it.
 
 ## Guardrails & Anti-Patterns
 
 - Explicit "Do Not" rules for common LLM mistakes in this repo:
     - Don't edit `packages/ui-common/generated/` by hand. Run `yarn generate` instead.
+    - Don't edit `yarn.lock` by hand.
     - Don't commit changes to `apps/main/AGENTS.md`. `next dev` rewrites it.
