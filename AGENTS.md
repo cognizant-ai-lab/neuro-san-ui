@@ -75,9 +75,7 @@ yarn knip                                   # Unused files/exports/dependencies
 - When addressing linter errors, run `yarn lint --fix` to automatically fix issues where possible.
 - Run `yarn check-format --write <path>` to fix Prettier issues. `yarn lint --fix` won't fix long lines.
 - Run `nvm use` first.
-- Type-check with `yarn tsc`. Never run `tsc -p tsconfig.test.json`, which writes a stray build file.
-- In a new git worktree, copy `packages/ui-common/generated/` and the root and `apps/main` `.env` files. They're
-  gitignored, and lint fails without `generated/`.
+- A new git worktree has no `packages/ui-common/generated/`. Run `yarn generate` before linting or type-checking.
 
 ## Code Style & Conventions
 
@@ -94,12 +92,9 @@ yarn knip                                   # Unused files/exports/dependencies
 - Fix the root cause, not the symptom. For example, add the missing prop or callback instead of remounting with `key`.
 - Write comments that say what the code does, not what it replaced ("now does X instead of Y").
 - Delete code your change leaves unused.
-- Sort `styled()` components alphabetically in the `// #region: Styled Components` block, except a component that
-  extends another, which goes after it.
 - Ask before changing user-facing copy.
 - Check UI changes in both light and dark themes.
-- Never use em dashes, in code, comments, commit messages, PRs, or issues. In prose, don't join sentences with
-  semicolons.
+- Never use em dashes in code, comments, commit messages, PRs, or issues.
 
 ## Testing Guidelines
 
@@ -118,27 +113,22 @@ yarn knip                                   # Unused files/exports/dependencies
 - Don't copy-paste near-duplicate tests. Use `it.each` or a helper.
 - Name tests for what the user sees or does, not for props or handlers.
 - Query by role and accessible name, not test id. If an element has no accessible name, add an `aria-label`.
-- Put the query in a const before the interaction, not inline in it.
 - Don't wrap `getBy*` in `toBeInTheDocument()`. `getBy*` already throws when the element is missing.
-- Prefer `userEvent` over `fireEvent`, and `user.paste` over `user.type` when individual keystrokes don't matter.
-- Use `toHaveBeenCalledWith` and similar matchers, not `mock.calls`. Pair `toHaveBeenCalledTimes(1)` with
-  `toHaveBeenCalledWith(...)`.
-- Type deliberately bad test data as `Partial<T>`, and cast to `T` only where it's passed in.
+- Prefer `userEvent` over `fireEvent`.
+- Use `toHaveBeenCalledWith` and similar matchers, not `mock.calls`.
 - Use `vi.mocked()` instead of casting mocks.
 - Use the constants the code exports instead of retyping string literals.
 - For transient UI (spinners, toasts), also assert that it goes away.
 
 ## Git & Pull Requests
 
-- Never commit or push without asking, and never commit to `main`.
-- Keep commit messages to one or two sentences of plain text, with no markdown.
+- Never commit to `main`.
 - Open PRs as drafts.
+- Keep commit messages short and in plain text.
 - PR descriptions describe the final change against the base branch, not how it got there.
 - Don't add extra line breaks at the end of PR descriptions.
 - Don't hard-wrap PR descriptions, comments, or issues. GitHub wraps them.
-- PR screenshots are dark theme and show the full window or a large region, not a thin crop.
 - Don't @-mention people in PR descriptions.
-- Avoid stacked PRs unless they're really needed.
 - In PRs, comments, and issues, state only what you verified.
 - Don't treat a README, doc, or PR description as proof of how something works. Read the code, workflow, or
   script, or run it.
