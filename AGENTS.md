@@ -73,6 +73,11 @@ yarn knip                                   # Unused files/exports/dependencies
 ```
 
 - When addressing linter errors, run `yarn lint --fix` to automatically fix issues where possible.
+- `yarn check-format --write <path>` fixes Prettier issues like long lines, which `yarn lint --fix` won't.
+- Run `nvm use` first to get the Node version in `.nvmrc`.
+- Type-check with `yarn tsc`, not `tsc -p tsconfig.test.json`, which writes a stray `tsconfig.test.tsbuildinfo`.
+- In a new git worktree, copy over `packages/ui-common/generated/` and both `.env` files (root and `apps/main`), since
+  they're gitignored. Without `generated/`, lint and tests fail.
 
 ## Code Style & Conventions
 
@@ -85,6 +90,15 @@ yarn knip                                   # Unused files/exports/dependencies
 - Use descriptive names for variables, functions, and components. Avoid abbreviations unless they are widely recognized.
 - Use functional components and React hooks. Avoid class components unless necessary.
 - Use TypeScript types and interfaces to define props and state. Avoid heavy casts unless absolutely necessary.
+- Prefer existing DOM and library types (e.g. `KeyboardEvent["key"]`) over a bare `string` or `number`.
+- Fix the root cause rather than working around it. For example, add the missing prop or callback instead of forcing a
+  remount with a `key`.
+- Comments say what the code does, not what it replaced ("now does X instead of Y").
+- Keep `styled()` components in alphabetical order within the `// #region: Styled Components` block. The exception is
+  a component that extends another one, which has to come after it.
+- Ask before changing user-facing copy.
+- For UI changes, check both light and dark themes.
+- No em dashes, in code, comments, or anything written for people (commit messages, PRs, issues).
 
 ## Testing Guidelines
 
@@ -99,9 +113,34 @@ yarn knip                                   # Unused files/exports/dependencies
   Zustand stores are module singletons and are not reset automatically, so reset the ones a test touches.
 - Coverage thresholds are enforced (`yarn test --coverage`, used by CommitCheck and CI).
 - jsdom does no layout, so visual problems (overlap, clipping, z-order) won't show up in tests.
+- Code drives tests. Don't change production code to make a test pass or raise coverage. The only exception is test
+  ids and selectors.
+- Don't copy-paste near-duplicate tests. Use `it.each` or a helper.
+- Name tests for what the user sees or does, not for props or handlers.
+- Query by role and accessible name before falling back to test ids. If an element has no accessible name, add an
+  `aria-label` to the component rather than a test id.
+- Put the query in a const before the interaction, so a failure shows whether the element was missing or the
+  interaction failed.
+- Don't wrap `getBy*` in `toBeInTheDocument()`, since `getBy*` already throws when the element is missing.
+- Prefer `userEvent` over `fireEvent`, and `user.paste` over `user.type` when individual keystrokes don't matter.
+- Use `toHaveBeenCalledWith` and similar matchers instead of reading `mock.calls` directly.
+- Use `vi.mocked()` instead of casting mocks.
+- Use the constants the code exports instead of retyping string literals.
+- When UI is transient (spinners, toasts), assert that it goes away too.
+
+## Git & Pull Requests
+
+- Don't commit or push without asking.
+- Keep commit messages to one or two sentences.
+- Open PRs as drafts.
+- PR descriptions describe the final change against the base branch, not how it got there.
+- Don't add extra line breaks at the end of PR descriptions.
+- Don't @-mention people in PR descriptions.
+- Avoid stacked PRs unless they're really needed.
+- Only state what was actually verified in PRs, comments, and issues.
 
 ## Guardrails & Anti-Patterns
 
 - Explicit "Do Not" rules for common LLM mistakes in this repo:
-    - Files or directories never to edit manually (e.g., generated migrations, lockfiles, `dist/`).
-    - Commands never to run (e.g., destructive DB resets, production deploy scripts).
+    - Don't edit `packages/ui-common/generated/` by hand. Run `yarn generate` instead.
+    - Don't commit changes to `apps/main/AGENTS.md`. `next dev` rewrites it.
