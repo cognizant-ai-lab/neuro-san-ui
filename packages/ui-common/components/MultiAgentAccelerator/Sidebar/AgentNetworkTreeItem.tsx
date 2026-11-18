@@ -1,10 +1,6 @@
 // Need to disable restricted imports because we want to import all MUI icons dynamically
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
-import BookmarkIcon from "@mui/icons-material/Bookmark"
-import Delete from "@mui/icons-material/Delete"
-import DownloadIcon from "@mui/icons-material/Download"
-import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
@@ -20,7 +16,7 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
-import {motion, useReducedMotion} from "motion/react"
+import {motion} from "motion/react"
 import {FC, useRef} from "react"
 
 import {AgentNetworkTreeItemModel} from "./TreeBuilder"
@@ -98,7 +94,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         status: itemStatus,
     } = useTreeItem({itemId, children, label, disabled})
 
-    const reduceMotion = useReducedMotion()
     const theme = useTheme()
     const sheen = getSheen(theme)
 
@@ -148,7 +143,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         }
     } else {
         // Use folder icon for parent items (i.e., folders)
-        muiIconElement = <MuiIcons.Folder sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        muiIconElement = itemStatus.expanded ? (
+            <MuiIcons.DriveFolderUpload sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        ) : (
+            <MuiIcons.Folder sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        )
     }
 
     return (
@@ -191,9 +190,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 position: "absolute",
                                 zIndex: 0,
                             }}
-                            transition={
-                                reduceMotion ? {duration: 0} : {type: "spring", stiffness: 420, damping: 34, mass: 0.7}
-                            }
+                            transition={{type: "spring", stiffness: 420, damping: 34, mass: 0.7}}
                         />
                     )}
                     <Box
@@ -219,12 +216,14 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <TreeItemLabel
                                         {...getLabelProps()}
                                         sx={{
-                                            // Folders read as small uppercase section labels (overline style)
-                                            fontWeight: isParent ? 600 : "normal",
-                                            fontSize: isParent ? "0.7rem" : "0.9rem",
-                                            letterSpacing: isParent ? "0.12em" : null,
-                                            textTransform: isParent ? "uppercase" : null,
-                                            color: isParent ? "text.secondary" : null,
+                                            typography: "body2",
+                                            ...(isParent && {
+                                                color: "text.secondary",
+                                                fontWeight: theme.typography.fontWeightMedium,
+                                                letterSpacing: theme.typography.button.letterSpacing,
+                                                textTransform: "uppercase",
+                                                typography: "subtitle1",
+                                            }),
                                             opacity: isExpired ? 0.25 : 1,
                                             "&:hover": {
                                                 textDecoration: "underline",
@@ -253,7 +252,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     placement="right"
                                     arrow={true}
                                 >
-                                    <BookmarkIcon sx={{fontSize: "0.75rem", color: "secondary.main"}} />
+                                    <MuiIcons.Bookmark sx={{fontSize: "0.75rem", color: "secondary.main"}} />
                                 </Tooltip>
                             ) : null}
                         </Box>
@@ -282,7 +281,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}
                                                 size="small"
                                             >
-                                                <DownloadIcon sx={{fontSize: "0.75rem"}} />
+                                                <MuiIcons.Download sx={{fontSize: "0.75rem"}} />
                                             </ActionIconButton>
                                         </span>
                                     </Tooltip>
@@ -298,12 +297,12 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             aria-label={EDIT_NETWORK_LABEL}
                                             size="small"
                                         >
-                                            <Edit sx={{fontSize: "0.75rem"}} />
+                                            <MuiIcons.Edit sx={{fontSize: "0.75rem"}} />
                                         </ActionIconButton>
                                     </span>
                                 </Tooltip>
                                 <Tooltip title="Delete network">
-                                    <Delete
+                                    <MuiIcons.Delete
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             onDeleteNetwork?.(itemId, isExpired)

@@ -19,7 +19,7 @@ limitations under the License.
 // glows, specular glass surfaces with gradient hairlines, aurora mesh + film grain.
 // The tokens live in the MUI palette (palette.sheen) so that, with CSS theme variables enabled, they are emitted as
 // --mui-palette-sheen-* variables and flip automatically with the active color scheme.
-// Keyframes referenced here (sheenSpin, sheenShimmer, sheenFlow, auroraDrift) and the --sheen-angle custom property
+// Keyframes referenced here (sheenSpin, sheenShimmer) and the --sheen-angle custom property
 // are defined in apps/main/styles/globals.css.
 
 import type {CSSObject, Theme} from "@mui/material/styles"

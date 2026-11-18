@@ -27,6 +27,7 @@ import LightModeIcon from "@mui/icons-material/LightMode"
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded"
 import SettingsIcon from "@mui/icons-material/Settings"
 import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
 import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
 import Menu from "@mui/material/Menu"
@@ -107,11 +108,6 @@ const NAV_LINKS = [
     {id: "nav-link-user-guide", label: "User Guide", path: "/UserGuide"},
 ] as const
 
-const MENU_ITEM_TEXT_PROPS = {
-    color: "text.primary",
-    fontSize: "18px",
-}
-
 // The Cognizant logo asset is white; in light mode render it as a dark monochrome mark so it stays legible
 export const LOGO_LIGHT_MODE_SX: SxProps<Theme> = (theme) => ({
     "& #logo-img": theme.applyStyles("light", {filter: "brightness(0)", opacity: 0.85}),
@@ -148,9 +144,7 @@ const NAV_BAR_SX: SxProps<Theme> = (theme) => ({
 
 // Menu toggles: text pills that pick up a tint on hover
 const MENU_PILL_SX: SxProps<Theme> = (theme) => ({
-    alignItems: "center",
     borderRadius: `${PILL_RADIUS}px`,
-    display: "flex",
     padding: "0.3rem 0.3rem 0.3rem 0.75rem",
     transition: `background-color 0.25s ${SHEEN_EASE}`,
     whiteSpace: "nowrap",
@@ -208,16 +202,6 @@ const SEARCH_PILL_SX: SxProps<Theme> = (theme) => {
             padding: "4px 7px",
         },
     }
-}
-
-const DISABLE_OUTLINE_PROPS = {
-    outline: "none",
-    "&:focus": {
-        outline: "none",
-    },
-    "&:active": {
-        outline: "none",
-    },
 }
 
 export const Navbar = ({
@@ -289,14 +273,7 @@ export const Navbar = ({
         <Grid
             id="nav-bar-container"
             container={true}
-            sx={[
-                NAV_BAR_SX,
-                LOGO_LIGHT_MODE_SX,
-                {
-                    alignItems: "center",
-                    ...MENU_ITEM_TEXT_PROPS,
-                },
-            ]}
+            sx={[NAV_BAR_SX, LOGO_LIGHT_MODE_SX, {alignItems: "center"}]}
         >
             {settingsDialogOpen && (
                 <SettingsDialog
@@ -329,7 +306,7 @@ export const Navbar = ({
                             data-testid="customer-branding"
                             sx={{
                                 fontSize: "20px",
-                                fontWeight: "600",
+                                fontWeight: "fontWeightBold",
                                 paddingLeft: "0.15rem",
                                 width: "200px",
                                 display: "flex",
@@ -353,20 +330,17 @@ export const Navbar = ({
                 <Typography
                     id="nav-bar-brand"
                     sx={{
-                        ...MENU_ITEM_TEXT_PROPS,
+                        fontFamily: SHEEN_FONT_DISPLAY,
+                        fontSize: "1.3rem",
+                        fontWeight: "fontWeightMedium",
+                        letterSpacing: "-0.025em",
                         marginLeft: "0.6rem",
-                        fontSize: "16px",
-                        fontWeight: "bold",
                         whiteSpace: "nowrap",
                     }}
                 >
                     <a
                         id="navbar-brand-link"
                         style={{
-                            fontFamily: SHEEN_FONT_DISPLAY,
-                            fontWeight: 500,
-                            fontSize: "1.3rem",
-                            letterSpacing: "-0.025em",
                             color: "inherit",
                             position: "relative",
                             bottom: "1px",
@@ -453,7 +427,7 @@ export const Navbar = ({
                                         color: isActive ? "text.primary" : "text.secondary",
                                         display: "block",
                                         fontSize: "0.9rem",
-                                        fontWeight: isActive ? 600 : 500,
+                                        fontWeight: isActive ? "fontWeightBold" : "fontWeightMedium",
                                         outline: "none",
                                         padding: "0.45rem 0.95rem",
                                         position: "relative",
@@ -487,7 +461,6 @@ export const Navbar = ({
                 <Typography
                     id="build-text"
                     sx={{
-                        ...MENU_ITEM_TEXT_PROPS,
                         color: "text.secondary",
                         display: "none",
                         fontSize: "11px",
@@ -525,110 +498,110 @@ export const Navbar = ({
             </Box>
 
             {/*Explore menu*/}
-            <Grid
+            <Button
                 id="explore-dropdown"
-                sx={{cursor: "pointer"}}
-            >
-                <Typography
-                    id="explore-toggle"
-                    sx={[MENU_PILL_SX, {...MENU_ITEM_TEXT_PROPS, fontSize: "15px", fontWeight: 500}]}
-                    onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
-                        setExploreMenuAnchorEl(event.currentTarget)
-                    }}
-                >
-                    Explore
+                aria-controls={exploreMenuOpen ? "explore-menu" : undefined}
+                aria-expanded={exploreMenuOpen ? "true" : undefined}
+                aria-haspopup="true"
+                color="inherit"
+                endIcon={
                     <ArrowDropDownIcon
                         id="nav-explore-dropdown-arrow"
-                        sx={{color: primary || "text.secondary", fontSize: 20}}
+                        sx={{color: primary || "text.secondary"}}
                     />
-                </Typography>
-                <Menu
-                    id="explore-menu"
-                    anchorEl={exploreMenuAnchorEl}
-                    open={exploreMenuOpen}
-                    onClose={handleCloseExploreMenu}
+                }
+                onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                    setExploreMenuAnchorEl(event.currentTarget)
+                }}
+                sx={[MENU_PILL_SX, {typography: "body1", fontWeight: "fontWeightMedium"}]}
+            >
+                Explore
+            </Button>
+            <Menu
+                id="explore-menu"
+                anchorEl={exploreMenuAnchorEl}
+                open={exploreMenuOpen}
+                onClose={handleCloseExploreMenu}
+                slotProps={{list: {"aria-labelledby": "explore-dropdown"}}}
+            >
+                <MenuItem
+                    id="explore-neuro-san-studio"
+                    key="explore-neuro-san-studio"
+                    component="a"
+                    href="https://github.com/cognizant-ai-lab/neuro-san-studio"
+                    rel="noopener noreferrer"
+                    target="_blank"
                 >
-                    <MenuItem
-                        id="explore-neuro-san-studio"
-                        key="explore-neuro-san-studio"
-                        component="a"
-                        href="https://github.com/cognizant-ai-lab/neuro-san-studio"
-                        rel="noopener noreferrer"
-                        sx={{...DISABLE_OUTLINE_PROPS}}
-                        target="_blank"
-                    >
-                        Neuro-san studio (examples)
-                    </MenuItem>
-                    <MenuItem
-                        id="explore-neuro-san"
-                        key="explore-neuro-san"
-                        component="a"
-                        href="https://github.com/cognizant-ai-lab/neuro-san"
-                        rel="noopener noreferrer"
-                        sx={{...DISABLE_OUTLINE_PROPS}}
-                        target="_blank"
-                    >
-                        Neuro-san (core)
-                    </MenuItem>
-                </Menu>
-            </Grid>
+                    Neuro-san studio (examples)
+                </MenuItem>
+                <MenuItem
+                    id="explore-neuro-san"
+                    key="explore-neuro-san"
+                    component="a"
+                    href="https://github.com/cognizant-ai-lab/neuro-san"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    Neuro-san (core)
+                </MenuItem>
+            </Menu>
 
             {/*Help menu*/}
-            <Grid
+            <Button
                 id="help-dropdown"
-                sx={{cursor: "pointer"}}
-            >
-                <Typography
-                    id="help-toggle"
-                    sx={[MENU_PILL_SX, {...MENU_ITEM_TEXT_PROPS, fontSize: "15px", fontWeight: 500}]}
-                    onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
-                        setHelpMenuAnchorEl(event.currentTarget)
-                    }}
-                >
-                    Help
+                aria-controls={helpMenuOpen ? "help-menu" : undefined}
+                aria-expanded={helpMenuOpen ? "true" : undefined}
+                aria-haspopup="true"
+                color="inherit"
+                endIcon={
                     <ArrowDropDownIcon
                         id="nav-help-dropdown-arrow"
-                        sx={{color: primary || "text.secondary", fontSize: 20}}
+                        sx={{color: primary || "text.secondary"}}
                     />
-                </Typography>
-                <Menu
-                    id="help-menu"
-                    anchorEl={helpMenuAnchorEl}
-                    open={helpMenuOpen}
-                    onClose={handleCloseHelpMenu}
+                }
+                onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
+                    setHelpMenuAnchorEl(event.currentTarget)
+                }}
+                sx={[MENU_PILL_SX, {typography: "body1", fontWeight: "fontWeightMedium"}]}
+            >
+                Help
+            </Button>
+            <Menu
+                id="help-menu"
+                anchorEl={helpMenuAnchorEl}
+                open={helpMenuOpen}
+                onClose={handleCloseHelpMenu}
+                slotProps={{list: {"aria-labelledby": "help-dropdown"}}}
+            >
+                <MenuItem
+                    id="user-guide"
+                    key="user-guide"
+                    component="a"
+                    href="/UserGuide"
+                    rel="noopener noreferrer"
+                    target="_blank"
                 >
-                    <MenuItem
-                        id="user-guide"
-                        key="user-guide"
-                        component="a"
-                        href="/UserGuide"
-                        rel="noopener noreferrer"
-                        sx={{...DISABLE_OUTLINE_PROPS}}
-                        target="_blank"
-                    >
-                        User guide
-                    </MenuItem>
-                    <MenuItem
-                        id="take-a-tour"
-                        key="take-a-tour"
-                        onClick={() => {
-                            handleCloseHelpMenu()
-                            onStartTour?.()
-                        }}
-                        sx={{...DISABLE_OUTLINE_PROPS}}
-                    >
-                        Take a tour
-                    </MenuItem>
-                    <MenuItem
-                        href={null}
-                        id="contact-us-help"
-                        key="contact-us-help"
-                        onClick={() => setEmailDialogOpen(true)}
-                    >
-                        Contact Us
-                    </MenuItem>
-                </Menu>
-            </Grid>
+                    User guide
+                </MenuItem>
+                <MenuItem
+                    id="take-a-tour"
+                    key="take-a-tour"
+                    onClick={() => {
+                        handleCloseHelpMenu()
+                        onStartTour?.()
+                    }}
+                >
+                    Take a tour
+                </MenuItem>
+                <MenuItem
+                    href={null}
+                    id="contact-us-help"
+                    key="contact-us-help"
+                    onClick={() => setEmailDialogOpen(true)}
+                >
+                    Contact Us
+                </MenuItem>
+            </Menu>
 
             {/*Contact us dialog*/}
             {emailDialogOpen ? (
@@ -648,15 +621,17 @@ export const Navbar = ({
 
             {/*User menu*/}
             {userInfo ? (
-                <Grid id="user-dropdown">
+                <>
                     <IconButton
                         aria-label="User dropdown toggle"
+                        aria-controls={userMenuOpen ? "user-menu" : undefined}
+                        aria-expanded={userMenuOpen ? "true" : undefined}
+                        aria-haspopup="true"
                         id="user-dropdown-toggle"
                         onClick={(event: ReactMouseEvent<HTMLButtonElement>) => {
                             setUserMenuAnchorEl(event.currentTarget)
                         }}
                         sx={(theme) => ({
-                            ...MENU_ITEM_TEXT_PROPS,
                             borderRadius: `${PILL_RADIUS}px`,
                             padding: "3px 2px 3px 3px",
                             "&:hover": {backgroundColor: getSheen(theme).tint},
@@ -696,11 +671,12 @@ export const Navbar = ({
                         anchorEl={userMenuAnchorEl}
                         open={userMenuOpen}
                         onClose={handleCloseUserMenu}
+                        slotProps={{list: {"aria-labelledby": "user-dropdown-toggle"}}}
                     >
                         <MenuItem
                             id="user-signed-in-as"
                             disabled
-                            sx={{fontWeight: "bold"}}
+                            sx={{fontWeight: "fontWeightBold"}}
                         >
                             Signed in as
                         </MenuItem>
@@ -718,7 +694,7 @@ export const Navbar = ({
                         <MenuItem
                             id="auth-type-title"
                             disabled
-                            sx={{fontWeight: "bold"}}
+                            sx={{fontWeight: "fontWeightBold"}}
                         >
                             Authentication
                         </MenuItem>
@@ -732,14 +708,14 @@ export const Navbar = ({
                         {enableAuthentication && (
                             <MenuItem
                                 id="user-sign-out"
-                                sx={{...DISABLE_OUTLINE_PROPS, fontWeight: "bold"}}
+                                sx={{fontWeight: "fontWeightBold"}}
                                 onClick={signOut}
                             >
                                 Sign out
                             </MenuItem>
                         )}
                     </Menu>
-                </Grid>
+                </>
             ) : null}
             {/*Dark mode toggle: sun and moon morph into each other (rotate + scale + fade)*/}
             <Tooltip
@@ -812,7 +788,6 @@ export const Navbar = ({
                         <SettingsIcon
                             id="settings-icon"
                             sx={{
-                                ...MENU_ITEM_TEXT_PROPS,
                                 color: "text.secondary",
                                 fontSize: "1rem",
                                 transition: `color 0.2s ease, transform 0.5s ${SHEEN_EASE}`,
