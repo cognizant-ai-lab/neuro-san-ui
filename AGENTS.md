@@ -90,6 +90,8 @@ yarn knip                                   # Unused files/exports/dependencies
 - Use TypeScript types and interfaces to define props and state. Avoid heavy casts unless absolutely necessary.
 - Prefer existing DOM and library types (e.g. `KeyboardEvent["key"]`) over a bare `string` or `number`.
 - Fix the root cause, not the symptom. For example, add the missing prop or callback instead of remounting with `key`.
+- Never disable an error from linting, type-checking, or a scanning tool (`eslint-disable`, `@ts-ignore`,
+  `@ts-expect-error`) unless there's no way to fix it. Fix the root cause instead.
 - Write comments that say what the code does, not what it replaced ("now does X instead of Y").
 - Delete code your change leaves unused.
 - Ask before changing user-facing copy.
