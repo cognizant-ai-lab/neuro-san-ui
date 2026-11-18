@@ -58,7 +58,7 @@ Run everything from the repo root.
 
 ```bash
 yarn install
-yarn generate          # Generate Neuro SAN API types (packages/ui-common/generated/) from the dev server's OpenAPI spec
+yarn generate          # Generate Neuro SAN API types (packages/ui-common/generated/) from the Neuro SAN dev server's OpenAPI spec
 yarn dev               # Next.js dev server for apps/main on http://localhost:3000 (needs .env, see apps/main/DEVELOPMENT.md)
 
 yarn test                                   # All Vitest tests
@@ -81,12 +81,12 @@ yarn knip                                   # Unused files/exports/dependencies
 
 - Use TypeScript and React. Avoid JavaScript, class components, and `any` type.
 - Follow clean design principles and single responsibility.
+- Annotate variables, functions, and components with types.
 - Avoid reinventing the wheel; use existing libraries and components where possible.
 - Source files carry the Apache 2.0 license header (copy it from a neighboring file).
 - Follow Google TypeScript Style Guide and Airbnb React/JSX Style Guide. Format with prettier and lint with ESLint.
 - Use camelCase for variable and function names, PascalCase for React components, and UPPER_CASE for constants.
 - Use descriptive names for variables, functions, and components. Avoid abbreviations unless they are widely recognized.
-- Use functional components and React hooks. Avoid class components unless necessary.
 - Use TypeScript types and interfaces to define props and state. Avoid heavy casts unless absolutely necessary.
 - Prefer existing DOM and library types (e.g. `KeyboardEvent["key"]`) over a bare `string` or `number`.
 - Fix the root cause, not the symptom. For example, add the missing prop or callback instead of remounting with `key`.
