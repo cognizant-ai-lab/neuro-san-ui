@@ -17,7 +17,7 @@ limitations under the License.
 import ContactSupportIcon from "@mui/icons-material/ContactSupport"
 import Box from "@mui/material/Box"
 import {useTheme} from "@mui/material/styles"
-import {AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring} from "motion/react"
+import {AnimatePresence, motion, useMotionValue, useSpring} from "motion/react"
 import {FC, PointerEvent as ReactPointerEvent, useState} from "react"
 
 import {CHATBOT_ENDPOINT} from "../../controller/llm/endpoints"
@@ -68,13 +68,11 @@ export const ChatBot: FC<ChatBotProps> = ({id, pageContext}) => {
 
     // MUI theme
     const theme = useTheme()
-    const reduceMotion = useReducedMotion()
 
     // Magnetic launcher: the orb is pulled toward the pointer while hovered and springs back on leave
     const magnetX = useSpring(useMotionValue(0), MAGNET_SPRING)
     const magnetY = useSpring(useMotionValue(0), MAGNET_SPRING)
     const onOrbPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (reduceMotion) return
         const rect = event.currentTarget.getBoundingClientRect()
         magnetX.set((event.clientX - (rect.left + rect.width / 2)) * MAGNET_PULL)
         magnetY.set((event.clientY - (rect.top + rect.height / 2)) * MAGNET_PULL)
@@ -92,16 +90,14 @@ export const ChatBot: FC<ChatBotProps> = ({id, pageContext}) => {
                         animate={{opacity: 1, scale: 1, x: 0, y: 0, filter: "blur(0px)"}}
                         exit={{
                             opacity: 0,
-                            scale: reduceMotion ? 1 : 0.1,
-                            x: reduceMotion ? 0 : 12,
-                            y: reduceMotion ? 0 : 30,
+                            scale: 0.1,
+                            x: 12,
+                            y: 30,
                             filter: "blur(6px)",
                             transition: {duration: 0.22, ease: "easeIn"},
                         }}
                         id={`chatbot-window-animation-${id}`}
-                        initial={
-                            reduceMotion ? {opacity: 0} : {opacity: 0, scale: 0.1, x: 12, y: 30, filter: "blur(8px)"}
-                        }
+                        initial={{opacity: 0, scale: 0.1, x: 12, y: 30, filter: "blur(8px)"}}
                         key="chatbot-window"
                         // Grow out of the launcher orb, which sits at the bottom right
                         style={{
@@ -113,7 +109,7 @@ export const ChatBot: FC<ChatBotProps> = ({id, pageContext}) => {
                             transformOrigin: "calc(100% - 4px) calc(100% + 14px)",
                             zIndex: getZIndex(2, theme),
                         }}
-                        transition={reduceMotion ? {duration: 0.2} : WINDOW_SPRING}
+                        transition={WINDOW_SPRING}
                     >
                         <Box
                             id={id}
@@ -156,8 +152,8 @@ export const ChatBot: FC<ChatBotProps> = ({id, pageContext}) => {
                     onPointerLeave={onOrbPointerLeave}
                     onPointerMove={onOrbPointerMove}
                     style={{x: magnetX, y: magnetY}}
-                    whileHover={reduceMotion ? undefined : {scale: 1.1}}
-                    whileTap={reduceMotion ? undefined : {scale: 0.92}}
+                    whileHover={{scale: 1.1}}
+                    whileTap={{scale: 0.92}}
                     sx={{
                         display: "flex",
                         alignItems: "center",
