@@ -66,7 +66,7 @@ describe("Index Page", () => {
         render(<Index />)
 
         await screen.findByText("Neuro® AI")
-        await screen.findByText("Multi-Agent Accelerator")
+        await screen.findByText("Neuro-SAN Multi-Agent UI (MAUI)")
         await screen.findByText("Low-code framework for rapidly agentifying your business.")
         await screen.findByText("Explore more.")
         await screen.findByText("Explore agent networks")
