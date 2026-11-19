@@ -325,9 +325,7 @@ export const Navbar = ({
                     id="nav-bar-brand"
                     variant="h4"
                     component="span"
-                    // Trim the box to cap height and baseline so flex centering lines up the glyphs, not the
-                    // font's ascent/descent area (Newsreader's descent space would otherwise push the text up)
-                    sx={{fontSize: "1.3rem", ml: 1, textBox: "trim-both cap alphabetic", whiteSpace: "nowrap"}}
+                    sx={{fontSize: "h6.fontSize", ml: 1, whiteSpace: "nowrap"}}
                 >
                     <a
                         id="navbar-brand-link"
