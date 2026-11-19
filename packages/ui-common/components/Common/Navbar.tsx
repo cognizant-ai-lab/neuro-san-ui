@@ -47,7 +47,6 @@ import {
     glowShadow,
     gradientBorder,
     SHEEN_EASE,
-    SHEEN_FONT_DISPLAY,
     SHEEN_FONT_MONO,
     sheenConic,
     sheenGradient,
@@ -304,14 +303,9 @@ export const Navbar = ({
                         />
                         <Typography
                             data-testid="customer-branding"
-                            sx={{
-                                fontSize: "20px",
-                                fontWeight: "fontWeightBold",
-                                paddingLeft: "0.15rem",
-                                width: "200px",
-                                display: "flex",
-                                alignItems: "center",
-                            }}
+                            variant="h6"
+                            component="span"
+                            sx={{maxWidth: 200}}
                         >
                             {customer}
                         </Typography>
@@ -329,14 +323,11 @@ export const Navbar = ({
                 {hasCustomer ? getCognizantLogoImage() : null}
                 <Typography
                     id="nav-bar-brand"
-                    sx={{
-                        fontFamily: SHEEN_FONT_DISPLAY,
-                        fontSize: "1.3rem",
-                        fontWeight: "fontWeightMedium",
-                        letterSpacing: "-0.025em",
-                        marginLeft: "0.6rem",
-                        whiteSpace: "nowrap",
-                    }}
+                    variant="h4"
+                    component="span"
+                    // Trim the box to cap height and baseline so flex centering lines up the glyphs, not the
+                    // font's ascent/descent area (Newsreader's descent space would otherwise push the text up)
+                    sx={{fontSize: "1.3rem", ml: 1, textBox: "trim-both cap alphabetic", whiteSpace: "nowrap"}}
                 >
                     <a
                         id="navbar-brand-link"
