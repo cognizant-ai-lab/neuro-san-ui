@@ -212,6 +212,30 @@ export const unpublishNetwork = async (serverUrl: string, publishId: string): Pr
     await throwIfNotOk(response, "Unpublishing")
 }
 
+const DEFAULT_BUNDLE_FILE_NAME = "bundle.tar.gz"
+
+const decodeExtendedFileName = (disposition: string): string | null => {
+    // RFC 6266 filename*, as in: filename*=UTF-8''caf%C3%A9.tar.gz
+    const encoded = /(?:^|;)\s*filename\*\s*=\s*utf-8'[^']*'(?<value>[^;\s]+)/iu.exec(disposition)?.groups?.["value"]
+    if (!encoded) return null
+    try {
+        return decodeURIComponent(encoded)
+    } catch {
+        return null
+    }
+}
+
+/**
+ * The file name in a Content-Disposition header. Prefers `filename*`, then a quoted or plain `filename`, then a
+ * default.
+ */
+const fileNameFromDisposition = (disposition: string): string => {
+    const quoted = /(?:^|;)\s*filename\s*=\s*"(?<value>(?:[^"\\]|\\.)*)"/iu.exec(disposition)?.groups?.["value"]
+    const plain = /(?:^|;)\s*filename\s*=\s*(?<value>[^";\s]+)/iu.exec(disposition)?.groups?.["value"]
+    const unescaped = quoted?.replaceAll(/\\(?<escaped>.)/gu, "$<escaped>")
+    return decodeExtendedFileName(disposition) || unescaped || plain || DEFAULT_BUNDLE_FILE_NAME
+}
+
 /**
  * Has the server build a static bundle of a published network, which can be hosted without the publish server.
  */
@@ -219,8 +243,6 @@ export const fetchBundle = async (serverUrl: string, publishId: string): Promise
     const response = await fetch(publishRouteUrl(serverUrl, `deployments/${publishId}/bundle`))
     await throwIfNotOk(response, "Building the bundle")
 
-    // The server names the file, as in: attachment; filename="<name>.tar.gz"
-    const disposition = response.headers.get("content-disposition") ?? ""
-    const fileName = /filename="(?<name>[^"]+)"/u.exec(disposition)?.groups?.["name"] ?? "bundle.tar.gz"
+    const fileName = fileNameFromDisposition(response.headers.get("content-disposition") ?? "")
     return {archive: new Uint8Array(await response.arrayBuffer()), fileName}
 }

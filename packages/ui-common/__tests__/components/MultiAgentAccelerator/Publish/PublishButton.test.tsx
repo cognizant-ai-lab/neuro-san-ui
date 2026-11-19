@@ -34,7 +34,7 @@ import {downloadFile} from "../../../../utils/File"
 const PUBLISH_ID = "dep-123"
 const DISPLAY_NAME = "Cailville Bakery"
 const HOCON = "{ tools: [] }"
-const PUBLISHED_URL = "http://live.test/cailville_bakery"
+const PUBLISHED_URL = "https://live.example.com/cailville_bakery"
 const NETWORK_ID = `${TEMPORARY_NETWORK_FOLDER}/cailville_bakery-1`
 const NETWORK_NAME = "cailville_bakery"
 // What a network published before was published under, with the id MAUI adds when the org already has the name
@@ -46,7 +46,8 @@ const FAILURES = [
     {desc: "an error", failure: new Error(SERVER_ERROR)},
     {desc: "a plain message", failure: SERVER_ERROR},
 ]
-const SERVER_URL = "https://publish.test"
+const SERVER_URL = "https://publish.example.com"
+const BUNDLE_ARCHIVE = new TextEncoder().encode("bundle contents")
 const BUNDLE_FILE_NAME = "cailville_bakery.tar.gz"
 
 //#endregion Constants
@@ -201,7 +202,7 @@ describe("PublishButton", () => {
         })
         vi.mocked(unpublishNetwork).mockResolvedValue()
         vi.mocked(listPublishedNetworks).mockResolvedValue([])
-        vi.mocked(fetchBundle).mockResolvedValue({archive: new Uint8Array([31, 139]), fileName: BUNDLE_FILE_NAME})
+        vi.mocked(fetchBundle).mockResolvedValue({archive: BUNDLE_ARCHIVE, fileName: BUNDLE_FILE_NAME})
     })
 
     it("should offer to publish a network this browser hasn't published, without asking the server", async () => {
@@ -236,19 +237,19 @@ describe("PublishButton", () => {
     it("should find the network by its id when another with the same name is live", async () => {
         setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([
-            {id: "their-dep", url: "http://live.test/theirs"},
+            {id: "their-dep", url: "https://live.example.com/theirs"},
             {id: PUBLISH_ID},
         ])
         renderPublishButton()
 
         await openDetails("Unpublished")
 
-        expect(screen.queryByText("http://live.test/theirs")).not.toBeInTheDocument()
+        expect(screen.queryByText("https://live.example.com/theirs")).not.toBeInTheDocument()
     })
 
     it.each([
         {setting: "org name", publish: {orgName: "another-org"}},
-        {setting: "publishing server", publish: {serverUrl: "https://other-publish.test"}},
+        {setting: "publishing server", publish: {serverUrl: "https://other-publish.example.com"}},
     ])("should offer to publish after the $setting in Settings changes", async ({publish}) => {
         setPublishedBefore()
         vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
@@ -360,7 +361,7 @@ describe("PublishButton", () => {
 
         await publishAndWaitUntilLive()
 
-        expect(mockPublishNetwork).toHaveBeenCalledWith(
+        expect(mockPublishNetwork).toHaveBeenCalledExactlyOnceWith(
             expect.objectContaining({serverUrl: SERVER_URL, orgName: ORG_NAME, hocon: HOCON})
         )
     })
@@ -370,8 +371,8 @@ describe("PublishButton", () => {
 
         await publishAndWaitUntilLive()
 
-        expect(isPublishNameTaken).toHaveBeenCalledWith(SERVER_URL, ORG_NAME, NETWORK_NAME)
-        expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: NETWORK_NAME}))
+        expect(isPublishNameTaken).toHaveBeenCalledExactlyOnceWith(SERVER_URL, ORG_NAME, NETWORK_NAME)
+        expect(mockPublishNetwork).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({networkName: NETWORK_NAME}))
     })
 
     it("should add an id of its own to the name when the org already has a network by that name", async () => {
@@ -380,7 +381,7 @@ describe("PublishButton", () => {
 
         await publishAndWaitUntilLive()
 
-        expect(mockPublishNetwork).toHaveBeenCalledWith(
+        expect(mockPublishNetwork).toHaveBeenCalledExactlyOnceWith(
             expect.objectContaining({
                 networkName: expect.stringMatching(new RegExp(`^${NETWORK_NAME}_[0-9a-f]{8}$`, "u")),
             })
@@ -394,7 +395,7 @@ describe("PublishButton", () => {
         await clickPublishAndConfirm()
 
         await waitFor(() =>
-            expect(sendNotification).toHaveBeenCalledWith(
+            expect(sendNotification).toHaveBeenCalledExactlyOnceWith(
                 NotificationType.error,
                 `Failed to publish "${NETWORK_NAME}".`,
                 SERVER_ERROR
@@ -439,8 +440,8 @@ describe("PublishButton", () => {
 
         await publishAndWaitUntilLive()
 
-        expect(openSpy).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
-        expect(sendNotification).toHaveBeenCalledWith(
+        expect(openSpy).toHaveBeenCalledExactlyOnceWith(PUBLISHED_URL, "_blank")
+        expect(sendNotification).toHaveBeenCalledExactlyOnceWith(
             NotificationType.success,
             PUBLISHED_MESSAGE,
             "",
@@ -454,7 +455,7 @@ describe("PublishButton", () => {
 
         await publishAndWaitUntilLive()
 
-        expect(sendNotification).toHaveBeenCalledWith(
+        expect(sendNotification).toHaveBeenCalledExactlyOnceWith(
             NotificationType.success,
             PUBLISHED_TAB_BLOCKED_MESSAGE,
             "",
@@ -480,9 +481,8 @@ describe("PublishButton", () => {
 
         await confirmRepublish(confirmation)
 
-        const [[{networkName: firstPublishName}]] = mockPublishNetwork.mock.calls
         expect(mockPublishNetwork).toHaveBeenLastCalledWith(
-            expect.objectContaining({networkName: firstPublishName, hocon: HOCON, refreshTheme: false})
+            expect.objectContaining({networkName: NETWORK_NAME, hocon: HOCON, refreshTheme: false})
         )
     })
 
@@ -497,7 +497,9 @@ describe("PublishButton", () => {
         await user.click(confirmButton)
 
         await waitFor(() =>
-            expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: PUBLISH_NAME}))
+            expect(mockPublishNetwork).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({networkName: PUBLISH_NAME})
+            )
         )
     })
 
@@ -604,7 +606,7 @@ describe("PublishButton", () => {
 
         await user.click(viewLiveButton)
 
-        expect(openSpy).toHaveBeenCalledWith(PUBLISHED_URL, "_blank")
+        expect(openSpy).toHaveBeenCalledExactlyOnceWith(PUBLISHED_URL, "_blank")
     })
 
     it("should show the live URL in the details", async () => {
@@ -713,9 +715,9 @@ describe("PublishButton", () => {
         await clickDownloadBundle()
 
         await waitFor(() =>
-            expect(downloadFile).toHaveBeenCalledWith(new Uint8Array([31, 139]), BUNDLE_FILE_NAME, "application/gzip")
+            expect(downloadFile).toHaveBeenCalledExactlyOnceWith(BUNDLE_ARCHIVE, BUNDLE_FILE_NAME, "application/gzip")
         )
-        expect(fetchBundle).toHaveBeenCalledWith(SERVER_URL, PUBLISH_ID)
+        expect(fetchBundle).toHaveBeenCalledExactlyOnceWith(SERVER_URL, PUBLISH_ID)
     })
 
     it("should not allow a second bundle download while the first is still building", async () => {
@@ -749,7 +751,7 @@ describe("PublishButton", () => {
             status: PublishStatus.Published,
             serverUrl: SERVER_URL,
             publishId: "dep-456",
-            url: "http://live.test/cailville_cafe",
+            url: "https://live.example.com/cailville_cafe",
         })
         const {rerender} = renderPublishButton()
         await publishAndWaitUntilLive()
@@ -851,7 +853,7 @@ describe("PublishButton", () => {
             await clickPublishAndConfirm()
 
             await waitFor(() =>
-                expect(sendNotification).toHaveBeenCalledWith(
+                expect(sendNotification).toHaveBeenCalledExactlyOnceWith(
                     NotificationType.error,
                     `Failed to publish "${NETWORK_NAME}".`,
                     SERVER_ERROR
