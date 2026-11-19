@@ -937,7 +937,7 @@ describe("AgentFlow", () => {
             expect(getThoughtBubbleEdgesMap().has("conv-5")).toBe(true)
         })
 
-        it("Should clean up thought bubbles via removeThoughtBubbleEdgeHelper during timeout", () => {
+        it("SShould clean up thought bubbles after timeout", () => {
             vi.useFakeTimers()
             const {mockSetThoughtBubbleEdges, getThoughtBubbleEdgesMap} = createThoughtBubbleEdgesStore()
 
