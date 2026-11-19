@@ -495,26 +495,21 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     const getBehaviorSection = () => (
         <Section>
             <SettingsSectionTitle>Behavior</SettingsSectionTitle>
-            <SettingsSubsection title="Zen mode">
-                <SettingsRow
-                    label='Enable "Zen" mode:'
-                    checkmark={enableZenModeCheckmark}
-                    tooltip={
-                        "Hides most of the UI during agent network animations providing a more immersive " +
-                        "experience."
-                    }
-                >
-                    <Checkbox
-                        checked={enableZenMode}
-                        data-testid="zen-mode-checkbox"
-                        onChange={(_, checked) => {
-                            updateSettings({behavior: {enableZenMode: checked}})
-                            enableZenModeCheckmark.trigger()
-                        }}
-                        sx={{p: 0.0}}
-                    />
-                </SettingsRow>
-            </SettingsSubsection>
+            <SettingsRow
+                label='Enable "Zen" mode:'
+                checkmark={enableZenModeCheckmark}
+                tooltip="Hides most of the UI during agent network animations providing a more immersive experience."
+            >
+                <Checkbox
+                    checked={enableZenMode}
+                    data-testid="zen-mode-checkbox"
+                    onChange={(_, checked) => {
+                        updateSettings({behavior: {enableZenMode: checked}})
+                        enableZenModeCheckmark.trigger()
+                    }}
+                    sx={{p: 0.0}}
+                />
+            </SettingsRow>
         </Section>
     )
 
@@ -524,7 +519,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                 label="Display as:"
                 checkmark={nativeNamesCheckmark}
                 tooltip={
-                    "Choose how agent names are displayed in the network. " +
+                    "Choose how agent names and network names are displayed. " +
                     '"Native" shows the original agent name as provided by the system, while "Beautified" applies ' +
                     "formatting to make names more human-readable. This setting does not affect the actual names of " +
                     "agents, only how they are displayed in the UI."
@@ -565,11 +560,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             overflowX: "auto",
                         }}
                     >
-                        <pre>
-                            {`category/some_agent_name → ${
-                                useNativeNames ? "category/some_agent_name [unchanged]" : "Category Some Agent Name"
-                            }`}
-                        </pre>
+                        <pre>{useNativeNames ? "some category/some_agent_name" : "Some Category Some Agent Name"}</pre>
                     </FormLabel>
                 </Box>
             </SettingsRow>
