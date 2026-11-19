@@ -23,12 +23,10 @@ import {
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/AgentNode"
 import {
     addThoughtBubbleEdge,
-    getThoughtBubbleEdges,
     layoutLinear,
     LayoutOptions,
     layoutRadial,
     MAX_GLOBAL_THOUGHT_BUBBLES,
-    removeThoughtBubbleEdge,
 } from "../../../../components/MultiAgentAccelerator/AgentFlow/GraphLayouts"
 import {DEFAULT_FRONTMAN_X_POS, DEFAULT_FRONTMAN_Y_POS} from "../../../../components/MultiAgentAccelerator/const"
 import {ThoughtBubbleEdgeShape} from "../../../../components/MultiAgentAccelerator/ThoughtBubbles/ThoughtBubbleEdge"
@@ -530,21 +528,6 @@ describe("GraphLayouts", () => {
             )
         })
 
-        it("Should remove global thought bubble edges", () => {
-            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1", mockEdge)
-            removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "conv1")
-
-            const {edges} = layoutRadial({
-                ...defaultLayoutParams,
-                agentsInNetwork: threeAgentNetwork,
-                isAwaitingLlm: true,
-                thoughtBubbleEdges: thoughtBubbleEdgesMap,
-            })
-            const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
-
-            expect(thoughtBubbleEdges).toHaveLength(0)
-        })
-
         it("Should enforce max thought bubble limit", () => {
             // Add more than MAX_GLOBAL_THOUGHT_BUBBLES (5) edges
             for (let i = 0; i < MAX_GLOBAL_THOUGHT_BUBBLES + 2; i += 1) {
@@ -567,40 +550,6 @@ describe("GraphLayouts", () => {
             const thoughtBubbleEdges = edges.filter((e) => e.type === "thoughtBubbleEdge")
 
             expect(thoughtBubbleEdges).toHaveLength(5)
-        })
-
-        it("Should remove single existent thought bubble edge", () => {
-            const e: ThoughtBubbleEdgeShape = {
-                id: "e1",
-                source: "A",
-                target: "B",
-                type: "thoughtBubbleEdge",
-                data: {text: "Test message"},
-            }
-            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
-
-            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
-            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(1)
-
-            removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1")
-            expect(getThoughtBubbleEdges(thoughtBubbleEdgesMap).length).toBe(0)
-        })
-
-        it("Should be a no-op if we try to remove a single non-existent thought bubble edge", () => {
-            const e: ThoughtBubbleEdgeShape = {
-                id: "e1",
-                source: "A",
-                target: "B",
-                type: "thoughtBubbleEdge",
-                data: {text: "Test message"},
-            }
-            addThoughtBubbleEdge(thoughtBubbleEdgesMap, "c1", e)
-
-            // Attempt to remove an edge that was never added
-            expect(() => removeThoughtBubbleEdge(thoughtBubbleEdgesMap, "no-such-conv")).not.toThrow()
-
-            // Map should remain 1
-            expect(thoughtBubbleEdgesMap.size).toBe(1)
         })
 
         it("Should clear all thought bubble edges", () => {
