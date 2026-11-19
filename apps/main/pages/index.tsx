@@ -155,9 +155,9 @@ const EyebrowPill = styled("div")(({theme}) => {
 const HeaderLineOne = styled("h1")(({theme}) => ({
     color: (theme.vars ?? theme).palette.text.primary,
     fontFamily: SHEEN_FONT_DISPLAY,
-    fontSize: "clamp(3.5rem, 7.6vw, 8rem)",
+    fontSize: "clamp(2.25rem, 4.8vw, 5rem)",
     fontWeight: 500,
-    lineHeight: 0.92,
+    lineHeight: 1.1,
     margin: 0,
     letterSpacing: "-0.035em",
     marginTop: "1.75rem",
@@ -363,7 +363,9 @@ export const Index: FC & CustomPageProps = Object.assign(
                                     <span id="headline-eyebrow">{LOGO}</span>
                                 </EyebrowPill>
                                 <HeaderLineOne id="header-line">
-                                    <SubHeaderTitle id="neuro-ai-maa-box">Multi-Agent Accelerator</SubHeaderTitle>
+                                    <SubHeaderTitle id="neuro-ai-maa-box">
+                                        Neuro-SAN Multi-Agent UI (MAUI)
+                                    </SubHeaderTitle>
                                 </HeaderLineOne>
                                 <NeuroAIDescriptionBox id="neuro-ai-description-box">
                                     Low-code framework for rapidly agentifying your business.
