@@ -4,7 +4,7 @@ import * as MuiIcons from "@mui/icons-material"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
 import IconButton from "@mui/material/IconButton"
-import {styled, useTheme} from "@mui/material/styles"
+import {styled, SxProps, Theme, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
@@ -32,9 +32,6 @@ import {PublishIconButton} from "../Publish/PublishIconButton"
 export const EDIT_NETWORK_LABEL = "Edit this network"
 export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
 
-// Palette of theme colors we can use for tags (MUI palette keys; each has .main and .contrastText)
-const TAG_COLORS = ["primary", "secondary", "info", "success", "warning", "error"] as const
-
 // Shared styling for the row's action buttons (download, edit, ...). Disabled state keeps the base
 // color and only dims via opacity.
 const ActionIconButton = styled(IconButton)(({theme}) => ({
@@ -53,13 +50,36 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
 }
-// Define a type for the TAG_COLORS array
-type TagColor = (typeof TAG_COLORS)[number]
 
 //#endregion Types and Interfaces
 
-// Keep track of which tags have which colors so that the same tag always has the same color
-const tagsToColors = new Map<string, TagColor>()
+// Step size around the color wheel. This gives maximum color separation between tags while still being visually
+// appealing.
+const GOLDEN_ANGLE_DEGREES = 137.5
+
+/**
+ * Tinted chip style for the tag at a given position in the list. OKLCH keeps the perceived lightness the same for
+ * every hue, so the label stays readable in both themes.
+ * @param index - the tag's position in the list
+ * @returns sx styles for the tag's Chip
+ */
+const tagChipSx =
+    (index: number): SxProps<Theme> =>
+    (theme) => {
+        const hueDegrees = (index * GOLDEN_ANGLE_DEGREES) % 360
+        return {
+            margin: "0.25rem",
+            fontWeight: 500,
+            color: `oklch(0.42 0.14 ${hueDegrees})`,
+            backgroundColor: `oklch(0.65 0.15 ${hueDegrees} / 0.14)`,
+            border: `1px solid oklch(0.6 0.15 ${hueDegrees} / 0.55)`,
+            ...theme.applyStyles("dark", {
+                color: `oklch(0.86 0.1 ${hueDegrees})`,
+                backgroundColor: `oklch(0.7 0.15 ${hueDegrees} / 0.22)`,
+                borderColor: `oklch(0.72 0.14 ${hueDegrees} / 0.7)`,
+            }),
+        }
+    }
 
 /**
  * Helper function to determine if a temporary network is expired based on its expiration date
@@ -103,14 +123,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isChild = !isParent
 
     const tags = item.tags ?? []
-
-    // Assign colors to tags as needed and store in tagsToColors map
-    for (const tag of tags) {
-        if (!tagsToColors.has(tag)) {
-            const color = TAG_COLORS[tagsToColors.size % TAG_COLORS.length]
-            tagsToColors.set(tag, color)
-        }
-    }
 
     // Determine if expired (temporary networks only)
     const expirationTime = item?.temporaryNetworkExpirationTime
@@ -238,15 +250,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 <Tooltip
                                     title={[...tags]
                                         .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                                        .map((tag) => (
+                                        .map((tag, index) => (
                                             <Chip
                                                 key={tag}
                                                 label={tag}
-                                                sx={{
-                                                    margin: "0.25rem",
-                                                    backgroundColor: `${tagsToColors.get(tag) || TAG_COLORS[0]}.main`,
-                                                    color: `${tagsToColors.get(tag) || TAG_COLORS[0]}.contrastText`,
-                                                }}
+                                                sx={tagChipSx(index)}
                                             />
                                         ))}
                                     placement="right"
