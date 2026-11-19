@@ -2,7 +2,7 @@ import Box from "@mui/material/Box"
 import Chip, {chipClasses} from "@mui/material/Chip"
 import {Theme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
-import {motion, useReducedMotion, Variants} from "motion/react"
+import {motion, stagger, useReducedMotion, Variants} from "motion/react"
 import {FC} from "react"
 
 import {getSheen, glassSurface, glowShadow, gradientBorder, SHEEN_EASE} from "../../../Theme/sheen"
@@ -17,7 +17,7 @@ const CHIP_RADIUS = 999
 // Chips cascade in one after another
 const CONTAINER_VARIANTS: Variants = {
     hidden: {},
-    shown: {transition: {staggerChildren: 0.07, delayChildren: 0.1}},
+    shown: {transition: {delayChildren: stagger(0.07, {startDelay: 0.1})}},
 }
 const CHIP_VARIANTS: Variants = {
     hidden: {opacity: 0, y: 10, scale: 0.92, filter: "blur(4px)"},
@@ -100,10 +100,8 @@ export const SampleQueries: FC<SampleQueriesProps> = ({disabled, handleSend, sam
                                         [`& .${chipClasses.label}`]: {
                                             lineHeight: 1.45,
                                             overflowWrap: "anywhere",
-                                            paddingBottom: "8px",
-                                            paddingLeft: "14px",
-                                            paddingRight: "14px",
-                                            paddingTop: "8px",
+                                            px: 2.75,
+                                            py: 1.5,
                                             whiteSpace: "normal",
                                         },
                                         marginRight: "0.75rem",

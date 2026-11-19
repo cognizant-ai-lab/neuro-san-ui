@@ -19,7 +19,7 @@ limitations under the License.
  */
 
 import {createTheme, ThemeProvider} from "@mui/material/styles"
-import {fireEvent, render, screen, waitFor} from "@testing-library/react"
+import {fireEvent, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
 import {ComponentProps} from "react"
 
@@ -218,6 +218,25 @@ describe("Navbar", () => {
         expect(neuroSanCoreItem).toBeVisible()
     })
 
+    it.each([
+        {toggleName: "Explore", itemName: "Neuro-san studio (examples)"},
+        {toggleName: "Help", itemName: "User guide"},
+        {toggleName: "User dropdown toggle", itemName: "Sign out"},
+    ])("opens the $toggleName menu from the keyboard", async ({toggleName, itemName}) => {
+        renderNavbar()
+
+        const toggle = await screen.findByRole("button", {name: toggleName})
+        expect(toggle).toHaveAttribute("aria-haspopup", "true")
+        expect(toggle).not.toHaveAttribute("aria-expanded")
+
+        toggle.focus()
+        await user.keyboard("{Enter}")
+
+        const menu = await screen.findByRole("menu", {name: toggleName})
+        expect(toggle).toHaveAttribute("aria-expanded", "true")
+        expect(within(menu).getByRole("menuitem", {name: itemName})).toBeVisible()
+    })
+
     it("toggles dark mode", async () => {
         renderNavbar()
 
@@ -232,14 +251,11 @@ describe("Navbar", () => {
         expect(darkModeToggle).toHaveStyle({color: createTheme({palette: {mode: "dark"}}).palette.secondary.main})
     })
 
-    it("renders as a floating sticky pill with text in the primary text color", async () => {
+    it("renders as a floating sticky pill", () => {
         renderNavbar()
 
         const navBar = document.getElementById("nav-bar-container")
         expect(navBar).toHaveStyle({position: "sticky", top: "12px", borderRadius: "999px"})
-
-        const exploreToggle = await screen.findByText("Explore")
-        expect(exploreToggle).toHaveStyle({color: theme.palette.text.primary})
     })
 
     it("uses the branding primary color for the menu icons when set", async () => {

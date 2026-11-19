@@ -68,14 +68,7 @@ export const addThoughtBubbleEdge = (
     }
 }
 
-export const removeThoughtBubbleEdge = (
-    thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>,
-    conversationId: string
-) => {
-    thoughtBubbleEdges.delete(conversationId)
-}
-
-export const getThoughtBubbleEdges = (
+const getThoughtBubbleEdges = (
     thoughtBubbleEdges: Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>
 ): ThoughtBubbleEdgeShape[] => {
     return [...thoughtBubbleEdges.values()].map((item) => item.edge)
