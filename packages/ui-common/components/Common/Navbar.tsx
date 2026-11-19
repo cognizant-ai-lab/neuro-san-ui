@@ -342,8 +342,6 @@ export const Navbar = ({
                         id="navbar-brand-link"
                         style={{
                             color: "inherit",
-                            position: "relative",
-                            bottom: "1px",
                             textDecoration: "none",
                         }}
                         href={

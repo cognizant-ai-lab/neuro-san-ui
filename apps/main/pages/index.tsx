@@ -86,7 +86,7 @@ const NavbarLogo = styled("h1")({
     fontSize: "1.25rem",
     margin: 0,
     width: "250px",
-    "& img": {height: "30px", width: "auto"},
+    "& img": {display: "block", height: "30px", width: "auto"},
 })
 
 const NavbarMiddleSection = styled("div")({
