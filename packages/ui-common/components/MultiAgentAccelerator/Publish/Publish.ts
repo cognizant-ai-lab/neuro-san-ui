@@ -131,7 +131,7 @@ const showServerPublishState = async (networkId: string, target: PublishTarget):
 const makePublishName = async (networkName: string, {serverUrl, orgName}: PublishTarget): Promise<string> =>
     (await isPublishNameTaken(serverUrl, orgName, networkName)) ? `${networkName}_${uuid().slice(0, 8)}` : networkName
 
-/** How a publish went: live at the URL, or failed with an error */
+/** How a publish went: live at the URL, failed with an error, or neither when the user stopped waiting */
 export interface PublishResult {
     readonly url?: string
     readonly error?: string
@@ -149,13 +149,15 @@ export interface UnpublishResult {
  */
 export const publish = async (
     network: PublishNetwork,
+    displayName: string,
     hocon: string,
     target: PublishTarget,
     refreshTheme: boolean
 ): Promise<PublishResult> => {
     const {clearPublishState, networks, setPublishState, setPublishedList} = usePublishStore.getState()
     const previousState = networks[network.id]
-    setPublishState(network.id, {status: PublishStatus.Publishing})
+    const waiting = new AbortController()
+    setPublishState(network.id, {status: PublishStatus.Publishing, displayName, waiting})
 
     try {
         const {serverUrl, orgName} = target
@@ -168,6 +170,7 @@ export const publish = async (
             networkName: publishName,
             hocon,
             refreshTheme,
+            signal: waiting.signal,
             // Save the deployment id as soon as the server accepts the publish, so MAUI can still find the deployment
             // if the build fails. Saved on the current network, since the user may have edited the network while
             // publishing.
@@ -193,6 +196,8 @@ export const publish = async (
         }
         setPublishedList(null)
         void showServerPublishState(network.id, target)
+        // Stopping the wait isn't an error. The server may still finish, which the check above picks up.
+        if (waiting.signal.aborted) return {}
         return {error: e instanceof Error ? e.message : String(e)}
     }
 }
@@ -205,6 +210,7 @@ export const showPublishResult = (networkName: string, result: PublishResult): v
         sendNotification(NotificationType.error, `Failed to publish "${networkName}".`, result.error)
         return
     }
+    if (!result.url) return
 
     const message = openInNewTab(result.url) ? PUBLISHED_MESSAGE : PUBLISHED_TAB_BLOCKED_MESSAGE
     sendNotification(NotificationType.success, message, "", {vertical: "bottom", horizontal: "center"})

@@ -9,11 +9,11 @@ describe("usePublishStore / replaceNetwork", () => {
     })
 
     it("moves a network's publish state to the network an edit replaced it with", () => {
-        usePublishStore.getState().setPublishState("first", {status: PublishStatus.Publishing})
+        usePublishStore.getState().setPublishState("first", {status: PublishStatus.Unpublished})
 
         usePublishStore.getState().replaceNetwork("first", "second")
 
-        expect(usePublishStore.getState().networks).toEqual({second: {status: PublishStatus.Publishing}})
+        expect(usePublishStore.getState().networks).toEqual({second: {status: PublishStatus.Unpublished}})
     })
 
     it("follows a network through several edits", () => {
