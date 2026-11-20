@@ -24,24 +24,48 @@ import {
     isOpenAIKeyValid,
     KeyValidationFailure,
     KeyValidationResult,
+    OPENAI_DEFAULT_ENDPOINT,
 } from "../../../controller/llm/Providers"
-import {API_KEYS_TTL_MS, getApiKey, LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {
+    API_KEYS_TTL_MS,
+    getApiKey,
+    LLM_PROVIDER_ENDPOINT_FIELD,
+    LLMProvider,
+    useSettingsStore,
+} from "../../../state/Settings"
 import {ApiKeyFailure} from "../ApiKeyErrorBanner"
 import {useCheckmarkFade} from "../FadingCheckmark"
 
 type CheckmarkFade = ReturnType<typeof useCheckmarkFade>
 export type ApiKeysMap = Parameters<typeof getApiKey>[0]
+export type ApiEndpointsMap = ReturnType<typeof useSettingsStore.getState>["settings"]["apiEndpoints"]
+
+/**
+ * Saves an API key, plus its endpoint URL for providers that have one. Tests the key first unless `allowUnverified`.
+ */
+export type PersistKey = (
+    vendor: LLMProvider,
+    key: string,
+    endpoint: string,
+    checkmark: CheckmarkFade,
+    now: number,
+    allowUnverified?: boolean
+) => Promise<boolean>
+
+const hasEndpoint = (vendor: LLMProvider): boolean => Object.hasOwn(LLM_PROVIDER_ENDPOINT_FIELD, vendor)
 
 interface LLMProviderDefinition {
+    readonly endpointPlaceholder?: string
     readonly getLogo: (isDarkMode: boolean) => string
     readonly idSuffix: string
-    readonly onTest: (key: string) => Promise<KeyValidationResult>
+    readonly onTest: (key: string, endpoint?: string) => Promise<KeyValidationResult>
     readonly placeholder: string
     readonly vendor: LLMProvider
 }
 
 const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
     {
+        endpointPlaceholder: OPENAI_DEFAULT_ENDPOINT,
         getLogo: (isDarkMode) => (isDarkMode ? "/OpenAI-white.png" : "/OpenAI-black.png"),
         idSuffix: "openai",
         onTest: isOpenAIKeyValid,
@@ -67,12 +91,16 @@ const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
 export interface ByokProviderItem {
     /** Checkmark fade controller for save indicator. */
     readonly checkmark: CheckmarkFade
+    /** Placeholder for the endpoint URL input, showing the URL used when none is set. */
+    readonly endpointPlaceholder?: string
+    /** Whether the provider accepts a custom endpoint URL. */
+    readonly hasEndpoint: boolean
     /** Unique DOM ID suffix for the provider. */
     readonly idSuffix: string
     /** Provider logo asset URL. */
     readonly logo: string
-    /** Test handler for validating keys. */
-    readonly onTest: (key: string) => Promise<KeyValidationResult>
+    /** Test handler for validating keys, against the endpoint URL when one is given. */
+    readonly onTest: (key: string, endpoint?: string) => Promise<KeyValidationResult>
     /** Input placeholder text. */
     readonly placeholder: string
     /** LLM provider identifier. */
@@ -89,6 +117,8 @@ export interface UseByokKeyManagerProps {
 export interface UseByokKeyManagerReturn {
     /** Active provider input configurations. */
     readonly activeConfigs: readonly ByokProviderItem[]
+    /** Persisted endpoint URLs from settings store. */
+    readonly apiEndpoints: ApiEndpointsMap
     /** Persisted API keys from settings store. */
     readonly apiKeys: ApiKeysMap | undefined
     /** Handler for closing the dialog, prompting confirmation if unsaved edits exist. */
@@ -96,6 +126,8 @@ export interface UseByokKeyManagerReturn {
     /** Handler for discarding unsaved changes and closing the dialog. */
     readonly clearDrafts: () => void
     readonly handleDiscard: () => void
+    /** Handler for updating draft endpoint URLs when inputs change. */
+    readonly handleEndpointChange: (vendor: LLMProvider, value: string) => void
     /** Handler for updating validation failure results for a vendor. */
     readonly handleKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     /** Handler for saving all unsaved changes and closing the dialog. */
@@ -104,14 +136,8 @@ export interface UseByokKeyManagerReturn {
     readonly handleValueChange: (vendor: LLMProvider, value: string) => void
     /** Current validation failures for active providers. */
     readonly keyFailures: readonly ApiKeyFailure[]
-    /** Persists a single API key to settings store. */
-    readonly persistKey: (
-        vendor: LLMProvider,
-        key: string,
-        checkmark: CheckmarkFade,
-        now: number,
-        allowUnverified?: boolean
-    ) => Promise<boolean>
+    /** Persists a single API key, and its endpoint URL, to settings store. */
+    readonly persistKey: PersistKey
     /** Whether the unsaved changes confirmation modal is currently visible. */
     readonly showUnsavedChangesModal: boolean
 }
@@ -132,12 +158,17 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const googleCheckmark = useCheckmarkFade()
 
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
+    const apiEndpoints = useSettingsStore((state) => state.settings.apiEndpoints)
     const updateSettings = useSettingsStore((state) => state.updateSettings)
 
     const [keyTestResults, setKeyTestResults] = useState<Partial<Record<LLMProvider, ApiKeyFailure | null>>>({})
     const currentDrafts = useRef<Record<string, string>>({})
-    const savingKeys = useRef(new Map<LLMProvider, {id: symbol; key: string; result: Promise<boolean>}>())
+    const currentEndpointDrafts = useRef<Record<string, string>>({})
+    const savingKeys = useRef(
+        new Map<LLMProvider, {endpoint: string; id: symbol; key: string; result: Promise<boolean>}>()
+    )
     const [draftKeys, setDraftKeys] = useState<Record<string, string>>({})
+    const [draftEndpoints, setDraftEndpoints] = useState<Record<string, string>>({})
     const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState<boolean>(false)
 
     useEffect(
@@ -145,6 +176,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
             // Invalidate pending validation so it cannot save a key after this dialog unmounts.
             savingKeys.current.clear()
             currentDrafts.current = {}
+            currentEndpointDrafts.current = {}
         },
         []
     )
@@ -164,6 +196,8 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         () =>
             PROVIDER_DEFINITIONS.map((def) => ({
                 checkmark: checkmarks[def.vendor],
+                endpointPlaceholder: def.endpointPlaceholder,
+                hasEndpoint: hasEndpoint(def.vendor),
                 idSuffix: def.idSuffix,
                 logo: def.getLogo(isDarkMode),
                 onTest: def.onTest,
@@ -178,14 +212,17 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         [providerItems, supportedProviders]
     )
 
-    const persistKey = useCallback(
-        async (vendor: LLMProvider, key: string, checkmark: CheckmarkFade, now: number, allowUnverified = false) => {
+    const persistKey: PersistKey = useCallback(
+        async (vendor, key, endpoint, checkmark, now, allowUnverified = false) => {
             const id = Symbol("BYOK save")
+            const isCurrentDraft = () =>
+                currentDrafts.current[vendor] === key &&
+                (!hasEndpoint(vendor) || currentEndpointDrafts.current[vendor] === endpoint)
             const save = async (): Promise<boolean> => {
                 if (key && !allowUnverified) {
-                    const result = await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key)
+                    const result = await PROVIDER_DEFINITIONS.find((def) => def.vendor === vendor).onTest(key, endpoint)
                     // An edit or discard while testing invalidates this save.
-                    if (savingKeys.current.get(vendor)?.id !== id || currentDrafts.current[vendor] !== key) {
+                    if (savingKeys.current.get(vendor)?.id !== id || !isCurrentDraft()) {
                         return false
                     }
                     setKeyTestResults((prev) => ({
@@ -203,11 +240,19 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                             expiresAt: key ? now + API_KEYS_TTL_MS : 0,
                         },
                     },
+                    // Forgetting a key keeps its endpoint URL, like other settings
+                    ...(key && hasEndpoint(vendor) ? {apiEndpoints: {[vendor]: endpoint}} : {}),
                 })
                 const {[vendor]: _savedDraft, ...remainingDrafts} = currentDrafts.current
                 currentDrafts.current = remainingDrafts
+                const {[vendor]: _savedEndpoint, ...remainingEndpointDrafts} = currentEndpointDrafts.current
+                currentEndpointDrafts.current = remainingEndpointDrafts
                 checkmark.trigger()
                 setDraftKeys((prev) => {
+                    const {[vendor]: _, ...rest} = prev
+                    return rest
+                })
+                setDraftEndpoints((prev) => {
                     const {[vendor]: _, ...rest} = prev
                     return rest
                 })
@@ -220,16 +265,16 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
             }
 
             const existing = savingKeys.current.get(vendor)
-            if (existing?.key === key) {
+            if (existing?.key === key && existing.endpoint === endpoint) {
                 return existing.result
             }
 
-            const canSaveUnverified = keyTestResults[vendor]?.canSaveUnverified && currentDrafts.current[vendor] === key
+            const canSaveUnverified = keyTestResults[vendor]?.canSaveUnverified && isCurrentDraft()
             if (existing || (allowUnverified && !canSaveUnverified)) {
                 return false
             }
 
-            const pending = {id, key, result: Promise.resolve().then(save)}
+            const pending = {endpoint, id, key, result: Promise.resolve().then(save)}
             savingKeys.current.set(vendor, pending)
             try {
                 return await pending.result
@@ -245,6 +290,11 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const handleValueChange = useCallback((vendor: LLMProvider, value: string) => {
         currentDrafts.current[vendor] = value
         setDraftKeys((prev) => ({...prev, [vendor]: value}))
+    }, [])
+
+    const handleEndpointChange = useCallback((vendor: LLMProvider, value: string) => {
+        currentEndpointDrafts.current[vendor] = value
+        setDraftEndpoints((prev) => ({...prev, [vendor]: value}))
     }, [])
 
     const handleKeyResultChange = useCallback((vendor: LLMProvider, result: KeyValidationFailure | null) => {
@@ -266,10 +316,15 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const getDirtyDrafts = useCallback(
         () =>
             activeConfigs.filter(({vendor}) => {
-                const draft = draftKeys[vendor]
-                return draft !== undefined && draft !== (getApiKey(apiKeys, vendor) ?? "")
+                const key = draftKeys[vendor]
+                const endpoint = draftEndpoints[vendor]
+                const keyChanged = key !== undefined && key !== (getApiKey(apiKeys, vendor) ?? "")
+                // An endpoint URL is only saved with a key
+                const endpointChanged =
+                    hasEndpoint(vendor) && key && endpoint !== undefined && endpoint !== (apiEndpoints[vendor] ?? "")
+                return keyChanged || endpointChanged
             }),
-        [activeConfigs, apiKeys, draftKeys]
+        [activeConfigs, apiEndpoints, apiKeys, draftEndpoints, draftKeys]
     )
 
     const handleClose = useCallback(() => {
@@ -284,7 +339,9 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         savingKeys.current.clear()
         setKeyTestResults({})
         currentDrafts.current = {}
+        currentEndpointDrafts.current = {}
         setDraftKeys({})
+        setDraftEndpoints({})
         setShowUnsavedChangesModal(false)
     }, [])
 
@@ -295,31 +352,42 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
 
     const handleSave = useCallback(async () => {
         const now = Date.now()
-        const drafts = getDirtyDrafts().map(({checkmark, vendor}) => ({checkmark, vendor, key: draftKeys[vendor]}))
+        const drafts = getDirtyDrafts().map(({checkmark, vendor}) => ({
+            checkmark,
+            endpoint: draftEndpoints[vendor] ?? "",
+            key: draftKeys[vendor],
+            vendor,
+        }))
         setShowUnsavedChangesModal(false)
         const saved = await Promise.all(
-            drafts.map(({checkmark, vendor, key}) => persistKey(vendor, key, checkmark, now))
+            drafts.map(({checkmark, endpoint, key, vendor}) => persistKey(vendor, key, endpoint, checkmark, now))
         )
+        const {settings} = useSettingsStore.getState()
+        const isSaved = (draft: string | undefined, savedValue: string) => draft === undefined || draft === savedValue
         if (
             saved.every(Boolean) &&
             activeConfigs.every(
                 ({vendor}) =>
-                    currentDrafts.current[vendor] === undefined ||
-                    currentDrafts.current[vendor] ===
-                        (getApiKey(useSettingsStore.getState().settings.apiKeys, vendor) ?? "")
+                    isSaved(currentDrafts.current[vendor], getApiKey(settings.apiKeys, vendor) ?? "") &&
+                    (!hasEndpoint(vendor) ||
+                        !getApiKey(settings.apiKeys, vendor) ||
+                        isSaved(currentEndpointDrafts.current[vendor], settings.apiEndpoints[vendor] ?? ""))
             )
         ) {
             setDraftKeys({})
+            setDraftEndpoints({})
             onClose?.()
         }
-    }, [activeConfigs, getDirtyDrafts, draftKeys, persistKey, onClose])
+    }, [activeConfigs, getDirtyDrafts, draftEndpoints, draftKeys, persistKey, onClose])
 
     return {
         activeConfigs,
+        apiEndpoints,
         apiKeys,
         handleClose,
         clearDrafts,
         handleDiscard,
+        handleEndpointChange,
         handleKeyResultChange,
         handleSave,
         handleValueChange,

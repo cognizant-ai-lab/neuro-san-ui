@@ -50,9 +50,11 @@ export interface ByokDialogProps {
 export const ByokDialog: FC<ByokDialogProps> = ({id, isOpen = true, onClose, supportedProviders}) => {
     const {
         activeConfigs,
+        apiEndpoints,
         apiKeys,
         handleClose,
         handleDiscard,
+        handleEndpointChange,
         handleKeyResultChange,
         handleSave,
         handleValueChange,
@@ -87,10 +89,12 @@ export const ByokDialog: FC<ByokDialogProps> = ({id, isOpen = true, onClose, sup
                 }
             >
                 <ByokInputs
+                    apiEndpoints={apiEndpoints}
                     apiKeys={apiKeys}
                     configs={activeConfigs}
                     id={id}
                     keyFailures={keyFailures}
+                    onEndpointChange={handleEndpointChange}
                     onKeyResultChange={handleKeyResultChange}
                     onPersistKey={persistKey}
                     onValueChange={handleValueChange}

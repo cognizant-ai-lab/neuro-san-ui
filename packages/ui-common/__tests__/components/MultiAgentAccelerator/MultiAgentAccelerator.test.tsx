@@ -70,7 +70,12 @@ import {
 } from "../../../generated/neuro-san/NeuroSanClient"
 import {AnnouncementId, useAnnouncementsStore} from "../../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
+import {
+    ByokKeyField,
+    LLM_PROVIDER_API_KEY_FIELD,
+    LLM_PROVIDER_ENDPOINT_FIELD,
+    useSettingsStore,
+} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
 import {cleanUpAgentName} from "../../../utils/AgentName"
@@ -1717,6 +1722,65 @@ describe("MultiAgentAccelerator", () => {
                 })
             )
         })
+
+        it.each([
+            {
+                case: "the network accepts it",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD.OpenAI],
+                savedKey: "openai-key",
+                expectedLlmConfig: {
+                    [LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "openai-key",
+                    [LLM_PROVIDER_ENDPOINT_FIELD.OpenAI]: "https://router.example.com/v1",
+                },
+            },
+            {
+                case: "the network doesn't accept it",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI],
+                savedKey: "openai-key",
+                expectedLlmConfig: {[LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "openai-key"},
+            },
+            {
+                case: "there's no OpenAI key",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD.OpenAI],
+                savedKey: undefined,
+                expectedLlmConfig: {},
+            },
+        ])(
+            "should send the OpenAI endpoint URL only with a key when $case",
+            async ({expectedLlmConfig, savedKey, schemaFields}) => {
+                vi.mocked(getAgentFunction).mockResolvedValue({
+                    function: {
+                        sly_data_schema: {
+                            type: "object",
+                            properties: {
+                                llm_config: {
+                                    type: "object",
+                                    properties: Object.fromEntries(schemaFields.map((key) => [key, {type: "string"}])),
+                                },
+                            },
+                            required: ["llm_config"],
+                        } satisfies z.infer<typeof BYOK>,
+                    },
+                } satisfies FunctionResponse)
+                useSettingsStore.getState().updateSettings({
+                    apiEndpoints: {OpenAI: "https://router.example.com/v1"},
+                    ...(savedKey && {apiKeys: {OpenAI: {expiresAt: Number.MAX_SAFE_INTEGER, value: savedKey}}}),
+                })
+
+                renderMultiAgentAccelerator()
+                await act(async () => {
+                    setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+                })
+
+                await waitFor(() => {
+                    expect(chatCommonMock).toHaveBeenLastCalledWith(
+                        expect.objectContaining<Partial<ChatCommonProps>>({
+                            extraSlyData: {llm_config: expectedLlmConfig},
+                        })
+                    )
+                })
+            }
+        )
 
         it("passes extraSlyData through to AgentFlow when present", async () => {
             useTempNetworksStore.setState({tempNetworks: [tempNetworkWithDefinition]})

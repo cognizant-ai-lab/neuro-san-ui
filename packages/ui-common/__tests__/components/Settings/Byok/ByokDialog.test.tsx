@@ -21,6 +21,7 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {ByokDialog} from "../../../../components/Settings/Byok/ByokDialog"
+import {OPENAI_DEFAULT_ENDPOINT} from "../../../../controller/llm/Providers"
 import {getApiKey, useSettingsStore} from "../../../../state/Settings"
 
 // Fading checkmark behavior is covered by FadingCheckmark.test.tsx.
@@ -30,6 +31,7 @@ vi.mock("../../../../components/Settings/FadingCheckmark", () => ({
 }))
 
 const TEST_API_KEY = "test-api-key-123"
+const ROUTER_ENDPOINT = "https://router.example.com/v1"
 
 describe("ByokDialog", () => {
     withStrictMocks()
@@ -75,6 +77,163 @@ describe("ByokDialog", () => {
         await user.click(saveButton)
 
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
+    })
+
+    describe("OpenAI endpoint URL", () => {
+        const saveOpenAIKey = async (key: string, endpoint: string) => {
+            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
+            const keyInput = within(openAIRow).getByPlaceholderText("sk-...")
+            const endpointInput = within(openAIRow).getByRole("textbox", {name: "OpenAI endpoint URL"})
+            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
+
+            await user.click(keyInput)
+            await user.paste(key)
+            await user.click(endpointInput)
+            await user.paste(endpoint)
+            await user.click(saveButton)
+        }
+
+        it("tests the key against the endpoint URL and saves both", async () => {
+            global.fetch = mockFetch({}, true)
+            render(<ByokDialog id="test-byok-dialog" />)
+
+            await saveOpenAIKey(TEST_API_KEY, ROUTER_ENDPOINT)
+
+            expect(global.fetch).toHaveBeenCalledWith(`${ROUTER_ENDPOINT}/models`, expect.anything())
+            const {settings} = useSettingsStore.getState()
+            expect(getApiKey(settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
+            expect(settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+        })
+
+        it("drops trailing slashes from the endpoint URL when leaving the field", async () => {
+            global.fetch = mockFetch({}, true)
+            render(<ByokDialog id="test-byok-dialog" />)
+
+            await saveOpenAIKey(TEST_API_KEY, `  ${ROUTER_ENDPOINT}//`)
+
+            expect(screen.getByRole("textbox", {name: "OpenAI endpoint URL"})).toHaveValue(ROUTER_ENDPOINT)
+            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+        })
+
+        it("lets the user save a new endpoint URL for a saved key", async () => {
+            global.fetch = mockFetch({}, true)
+            useSettingsStore
+                .getState()
+                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+            render(<ByokDialog id="test-byok-dialog" />)
+            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
+            const endpointInput = within(openAIRow).getByRole("textbox", {name: "OpenAI endpoint URL"})
+            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
+            expect(saveButton).toBeDisabled()
+
+            await user.click(endpointInput)
+            await user.paste(ROUTER_ENDPOINT)
+            await user.click(saveButton)
+
+            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+        })
+
+        it("saves neither the key nor the endpoint URL when the key fails its test", async () => {
+            global.fetch = mockFetch({error: {message: "Invalid API key"}}, false, 401)
+            render(<ByokDialog id="test-byok-dialog" />)
+
+            await saveOpenAIKey(TEST_API_KEY, ROUTER_ENDPOINT)
+
+            const {settings} = useSettingsStore.getState()
+            expect(getApiKey(settings.apiKeys, "OpenAI")).toBeFalsy()
+            expect(settings.apiEndpoints.OpenAI).toBeUndefined()
+            expect(screen.getByRole("textbox", {name: "OpenAI endpoint URL"})).toHaveValue(ROUTER_ENDPOINT)
+        })
+
+        it("tests the key against OpenAI after the endpoint URL is cleared", async () => {
+            global.fetch = mockFetch({}, true)
+            useSettingsStore.getState().updateSettings({
+                apiEndpoints: {OpenAI: ROUTER_ENDPOINT},
+                apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}},
+            })
+            render(<ByokDialog id="test-byok-dialog" />)
+            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
+            const clearButton = within(openAIRow).getByRole("button", {name: "Clear OpenAI endpoint URL"})
+            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
+
+            await user.click(clearButton)
+            await user.click(saveButton)
+
+            expect(global.fetch).toHaveBeenCalledWith(`${OPENAI_DEFAULT_ENDPOINT}/models`, expect.anything())
+            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe("")
+        })
+
+        it("asks about unsaved changes when only the endpoint URL changed", async () => {
+            const onCloseMock = vi.fn()
+            useSettingsStore
+                .getState()
+                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+            render(
+                <ByokDialog
+                    id="test-byok-dialog"
+                    onClose={onCloseMock}
+                />
+            )
+            const endpointInput = screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+            const closeButton = screen.getByRole("button", {name: "close"})
+
+            await user.click(endpointInput)
+            await user.paste(ROUTER_ENDPOINT)
+            await user.click(closeButton)
+
+            expect(onCloseMock).not.toHaveBeenCalled()
+            screen.getByText("Unsaved Changes")
+        })
+
+        it("closes after saving another key from the prompt when OpenAI has no endpoint URL", async () => {
+            global.fetch = mockFetch({}, true)
+            const onCloseMock = vi.fn()
+            useSettingsStore
+                .getState()
+                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+            render(
+                <ByokDialog
+                    id="test-byok-dialog"
+                    onClose={onCloseMock}
+                />
+            )
+            const anthropicKeyInput = screen.getByPlaceholderText("sk-ant-...")
+            const closeButton = screen.getByRole("button", {name: "close"})
+
+            await user.click(anthropicKeyInput)
+            await user.paste("anthropic-key")
+            await user.click(closeButton)
+            const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
+            await user.click(saveChangesButton)
+
+            await waitFor(() => expect(onCloseMock).toHaveBeenCalledTimes(1))
+            expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Anthropic")).toBe("anthropic-key")
+        })
+
+        it("closes without asking when an endpoint URL is typed with no key", async () => {
+            const onCloseMock = vi.fn()
+            render(
+                <ByokDialog
+                    id="test-byok-dialog"
+                    onClose={onCloseMock}
+                />
+            )
+            const endpointInput = screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+            const closeButton = screen.getByRole("button", {name: "close"})
+
+            await user.click(endpointInput)
+            await user.paste(ROUTER_ENDPOINT)
+            await user.click(closeButton)
+
+            expect(onCloseMock).toHaveBeenCalledTimes(1)
+        })
+
+        it("shows an endpoint URL field for OpenAI only", () => {
+            render(<ByokDialog id="test-byok-dialog" />)
+
+            expect(screen.getAllByRole("textbox", {name: /endpoint URL/u})).toHaveLength(1)
+            screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+        })
     })
 
     it("triggers onClose directly when closing with no unsaved changes", async () => {
