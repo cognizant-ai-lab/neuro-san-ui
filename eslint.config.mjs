@@ -33,7 +33,7 @@ export default defineConfig([
 
                         // Importing via package name is also banned to maintain consistency
                         {
-                            regex: "^@cognizant-ai-lab",
+                            regex: "^@cognizant-ai-lab/ui-common",
                             message:
                                 "Do not import from the @cognizant-ai-lab/ui-common barrel file. " +
                                 "Use a relative path to import specific component/state files instead.",
