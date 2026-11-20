@@ -1,0 +1,99 @@
+{
+# Importing content from other HOCON files
+# The include keyword must be unquoted and followed by a quoted URL or file path.
+# File paths should be absolute or relative to the script's working directory, not the HOCON file location.
+# This "aaosa.hocon" file contains key-value pairs used for substitution.
+# Specifically, it provides values for the following keys:
+#   - aaosa_call
+#   - aaosa_instructions
+# IMPORTANT:
+# Ensure that you run `python -m neuro_san_studio run` from the top level of the repository.
+# The path to this substitution file is **relative to the top-level directory**,
+# so running the script from elsewhere may result in file not found errors.
+    include "registries/aaosa.hocon"
+
+# Optional metadata describing this agent network
+    "metadata": {
+        "sample_queries": [
+            "Assign a distinct Material UI icon to each agent in this list and return pure JSON (agent_name -> icon name): [{\"agent_name\":\"support_triage\",\"description\":\"Routes customer support tickets by topic and urgency\",\"tags\":[\"support\",\"triage\"]},{\"agent_name\":\"sales_insights\",\"description\":\"Analyzes CRM data and summarizes pipeline health\",\"tags\":[\"analytics\",\"sales\"]},{\"agent_name\":\"deployment_bot\",\"description\":\"Automates releases and monitors CI/CD status\",\"tags\":[\"devops\",\"deploy\"]}]",
+            "Pick the best-fit MUI icon names (no 'Icon' suffix) for these networks using descriptions first, and avoid reusing icons where possible: [{\"agent_name\":\"privacy_auditor\",\"description\":\"Checks products for data-privacy compliance and policy gaps\",\"tags\":[\"security\",\"compliance\"]},{\"agent_name\":\"doc_generator\",\"description\":\"Generates API reference docs from code comments\",\"tags\":[\"documentation\",\"api\"]},{\"agent_name\":\"incident_commander\",\"description\":\"Coordinates response during outages and escalations\",\"tags\":[\"incident\",\"operations\"]}]",
+            "Suggest MUI icon names for each agent and output ONLY JSON: [{\"agent_name\":\"research_scout\",\"description\":\"Finds and summarizes relevant papers for a given topic\",\"tags\":[\"research\",\"search\"]},{\"agent_name\":\"ui_designer\",\"description\":\"Creates wireframes and proposes layout improvements\",\"tags\":[\"design\",\"ui\"]},{\"agent_name\":\"data_cleaner\",\"description\":\"Detects anomalies and fixes formatting issues in datasets\",\"tags\":[\"data\",\"etl\"]}]",
+            "For this list of agent networks, return a JSON map of agent_name to a single MUI icon name (without 'Icon'), minimizing duplicates: [{\"agent_name\":\"billing_assistant\",\"description\":\"Handles invoices, refunds, and payment questions\",\"tags\":[\"finance\",\"billing\"]},{\"agent_name\":\"calendar_scheduler\",\"description\":\"Books meetings and resolves scheduling conflicts\",\"tags\":[\"calendar\",\"productivity\"]},{\"agent_name\":\"code_reviewer\",\"description\":\"Reviews pull requests for style and correctness\",\"tags\":[\"code\",\"quality\"]}]"
+        ],
+        "date_created": "2026-11-20T19:10:05.493247+00:00"
+    },
+
+# Load the shared LLM configuration from a single source of truth.
+# This allows users to change the model in one file rather than
+# modifying the configuration for each agent network.
+# Note that the file path here is relative to the root level of the repo.
+    include "config/llm_config.hocon",
+
+    "max_execution_seconds": 600,
+
+   "instructions_prefix": """
+You are part of a team of assistants in mui_icon_assigner.
+Only answer inquiries that are directly within your area of expertise.
+Do not try to help for other matters.
+Do not mention what you can NOT do. Only mention what you can do.
+""",
+   "demo_mode": "You are part of a demo system, so when queried, make up a realistic response as if you are actually grounded in real data or you are operating a real application API or microservice.",
+   "tools": [
+        {
+            "name": "icon_assignment_coordinator",
+            "function": ${aaosa_call}{
+                "description": """
+Assigns best-fit Material UI icon names to each entry in an input list of agent networks, returning a JSON map from agent_name to icon name.
+                """
+            },
+            "instructions": ${instructions_prefix} """
+            Never express irrelevance unless you have first consulted all your tools.
+            Once you have determined the relevant tools, do not express that to the user, rather,
+            call all the relevant tools and make sure the command is fully serviced and express the end result.
+You coordinate assigning an appropriate Material UI (MUI) icon name to each agent network in the provided input list.
+
+Input:
+- You will be given {{network_list}}: a list of objects with fields agent_name, description, and tags.
+
+Task:
+- For each item, select one best-fit MUI icon name (the component/base name without the 'Icon' suffix).
+- Base the choice primarily on the description; use tags only as secondary context.
+- Avoid reusing the same icon across different agent_name entries when possible; if reuse is unavoidable, prefer reuse that is still semantically strong.
+- If an entry is ambiguous, choose a broadly applicable icon that best matches the most likely function implied by the description.
+
+Tool use:
+- Use the mui_icon_selector tool to search/validate candidate MUI icon names and confirm the exact icon name spelling.
+
+Output:
+- Return ONLY pure JSON (no surrounding text, no code fences, no commentary) mapping each agent_name to its chosen icon name.
+- Example shape: {"agent_a":"Search","agent_b":"Settings"}
+- Ensure the icon values contain no 'Icon' suffix and are valid MUI icon names.
+""" ${aaosa_instructions},
+            "tools": ["mui_icon_selector"]
+        },
+        {
+            "name": "mui_icon_selector",
+            "function": ${aaosa_call}{
+                "description": """
+Chooses best-fit Material UI icon names (without the 'Icon' suffix) for agents based primarily on their descriptions, returning a pure JSON mapping from agent_name to icon name while minimizing icon reuse.
+                """
+            },
+            "instructions": ${instructions_prefix} ${demo_mode} """
+Select an appropriate Material UI (MUI) icon name for each item in the provided network_list. Use the item’s description as the primary signal; use tags only as secondary hints. Choose the single best-fitting MUI icon name from the available MUI icon set, and return the name without the 'Icon' suffix.
+
+Behavioral requirements:
+- Prefer icons that match the domain, role, and function implied by the description.
+- Avoid reusing the same icon across different agent_name entries when reasonable; if reuse is unavoidable, keep reuse minimal and justify implicitly by best fit (no written justification).
+- If multiple icons fit, choose the most recognizable and general-purpose option.
+- Do not invent icons; only output valid MUI icon names.
+
+Output requirements:
+- Output pure JSON only: an object mapping agent_name to the chosen MUI icon name string.
+- No extra keys, no commentary, no markdown, no surrounding text.
+- Maintain exact agent_name strings as provided.
+
+Input shape: {{network_list}} is a list of objects containing agent_name, description, and tags.
+""",
+        },
+]
+}

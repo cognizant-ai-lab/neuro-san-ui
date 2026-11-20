@@ -10,6 +10,7 @@
         "prepack": "echo PREPACK_RUNNING && yarn build"
     },
     "dependencies": {
+        "@cognizant-ai-lab/neuro-san": "catalog:default",
         "@dagrejs/dagre": "1.0.4",
         "@langchain/core": "catalog:default",
         "@xyflow/react": "catalog:default",
