@@ -1,13 +1,9 @@
 // Need to disable restricted imports because we want to import all MUI icons dynamically
 // eslint-disable-next-line no-restricted-imports
 import * as MuiIcons from "@mui/icons-material"
-import BookmarkIcon from "@mui/icons-material/Bookmark"
-import Delete from "@mui/icons-material/Delete"
-import DownloadIcon from "@mui/icons-material/Download"
-import Edit from "@mui/icons-material/Edit"
 import Box from "@mui/material/Box"
 import Chip from "@mui/material/Chip"
-import {styled, useTheme} from "@mui/material/styles"
+import {styled, SxProps, Theme, useTheme} from "@mui/material/styles"
 import Tooltip from "@mui/material/Tooltip"
 import {useTreeItemModel} from "@mui/x-tree-view/hooks"
 import {
@@ -19,7 +15,7 @@ import {
 } from "@mui/x-tree-view/TreeItem"
 import {TreeItemProvider} from "@mui/x-tree-view/TreeItemProvider"
 import {useTreeItem} from "@mui/x-tree-view/useTreeItem"
-import {motion, useReducedMotion} from "motion/react"
+import {motion} from "motion/react"
 import {FC, useRef} from "react"
 
 import {ActionIconButton} from "./ActionIconButton"
@@ -34,9 +30,6 @@ import {PublishIconButton} from "../Publish/PublishIconButton"
 export const EDIT_NETWORK_LABEL = "Edit this network"
 export const DOWNLOAD_NETWORK_DEFINITION_LABEL = "Download network definition"
 export const DELETE_NETWORK_LABEL = "Delete network"
-
-// Palette of theme colors we can use for tags (MUI palette keys; each has .main and .contrastText)
-const TAG_COLORS = ["primary", "secondary", "info", "success", "warning", "error"] as const
 
 //#endregion Constants
 
@@ -54,13 +47,36 @@ export interface AgentNetworkNodeProps extends TreeItemProps {
     readonly onDeleteNetwork?: (network: string, isExpired: boolean) => void
     readonly onEditNetwork?: (network: string) => void
 }
-// Define a type for the TAG_COLORS array
-type TagColor = (typeof TAG_COLORS)[number]
 
 //#endregion Types and Interfaces
 
-// Keep track of which tags have which colors so that the same tag always has the same color
-const tagsToColors = new Map<string, TagColor>()
+// Step size around the color wheel. This gives maximum color separation between tags while still being visually
+// appealing.
+const GOLDEN_ANGLE_DEGREES = 137.5
+
+/**
+ * Tinted chip style for the tag at a given position in the list. OKLCH keeps the perceived lightness the same for
+ * every hue, so the label stays readable in both themes.
+ * @param index - the tag's position in the list
+ * @returns sx styles for the tag's Chip
+ */
+const tagChipSx =
+    (index: number): SxProps<Theme> =>
+    (theme) => {
+        const hueDegrees = (index * GOLDEN_ANGLE_DEGREES) % 360
+        return {
+            margin: "0.25rem",
+            fontWeight: 500,
+            color: `oklch(0.42 0.14 ${hueDegrees})`,
+            backgroundColor: `oklch(0.65 0.15 ${hueDegrees} / 0.14)`,
+            border: `1px solid oklch(0.6 0.15 ${hueDegrees} / 0.55)`,
+            ...theme.applyStyles("dark", {
+                color: `oklch(0.86 0.1 ${hueDegrees})`,
+                backgroundColor: `oklch(0.7 0.15 ${hueDegrees} / 0.22)`,
+                borderColor: `oklch(0.72 0.14 ${hueDegrees} / 0.7)`,
+            }),
+        }
+    }
 
 /**
  * Helper function to determine if a temporary network is expired based on its expiration date
@@ -95,7 +111,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         status: itemStatus,
     } = useTreeItem({itemId, children, label, disabled})
 
-    const reduceMotion = useReducedMotion()
     const theme = useTheme()
     const sheen = getSheen(theme)
 
@@ -105,14 +120,6 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     const isChild = !isParent
 
     const tags = item.tags ?? []
-
-    // Assign colors to tags as needed and store in tagsToColors map
-    for (const tag of tags) {
-        if (!tagsToColors.has(tag)) {
-            const color = TAG_COLORS[tagsToColors.size % TAG_COLORS.length]
-            tagsToColors.set(tag, color)
-        }
-    }
 
     // Determine if expired (temporary networks only)
     const expirationTime = item?.temporaryNetworkExpirationTime
@@ -141,7 +148,11 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
         }
     } else {
         // Use folder icon for parent items (i.e., folders)
-        muiIconElement = <MuiIcons.Folder sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        muiIconElement = itemStatus.expanded ? (
+            <MuiIcons.DriveFolderUpload sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        ) : (
+            <MuiIcons.Folder sx={{fontSize: "0.85rem", color: "text.secondary"}} />
+        )
     }
 
     return (
@@ -184,9 +195,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 position: "absolute",
                                 zIndex: 0,
                             }}
-                            transition={
-                                reduceMotion ? {duration: 0} : {type: "spring", stiffness: 420, damping: 34, mass: 0.7}
-                            }
+                            transition={{type: "spring", stiffness: 420, damping: 34, mass: 0.7}}
                         />
                     )}
                     <Box
@@ -212,12 +221,14 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                     <TreeItemLabel
                                         {...getLabelProps()}
                                         sx={{
-                                            // Folders read as small uppercase section labels (overline style)
-                                            fontWeight: isParent ? 600 : "normal",
-                                            fontSize: isParent ? "0.7rem" : "0.9rem",
-                                            letterSpacing: isParent ? "0.12em" : null,
-                                            textTransform: isParent ? "uppercase" : null,
-                                            color: isParent ? "text.secondary" : null,
+                                            typography: "body2",
+                                            ...(isParent && {
+                                                color: "text.secondary",
+                                                fontWeight: theme.typography.fontWeightMedium,
+                                                letterSpacing: theme.typography.button.letterSpacing,
+                                                textTransform: "uppercase",
+                                                typography: "subtitle1",
+                                            }),
                                             opacity: isExpired ? 0.25 : 1,
                                             "&:hover": {
                                                 textDecoration: "underline",
@@ -232,21 +243,17 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                 <Tooltip
                                     title={[...tags]
                                         .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
-                                        .map((tag) => (
+                                        .map((tag, index) => (
                                             <Chip
                                                 key={tag}
                                                 label={tag}
-                                                sx={{
-                                                    margin: "0.25rem",
-                                                    backgroundColor: `${tagsToColors.get(tag) || TAG_COLORS[0]}.main`,
-                                                    color: `${tagsToColors.get(tag) || TAG_COLORS[0]}.contrastText`,
-                                                }}
+                                                sx={tagChipSx(index)}
                                             />
                                         ))}
                                     placement="right"
                                     arrow={true}
                                 >
-                                    <BookmarkIcon sx={{fontSize: "0.75rem", color: "secondary.main"}} />
+                                    <MuiIcons.Bookmark sx={{fontSize: "0.75rem", color: "secondary.main"}} />
                                 </Tooltip>
                             ) : null}
                         </Box>
@@ -271,7 +278,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                                 aria-label={DOWNLOAD_NETWORK_DEFINITION_LABEL}
                                                 size="small"
                                             >
-                                                <DownloadIcon />
+                                                <MuiIcons.Download />
                                             </ActionIconButton>
                                         </span>
                                     </Tooltip>
@@ -287,7 +294,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                             aria-label={EDIT_NETWORK_LABEL}
                                             size="small"
                                         >
-                                            <Edit />
+                                            <MuiIcons.Edit />
                                         </ActionIconButton>
                                     </span>
                                 </Tooltip>
@@ -300,7 +307,7 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
                                         }}
                                         size="small"
                                     >
-                                        <Delete />
+                                        <MuiIcons.Delete />
                                     </DeleteIconButton>
                                 </Tooltip>
                             </Box>
