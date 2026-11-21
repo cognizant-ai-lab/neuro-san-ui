@@ -321,7 +321,10 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                 const keyChanged = key !== undefined && key !== (getApiKey(apiKeys, vendor) ?? "")
                 // An endpoint URL is only saved with a key
                 const endpointChanged =
-                    hasEndpoint(vendor) && key && endpoint !== undefined && endpoint !== (apiEndpoints[vendor] ?? "")
+                    hasEndpoint(vendor) &&
+                    Boolean(key) &&
+                    endpoint !== undefined &&
+                    endpoint !== (apiEndpoints[vendor] ?? "")
                 return keyChanged || endpointChanged
             }),
         [activeConfigs, apiEndpoints, apiKeys, draftEndpoints, draftKeys]

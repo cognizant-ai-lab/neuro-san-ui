@@ -275,12 +275,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 <Box sx={{display: "flex", alignItems: "center", columnGap: 1.5, width: "100%"}}>
                     {/* Lines the label up under the vendor name, past the logo */}
                     <Box sx={{width: 25, flexShrink: 0}} />
-                    <FormLabel
-                        id={`${id}-endpoint-label`}
-                        sx={{width: 90, flexShrink: 0}}
-                    >
-                        Endpoint
-                    </FormLabel>
+                    <FormLabel sx={{width: 90, flexShrink: 0}}>Endpoint</FormLabel>
                     <TextField
                         autoComplete="off"
                         onBlur={() => changeEndpoint(normalizeEndpoint(endpointValue))}
