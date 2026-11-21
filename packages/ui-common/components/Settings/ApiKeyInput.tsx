@@ -15,15 +15,24 @@ import {LLMProvider} from "../../state/Settings"
 import {ConfirmationModal} from "../Common/ConfirmationModal"
 import {StatusLight} from "../Common/StatusLight"
 
+/**
+ * Trims a URL and drops trailing slashes, so "{url}/models" is well formed.
+ */
+const normalizeEndpoint = (url: string): string => url.trim().replace(/\/+$/u, "")
+
 interface ApiKeyInputProps {
+    readonly endpointPlaceholder?: string
     readonly forgetKey: () => void
     readonly id: string
     readonly logo: string
+    readonly onEndpointChange?: (vendor: LLMProvider, value: string) => void
     readonly onResultChange?: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
-    readonly onSave: (key: string) => Promise<boolean>
-    readonly onSaveUnverified?: (key: string) => Promise<boolean>
-    readonly onTest: (key: string) => Promise<KeyValidationResult>
+    readonly onSave: (key: string, endpoint: string) => Promise<boolean>
+    readonly onSaveUnverified?: (key: string, endpoint: string) => Promise<boolean>
+    readonly onTest: (key: string, endpoint: string) => Promise<KeyValidationResult>
     readonly onValueChange?: (vendor: LLMProvider, value: string) => void
+    /** Saved endpoint URL. When defined, an optional endpoint URL field is shown and saved with the key. */
+    readonly persistedEndpoint?: string
     readonly persistedValue: string
     readonly placeholder: string
     readonly vendor: LLMProvider
@@ -31,16 +40,21 @@ interface ApiKeyInputProps {
 
 /**
  * Component for inputting an API key for a given vendor, with the ability to test the key and forget the saved key.
+ * For vendors with a `persistedEndpoint`, it also takes an optional endpoint URL (e.g. an LLM router) that the key is
+ * tested and saved with.
  */
 export const ApiKeyInput: FC<ApiKeyInputProps> = ({
+    endpointPlaceholder,
     forgetKey,
     id,
     logo,
+    onEndpointChange,
     onResultChange,
     onSave,
     onSaveUnverified,
     onTest,
     onValueChange,
+    persistedEndpoint,
     persistedValue,
     placeholder,
     vendor,
@@ -48,6 +62,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
     // Edits and unmounts invalidate a pending test, even if the same key is entered again.
     const ignoreTestResult = useRef(false)
     const [inputValue, setInputValue] = useState<string>(persistedValue ?? "")
+    const [endpointValue, setEndpointValue] = useState<string>(persistedEndpoint ?? "")
     const [keyValidated, setKeyValidated] = useState<null | boolean>(null)
     const [isValidating, setIsValidating] = useState<boolean>(false)
     const [confirmationDialogOpen, setConfirmationDialogOpen] = useState<boolean>(false)
@@ -62,13 +77,24 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         onValueChange?.(vendor, newValue)
     }
 
+    const changeEndpoint = (newValue: string) => {
+        if (newValue === endpointValue) {
+            return
+        }
+        ignoreTestResult.current = true
+        setKeyValidated(null)
+        onResultChange?.(vendor, null)
+        setEndpointValue(newValue)
+        onEndpointChange?.(vendor, newValue)
+    }
+
     const handleOnTest = async () => {
         setIsValidating(true)
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         ignoreTestResult.current = false
         try {
-            const result = await onTest(inputValue)
+            const result = await onTest(inputValue, endpointValue)
             if (ignoreTestResult.current) {
                 return
             }
@@ -79,18 +105,23 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
         }
     }
 
-    const disableActions = !inputValue || inputValue === persistedValue || isValidating
+    const isUnchanged = inputValue === persistedValue && endpointValue === (persistedEndpoint ?? "")
+    const disableActions = !inputValue || isUnchanged || isValidating
 
-    // Sync with persisted value changes - if the persisted value changes from outside
+    // Sync with persisted value changes - if the persisted values change from outside
     useEffect(() => {
         setInputValue(persistedValue ?? "")
+        setEndpointValue(persistedEndpoint ?? "")
         setKeyValidated(null)
         onResultChange?.(vendor, null)
         onValueChange?.(vendor, persistedValue ?? "")
+        if (persistedEndpoint !== undefined) {
+            onEndpointChange?.(vendor, persistedEndpoint)
+        }
         return () => {
             ignoreTestResult.current = true
         }
-    }, [persistedValue, vendor, onResultChange, onValueChange])
+    }, [persistedEndpoint, persistedValue, vendor, onEndpointChange, onResultChange, onValueChange])
 
     const handleClearInput = () => {
         ignoreTestResult.current = true
@@ -221,7 +252,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                 onClick={async () => {
                     setIsValidating(true)
                     try {
-                        await onSave(inputValue)
+                        await onSave(inputValue, endpointValue)
                     } finally {
                         setIsValidating(false)
                     }
@@ -240,6 +271,41 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
             >
                 Forget
             </Button>
+            {persistedEndpoint === undefined ? null : (
+                <Box sx={{display: "flex", alignItems: "center", columnGap: 1.5, width: "100%"}}>
+                    {/* Lines the label up under the vendor name, past the logo */}
+                    <Box sx={{width: 25, flexShrink: 0}} />
+                    <FormLabel sx={{width: 90, flexShrink: 0}}>Endpoint</FormLabel>
+                    <TextField
+                        autoComplete="off"
+                        onBlur={() => changeEndpoint(normalizeEndpoint(endpointValue))}
+                        onChange={(e) => changeEndpoint(e.target.value)}
+                        placeholder={endpointPlaceholder}
+                        size="small"
+                        slotProps={{
+                            htmlInput: {"aria-label": `${vendor} endpoint URL`},
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label={`Clear ${vendor} endpoint URL`}
+                                            edge="end"
+                                            onClick={() => changeEndpoint("")}
+                                            size="small"
+                                        >
+                                            <ClearIcon fontSize="small" />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        sx={{flex: 1}}
+                        type="url"
+                        value={endpointValue}
+                        variant="outlined"
+                    />
+                </Box>
+            )}
             {onSaveUnverified && !disableActions ? (
                 <Box sx={{display: "flex", gap: 1, width: "100%", justifyContent: "flex-end"}}>
                     <Button
@@ -249,7 +315,7 @@ export const ApiKeyInput: FC<ApiKeyInputProps> = ({
                         Keep editing
                     </Button>
                     <Button
-                        onClick={() => onSaveUnverified(inputValue)}
+                        onClick={() => onSaveUnverified(inputValue, endpointValue)}
                         size="small"
                         variant="outlined"
                     >

@@ -63,8 +63,16 @@ const validateKey = async (url: string, headers: HeadersInit): Promise<KeyValida
     }
 }
 
-export const isOpenAIKeyValid = (key: string): Promise<KeyValidationResult> =>
-    validateKey("https://api.openai.com/v1/models", {
+// OpenAI's API base URL, used when no custom endpoint is set
+export const OPENAI_DEFAULT_ENDPOINT = "https://api.openai.com/v1"
+
+/**
+ * Validate an OpenAI key, or the key for an OpenAI-compatible endpoint such as an LLM router.
+ * @param key The API key.
+ * @param endpoint The API base URL. Defaults to OpenAI's.
+ */
+export const isOpenAIKeyValid = (key: string, endpoint?: string): Promise<KeyValidationResult> =>
+    validateKey(`${endpoint || OPENAI_DEFAULT_ENDPOINT}/models`, {
         Accept: "application/json",
         Authorization: `Bearer ${key}`,
     })

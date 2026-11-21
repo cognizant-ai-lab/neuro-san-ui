@@ -47,6 +47,9 @@ interface ApiKeyEntry {
 
 type ApiKeys = Partial<Record<LLMProvider, ApiKeyEntry>>
 
+// Custom endpoint URLs, for providers that support one (e.g. an LLM router that emulates the OpenAI API)
+type ApiEndpoints = Partial<Record<LLMProvider, string>>
+
 export type PaletteKey = keyof typeof PALETTES | "brand"
 
 export type Layout = "radial" | "linear"
@@ -82,6 +85,7 @@ interface Settings {
         readonly enableZenMode: boolean
     }
     readonly apiKeys: ApiKeys
+    readonly apiEndpoints: ApiEndpoints
     readonly externalServices: {
         neuroSanUrl: string | null
     }
@@ -113,6 +117,11 @@ export const LLM_PROVIDER_API_KEY_FIELD = {
     Google: "google_api_key",
 } as const satisfies Record<LLMProvider, string>
 
+// Mapping of LLM providers that support a custom endpoint URL to the sly_data field it's sent in.
+export const LLM_PROVIDER_ENDPOINT_FIELD = {
+    OpenAI: "openai_api_base",
+} as const satisfies Partial<Record<LLMProvider, string>>
+
 /**
  * Default settings, used on first load and on reset
  */
@@ -143,6 +152,7 @@ export const DEFAULT_SETTINGS: Settings = {
         enableZenMode: true,
     },
     apiKeys: {},
+    apiEndpoints: {},
     externalServices: {
         neuroSanUrl: null,
     },
