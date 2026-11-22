@@ -1,7 +1,7 @@
 import {environ} from "@cognizant-ai-lab/neuro-san"
 
-import {createAgentNetworkSession} from "./AgentNetworkSession"
 import AGENT_ICON_SUGGESTER_NETWORK from "./networks/agent_icon_suggester.json"
+import {createAgentNetworkSession} from "./NetworkSuggestions"
 import {
     AgentInfo,
     // eslint-disable-next-line camelcase
