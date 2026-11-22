@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {environ} from "@cognizant-ai-lab/neuro-san"
-
 import {
     mockNeuroSanBrowserSession,
+    networkWithTestOpenAiApiKey,
     saveOpenAiApiKey,
-    TEST_OPENAI_API_KEY,
 } from "../../../../../../__tests__/common/NeuroSanBrowserSessionMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
@@ -31,7 +29,6 @@ import {AgentInfo, ConnectivityResponse} from "../../../../generated/neuro-san/N
 import {useIconSuggestionsStore} from "../../../../state/IconSuggestions"
 import {useSettingsStore} from "../../../../state/Settings"
 
-vi.mock("@cognizant-ai-lab/neuro-san", () => ({environ: {}}))
 vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
 
 const AGENT_CONNECTIVITY: ConnectivityResponse = {
@@ -178,8 +175,10 @@ describe("Controller/Agent/getNetworkIconSuggestions", () => {
 
             await expect(getIconSuggestions()).resolves.toEqual(suggestions)
 
-            expect(environ["OPENAI_API_KEY"]).toBe(TEST_OPENAI_API_KEY)
-            expect(createNeuroSanBrowserSession).toHaveBeenCalledExactlyOnceWith(network, networkName)
+            expect(createNeuroSanBrowserSession).toHaveBeenCalledExactlyOnceWith(
+                networkWithTestOpenAiApiKey(network),
+                networkName
+            )
             expect(streamingChat).toHaveBeenCalledExactlyOnceWith(
                 expect.objectContaining({user_message: expect.objectContaining({text: JSON.stringify(input)})})
             )

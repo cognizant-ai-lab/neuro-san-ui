@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {environ} from "@cognizant-ai-lab/neuro-san"
-
 import {createNeuroSanBrowserSession} from "./NeuroSanBrowserSession"
 import {
     // eslint-disable-next-line camelcase
@@ -24,6 +22,28 @@ import {
     ChatRequest,
     ChatResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
+
+// The agent network's LLM settings: either a single LLM config or a list of fallback LLM configs
+interface NetworkLlmConfig {
+    fallbacks?: Record<string, unknown>[]
+    [key: string]: unknown
+}
+
+/**
+ * Returns a copy of the agent network config that carries the OpenAI API key in its LLM config. Keeping the key in the
+ * config scopes it to the one session built from that copy, instead of the package-global environment, so nothing
+ * holds on to the key once the query is done.
+ */
+const withOpenAiApiKey = (networkConfig: Record<string, unknown>, openAiApiKey: string): Record<string, unknown> => {
+    const llmConfig = (networkConfig["llm_config"] ?? {}) as NetworkLlmConfig
+    const keyedLlmConfig: NetworkLlmConfig = llmConfig.fallbacks
+        ? {
+              ...llmConfig,
+              fallbacks: llmConfig.fallbacks.map((fallback) => ({...fallback, openai_api_key: openAiApiKey})),
+          }
+        : {...llmConfig, openai_api_key: openAiApiKey}
+    return {...networkConfig, llm_config: keyedLlmConfig}
+}
 
 /**
  * Asks an agent network, run in the browser by the neuro-san package, for an answer in JSON.
@@ -41,9 +61,7 @@ export const queryNeuroSanInBrowser = async <T>(
     input: Record<string, unknown>,
     openAiApiKey: string
 ): Promise<T> => {
-    environ["OPENAI_API_KEY"] = openAiApiKey
-
-    const session = createNeuroSanBrowserSession(networkConfig, networkName)
+    const session = createNeuroSanBrowserSession(withOpenAiApiKey(networkConfig, openAiApiKey), networkName)
     const request: ChatRequest = {
         user_message: {
             type: ChatMessageType.HUMAN,

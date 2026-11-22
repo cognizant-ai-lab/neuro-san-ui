@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {environ} from "@cognizant-ai-lab/neuro-san"
-
 import {
     mockNeuroSanBrowserSession,
+    networkWithTestOpenAiApiKey,
     saveOpenAiApiKey,
-    TEST_OPENAI_API_KEY,
 } from "../../../../../../__tests__/common/NeuroSanBrowserSessionMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
@@ -29,7 +27,6 @@ import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSa
 import {BrandingSuggestions} from "../../../../controller/Types/Branding"
 import {useSettingsStore} from "../../../../state/Settings"
 
-vi.mock("@cognizant-ai-lab/neuro-san", () => ({environ: {}}))
 vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
 
 const COMPANY = "Acme"
@@ -70,9 +67,8 @@ describe("Controller/Agent/getBrandingSuggestions", () => {
 
         await expect(getBrandingSuggestions(COMPANY)).resolves.toEqual(SUGGESTIONS)
 
-        expect(environ["OPENAI_API_KEY"]).toBe(TEST_OPENAI_API_KEY)
         expect(createNeuroSanBrowserSession).toHaveBeenCalledExactlyOnceWith(
-            BRANDING_SUGGESTER_NETWORK,
+            networkWithTestOpenAiApiKey(BRANDING_SUGGESTER_NETWORK),
             "branding_suggester"
         )
         expect(streamingChat).toHaveBeenCalledExactlyOnceWith(
