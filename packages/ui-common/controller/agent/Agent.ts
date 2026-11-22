@@ -18,7 +18,6 @@ limitations under the License.
  * Controller module for interacting with the Agent LLM API.
  */
 
-import {postJsonRequest} from "./IconSuggestions"
 import {
     AGENT_NETWORK_DEFINITION_KEY,
     AGENT_NETWORK_DESIGNER_ID,
@@ -42,6 +41,7 @@ import {
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest, StreamingUnit} from "../llm/LlmChat"
 import {BrandingSuggestions} from "../Types/Branding"
+import {postJsonRequest} from "./common/JsonRequest"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:

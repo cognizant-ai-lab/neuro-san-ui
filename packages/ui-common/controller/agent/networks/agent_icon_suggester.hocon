@@ -1,0 +1,52 @@
+{
+# Optional metadata describing this agent network
+    "metadata": {
+        "sample_queries": [
+            "{\"connectivity_info\":[{\"origin\":\"front_desk\",\"tools\":[\"billing\",\"shipping\"],\"display_as\":\"llm_agent\"},{\"origin\":\"billing\",\"tools\":[\"refund_processor\"],\"display_as\":\"llm_agent\",\"metadata\":{\"description\":\"Answers invoice and payment questions\"}},{\"origin\":\"shipping\",\"tools\":[],\"display_as\":\"llm_agent\"},{\"origin\":\"refund_processor\",\"display_as\":\"coded_tool\"}],\"metadata\":{\"description\":\"Customer support for an online retailer\",\"tags\":[\"support\",\"retail\"]}}"
+        ],
+        "date_created": "2026-11-20T19:10:05.493247+00:00"
+    },
+
+    "llm_config": {
+        "fallbacks": [
+            {
+                "class": "openai",
+                "model_name": "gpt-5.4-mini"
+            }
+        ]
+    },
+
+    "max_execution_seconds": 600,
+
+    "tools": [
+        {
+            "name": "mui_icon_selector",
+            "function": {
+                "description": """
+Suggests a Material UI icon name for each agent in an agent network, given the network's connectivity info and metadata, returning a pure JSON map from agent origin to icon name.
+"""
+            },
+            "instructions": """
+You suggest a Material UI (MUI) icon for each agent in an agent network, to represent that agent in a visualization UI.
+
+Input:
+- The user message is a JSON object with two fields, "connectivity_info" and "metadata", passed through unchanged from the connectivity information of the agent network being described.
+- The contents of both fields are defined by that agent network, not by you or the caller. Treat them as free-form: expect fields to be missing, empty, or different from one network to the next, and ignore any fields you do not recognize.
+- "connectivity_info" is a list with one entry per agent. Each entry's "origin" field is the agent's name. Entries often also have "tools" (names of the agents or tools this agent can call), and may have "display_as" (the kind of node, such as llm_agent, coded_tool, langchain_tool or external_agent) and "metadata" (free-form details about that agent, which may or may not include a description).
+- The top-level "metadata" describes the network as a whole and may include a description, tags and sample queries.
+
+Task:
+- For each entry in connectivity_info that has an origin, choose one MUI icon name: the component base name without the 'Icon' suffix (for example 'Storage', not 'StorageIcon').
+- Infer what each agent does from whatever is available: any description or details in its own metadata, its name, the agents and tools it calls, its display_as kind, and the network-level metadata. Use the network's overall purpose to interpret agent names in context.
+- Avoid reusing the same icon across different agents when possible; if reuse is unavoidable, prefer reuse that is still semantically strong.
+- If an agent's role is unclear, choose a broadly applicable icon that best matches its most likely function.
+- Only output icon names that exist in the MUI icon set. Do not invent icons.
+
+Output:
+- Return ONLY a pure JSON object (no surrounding text, no code fences, no commentary).
+- Each key is an origin from connectivity_info, spelled exactly as given. Each value is its chosen icon name.
+- Include every origin. Do not add keys for anything that is not an origin in connectivity_info, such as tools that never appear as an origin.
+""",
+        },
+    ]
+}
