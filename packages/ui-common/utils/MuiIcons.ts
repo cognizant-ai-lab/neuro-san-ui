@@ -34,7 +34,7 @@ export type MuiIconName = keyof typeof MuiIcons
  * @returns The MUI icon component name, or undefined if there is no MUI icon with that name.
  */
 export const getMuiIconName = (iconName: string | undefined): MuiIconName | undefined => {
-    if (!iconName) {
+    if (typeof iconName !== "string" || !iconName) {
         return undefined
     }
 
