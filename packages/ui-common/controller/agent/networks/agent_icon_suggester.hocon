@@ -45,7 +45,7 @@ Task:
 Output:
 - Return ONLY a pure JSON object (no surrounding text, no code fences, no commentary).
 - Each key is an origin from connectivity_info, spelled exactly as given. Each value is its chosen icon name.
-- Include every origin. Do not add keys for anything that is not an origin in connectivity_info, such as tools that never appear as an origin.
+- Include every origin and no other keys. Do not add keys for tools that never appear as an origin.
 """,
         },
     ]
