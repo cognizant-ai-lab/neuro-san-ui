@@ -65,6 +65,7 @@ yarn test                                   # All Vitest tests
 yarn test path/to/File.test.tsx             # One file
 yarn test path/to/File.test.tsx -t "name"   # One test by name
 yarn test --coverage                        # Run tests with coverage report. Important as CI enforces coverage.
+yarn update-coverage                        # Update coverage baseline in vitest.config.ts to reflect new values.
 yarn tsc                                    # Type-check (Next build skips type errors, so this is the real check)
 yarn lint --max-warnings 0                  # ESLint, zero warnings allowed in CI
 yarn check-format                           # Prettier

@@ -5,6 +5,7 @@ import {SvgIconProps} from "@mui/material/SvgIcon"
 import {FC} from "react"
 
 import {LogoSource} from "../../state/Settings"
+import {getMuiIconName} from "../../utils/MuiIcons"
 
 //#region Types and Interfaces
 interface CustomerLogoProps {
@@ -41,7 +42,8 @@ export const CustomerLogo: FC<CustomerLogoProps> = ({
     // "generic": check if suggested MUI icon is valid
     switch (logoSource) {
         case "generic": {
-            const MuiIcon = MuiIcons[iconSuggestion as keyof typeof MuiIcons]
+            const iconName = getMuiIconName(iconSuggestion)
+            const MuiIcon = iconName ? MuiIcons[iconName] : undefined
             const LogoIcon = MuiIcon ?? FallbackIcon
 
             return LogoIcon ? <LogoIcon sx={{fontSize: "2rem"}} /> : null
