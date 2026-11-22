@@ -43,6 +43,7 @@ import {
     sheenConic,
     sheenGradient,
 } from "../../../Theme/sheen"
+import {getMuiIconName} from "../../../utils/MuiIcons"
 import {getZIndex} from "../../../utils/zIndexLayers"
 import {AgentConversation} from "../AgentConversations"
 import {DisplayAs} from "../const"
@@ -209,7 +210,8 @@ export const AgentNode: FC<NodeProps<RFNode<AgentNodeProps>>> = (props: NodeProp
         const id = `${agentId}-icon`
 
         // Check for valid MUI icon suggestion from the LLM suggestion service
-        const SuggestedIcon = agentIconSuggestion ? MuiIcons[agentIconSuggestion as keyof typeof MuiIcons] : undefined
+        const suggestedIconName = getMuiIconName(agentIconSuggestion)
+        const SuggestedIcon = suggestedIconName ? MuiIcons[suggestedIconName] : undefined
 
         // If the LLM provided a valid icon suggestion, use it. Otherwise, fall back to default icons based on
         // agent type.

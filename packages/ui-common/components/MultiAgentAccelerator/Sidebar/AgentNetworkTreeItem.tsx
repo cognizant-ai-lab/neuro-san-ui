@@ -24,6 +24,7 @@ import {useEnvironmentStore} from "../../../state/Environment"
 import {usePublishServerUrl} from "../../../state/Publish"
 import {getSheen, SHEEN_EASE, sheenGradient} from "../../../Theme/sheen"
 import {downloadFile} from "../../../utils/File"
+import {getMuiIconName} from "../../../utils/MuiIcons"
 import {PublishIconButton} from "../Publish/PublishIconButton"
 
 //#region Constants
@@ -141,9 +142,10 @@ export const AgentNetworkTreeItem: FC<AgentNetworkNodeProps> = ({
     // If the item is a child (i.e., a network), we want to render an icon next to it.
     if (isChild) {
         if (iconNameSuggestion) {
-            if (MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]) {
+            const iconName = getMuiIconName(iconNameSuggestion)
+            if (iconName) {
                 // If the icon name suggestion is valid, use it to render the icon
-                const IconComponent = MuiIcons[iconNameSuggestion as keyof typeof MuiIcons]
+                const IconComponent = MuiIcons[iconName]
                 muiIconElement = <IconComponent sx={{fontSize: "1rem"}} />
             } else {
                 // If the icon name suggestion is not valid, use a default icon
