@@ -1,9 +1,6 @@
 {
     "metadata": {
-        "sample_queries": [
-            "{\"company\":\"Cognizant\"}",
-            "{\"company\":\"a non-profit organization\"}"
-        ],
+        "sample_queries": ["{\"company\":\"Cognizant\"}", "{\"company\":\"a non-profit organization\"}"],
         "date_created": "2026-11-22T03:16:55.956500+00:00"
     },
     "llm_config": {
