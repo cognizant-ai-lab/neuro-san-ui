@@ -41,6 +41,19 @@ export const mockNeuroSanBrowserSession = (responses: readonly ChatResponse[]): 
 }
 
 /**
+ * Matches the config an in-browser session is built from for the given agent network: the network as defined, with
+ * the test OpenAI API key in its LLM fallback config.
+ *
+ * @param network The agent network config, with a single LLM fallback config
+ * @returns An asymmetric matcher for the config passed to createNeuroSanBrowserSession
+ */
+export const networkWithTestOpenAiApiKey = (network: Record<string, unknown>): Record<string, unknown> => ({
+    ...network,
+
+    llm_config: {fallbacks: [expect.objectContaining({openai_api_key: TEST_OPENAI_API_KEY})]},
+})
+
+/**
  * Saves the user's own OpenAI API key, which makes LLM suggestions come from agent networks run in the browser.
  * Callers should reset the settings store between tests.
  */
