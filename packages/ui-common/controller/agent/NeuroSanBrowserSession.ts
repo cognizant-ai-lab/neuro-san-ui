@@ -73,7 +73,10 @@ const prepareNetworkConfig = (config: Record<string, unknown>, networkName: stri
  * @returns A session whose streaming_chat runs the network.
  * @throws An error if the config fails neuro-san's network validation.
  */
-export const createAgentNetworkSession = (config: Record<string, unknown>, networkName: string): DirectAgentSession => {
+export const createNeuroSanBrowserSession = (
+    config: Record<string, unknown>,
+    networkName: string
+): DirectAgentSession => {
     const networkConfig = prepareNetworkConfig(config, networkName)
     const network = new AgentNetwork(networkConfig, networkName)
 

@@ -40,8 +40,6 @@ import {
     FunctionResponse,
 } from "../../generated/neuro-san/NeuroSanClient"
 import {sendLlmRequest, StreamingUnit} from "../llm/LlmChat"
-import {BrandingSuggestions} from "../Types/Branding"
-import {postJsonRequest} from "./common/JsonRequest"
 
 /**
  * Insert the target agent name into the path. The paths Api enum contains values like:
@@ -120,15 +118,6 @@ export const testConnection = async (url: string): Promise<TestConnectionResult>
         clearTimeout(timeout)
     }
 }
-
-/**
- * Get LLM suggestions for branding colors based on the company name. This is used to customize the UI colors
- * to match the user's company branding.
- * @param company The name of the company to get branding color suggestions for.
- * @returns A promise that resolves to a record mapping color types (e.g. "primary", "secondary") to hex color codes.
- */
-export const getBrandingSuggestions = async (company: string): Promise<BrandingSuggestions> =>
-    postJsonRequest<BrandingSuggestions>("/api/branding", {company})
 
 /**
  * Get the list of available agent networks from the concierge service.

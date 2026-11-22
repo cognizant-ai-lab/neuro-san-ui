@@ -17,18 +17,20 @@ limitations under the License.
 import {DirectAgentSession} from "@cognizant-ai-lab/neuro-san"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {createAgentNetworkSession} from "../../../../controller/agent/AgentNetworkSession"
 import AGENT_ICON_SUGGESTER_NETWORK from "../../../../controller/agent/networks/agent_icon_suggester.json"
+import BRANDING_SUGGESTER_NETWORK from "../../../../controller/agent/networks/branding_suggester.json"
 import NETWORK_ICON_SUGGESTER_NETWORK from "../../../../controller/agent/networks/network_icon_suggester.json"
+import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowserSession"
 
-describe("Controller/Agent/createAgentNetworkSession", () => {
+describe("Controller/Agent/createNeuroSanBrowserSession", () => {
     withStrictMocks()
 
     it.each([
         {networkName: "agent_icon_suggester", network: AGENT_ICON_SUGGESTER_NETWORK},
         {networkName: "network_icon_suggester", network: NETWORK_ICON_SUGGESTER_NETWORK},
+        {networkName: "branding_suggester", network: BRANDING_SUGGESTER_NETWORK},
     ])("creates a session for the $networkName network", ({networkName, network}) => {
-        expect(createAgentNetworkSession(network, networkName)).toBeInstanceOf(DirectAgentSession)
+        expect(createNeuroSanBrowserSession(network, networkName)).toBeInstanceOf(DirectAgentSession)
     })
 
     it("rejects a network whose front man calls a tool that is not defined", () => {
@@ -43,7 +45,7 @@ describe("Controller/Agent/createAgentNetworkSession", () => {
             ],
         }
 
-        expect(() => createAgentNetworkSession(network, "broken_network")).toThrow(
+        expect(() => createNeuroSanBrowserSession(network, "broken_network")).toThrow(
             /Agent network broken_network is not valid: .*missing_tool/u
         )
     })

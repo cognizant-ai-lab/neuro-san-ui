@@ -24,7 +24,8 @@ import {PublishSettings} from "./PublishSettings"
 import {Section, SettingsSectionTitle, SettingsSubsection, SubSection, SubSectionBody} from "./SettingsLayout"
 import {SettingsNavLayout} from "./SettingsNav"
 import {SettingsRow} from "./SettingsRow"
-import {getBrandingSuggestions, testConnection, TestConnectionResult} from "../../controller/agent/Agent"
+import {testConnection, TestConnectionResult} from "../../controller/agent/Agent"
+import {getBrandingSuggestions} from "../../controller/agent/BrandingSuggestions"
 import {BrandingSuggestions} from "../../controller/Types/Branding"
 import {useEnvironmentStore} from "../../state/Environment"
 import {DEFAULT_SETTINGS, PaletteKey, useSettingsStore} from "../../state/Settings"
@@ -560,7 +561,7 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
                             overflowX: "auto",
                         }}
                     >
-                        <pre>{useNativeNames ? "some category/some_agent_name" : "Some Category Some Agent Name"}</pre>
+                        <pre>{useNativeNames ? "some_category/some_agent_name" : "Some Category Some Agent Name"}</pre>
                     </FormLabel>
                 </Box>
             </SettingsRow>

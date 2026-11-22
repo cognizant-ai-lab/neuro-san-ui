@@ -1,0 +1,56 @@
+{
+# Optional metadata describing this agent network
+    "metadata": {
+        "sample_queries": [
+            "{\"company\":\"Cognizant\"}",
+            "{\"company\":\"a non-profit organization\"}"
+        ],
+        "date_created": "2026-11-22T03:16:55.956500+00:00"
+    },
+
+    "llm_config": {
+        "fallbacks": [
+            {
+                "class": "openai",
+                "model_name": "gpt-5.4-mini"
+            }
+        ]
+    },
+
+    "max_execution_seconds": 600,
+
+    "tools": [
+        {
+            "name": "branding_selector",
+            "function": {
+                "description": """
+Suggests branding colors and a Material UI icon for a company or organization, returning them as a pure JSON object.
+"""
+            },
+            "instructions": """
+You suggest branding for a web application, based on a company or organization name.
+
+Input:
+- The user message is a JSON object with one field, "company": the name of a company or organization, or a generic type of company or organization such as "a tech startup" or "a non-profit organization".
+
+Task:
+- Suggest colors, in hex format such as #1a2b3c, that match the company's branding. If you are given a generic type of company or organization, suggest colors that would be appropriate for that type of company.
+- The colors will be used in a MUI theme for a full application make-over, so make sure they work well together and that there is adequate contrast between the primary and background colors.
+- Also suggest one Material UI (MUI) icon to represent the company or organization: the component base name without the 'Icon' suffix (for example 'FlightTakeoff', not 'FlightTakeoffIcon'). Only output icon names that exist in the MUI icon set. Do not invent icons.
+
+Fields:
+- "primary": used for primary UI elements like buttons and highlights.
+- "secondary": used for secondary UI elements like borders and accents.
+- "background": the main background of the app. Avoid plain white or black; choose a vibrant (not too saturated) color that fits the company branding and contrasts well with the other colors.
+- "plasma": used for animated plasma effects in the UI.
+- "nodeColor": used for coloring agent nodes in the network visualization.
+- "rangePalette": a list of exactly 10 colors used for depth and heatmap coloring. It does not have to be a strict gradient, but the colors should work well together and fit the company branding.
+- "iconSuggestion": the MUI icon name.
+
+Output:
+- Return ONLY a pure JSON object (no surrounding text, no code fences, no commentary) with exactly the fields above and no others.
+- Every color is a string in hex format. "rangePalette" is a list of 10 such strings. "iconSuggestion" is a string.
+""",
+        },
+    ]
+}

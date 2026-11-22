@@ -21,7 +21,6 @@ import {AgentNetworkDefinitionEntry, TEMPORARY_NETWORK_FOLDER} from "../../../..
 import {
     getAgentFunction,
     getAgentNetworks,
-    getBrandingSuggestions,
     getConnectivity,
     HealthCheckResponse,
     sendChatQuery,
@@ -398,30 +397,5 @@ describe("Controller/Agent/sendNetworkDesignerRequest", () => {
         const requestParams = sendLlmRequestMock.mock.calls[0][3]
         expect(requestParams).toHaveProperty("sly_data")
         expect(requestParams["sly_data"]).not.toHaveProperty("agent_network_name")
-    })
-})
-
-describe("Controller/Agent/getBrandingSuggestions", () => {
-    withStrictMocks()
-
-    beforeEach(() => {
-        oldFetch = global.fetch
-    })
-
-    afterEach(() => {
-        global.fetch = oldFetch
-    })
-
-    it("getBrandingSuggestions POSTs the company name and returns the suggestions", async () => {
-        const suggestions = {primary: "#123456"}
-        global.fetch = mockFetch(suggestions)
-
-        const result = await getBrandingSuggestions("Acme")
-
-        expect(result).toEqual(suggestions)
-        expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
-            "/api/branding",
-            expect.objectContaining({method: "POST", body: JSON.stringify({company: "Acme"})})
-        )
     })
 })

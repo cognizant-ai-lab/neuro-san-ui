@@ -1,22 +1,12 @@
-import {environ} from "@cognizant-ai-lab/neuro-san"
-
-import {createAgentNetworkSession} from "./AgentNetworkSession"
+import {postJsonRequest} from "./common/JsonRequest"
 import AGENT_ICON_SUGGESTER_NETWORK from "./networks/agent_icon_suggester.json"
 import NETWORK_ICON_SUGGESTER_NETWORK from "./networks/network_icon_suggester.json"
-import {
-    AgentInfo,
-    // eslint-disable-next-line camelcase
-    ChatFilterChat_filter_type,
-    ChatMessageType,
-    ChatRequest,
-    ChatResponse,
-    ConnectivityResponse,
-} from "../../generated/neuro-san/NeuroSanClient"
+import {queryNeuroSanInBrowser} from "./NeuroSanBrowserQuery"
+import {AgentInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useIconSuggestionsStore} from "../../state/IconSuggestions"
 import {getApiKey, useSettingsStore} from "../../state/Settings"
 import {AgentIconSuggestions} from "../Types/AgentIconSuggestions"
 import {NetworkIconSuggestions} from "../Types/NetworkIconSuggestions"
-import {postJsonRequest} from "./common/JsonRequest"
 
 // The two types of suggestions we can get from the LLM
 type Suggestions = AgentIconSuggestions | NetworkIconSuggestions
@@ -75,47 +65,6 @@ const AGENT_ICON_SUGGESTER_NAME = "agent_icon_suggester"
 const NETWORK_ICON_SUGGESTER_NAME = "network_icon_suggester"
 
 /**
- * Asks an icon suggester agent network, run in the browser by the neuro-san package, for icon suggestions.
- *
- * @param networkConfig The icon suggester network's config.
- * @param networkName The name to run the network under.
- * @param input The data to suggest icons for. It is sent to the network as JSON in the user message.
- * @param openAiApiKey The user's own OpenAI API key, which the agent network uses for its LLM calls.
- * @returns A promise that resolves to a record mapping names to suggested MUI icon names.
- * @throws An error if the agent network gives no answer or its answer is not JSON.
- */
-const getFromLocalNeuroSAN = async <T extends Suggestions>(
-    networkConfig: Record<string, unknown>,
-    networkName: string,
-    input: Record<string, unknown>,
-    openAiApiKey: string
-): Promise<T> => {
-    environ["OPENAI_API_KEY"] = openAiApiKey
-    // console.debug(`Asking ${networkName} for icon suggestions`)
-
-    const session = createAgentNetworkSession(networkConfig, networkName)
-    const request: ChatRequest = {
-        user_message: {
-            type: ChatMessageType.HUMAN,
-            text: JSON.stringify(input),
-        },
-        // MINIMAL leaves out the agents' internal messages, so the last text is the final answer.
-        // eslint-disable-next-line camelcase
-        chat_filter: {chat_filter_type: ChatFilterChat_filter_type.MINIMAL},
-    }
-
-    let answer = ""
-    for await (const chunk of session.streaming_chat(request) as AsyncGenerator<ChatResponse>) {
-        answer = chunk.response?.text || answer
-    }
-
-    if (!answer) {
-        throw new Error(`${networkName} returned no answer`)
-    }
-    return JSON.parse(answer) as T
-}
-
-/**
  * Get LLM suggestions for network icons.
  *
  * @note Will use cached suggestions if available to avoid unnecessary LLM calls
@@ -131,7 +80,7 @@ export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]):
         "networkIconSuggestions",
         () =>
             openAiApiKey
-                ? getFromLocalNeuroSAN<NetworkIconSuggestions>(
+                ? queryNeuroSanInBrowser<NetworkIconSuggestions>(
                       NETWORK_ICON_SUGGESTER_NETWORK,
                       NETWORK_ICON_SUGGESTER_NAME,
                       {networks},
@@ -166,7 +115,7 @@ export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse
         "agentIconSuggestions",
         () =>
             openAiApiKey
-                ? getFromLocalNeuroSAN<AgentIconSuggestions>(
+                ? queryNeuroSanInBrowser<AgentIconSuggestions>(
                       AGENT_ICON_SUGGESTER_NETWORK,
                       AGENT_ICON_SUGGESTER_NAME,
                       {connectivity_info: connectivity.connectivity_info, metadata: connectivity.metadata},
