@@ -39,11 +39,8 @@ const getSuggestions = async (
 
     // If we have cached suggestions for all keys, return them
     if (Object.keys(cachedSuggestions).length === keys.length) {
-        // console.debug(`Using cached ${storeKey} for keys: ${keys.join(", ")}`)
         return cachedSuggestions
     }
-
-    // console.debug(`Cache miss for ${storeKey}. Fetching suggestions for keys: ${keys.join(", ")}`)
 
     // Cache miss. Request suggestions from LLM
     const fetched = await fetchSuggestions()
@@ -104,11 +101,6 @@ export const getNetworkIconSuggestions = async (networks: readonly AgentInfo[]):
  */
 export const getAgentIconSuggestions = async (connectivity: ConnectivityResponse): Promise<AgentIconSuggestions> => {
     const openAiApiKey = getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")
-    // console.debug(
-    //     `Getting agent icon suggestions for ${connectivity.connectivity_info.length} agents using OpenAI API key: ${
-    //         openAiApiKey ? "present" : "not present"
-    //     }`
-    // )
 
     return getSuggestions(
         connectivity.connectivity_info.map((agent) => agent.origin),

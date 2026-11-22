@@ -8,7 +8,6 @@
  * @throws An error if the request fails or the response is not ok.
  */
 export const postJsonRequest = async <T>(endpoint: string, body: Record<string, unknown>): Promise<T> => {
-    // console.debug(`Sending POST request to ${endpoint} with body:`, body)
     const response = await fetch(endpoint, {
         method: "POST",
         headers: {
