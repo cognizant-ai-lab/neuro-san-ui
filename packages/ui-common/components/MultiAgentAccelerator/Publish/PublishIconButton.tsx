@@ -21,7 +21,14 @@ import IconButton from "@mui/material/IconButton"
 import Tooltip from "@mui/material/Tooltip"
 import {FC, useState} from "react"
 
-import {openInNewTab, publish, PUBLISH_SETTINGS_REQUIRED_MESSAGE, PublishNetwork, showPublishResult} from "./Publish"
+import {
+    getPublishedDeployment,
+    openInNewTab,
+    publish,
+    PUBLISH_SETTINGS_REQUIRED_MESSAGE,
+    PublishNetwork,
+    showPublishResult,
+} from "./Publish"
 import {PublishConfirmation} from "./PublishConfirmation"
 import {usePublishTarget} from "./usePublishTarget"
 import {PublishStatus, usePublishStore} from "../../../state/Publish"
@@ -55,6 +62,7 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
     const publishStatus = publishState?.status
     const publishedUrl = publishState?.status === PublishStatus.Published ? publishState.url : null
     const target = usePublishTarget(networkId, networkName)
+    const deployment = target ? getPublishedDeployment(networkId, target) : null
 
     const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
@@ -119,10 +127,12 @@ export const PublishIconButton: FC<PublishIconButtonProps> = ({
                         displayName={displayName}
                         id={`${id}-confirm`}
                         hasTheme={Boolean(publishState)}
+                        networkName={deployment?.name ?? networkName}
+                        canRename={!deployment}
                         onCancel={() => setIsConfirmOpen(false)}
-                        onConfirm={(refreshTheme) => {
+                        onConfirm={(refreshTheme, publishName) => {
                             setIsConfirmOpen(false)
-                            void publish(network, hocon, target, refreshTheme).then((result) =>
+                            void publish(network, hocon, target, refreshTheme, publishName).then((result) =>
                                 showPublishResult(networkName, result)
                             )
                         }}

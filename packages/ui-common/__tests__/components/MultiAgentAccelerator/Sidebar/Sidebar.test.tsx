@@ -40,7 +40,10 @@ import {
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {AGENT_NETWORK_DESIGNER_ID} from "../../../../components/MultiAgentAccelerator/const"
 import {PUBLISH_SETTINGS_REQUIRED_MESSAGE} from "../../../../components/MultiAgentAccelerator/Publish/Publish"
-import {REFRESH_THEME_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
+import {
+    PUBLISH_NAME_LABEL,
+    REFRESH_THEME_LABEL,
+} from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
     DOWNLOAD_NETWORK_DEFINITION_LABEL,
     EDIT_NETWORK_LABEL,
@@ -794,6 +797,20 @@ describe("SideBar", () => {
             await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
             screen.getByRole("button", {name: "Publish"})
             expect(publishNetwork).not.toHaveBeenCalled()
+            expect(setSelectedNetworkMock).not.toHaveBeenCalled()
+        })
+
+        it("Should publish under the entered name without opening the network", async () => {
+            renderWithTemporaryNetwork()
+            await user.click(await screen.findByRole("button", {name: "Publish"}))
+            const confirmation = await screen.findByRole("dialog")
+            const nameInput = within(confirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
+            await user.clear(nameInput)
+            await user.type(nameInput, "bakery")
+            await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
+
+            await screen.findByRole("button", {name: "View live"})
+            expect(publishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: "bakery"}))
             expect(setSelectedNetworkMock).not.toHaveBeenCalled()
         })
 

@@ -40,6 +40,7 @@ interface ConfirmationModalProps {
     id: string
     maskCloseable?: boolean
     okBtnLabel?: string
+    okBtnDisabled?: boolean
     title: ReactNode
 }
 // #endregion: Types
@@ -54,6 +55,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
     id = "",
     maskCloseable = false,
     okBtnLabel,
+    okBtnDisabled = false,
     title = "",
 }) => {
     const [modalOpen, setModalOpen] = useState<boolean>(true)
@@ -98,7 +100,7 @@ export const ConfirmationModal: FC<ConfirmationModalProps> = ({
                 // This ID needs to be dynamic because there can be several instances of this on the page
                 id={`${id}-confirm-ok-btn`}
                 key="confirm-ok"
-                disabled={isLoading}
+                disabled={isLoading || okBtnDisabled}
                 onClick={() => handleOKWrapper()}
                 variant="contained"
             >
