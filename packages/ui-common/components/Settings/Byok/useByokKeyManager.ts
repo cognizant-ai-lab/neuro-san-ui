@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {useTheme} from "@mui/material/styles"
+import {useColorScheme, useTheme} from "@mui/material/styles"
 import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 
 import {
@@ -26,6 +26,7 @@ import {
     KeyValidationResult,
 } from "../../../controller/llm/Providers"
 import {API_KEYS_TTL_MS, getApiKey, LLMProvider, useSettingsStore} from "../../../state/Settings"
+import {isDarkMode} from "../../../Theme/Theme"
 import {ApiKeyFailure} from "../ApiKeyErrorBanner"
 import {useCheckmarkFade} from "../FadingCheckmark"
 
@@ -33,7 +34,7 @@ type CheckmarkFade = ReturnType<typeof useCheckmarkFade>
 export type ApiKeysMap = Parameters<typeof getApiKey>[0]
 
 interface LLMProviderDefinition {
-    readonly getLogo: (isDarkMode: boolean) => string
+    readonly getLogo: (darkMode: boolean) => string
     readonly idSuffix: string
     readonly onTest: (key: string) => Promise<KeyValidationResult>
     readonly placeholder: string
@@ -42,7 +43,7 @@ interface LLMProviderDefinition {
 
 const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
     {
-        getLogo: (isDarkMode) => (isDarkMode ? "/OpenAI-white.png" : "/OpenAI-black.png"),
+        getLogo: (darkMode) => (darkMode ? "/OpenAI-white.png" : "/OpenAI-black.png"),
         idSuffix: "openai",
         onTest: isOpenAIKeyValid,
         placeholder: "sk-...",
@@ -127,6 +128,7 @@ export interface UseByokKeyManagerReturn {
  */
 export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManagerProps): UseByokKeyManagerReturn => {
     const theme = useTheme()
+    const {mode, systemMode} = useColorScheme()
     const openAIKeyCheckmark = useCheckmarkFade()
     const anthropicKeyCheckmark = useCheckmarkFade()
     const googleCheckmark = useCheckmarkFade()
@@ -158,19 +160,19 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         [anthropicKeyCheckmark, googleCheckmark, openAIKeyCheckmark]
     )
 
-    const isDarkMode = theme.palette.mode === "dark"
+    const darkMode = isDarkMode(mode ?? theme.palette.mode, systemMode)
 
     const providerItems: readonly ByokProviderItem[] = useMemo(
         () =>
             PROVIDER_DEFINITIONS.map((def) => ({
                 checkmark: checkmarks[def.vendor],
                 idSuffix: def.idSuffix,
-                logo: def.getLogo(isDarkMode),
+                logo: def.getLogo(darkMode),
                 onTest: def.onTest,
                 placeholder: def.placeholder,
                 vendor: def.vendor,
             })),
-        [checkmarks, isDarkMode]
+        [checkmarks, darkMode]
     )
 
     const activeConfigs = useMemo(
