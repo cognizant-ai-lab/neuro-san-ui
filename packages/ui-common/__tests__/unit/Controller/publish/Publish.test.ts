@@ -151,7 +151,8 @@ describe("Publish", () => {
         expect(fetchMock).toHaveBeenCalledTimes(3)
         expect(fetchMock).toHaveBeenNthCalledWith(
             2,
-            expect.stringContaining(`/api/publish/deployments/${PUBLISH_ID}/wait?`)
+            expect.stringContaining(`/api/publish/deployments/${PUBLISH_ID}/wait?`),
+            {signal: undefined}
         )
     })
 

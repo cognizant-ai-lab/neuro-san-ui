@@ -48,6 +48,7 @@ import {
 } from "./const"
 import {NeuroSanStudioCallout} from "./NeuroSanStudioCallout"
 import {PanelSeparator, SEPARATOR_HIT_WIDTH} from "./PanelSeparator"
+import {PublishWaitPrompts} from "./Publish/PublishWaitPrompts"
 import {BYOK} from "./Schema/SlyData"
 import {Sidebar} from "./Sidebar/Sidebar"
 import {
@@ -1427,6 +1428,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
             {Tour}
             {getTourModal()}
             {getDeleteNetworkConfirmationModal()}
+            <PublishWaitPrompts />
 
             {/* Zero-size marker for where the workspace would naturally start (below the navbar, inside the page
                 gutters); the workspace below is offset by this to bleed edge-to-edge under the navbar */}

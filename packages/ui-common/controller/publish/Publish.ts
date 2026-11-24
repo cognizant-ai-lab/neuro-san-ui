@@ -38,6 +38,8 @@ interface PublishNetworkRequest {
     readonly refreshTheme?: boolean
     /** Called with the deployment id as soon as the server accepts the publish, before the network is live */
     readonly onAccepted?: (id: string) => void
+    /** Stops waiting for the network to go live. The server isn't told and may still finish. */
+    readonly signal?: AbortSignal
 }
 
 /** The subset of the server's view of a published network (its DeploymentView) that we use */
@@ -175,6 +177,7 @@ export const publishNetwork = async ({
     hocon,
     refreshTheme = false,
     onAccepted,
+    signal,
 }: PublishNetworkRequest): Promise<Required<PublishedNetwork>> => {
     const form = new FormData()
     form.append("file", new Blob([hocon], {type: "text/plain"}), `${networkName}.hocon`)
@@ -184,14 +187,15 @@ export const publishNetwork = async ({
     form.append("theme", "true")
     form.append("theme_refresh", String(refreshTheme))
 
-    const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form})
+    const createResponse = await fetch(publishRouteUrl(serverUrl, "deployments"), {method: "POST", body: form, signal})
     await throwIfNotOk(createResponse, "Publishing")
     let network: ServerNetwork = await createResponse.json()
     onAccepted?.(network.id)
 
     while (network.status === "queued" || network.status === "building") {
         const waitResponse = await fetch(
-            publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)})
+            publishRouteUrl(serverUrl, `deployments/${network.id}/wait`, {timeout: String(WAIT_TIMEOUT_SECONDS)}),
+            {signal}
         )
         network = await readWaitResponse(waitResponse)
     }
