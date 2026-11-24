@@ -21,8 +21,7 @@ import {userEvent, UserEvent} from "@testing-library/user-event"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {ByokDialog} from "../../../../components/Settings/Byok/ByokDialog"
-import {OPENAI_DEFAULT_ENDPOINT} from "../../../../controller/llm/Providers"
-import {getApiKey, useSettingsStore} from "../../../../state/Settings"
+import {getApiKey, LLMProvider, useSettingsStore} from "../../../../state/Settings"
 
 // Fading checkmark behavior is covered by FadingCheckmark.test.tsx.
 vi.mock("../../../../components/Settings/FadingCheckmark", () => ({
@@ -79,118 +78,242 @@ describe("ByokDialog", () => {
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
     })
 
-    describe("OpenAI endpoint URL", () => {
-        const saveOpenAIKey = async (key: string, endpoint: string) => {
-            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
-            const keyInput = within(openAIRow).getByPlaceholderText("sk-...")
-            const endpointInput = within(openAIRow).getByRole("textbox", {name: "OpenAI endpoint URL"})
-            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
+    describe("LLM Router", () => {
+        const ROUTER_KEY = "router-key"
+        const getRouterRow = () => screen.getByTestId("test-byok-dialog-llm-router-input")
+
+        const addRouterUrl = async () => {
+            const addButton = within(getRouterRow()).getByRole("button", {name: "Add LLM Router base URL"})
+            await user.click(addButton)
+            return within(getRouterRow()).getByRole("textbox", {name: "LLM Router base URL"})
+        }
+
+        const enterRouter = async (key: string, url: string) => {
+            const routerRow = getRouterRow()
+            const keyInput = within(routerRow).getByPlaceholderText("sk-...")
 
             await user.click(keyInput)
             await user.paste(key)
-            await user.click(endpointInput)
-            await user.paste(endpoint)
+            const urlInput = await addRouterUrl()
+            await user.click(urlInput)
+            await user.paste(url)
+        }
+
+        const saveRouter = async (key: string, url: string) => {
+            await enterRouter(key, url)
+            const saveButton = within(getRouterRow()).getByRole("button", {name: "Save"})
             await user.click(saveButton)
         }
 
-        it("tests the key against the endpoint URL and saves both", async () => {
+        const editRouterUrl = async () => {
+            const editButton = within(getRouterRow()).getByRole("button", {name: "Edit LLM Router base URL"})
+            await user.click(editButton)
+        }
+
+        const storeKey = (provider: LLMProvider) =>
+            useSettingsStore.getState().updateSettings({
+                ...(provider === "LLM Router" && {apiEndpoints: {"LLM Router": ROUTER_ENDPOINT}}),
+                apiKeys: {[provider]: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}},
+            })
+
+        it("tests the router key against its URL and saves both", async () => {
             global.fetch = mockFetch({}, true)
             render(<ByokDialog id="test-byok-dialog" />)
 
-            await saveOpenAIKey(TEST_API_KEY, ROUTER_ENDPOINT)
+            await saveRouter(ROUTER_KEY, ROUTER_ENDPOINT)
 
             expect(global.fetch).toHaveBeenCalledWith(`${ROUTER_ENDPOINT}/models`, expect.anything())
             const {settings} = useSettingsStore.getState()
-            expect(getApiKey(settings.apiKeys, "OpenAI")).toBe(TEST_API_KEY)
-            expect(settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+            expect(getApiKey(settings.apiKeys, "LLM Router")).toBe(ROUTER_KEY)
+            expect(settings.apiEndpoints["LLM Router"]).toBe(ROUTER_ENDPOINT)
         })
 
-        it("drops trailing slashes from the endpoint URL when leaving the field", async () => {
+        it("drops trailing slashes from the router URL when leaving the field", async () => {
             global.fetch = mockFetch({}, true)
             render(<ByokDialog id="test-byok-dialog" />)
 
-            await saveOpenAIKey(TEST_API_KEY, `  ${ROUTER_ENDPOINT}//`)
+            await saveRouter(ROUTER_KEY, `  ${ROUTER_ENDPOINT}//`)
 
-            expect(screen.getByRole("textbox", {name: "OpenAI endpoint URL"})).toHaveValue(ROUTER_ENDPOINT)
-            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+            within(getRouterRow()).getByText(ROUTER_ENDPOINT)
+            expect(useSettingsStore.getState().settings.apiEndpoints["LLM Router"]).toBe(ROUTER_ENDPOINT)
         })
 
-        it("lets the user save a new endpoint URL for a saved key", async () => {
-            global.fetch = mockFetch({}, true)
-            useSettingsStore
-                .getState()
-                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+        it("won't test or save a router key without its URL", async () => {
             render(<ByokDialog id="test-byok-dialog" />)
-            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
-            const endpointInput = within(openAIRow).getByRole("textbox", {name: "OpenAI endpoint URL"})
-            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
-            expect(saveButton).toBeDisabled()
+            const routerRow = getRouterRow()
+            const keyInput = within(routerRow).getByPlaceholderText("sk-...")
 
-            await user.click(endpointInput)
-            await user.paste(ROUTER_ENDPOINT)
-            await user.click(saveButton)
+            await user.click(keyInput)
+            await user.paste(ROUTER_KEY)
 
-            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe(ROUTER_ENDPOINT)
+            expect(within(routerRow).getByRole("button", {name: "Test"})).toBeDisabled()
+            expect(within(routerRow).getByRole("button", {name: "Save"})).toBeDisabled()
         })
 
-        it("saves neither the key nor the endpoint URL when the key fails its test", async () => {
+        it("won't save a saved router key once its URL is cleared", async () => {
+            storeKey("LLM Router")
+            render(<ByokDialog id="test-byok-dialog" />)
+            await editRouterUrl()
+            const routerRow = getRouterRow()
+            const clearButton = within(routerRow).getByRole("button", {name: "Clear LLM Router base URL"})
+
+            await user.click(clearButton)
+
+            expect(within(routerRow).getByRole("textbox", {name: "LLM Router base URL"})).toHaveValue("")
+            expect(within(routerRow).getByRole("button", {name: "Save"})).toBeDisabled()
+        })
+
+        it("saves neither the router key nor its URL when the key fails its test", async () => {
             global.fetch = mockFetch({error: {message: "Invalid API key"}}, false, 401)
             render(<ByokDialog id="test-byok-dialog" />)
 
-            await saveOpenAIKey(TEST_API_KEY, ROUTER_ENDPOINT)
+            await saveRouter(ROUTER_KEY, ROUTER_ENDPOINT)
 
             const {settings} = useSettingsStore.getState()
-            expect(getApiKey(settings.apiKeys, "OpenAI")).toBeFalsy()
-            expect(settings.apiEndpoints.OpenAI).toBeUndefined()
-            expect(screen.getByRole("textbox", {name: "OpenAI endpoint URL"})).toHaveValue(ROUTER_ENDPOINT)
+            expect(getApiKey(settings.apiKeys, "LLM Router")).toBeFalsy()
+            expect(settings.apiEndpoints["LLM Router"]).toBeUndefined()
+            expect(screen.getByRole("textbox", {name: "LLM Router base URL"})).toHaveValue(ROUTER_ENDPOINT)
         })
 
-        it("tests the key against OpenAI after the endpoint URL is cleared", async () => {
+        it("lets the user save a new URL for a saved router key", async () => {
+            const NEW_ENDPOINT = "https://other-router.example.com/v1"
             global.fetch = mockFetch({}, true)
-            useSettingsStore.getState().updateSettings({
-                apiEndpoints: {OpenAI: ROUTER_ENDPOINT},
-                apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}},
-            })
+            storeKey("LLM Router")
             render(<ByokDialog id="test-byok-dialog" />)
-            const openAIRow = screen.getByTestId("test-byok-dialog-openai-input")
-            const clearButton = within(openAIRow).getByRole("button", {name: "Clear OpenAI endpoint URL"})
-            const saveButton = within(openAIRow).getByRole("button", {name: "Save"})
+            await editRouterUrl()
+            const routerRow = getRouterRow()
+            const clearButton = within(routerRow).getByRole("button", {name: "Clear LLM Router base URL"})
+            const urlInput = within(routerRow).getByRole("textbox", {name: "LLM Router base URL"})
+            const saveButton = within(routerRow).getByRole("button", {name: "Save"})
+            expect(saveButton).toBeDisabled()
 
             await user.click(clearButton)
+            await user.click(urlInput)
+            await user.paste(NEW_ENDPOINT)
             await user.click(saveButton)
 
-            expect(global.fetch).toHaveBeenCalledWith(`${OPENAI_DEFAULT_ENDPOINT}/models`, expect.anything())
-            expect(useSettingsStore.getState().settings.apiEndpoints.OpenAI).toBe("")
+            expect(global.fetch).toHaveBeenCalledWith(`${NEW_ENDPOINT}/models`, expect.anything())
+            expect(useSettingsStore.getState().settings.apiEndpoints["LLM Router"]).toBe(NEW_ENDPOINT)
         })
 
-        it("asks about unsaved changes when only the endpoint URL changed", async () => {
+        it("asks about unsaved changes when only the router URL changed", async () => {
             const onCloseMock = vi.fn()
-            useSettingsStore
-                .getState()
-                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+            storeKey("LLM Router")
             render(
                 <ByokDialog
                     id="test-byok-dialog"
                     onClose={onCloseMock}
                 />
             )
-            const endpointInput = screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+            await editRouterUrl()
+            const urlInput = screen.getByRole("textbox", {name: "LLM Router base URL"})
             const closeButton = screen.getByRole("button", {name: "close"})
 
-            await user.click(endpointInput)
-            await user.paste(ROUTER_ENDPOINT)
+            await user.click(urlInput)
+            await user.paste("/extra")
             await user.click(closeButton)
 
             expect(onCloseMock).not.toHaveBeenCalled()
             screen.getByText("Unsaved Changes")
         })
 
-        it("closes after saving another key from the prompt when OpenAI has no endpoint URL", async () => {
+        it("saves a changed router URL from the unsaved changes prompt and closes", async () => {
+            const NEW_ENDPOINT = "https://other-router.example.com/v1"
             global.fetch = mockFetch({}, true)
             const onCloseMock = vi.fn()
-            useSettingsStore
-                .getState()
-                .updateSettings({apiKeys: {OpenAI: {value: TEST_API_KEY, expiresAt: Date.now() + 60000}}})
+            storeKey("LLM Router")
+            render(
+                <ByokDialog
+                    id="test-byok-dialog"
+                    onClose={onCloseMock}
+                />
+            )
+            await editRouterUrl()
+            const routerRow = getRouterRow()
+            const clearButton = within(routerRow).getByRole("button", {name: "Clear LLM Router base URL"})
+            const urlInput = within(routerRow).getByRole("textbox", {name: "LLM Router base URL"})
+            const closeButton = screen.getByRole("button", {name: "close"})
+
+            await user.click(clearButton)
+            await user.click(urlInput)
+            await user.paste(NEW_ENDPOINT)
+            await user.click(closeButton)
+            const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
+            await user.click(saveChangesButton)
+
+            await waitFor(() => expect(onCloseMock).toHaveBeenCalledTimes(1))
+            expect(useSettingsStore.getState().settings.apiEndpoints["LLM Router"]).toBe(NEW_ENDPOINT)
+        })
+
+        it("shows a saved router URL as a summary line until Edit is clicked", async () => {
+            storeKey("LLM Router")
+            render(<ByokDialog id="test-byok-dialog" />)
+            const routerRow = getRouterRow()
+            within(routerRow).getByText(ROUTER_ENDPOINT)
+            within(routerRow).getByTitle("Saved")
+            expect(within(routerRow).queryByRole("textbox", {name: "LLM Router base URL"})).not.toBeInTheDocument()
+
+            await editRouterUrl()
+
+            expect(within(routerRow).getByRole("textbox", {name: "LLM Router base URL"})).toHaveValue(ROUTER_ENDPOINT)
+        })
+
+        it("goes back to the summary line with the edited URL, not yet saved, when Done is clicked", async () => {
+            const NEW_ENDPOINT = "https://other-router.example.com/v1"
+            storeKey("LLM Router")
+            render(<ByokDialog id="test-byok-dialog" />)
+            await editRouterUrl()
+            const routerRow = getRouterRow()
+            const clearButton = within(routerRow).getByRole("button", {name: "Clear LLM Router base URL"})
+            const urlInput = within(routerRow).getByRole("textbox", {name: "LLM Router base URL"})
+            const doneButton = within(routerRow).getByRole("button", {name: "Done"})
+
+            await user.click(clearButton)
+            await user.click(urlInput)
+            await user.paste(NEW_ENDPOINT)
+            await user.click(doneButton)
+
+            within(routerRow).getByText(NEW_ENDPOINT)
+            expect(within(routerRow).queryByTitle("Saved")).not.toBeInTheDocument()
+            expect(within(routerRow).getByRole("button", {name: "Save"})).toBeEnabled()
+        })
+
+        it("shows Not set with an Add button until a router URL is added", async () => {
+            render(<ByokDialog id="test-byok-dialog" />)
+            const routerRow = getRouterRow()
+            within(routerRow).getByText("Not set")
+            expect(within(routerRow).queryByRole("textbox", {name: "LLM Router base URL"})).not.toBeInTheDocument()
+            expect(within(routerRow).queryByTitle("Saved")).not.toBeInTheDocument()
+
+            await addRouterUrl()
+            const doneButton = within(routerRow).getByRole("button", {name: "Done"})
+            await user.click(doneButton)
+
+            within(routerRow).getByText("Not set")
+        })
+
+        it("closes without asking when a router URL is typed with no key", async () => {
+            const onCloseMock = vi.fn()
+            render(
+                <ByokDialog
+                    id="test-byok-dialog"
+                    onClose={onCloseMock}
+                />
+            )
+            const closeButton = screen.getByRole("button", {name: "close"})
+
+            const urlInput = await addRouterUrl()
+            await user.click(urlInput)
+            await user.paste(ROUTER_ENDPOINT)
+            await user.click(closeButton)
+
+            expect(onCloseMock).toHaveBeenCalledTimes(1)
+        })
+
+        it("closes after saving another key from the prompt when no LLM router is saved", async () => {
+            global.fetch = mockFetch({}, true)
+            const onCloseMock = vi.fn()
+            storeKey("OpenAI")
             render(
                 <ByokDialog
                     id="test-byok-dialog"
@@ -210,7 +333,41 @@ describe("ByokDialog", () => {
             expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "Anthropic")).toBe("anthropic-key")
         })
 
-        it("closes without asking when an endpoint URL is typed with no key", async () => {
+        it("explains that the router uses the OpenAI API format and can't be used with an OpenAI key", async () => {
+            render(<ByokDialog id="test-byok-dialog" />)
+            await addRouterUrl()
+
+            expect(
+                within(getRouterRow()).getByText(/uses the OpenAI API format.*can't be used with an OpenAI key/u)
+            ).toBeVisible()
+        })
+
+        it.each([
+            {saved: "OpenAI", entered: "LLM Router", rowTestId: "test-byok-dialog-llm-router-input"},
+            {saved: "LLM Router", entered: "OpenAI", rowTestId: "test-byok-dialog-openai-input"},
+        ] as const)("won't save an $entered key while an $saved key is saved", async ({saved, entered, rowTestId}) => {
+            storeKey(saved)
+            render(<ByokDialog id="test-byok-dialog" />)
+            const row = screen.getByTestId(rowTestId)
+            const keyInput = within(row).getByPlaceholderText("sk-...")
+            expect(within(row).queryByRole("alert")).not.toBeInTheDocument()
+
+            await user.click(keyInput)
+            await user.paste(ROUTER_KEY)
+            if (entered === "LLM Router") {
+                const urlInput = await addRouterUrl()
+                await user.click(urlInput)
+                await user.paste(ROUTER_ENDPOINT)
+            }
+
+            expect(within(row).getByRole("alert")).toHaveTextContent(
+                `You can't save both ${entered} and ${saved} keys. Forget the ${saved} key first.`
+            )
+            expect(within(row).getByRole("button", {name: "Save"})).toBeDisabled()
+        })
+
+        it("saves only one of an OpenAI key and an LLM router entered together", async () => {
+            global.fetch = mockFetch({}, true)
             const onCloseMock = vi.fn()
             render(
                 <ByokDialog
@@ -218,21 +375,23 @@ describe("ByokDialog", () => {
                     onClose={onCloseMock}
                 />
             )
-            const endpointInput = screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+            const openAIKeyInput = within(screen.getByTestId("test-byok-dialog-openai-input")).getByPlaceholderText(
+                "sk-..."
+            )
             const closeButton = screen.getByRole("button", {name: "close"})
 
-            await user.click(endpointInput)
-            await user.paste(ROUTER_ENDPOINT)
+            await user.click(openAIKeyInput)
+            await user.paste(TEST_API_KEY)
+            await enterRouter(ROUTER_KEY, ROUTER_ENDPOINT)
             await user.click(closeButton)
+            const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
+            await user.click(saveChangesButton)
 
-            expect(onCloseMock).toHaveBeenCalledTimes(1)
-        })
-
-        it("shows an endpoint URL field for OpenAI only", () => {
-            render(<ByokDialog id="test-byok-dialog" />)
-
-            expect(screen.getAllByRole("textbox", {name: /endpoint URL/u})).toHaveLength(1)
-            screen.getByRole("textbox", {name: "OpenAI endpoint URL"})
+            await waitFor(() => {
+                const {apiKeys} = useSettingsStore.getState().settings
+                expect([getApiKey(apiKeys, "OpenAI"), getApiKey(apiKeys, "LLM Router")].filter(Boolean)).toHaveLength(1)
+            })
+            expect(onCloseMock).not.toHaveBeenCalled()
         })
     })
 

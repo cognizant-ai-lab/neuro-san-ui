@@ -68,10 +68,10 @@ import {AnnouncementId, useAnnouncementsStore} from "../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../state/ChatHistory"
 import {usePublishStore} from "../../state/Publish"
 import {
-    ByokKeyField,
     getApiKey,
+    getEndpoint,
+    getEndpointField,
     LLM_PROVIDER_API_KEY_FIELD,
-    LLM_PROVIDER_ENDPOINT_FIELD,
     LLMProvider,
     useSettingsStore,
 } from "../../state/Settings"
@@ -127,15 +127,6 @@ const isCollapsedSize = (size: PanelSize) => size.asPercentage < 0.5
 const EMPTY_THOUGHT_BUBBLE_EDGES = new Map<string, {edge: ThoughtBubbleEdgeShape; timestamp: number}>()
 
 /**
- * Maps an API key name to the corresponding LLM provider
- */
-const API_KEY_TO_PROVIDER = {
-    openai_api_key: "OpenAI",
-    anthropic_api_key: "Anthropic",
-    google_api_key: "Google",
-} as const satisfies Record<ByokKeyField, LLMProvider>
-
-/**
  * Given a SlyData schema, returns the names of the BYOK `llm_config` fields the agent network accepts.
  * @param slyDataSchema The SlyData schema, if any.
  * @returns The `llm_config` field names. Empty if the network doesn't require an `llm_config`.
@@ -154,27 +145,22 @@ const getLlmConfigFields = (slyDataSchema: unknown): readonly string[] => {
  * Given a SlyData schema, returns the set of LLM providers that are supported by the agent network.
  * @param agentLlmConfig The `llm_config` property of the SlyData schema, if any.
  * @returns A Set of LLM providers for which BYOK keys are supported by the current network. Empty if none.
- * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers
+ * @note Semantics are "oneOf": a key must be supplied for at least one of the named providers. A provider with an
+ * endpoint URL, like an LLM router, is only supported when the network accepts both its key and its URL.
  */
 const getSupportedLlmProviders = (agentLlmConfig: unknown): ReadonlySet<LLMProvider> => {
-    const isByokKeyField = (key: string): key is ByokKeyField => Object.hasOwn(API_KEY_TO_PROVIDER, key)
+    const fields = getLlmConfigFields(agentLlmConfig)
+    const providers = Object.keys(LLM_PROVIDER_API_KEY_FIELD) as LLMProvider[]
 
     return new Set(
-        getLlmConfigFields(agentLlmConfig)
-            .filter(isByokKeyField)
-            .map((key) => API_KEY_TO_PROVIDER[key])
+        providers.filter((provider) => {
+            const endpointField = getEndpointField(provider)
+            return (
+                fields.includes(LLM_PROVIDER_API_KEY_FIELD[provider]) &&
+                (endpointField === undefined || fields.includes(endpointField))
+            )
+        })
     )
-}
-
-/**
- * Given a SlyData schema, returns the `llm_config` endpoint URL fields the agent network accepts, by provider.
- * @param slyDataSchema The SlyData schema, if any.
- * @returns A map from provider to its endpoint URL field. Empty if the network accepts none.
- */
-const getSupportedEndpointFields = (slyDataSchema: unknown): Partial<Record<LLMProvider, string>> => {
-    const fields = getLlmConfigFields(slyDataSchema)
-
-    return Object.fromEntries(Object.entries(LLM_PROVIDER_ENDPOINT_FIELD).filter(([, field]) => fields.includes(field)))
 }
 
 /**
@@ -496,15 +482,12 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
     // Build base extraSlyData
     const baseExtraSlyData = buildExtraSlyData()
 
-    // Endpoint URL fields the selected network accepts, by provider
-    const supportedEndpointFields = useMemo(() => getSupportedEndpointFields(slyDataSchema), [slyDataSchema])
-
     // Add API keys to extraSlyData if needed, merging with baseExtraSlyData if it exists
     const extraSlyData: Record<string, unknown> | undefined = useMemo(() => {
         /**
          * Builds the API keys object to be sent as extraSlyData with each request, based on the LLM providers required
-         * by the currently selected network. Only includes keys for providers that are required, plus each key's
-         * endpoint URL when one is set and the network accepts it.
+         * by the currently selected network. Only includes keys for providers that are required, plus the endpoint URL
+         * for providers that have one, like an LLM router.
          */
         const apiKeysSlyData = {
             llm_config: Object.fromEntries(
@@ -513,8 +496,8 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                     if (!key) {
                         return []
                     }
-                    const endpointField = supportedEndpointFields[provider]
-                    const endpoint = apiEndpoints[provider]
+                    const endpointField = getEndpointField(provider)
+                    const endpoint = getEndpoint(apiEndpoints, provider)
                     const entries: [string, string][] = [[LLM_PROVIDER_API_KEY_FIELD[provider], key]]
                     if (endpointField && endpoint) {
                         entries.push([endpointField, endpoint])
@@ -530,7 +513,7 @@ export const MultiAgentAccelerator: FC<MultiAgentAcceleratorProps> = ({
                   ...(anyApiKeysRequired ? apiKeysSlyData : {}),
               }
             : undefined
-    }, [anyApiKeysRequired, apiEndpoints, apiKeys, baseExtraSlyData, supportedByokProviders, supportedEndpointFields])
+    }, [anyApiKeysRequired, apiEndpoints, apiKeys, baseExtraSlyData, supportedByokProviders])
 
     // Handle external stop button click - stops streaming and exits zen mode
     const handleExternalStop = useCallback(() => {

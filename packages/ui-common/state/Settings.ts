@@ -32,7 +32,8 @@ type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
 }
 
-export type LLMProvider = "OpenAI" | "Anthropic" | "Google"
+// "LLM Router" is an LLM router that uses the OpenAI API format, such as LiteLLM or OpenRouter
+export type LLMProvider = "OpenAI" | "Anthropic" | "Google" | "LLM Router"
 
 export type LogoSource = "none" | "generic" | "auto"
 
@@ -47,7 +48,7 @@ interface ApiKeyEntry {
 
 type ApiKeys = Partial<Record<LLMProvider, ApiKeyEntry>>
 
-// Custom endpoint URLs, for providers that support one (e.g. an LLM router that emulates the OpenAI API)
+// Endpoint URLs, for providers that have one
 type ApiEndpoints = Partial<Record<LLMProvider, string>>
 
 export type PaletteKey = keyof typeof PALETTES | "brand"
@@ -115,12 +116,22 @@ export const LLM_PROVIDER_API_KEY_FIELD = {
     OpenAI: "openai_api_key",
     Anthropic: "anthropic_api_key",
     Google: "google_api_key",
+    // A router key takes the OpenAI key's place, so only one of the two can be used
+    "LLM Router": "openai_api_key",
 } as const satisfies Record<LLMProvider, string>
 
-// Mapping of LLM providers that support a custom endpoint URL to the sly_data field it's sent in.
+// Mapping of LLM providers that have an endpoint URL to the sly_data field it's sent in.
 export const LLM_PROVIDER_ENDPOINT_FIELD = {
-    OpenAI: "openai_api_base",
+    "LLM Router": "openai_api_base",
 } as const satisfies Partial<Record<LLMProvider, string>>
+
+/**
+ * Returns the sly_data field a provider's endpoint URL is sent in, or `undefined` if the provider has no endpoint URL.
+ */
+export const getEndpointField = (provider: LLMProvider): string | undefined => {
+    const endpointFields: Partial<Record<LLMProvider, string>> = LLM_PROVIDER_ENDPOINT_FIELD
+    return endpointFields[provider]
+}
 
 /**
  * Default settings, used on first load and on reset
@@ -243,6 +254,11 @@ export const getApiKey = (apiKeys: ApiKeys, provider: LLMProvider) => {
 
     return isApiKeyValid(entry) ? entry.value : undefined
 }
+
+/**
+ * Returns the saved endpoint URL for a provider, or "" if none is saved.
+ */
+export const getEndpoint = (apiEndpoints: ApiEndpoints, provider: LLMProvider): string => apiEndpoints[provider] ?? ""
 
 /**
  * The hook that lets apps use the store

@@ -1725,29 +1725,29 @@ describe("MultiAgentAccelerator", () => {
 
         it.each([
             {
-                case: "the network accepts it",
-                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD.OpenAI],
-                savedKey: "openai-key",
+                case: "an LLM router is saved and the network accepts a URL",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]],
+                savedProvider: "LLM Router",
                 expectedLlmConfig: {
-                    [LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "openai-key",
-                    [LLM_PROVIDER_ENDPOINT_FIELD.OpenAI]: "https://router.example.com/v1",
+                    [LLM_PROVIDER_API_KEY_FIELD["LLM Router"]]: "saved-key",
+                    [LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]]: "https://router.example.com/v1",
                 },
             },
             {
-                case: "the network doesn't accept it",
+                case: "an LLM router is saved but the network doesn't accept a URL",
                 schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI],
-                savedKey: "openai-key",
-                expectedLlmConfig: {[LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "openai-key"},
-            },
-            {
-                case: "there's no OpenAI key",
-                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD.OpenAI],
-                savedKey: undefined,
+                savedProvider: "LLM Router",
                 expectedLlmConfig: {},
             },
-        ])(
-            "should send the OpenAI endpoint URL only with a key when $case",
-            async ({expectedLlmConfig, savedKey, schemaFields}) => {
+            {
+                case: "an OpenAI key is saved",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]],
+                savedProvider: "OpenAI",
+                expectedLlmConfig: {[LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "saved-key"},
+            },
+        ] as const)(
+            "should send the right llm_config when $case",
+            async ({expectedLlmConfig, savedProvider, schemaFields}) => {
                 vi.mocked(getAgentFunction).mockResolvedValue({
                     function: {
                         sly_data_schema: {
@@ -1763,8 +1763,8 @@ describe("MultiAgentAccelerator", () => {
                     },
                 } satisfies FunctionResponse)
                 useSettingsStore.getState().updateSettings({
-                    apiEndpoints: {OpenAI: "https://router.example.com/v1"},
-                    ...(savedKey && {apiKeys: {OpenAI: {expiresAt: Number.MAX_SAFE_INTEGER, value: savedKey}}}),
+                    apiEndpoints: {"LLM Router": "https://router.example.com/v1"},
+                    apiKeys: {[savedProvider]: {expiresAt: Number.MAX_SAFE_INTEGER, value: "saved-key"}},
                 })
 
                 renderMultiAgentAccelerator()

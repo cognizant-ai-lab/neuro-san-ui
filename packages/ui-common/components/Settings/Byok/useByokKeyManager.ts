@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import AltRouteIcon from "@mui/icons-material/AltRoute"
 import {useTheme} from "@mui/material/styles"
 import {useCallback, useEffect, useMemo, useRef, useState} from "react"
 
@@ -24,16 +25,18 @@ import {
     isOpenAIKeyValid,
     KeyValidationFailure,
     KeyValidationResult,
-    OPENAI_DEFAULT_ENDPOINT,
 } from "../../../controller/llm/Providers"
 import {
     API_KEYS_TTL_MS,
     getApiKey,
+    getEndpoint,
+    LLM_PROVIDER_API_KEY_FIELD,
     LLM_PROVIDER_ENDPOINT_FIELD,
     LLMProvider,
     useSettingsStore,
 } from "../../../state/Settings"
 import {ApiKeyFailure} from "../ApiKeyErrorBanner"
+import {ProviderLogo} from "../ApiKeyInput"
 import {useCheckmarkFade} from "../FadingCheckmark"
 
 type CheckmarkFade = ReturnType<typeof useCheckmarkFade>
@@ -54,9 +57,21 @@ export type PersistKey = (
 
 const hasEndpoint = (vendor: LLMProvider): boolean => Object.hasOwn(LLM_PROVIDER_ENDPOINT_FIELD, vendor)
 
+/**
+ * Returns the other provider with a saved key that is sent in the same `llm_config` field as `vendor`'s key, if any.
+ * Only one of them can be saved, since the network can only get one key in that field.
+ */
+export const getConflictingProvider = (vendor: LLMProvider, apiKeys: ApiKeysMap): LLMProvider | undefined =>
+    (Object.keys(LLM_PROVIDER_API_KEY_FIELD) as LLMProvider[]).find(
+        (other) =>
+            other !== vendor &&
+            LLM_PROVIDER_API_KEY_FIELD[other] === LLM_PROVIDER_API_KEY_FIELD[vendor] &&
+            Boolean(getApiKey(apiKeys, other))
+    )
+
 interface LLMProviderDefinition {
-    readonly endpointPlaceholder?: string
-    readonly getLogo: (isDarkMode: boolean) => string
+    readonly endpointHelperText?: string
+    readonly getLogo: (isDarkMode: boolean) => ProviderLogo
     readonly idSuffix: string
     readonly onTest: (key: string, endpoint?: string) => Promise<KeyValidationResult>
     readonly placeholder: string
@@ -65,7 +80,6 @@ interface LLMProviderDefinition {
 
 const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
     {
-        endpointPlaceholder: OPENAI_DEFAULT_ENDPOINT,
         getLogo: (isDarkMode) => (isDarkMode ? "/OpenAI-white.png" : "/OpenAI-black.png"),
         idSuffix: "openai",
         onTest: isOpenAIKeyValid,
@@ -86,19 +100,29 @@ const PROVIDER_DEFINITIONS: readonly LLMProviderDefinition[] = [
         placeholder: "AQ....",
         vendor: "Google",
     },
+    {
+        endpointHelperText:
+            "Base URL for an LLM router that uses the OpenAI API format, such as LiteLLM or OpenRouter. " +
+            "It can't be used with an OpenAI key.",
+        getLogo: () => AltRouteIcon,
+        idSuffix: "llm-router",
+        onTest: isOpenAIKeyValid,
+        placeholder: "sk-...",
+        vendor: "LLM Router",
+    },
 ]
 
 export interface ByokProviderItem {
     /** Checkmark fade controller for save indicator. */
     readonly checkmark: CheckmarkFade
-    /** Placeholder for the endpoint URL input, showing the URL used when none is set. */
-    readonly endpointPlaceholder?: string
-    /** Whether the provider accepts a custom endpoint URL. */
+    /** Help text shown under the endpoint URL while it's being edited. */
+    readonly endpointHelperText?: string
+    /** Whether the provider has an endpoint URL, saved with its key. */
     readonly hasEndpoint: boolean
     /** Unique DOM ID suffix for the provider. */
     readonly idSuffix: string
-    /** Provider logo asset URL. */
-    readonly logo: string
+    /** Provider logo asset URL, or an icon. */
+    readonly logo: ProviderLogo
     /** Test handler for validating keys, against the endpoint URL when one is given. */
     readonly onTest: (key: string, endpoint?: string) => Promise<KeyValidationResult>
     /** Input placeholder text. */
@@ -156,6 +180,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
     const openAIKeyCheckmark = useCheckmarkFade()
     const anthropicKeyCheckmark = useCheckmarkFade()
     const googleCheckmark = useCheckmarkFade()
+    const llmRouterCheckmark = useCheckmarkFade()
 
     const apiKeys = useSettingsStore((state) => state.settings.apiKeys)
     const apiEndpoints = useSettingsStore((state) => state.settings.apiEndpoints)
@@ -186,8 +211,9 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
             Anthropic: anthropicKeyCheckmark,
             OpenAI: openAIKeyCheckmark,
             Google: googleCheckmark,
+            "LLM Router": llmRouterCheckmark,
         }),
-        [anthropicKeyCheckmark, googleCheckmark, openAIKeyCheckmark]
+        [anthropicKeyCheckmark, googleCheckmark, llmRouterCheckmark, openAIKeyCheckmark]
     )
 
     const isDarkMode = theme.palette.mode === "dark"
@@ -196,7 +222,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
         () =>
             PROVIDER_DEFINITIONS.map((def) => ({
                 checkmark: checkmarks[def.vendor],
-                endpointPlaceholder: def.endpointPlaceholder,
+                endpointHelperText: def.endpointHelperText,
                 hasEndpoint: hasEndpoint(def.vendor),
                 idSuffix: def.idSuffix,
                 logo: def.getLogo(isDarkMode),
@@ -232,6 +258,10 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     if (!result.ok) {
                         return false
                     }
+                }
+                // Checked after the test, since another save may have finished while this key was being tested
+                if (key && getConflictingProvider(vendor, useSettingsStore.getState().settings.apiKeys)) {
+                    return false
                 }
                 updateSettings({
                     apiKeys: {
@@ -324,7 +354,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     hasEndpoint(vendor) &&
                     Boolean(key) &&
                     endpoint !== undefined &&
-                    endpoint !== (apiEndpoints[vendor] ?? "")
+                    endpoint !== getEndpoint(apiEndpoints, vendor)
                 return keyChanged || endpointChanged
             }),
         [activeConfigs, apiEndpoints, apiKeys, draftEndpoints, draftKeys]
@@ -374,7 +404,7 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
                     isSaved(currentDrafts.current[vendor], getApiKey(settings.apiKeys, vendor) ?? "") &&
                     (!hasEndpoint(vendor) ||
                         !getApiKey(settings.apiKeys, vendor) ||
-                        isSaved(currentEndpointDrafts.current[vendor], settings.apiEndpoints[vendor] ?? ""))
+                        isSaved(currentEndpointDrafts.current[vendor], getEndpoint(settings.apiEndpoints, vendor)))
             )
         ) {
             setDraftKeys({})

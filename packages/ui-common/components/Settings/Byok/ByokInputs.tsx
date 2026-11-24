@@ -17,9 +17,9 @@ limitations under the License.
 import Box from "@mui/material/Box"
 import {FC} from "react"
 
-import {ApiEndpointsMap, ApiKeysMap, ByokProviderItem, PersistKey} from "./useByokKeyManager"
+import {ApiEndpointsMap, ApiKeysMap, ByokProviderItem, getConflictingProvider, PersistKey} from "./useByokKeyManager"
 import {KeyValidationFailure} from "../../../controller/llm/Providers"
-import {getApiKey, LLMProvider} from "../../../state/Settings"
+import {getApiKey, getEndpoint, LLMProvider} from "../../../state/Settings"
 import {ApiKeyErrorBanner, ApiKeyFailure} from "../ApiKeyErrorBanner"
 import {ApiKeyInput} from "../ApiKeyInput"
 import {SettingsRow} from "../SettingsRow"
@@ -78,7 +78,7 @@ export const ByokInputs: FC<ByokInputsProps> = ({
         />
         <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5, mt: 1, width: "100%"}}>
             {configs.map(
-                ({checkmark, endpointPlaceholder, hasEndpoint, idSuffix, logo, onTest, placeholder, vendor}) => (
+                ({checkmark, endpointHelperText, hasEndpoint, idSuffix, logo, onTest, placeholder, vendor}) => (
                     <SettingsRow
                         checkmark={checkmark}
                         key={`${id}-${idSuffix}`}
@@ -86,7 +86,8 @@ export const ByokInputs: FC<ByokInputsProps> = ({
                         tooltip={`API key for ${vendor}.`}
                     >
                         <ApiKeyInput
-                            endpointPlaceholder={endpointPlaceholder}
+                            conflictingVendor={getConflictingProvider(vendor, apiKeys)}
+                            endpointHelperText={endpointHelperText}
                             forgetKey={() => onPersistKey(vendor, "", "", checkmark, 0)}
                             id={`${id}-${idSuffix}`}
                             logo={logo}
@@ -101,7 +102,7 @@ export const ByokInputs: FC<ByokInputsProps> = ({
                             onSave={(key, endpoint) => onPersistKey(vendor, key, endpoint, checkmark, Date.now())}
                             onTest={onTest}
                             onValueChange={onValueChange}
-                            persistedEndpoint={hasEndpoint ? (apiEndpoints[vendor] ?? "") : undefined}
+                            persistedEndpoint={hasEndpoint ? getEndpoint(apiEndpoints, vendor) : undefined}
                             persistedValue={getApiKey(apiKeys, vendor)}
                             placeholder={placeholder}
                             vendor={vendor}

@@ -845,7 +845,8 @@ describe("SettingsDialog", () => {
         })
 
         expect(screen.queryByText("Discarded key rejected")).not.toBeInTheDocument()
-        expect(screen.getByPlaceholderText("sk-...")).toHaveValue("")
+        const openAIRowAfterReset = screen.getByTestId("settings-dialog-openai-input")
+        expect(within(openAIRowAfterReset).getByPlaceholderText("sk-...")).toHaveValue("")
         expect(getApiKey(useSettingsStore.getState().settings.apiKeys, "OpenAI")).toBeFalsy()
     })
 

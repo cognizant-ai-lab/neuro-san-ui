@@ -76,7 +76,7 @@ export const ApiKeyErrorBanner: FC<ApiKeyErrorBannerProps> = ({id, failures}) =>
                 {failures.map((failure) => (
                     <FailureRow
                         failure={failure}
-                        id={`${id}-${failure.vendor.toLowerCase()}`}
+                        id={`${id}-${failure.vendor.toLowerCase().replaceAll(" ", "-")}`}
                         key={failure.vendor}
                     />
                 ))}
