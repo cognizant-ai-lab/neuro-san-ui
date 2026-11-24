@@ -140,10 +140,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
     // BYOK state and unsaved changes lifecycle
     const {
         activeConfigs: apiKeyConfigs,
+        apiEndpoints,
         apiKeys,
         handleClose: handleSettingsClose,
         clearDrafts: clearKeyDrafts,
         handleDiscard: handleDiscardUnsavedKeys,
+        handleEndpointChange,
         handleKeyResultChange,
         handleSave: handleSaveUnsavedKeys,
         handleValueChange,
@@ -480,10 +482,12 @@ export const SettingsDialog: FC<SettingsDialogProps> = ({id, isOpen, logoService
             <SettingsSubsection title="LLM Providers">
                 <ByokInputs
                     key={keyInputVersion}
+                    apiEndpoints={apiEndpoints}
                     apiKeys={apiKeys}
                     configs={apiKeyConfigs}
                     id={id}
                     keyFailures={keyFailures}
+                    onEndpointChange={handleEndpointChange}
                     onKeyResultChange={handleKeyResultChange}
                     onPersistKey={persistKey}
                     onValueChange={handleValueChange}

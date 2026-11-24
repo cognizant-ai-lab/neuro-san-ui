@@ -24,6 +24,7 @@ import {
     isKeyValidationFailure,
     isOpenAIKeyValid,
     KeyValidationResult,
+    OPENAI_DEFAULT_ENDPOINT,
 } from "../../../../controller/llm/Providers"
 import {LLMProvider} from "../../../../state/Settings"
 
@@ -50,6 +51,21 @@ describe("Providers controller", () => {
         expect(await isAnthropicKeyValid(FAKE_KEY)).toEqual(success)
         expect(await isGoogleKeyValid(FAKE_KEY)).toEqual(success)
     })
+
+    it.each([
+        {endpoint: undefined, expectedUrl: `${OPENAI_DEFAULT_ENDPOINT}/models`},
+        {endpoint: "", expectedUrl: `${OPENAI_DEFAULT_ENDPOINT}/models`},
+        {endpoint: "https://router.example.com/v1", expectedUrl: "https://router.example.com/v1/models"},
+    ])(
+        "should test an OpenAI key against $expectedUrl when the endpoint is $endpoint",
+        async ({endpoint, expectedUrl}) => {
+            global.fetch = mockFetch({})
+
+            await isOpenAIKeyValid(FAKE_KEY, endpoint)
+
+            expect(global.fetch).toHaveBeenCalledWith(expectedUrl, expect.anything())
+        }
+    )
 
     it.each<FailedResponseCase>([
         // OpenAI shape: {error: {message}}

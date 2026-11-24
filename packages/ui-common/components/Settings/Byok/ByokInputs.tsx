@@ -17,17 +17,16 @@ limitations under the License.
 import Box from "@mui/material/Box"
 import {FC} from "react"
 
-import {ApiKeysMap, ByokProviderItem} from "./useByokKeyManager"
+import {ApiEndpointsMap, ApiKeysMap, ByokProviderItem, getConflictingProvider, PersistKey} from "./useByokKeyManager"
 import {KeyValidationFailure} from "../../../controller/llm/Providers"
-import {getApiKey, LLMProvider} from "../../../state/Settings"
+import {getApiKey, getEndpoint, LLMProvider} from "../../../state/Settings"
 import {ApiKeyErrorBanner, ApiKeyFailure} from "../ApiKeyErrorBanner"
 import {ApiKeyInput} from "../ApiKeyInput"
-import {useCheckmarkFade} from "../FadingCheckmark"
 import {SettingsRow} from "../SettingsRow"
 
-type CheckmarkFade = ReturnType<typeof useCheckmarkFade>
-
 export interface ByokInputsProps {
+    /** Persisted endpoint URLs to display in inputs. */
+    readonly apiEndpoints: ApiEndpointsMap
     /** Persisted API keys map to display in inputs. */
     readonly apiKeys: ApiKeysMap | undefined
     /** Active provider input configurations. */
@@ -36,16 +35,12 @@ export interface ByokInputsProps {
     readonly id: string
     /** Current test failures to display in error banner. */
     readonly keyFailures: readonly ApiKeyFailure[]
+    /** Callback when an endpoint URL input value changes. */
+    readonly onEndpointChange: (vendor: LLMProvider, value: string) => void
     /** Callback when a key validation test produces a result. */
     readonly onKeyResultChange: (vendor: LLMProvider, result: KeyValidationFailure | null) => void
     /** Callback to persist an API key. */
-    readonly onPersistKey: (
-        vendor: LLMProvider,
-        key: string,
-        checkmark: CheckmarkFade,
-        now: number,
-        allowUnverified?: boolean
-    ) => Promise<boolean>
+    readonly onPersistKey: PersistKey
     /** Callback when an input value changes. */
     readonly onValueChange: (vendor: LLMProvider, value: string) => void
 }
@@ -54,20 +49,24 @@ export interface ByokInputsProps {
  * Presentational component rendering the list of BYOK API key inputs and error banner.
  *
  * @param props Component properties
+ * @param props.apiEndpoints Persisted endpoint URLs
  * @param props.apiKeys Persisted API keys map
  * @param props.configs Provider configurations to render
  * @param props.id Base ID for DOM references
  * @param props.keyFailures Active key validation failures
+ * @param props.onEndpointChange Handler when endpoint URL input text changes
  * @param props.onKeyResultChange Handler when key test result is obtained
  * @param props.onPersistKey Handler to save or clear an API key
  * @param props.onValueChange Handler when key input draft text changes
  * @return Rendered BYOK inputs list with error banner
  */
 export const ByokInputs: FC<ByokInputsProps> = ({
+    apiEndpoints,
     apiKeys,
     configs,
     id,
     keyFailures,
+    onEndpointChange,
     onKeyResultChange,
     onPersistKey,
     onValueChange,
@@ -78,32 +77,39 @@ export const ByokInputs: FC<ByokInputsProps> = ({
             id={`${id}-api-key-error-banner`}
         />
         <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5, mt: 1, width: "100%"}}>
-            {configs.map(({checkmark, idSuffix, logo, onTest, placeholder, vendor}) => (
-                <SettingsRow
-                    checkmark={checkmark}
-                    key={`${id}-${idSuffix}`}
-                    label=""
-                    tooltip={`API key for ${vendor}.`}
-                >
-                    <ApiKeyInput
-                        forgetKey={() => onPersistKey(vendor, "", checkmark, 0)}
-                        id={`${id}-${idSuffix}`}
-                        logo={logo}
-                        onResultChange={onKeyResultChange}
-                        onSaveUnverified={
-                            keyFailures.some((failure) => failure.vendor === vendor && failure.canSaveUnverified)
-                                ? (key) => onPersistKey(vendor, key, checkmark, Date.now(), true)
-                                : undefined
-                        }
-                        onSave={(key) => onPersistKey(vendor, key, checkmark, Date.now())}
-                        onTest={onTest}
-                        onValueChange={onValueChange}
-                        persistedValue={getApiKey(apiKeys, vendor)}
-                        placeholder={placeholder}
-                        vendor={vendor}
-                    />
-                </SettingsRow>
-            ))}
+            {configs.map(
+                ({checkmark, endpointHelperText, hasEndpoint, idSuffix, logo, onTest, placeholder, vendor}) => (
+                    <SettingsRow
+                        checkmark={checkmark}
+                        key={`${id}-${idSuffix}`}
+                        label=""
+                        tooltip={`API key for ${vendor}.`}
+                    >
+                        <ApiKeyInput
+                            conflictingVendor={getConflictingProvider(vendor, apiKeys)}
+                            endpointHelperText={endpointHelperText}
+                            forgetKey={() => onPersistKey(vendor, "", "", checkmark, 0)}
+                            id={`${id}-${idSuffix}`}
+                            logo={logo}
+                            onEndpointChange={onEndpointChange}
+                            onResultChange={onKeyResultChange}
+                            onSaveUnverified={
+                                keyFailures.some((failure) => failure.vendor === vendor && failure.canSaveUnverified)
+                                    ? (key, endpoint) =>
+                                          onPersistKey(vendor, key, endpoint, checkmark, Date.now(), true)
+                                    : undefined
+                            }
+                            onSave={(key, endpoint) => onPersistKey(vendor, key, endpoint, checkmark, Date.now())}
+                            onTest={onTest}
+                            onValueChange={onValueChange}
+                            persistedEndpoint={hasEndpoint ? getEndpoint(apiEndpoints, vendor) : undefined}
+                            persistedValue={getApiKey(apiKeys, vendor)}
+                            placeholder={placeholder}
+                            vendor={vendor}
+                        />
+                    </SettingsRow>
+                )
+            )}
         </Box>
     </>
 )

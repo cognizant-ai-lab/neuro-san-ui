@@ -70,7 +70,12 @@ import {
 } from "../../../generated/neuro-san/NeuroSanClient"
 import {AnnouncementId, useAnnouncementsStore} from "../../../state/Announcements"
 import {useAgentChatHistoryStore} from "../../../state/ChatHistory"
-import {ByokKeyField, LLM_PROVIDER_API_KEY_FIELD, useSettingsStore} from "../../../state/Settings"
+import {
+    ByokKeyField,
+    LLM_PROVIDER_API_KEY_FIELD,
+    LLM_PROVIDER_ENDPOINT_FIELD,
+    useSettingsStore,
+} from "../../../state/Settings"
 import {TemporaryNetwork, useTempNetworksStore} from "../../../state/TemporaryNetworks"
 import {TourPromptState, useTourStore} from "../../../state/Tour"
 import {cleanUpAgentName} from "../../../utils/AgentName"
@@ -1717,6 +1722,65 @@ describe("MultiAgentAccelerator", () => {
                 })
             )
         })
+
+        it.each([
+            {
+                case: "an LLM router is saved and the network accepts a URL",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]],
+                savedProvider: "LLM Router",
+                expectedLlmConfig: {
+                    [LLM_PROVIDER_API_KEY_FIELD["LLM Router"]]: "saved-key",
+                    [LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]]: "https://router.example.com/v1",
+                },
+            },
+            {
+                case: "an LLM router is saved but the network doesn't accept a URL",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI],
+                savedProvider: "LLM Router",
+                expectedLlmConfig: {},
+            },
+            {
+                case: "an OpenAI key is saved",
+                schemaFields: [LLM_PROVIDER_API_KEY_FIELD.OpenAI, LLM_PROVIDER_ENDPOINT_FIELD["LLM Router"]],
+                savedProvider: "OpenAI",
+                expectedLlmConfig: {[LLM_PROVIDER_API_KEY_FIELD.OpenAI]: "saved-key"},
+            },
+        ] as const)(
+            "should send the right llm_config when $case",
+            async ({expectedLlmConfig, savedProvider, schemaFields}) => {
+                vi.mocked(getAgentFunction).mockResolvedValue({
+                    function: {
+                        sly_data_schema: {
+                            type: "object",
+                            properties: {
+                                llm_config: {
+                                    type: "object",
+                                    properties: Object.fromEntries(schemaFields.map((key) => [key, {type: "string"}])),
+                                },
+                            },
+                            required: ["llm_config"],
+                        } satisfies z.infer<typeof BYOK>,
+                    },
+                } satisfies FunctionResponse)
+                useSettingsStore.getState().updateSettings({
+                    apiEndpoints: {"LLM Router": "https://router.example.com/v1"},
+                    apiKeys: {[savedProvider]: {expiresAt: Number.MAX_SAFE_INTEGER, value: "saved-key"}},
+                })
+
+                renderMultiAgentAccelerator()
+                await act(async () => {
+                    setSelectedNetwork(`${TEST_AGENTS_FOLDER}/${TEST_AGENT_MATH_GUY}`)
+                })
+
+                await waitFor(() => {
+                    expect(chatCommonMock).toHaveBeenLastCalledWith(
+                        expect.objectContaining<Partial<ChatCommonProps>>({
+                            extraSlyData: {llm_config: expectedLlmConfig},
+                        })
+                    )
+                })
+            }
+        )
 
         it("passes extraSlyData through to AgentFlow when present", async () => {
             useTempNetworksStore.setState({tempNetworks: [tempNetworkWithDefinition]})
