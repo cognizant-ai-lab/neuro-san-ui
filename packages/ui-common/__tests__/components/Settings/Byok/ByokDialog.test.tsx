@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createTheme, ThemeProvider} from "@mui/material/styles"
+import {createTheme, ThemeProvider, useColorScheme} from "@mui/material/styles"
 import {act, render, screen, waitFor, within} from "@testing-library/react"
 import {userEvent, UserEvent} from "@testing-library/user-event"
+import {JSX as ReactJSX, useState} from "react"
 
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
@@ -31,6 +32,32 @@ vi.mock("../../../../components/Settings/FadingCheckmark", () => ({
 
 const TEST_API_KEY = "test-api-key-123"
 const ROUTER_ENDPOINT = "https://router.example.com/v1"
+
+const ByokThemeControls = (): ReactJSX.Element => {
+    const {mode, setMode} = useColorScheme()
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+            >
+                Toggle theme
+            </button>
+            <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+            >
+                Open API keys
+            </button>
+            <ByokDialog
+                id="test-byok-theme-dialog"
+                isOpen={isOpen}
+                onClose={() => setIsOpen(false)}
+            />
+        </>
+    )
+}
 
 describe("ByokDialog", () => {
     withStrictMocks()
@@ -773,15 +800,52 @@ describe("ByokDialog", () => {
         }
     )
 
-    it("renders dark mode logo when theme mode is dark", () => {
-        const darkTheme = createTheme({palette: {mode: "dark"}})
+    it.each(["light", "dark"] as const)("shows the OpenAI logo for a %s single-theme provider", (mode) => {
+        const theme = createTheme({palette: {mode}})
         render(
-            <ThemeProvider theme={darkTheme}>
+            <ThemeProvider theme={theme}>
                 <ByokDialog id="test-byok-dark-dialog" />
             </ThemeProvider>
         )
 
-        const apiKeyInput = screen.getByTestId("test-byok-dark-dialog-openai-input")
-        expect(within(apiKeyInput).getByRole("img")).toHaveAttribute("src", "/OpenAI-white.png")
+        expect(screen.getByRole("img", {name: "OpenAI logo"})).toHaveAttribute(
+            "src",
+            mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png"
+        )
+    })
+
+    it.each(["light", "dark"] as const)("keeps the OpenAI logo in sync with a saved %s appearance", async (mode) => {
+        localStorage.setItem("mui-mode", mode)
+        const theme = createTheme({
+            cssVariables: {colorSchemeSelector: "data-mui-color-scheme"},
+            defaultColorScheme: "dark",
+            colorSchemes: {light: true, dark: true},
+        })
+        render(
+            <ThemeProvider
+                theme={theme}
+                defaultMode="dark"
+                noSsr={true}
+            >
+                <ByokThemeControls />
+            </ThemeProvider>
+        )
+
+        await user.click(screen.getByRole("button", {name: "Open API keys"}))
+        const initialLogo = mode === "dark" ? "/OpenAI-white.png" : "/OpenAI-black.png"
+        const toggledLogo = mode === "dark" ? "/OpenAI-black.png" : "/OpenAI-white.png"
+        await waitFor(() => expect(screen.getByRole("img", {name: "OpenAI logo"})).toHaveAttribute("src", initialLogo))
+
+        await user.click(screen.getByRole("button", {name: "close"}))
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+        await user.click(screen.getByRole("button", {name: "Toggle theme"}))
+        await user.click(screen.getByRole("button", {name: "Open API keys"}))
+        expect(screen.getByRole("img", {name: "OpenAI logo"})).toHaveAttribute("src", toggledLogo)
+
+        await user.click(screen.getByRole("button", {name: "close"}))
+        await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+        await user.click(screen.getByRole("button", {name: "Toggle theme"}))
+        await user.click(screen.getByRole("button", {name: "Open API keys"}))
+        expect(screen.getByRole("img", {name: "OpenAI logo"})).toHaveAttribute("src", initialLogo)
     })
 })
