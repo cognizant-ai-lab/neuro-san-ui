@@ -319,6 +319,56 @@ describe("ByokDialog", () => {
             within(routerRow).getByText("Not set")
         })
 
+        it.each([
+            {
+                case: "a new router key has no URL",
+                setup: async () => {
+                    const keyInput = within(getRouterRow()).getByPlaceholderText("sk-...")
+                    await user.click(keyInput)
+                    await user.paste(ROUTER_KEY)
+                },
+                savedKey: undefined,
+                savedEndpoint: undefined,
+            },
+            {
+                case: "a saved router's URL is cleared",
+                setup: async () => {
+                    await editRouterUrl()
+                    const clearButton = within(getRouterRow()).getByRole("button", {name: "Clear LLM Router base URL"})
+                    await user.click(clearButton)
+                },
+                savedKey: TEST_API_KEY,
+                savedEndpoint: ROUTER_ENDPOINT,
+            },
+        ])(
+            "won't test or save from the unsaved changes prompt when $case",
+            async ({setup, savedKey, savedEndpoint}) => {
+                global.fetch = mockFetch({}, true)
+                const onCloseMock = vi.fn()
+                if (savedKey) {
+                    storeKey("LLM Router")
+                }
+                render(
+                    <ByokDialog
+                        id="test-byok-dialog"
+                        onClose={onCloseMock}
+                    />
+                )
+                const closeButton = screen.getByRole("button", {name: "close"})
+
+                await setup()
+                await user.click(closeButton)
+                const saveChangesButton = screen.getByRole("button", {name: "Save changes"})
+                await user.click(saveChangesButton)
+
+                expect(global.fetch).not.toHaveBeenCalled()
+                const {settings} = useSettingsStore.getState()
+                expect(getApiKey(settings.apiKeys, "LLM Router")).toBe(savedKey)
+                expect(settings.apiEndpoints["LLM Router"]).toBe(savedEndpoint)
+                expect(onCloseMock).not.toHaveBeenCalled()
+            }
+        )
+
         it("closes without asking when a router URL is typed with no key", async () => {
             const onCloseMock = vi.fn()
             render(

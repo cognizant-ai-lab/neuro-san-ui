@@ -242,6 +242,10 @@ export const useByokKeyManager = ({onClose, supportedProviders}: UseByokKeyManag
 
     const persistKey: PersistKey = useCallback(
         async (vendor, key, endpoint, checkmark, now, allowUnverified = false) => {
+            // A key for a provider with an endpoint URL, like an LLM router, is never tested or saved without its URL
+            if (key && hasEndpoint(vendor) && !endpoint) {
+                return false
+            }
             const id = Symbol("BYOK save")
             const isCurrentDraft = () =>
                 currentDrafts.current[vendor] === key &&
