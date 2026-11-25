@@ -24,8 +24,8 @@ export const TEST_OPENAI_API_KEY = "test-openai-key"
 
 /**
  * Stands in for an agent network session run in the browser by the neuro-san package, streaming the given chat
- * responses. Tests that use this must mock the NeuroSanBrowserSession module with
- * `vi.mock(".../controller/agent/NeuroSanBrowserSession")`.
+ * responses. Tests that use this must mock the session module with
+ * `vi.mock(import(".../controller/agent/NeuroSanBrowser/Session"))`.
  *
  * @param responses The chat responses the session streams back
  * @returns The mock session's streaming_chat function, for assertions
