@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {createNeuroSanBrowserSession} from "./NeuroSanBrowserSession"
+import {createNeuroSanBrowserSession} from "./Session"
 import {
     // eslint-disable-next-line camelcase
     ChatFilterChat_filter_type,
     ChatMessageType,
     ChatRequest,
     ChatResponse,
-} from "../../generated/neuro-san/NeuroSanClient"
+} from "../../../generated/neuro-san/NeuroSanClient"
 
 // The agent network's LLM settings: either a single LLM config or a list of fallback LLM configs
 interface NetworkLlmConfig {

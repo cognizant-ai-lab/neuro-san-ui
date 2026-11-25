@@ -23,7 +23,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {mockFetch} from "../../../../../../__tests__/common/TestUtils"
 import {getBrandingSuggestions} from "../../../../controller/agent/BrandingSuggestions"
 import BRANDING_SUGGESTER_NETWORK from "../../../../controller/agent/networks/branding_suggester.json"
-import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowserSession"
+import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowser/Session"
 import {BrandingSuggestions} from "../../../../controller/Types/Branding"
 import {useSettingsStore} from "../../../../state/Settings"
 
