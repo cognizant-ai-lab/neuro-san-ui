@@ -17,6 +17,7 @@ limitations under the License.
 import Checkbox from "@mui/material/Checkbox"
 import FormControlLabel from "@mui/material/FormControlLabel"
 import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC, useState} from "react"
 
@@ -27,6 +28,7 @@ export const PUBLIC_ACCESS_WARNING = "Anyone with the link can see and use it. T
 export const REFRESH_THEME_LABEL = "Recreate theme"
 export const PUBLISH_NAME_LABEL = "Publish as"
 export const PUBLISH_NAME_REQUIRED_MESSAGE = "Enter a network name."
+export const PUBLISH_NAME_READ_ONLY_MESSAGE = "Once a network is published, the name cannot be changed."
 
 interface PublishConfirmationProps {
     readonly displayName: string
@@ -71,18 +73,23 @@ export const PublishConfirmation: FC<PublishConfirmationProps> = ({
             content={
                 <>
                     <Typography variant="body2">{`${message} ${PUBLIC_ACCESS_WARNING}`}</Typography>
-                    <TextField
-                        error={isNameEmpty}
-                        fullWidth
-                        helperText={isNameEmpty ? PUBLISH_NAME_REQUIRED_MESSAGE : undefined}
-                        id={`${id}-network-name`}
-                        label={PUBLISH_NAME_LABEL}
-                        onChange={(event) => setPublishName(event.target.value)}
-                        size="small"
-                        slotProps={{input: {readOnly: !canRename}}}
-                        sx={{mt: 2}}
-                        value={publishName}
-                    />
+                    <Tooltip
+                        describeChild
+                        title={canRename ? "" : PUBLISH_NAME_READ_ONLY_MESSAGE}
+                    >
+                        <TextField
+                            error={isNameEmpty}
+                            fullWidth
+                            helperText={isNameEmpty ? PUBLISH_NAME_REQUIRED_MESSAGE : undefined}
+                            id={`${id}-network-name`}
+                            label={PUBLISH_NAME_LABEL}
+                            onChange={(event) => setPublishName(event.target.value)}
+                            size="small"
+                            slotProps={{input: {readOnly: !canRename}}}
+                            sx={{mt: 2}}
+                            value={publishName}
+                        />
+                    </Tooltip>
                     {hasTheme && (
                         <FormControlLabel
                             control={

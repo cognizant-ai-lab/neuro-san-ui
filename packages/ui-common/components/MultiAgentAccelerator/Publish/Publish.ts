@@ -165,7 +165,7 @@ export const publish = async (
         const {serverUrl, orgName} = target
         // Publishing again goes to the same deployment, under the name it was first published under
         const publishName =
-            getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(requestedName.trim(), target))
+            getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(requestedName, target))
         const liveNetwork = await publishNetwork({
             serverUrl,
             orgName,

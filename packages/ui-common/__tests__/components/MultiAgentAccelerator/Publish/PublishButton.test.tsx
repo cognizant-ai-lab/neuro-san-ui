@@ -16,6 +16,7 @@ import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAge
 import {
     PUBLIC_ACCESS_WARNING,
     PUBLISH_NAME_LABEL,
+    PUBLISH_NAME_READ_ONLY_MESSAGE,
     PUBLISH_NAME_REQUIRED_MESSAGE,
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
@@ -398,6 +399,8 @@ describe("PublishButton", () => {
         const confirmation = await screen.findByRole("dialog")
         const nameInput = within(confirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
         expect(nameInput).toHaveValue(NETWORK_NAME)
+        await user.hover(nameInput)
+        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument()
         await user.clear(nameInput)
         await user.type(nameInput, `  ${PUBLISH_NAME}  `)
         await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
@@ -416,6 +419,10 @@ describe("PublishButton", () => {
         const savedName = within(republishConfirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
         expect(savedName).toHaveValue(PUBLISH_NAME)
         expect(savedName).toHaveAttribute("readonly")
+        await user.hover(savedName)
+        await screen.findByRole("tooltip", {name: PUBLISH_NAME_READ_ONLY_MESSAGE})
+        await user.unhover(savedName)
+        await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument())
         await confirmRepublish(republishConfirmation)
         expect(mockPublishNetwork).toHaveBeenLastCalledWith(expect.objectContaining({networkName: PUBLISH_NAME}))
     })
