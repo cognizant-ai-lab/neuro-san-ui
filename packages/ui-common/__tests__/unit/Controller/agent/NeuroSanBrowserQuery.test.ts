@@ -22,7 +22,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import {queryNeuroSanInBrowser} from "../../../../controller/agent/NeuroSanBrowser/Query"
 import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowser/Session"
 
-vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
+vi.mock(import("../../../../controller/agent/NeuroSanBrowser/Session"))
 
 const NETWORK_NAME = "test_network"
 const TOOLS = [{name: "front_man", instructions: "Answer in JSON."}]

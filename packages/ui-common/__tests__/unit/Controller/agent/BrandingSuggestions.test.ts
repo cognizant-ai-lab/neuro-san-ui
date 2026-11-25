@@ -27,7 +27,7 @@ import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSa
 import {BrandingSuggestions} from "../../../../controller/Types/Branding"
 import {useSettingsStore} from "../../../../state/Settings"
 
-vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
+vi.mock(import("../../../../controller/agent/NeuroSanBrowser/Session"))
 
 const COMPANY = "Acme"
 

@@ -29,7 +29,7 @@ import {AgentInfo, ConnectivityResponse} from "../../../../generated/neuro-san/N
 import {useIconSuggestionsStore} from "../../../../state/IconSuggestions"
 import {useSettingsStore} from "../../../../state/Settings"
 
-vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
+vi.mock(import("../../../../controller/agent/NeuroSanBrowser/Session"))
 
 const AGENT_CONNECTIVITY: ConnectivityResponse = {
     connectivity_info: [{origin: "test_agent", tools: ["other_agent"]}, {origin: "other_agent"}],
