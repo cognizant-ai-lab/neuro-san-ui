@@ -16,7 +16,7 @@ limitations under the License.
 
 import type {Mock} from "vitest"
 
-import {createNeuroSanBrowserSession} from "../../packages/ui-common/controller/agent/NeuroSanBrowserSession"
+import {createNeuroSanBrowserSession} from "../../packages/ui-common/controller/agent/NeuroSanBrowser/Session"
 import {ChatResponse} from "../../packages/ui-common/generated/neuro-san/NeuroSanClient"
 import {useSettingsStore} from "../../packages/ui-common/state/Settings"
 
@@ -34,9 +34,7 @@ export const mockNeuroSanBrowserSession = (responses: readonly ChatResponse[]): 
     const streamingChat = vi.fn(async function* streamResponses() {
         yield* responses
     })
-    vi.mocked(createNeuroSanBrowserSession).mockReturnValue({
-        streaming_chat: streamingChat,
-    } as unknown as ReturnType<typeof createNeuroSanBrowserSession>)
+    vi.mocked(createNeuroSanBrowserSession, {partial: true}).mockReturnValue({streaming_chat: streamingChat})
     return streamingChat
 }
 

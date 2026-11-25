@@ -1,7 +1,7 @@
 import {postJsonRequest} from "./common/JsonRequest"
 import AGENT_ICON_SUGGESTER_NETWORK from "./networks/agent_icon_suggester.json"
 import NETWORK_ICON_SUGGESTER_NETWORK from "./networks/network_icon_suggester.json"
-import {queryNeuroSanInBrowser} from "./NeuroSanBrowserQuery"
+import {queryNeuroSanInBrowser} from "./NeuroSanBrowser/Query"
 import {AgentInfo, ConnectivityResponse} from "../../generated/neuro-san/NeuroSanClient"
 import {useIconSuggestionsStore} from "../../state/IconSuggestions"
 import {getApiKey, useSettingsStore} from "../../state/Settings"

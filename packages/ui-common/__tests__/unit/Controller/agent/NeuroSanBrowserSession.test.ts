@@ -20,7 +20,7 @@ import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
 import AGENT_ICON_SUGGESTER_NETWORK from "../../../../controller/agent/networks/agent_icon_suggester.json"
 import BRANDING_SUGGESTER_NETWORK from "../../../../controller/agent/networks/branding_suggester.json"
 import NETWORK_ICON_SUGGESTER_NETWORK from "../../../../controller/agent/networks/network_icon_suggester.json"
-import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowserSession"
+import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowser/Session"
 
 describe("Controller/Agent/createNeuroSanBrowserSession", () => {
     withStrictMocks()

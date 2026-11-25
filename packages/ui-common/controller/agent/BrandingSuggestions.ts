@@ -16,7 +16,7 @@ limitations under the License.
 
 import {postJsonRequest} from "./common/JsonRequest"
 import BRANDING_SUGGESTER_NETWORK from "./networks/branding_suggester.json"
-import {queryNeuroSanInBrowser} from "./NeuroSanBrowserQuery"
+import {queryNeuroSanInBrowser} from "./NeuroSanBrowser/Query"
 import {getApiKey, useSettingsStore} from "../../state/Settings"
 import {BrandingSuggestions} from "../Types/Branding"
 

@@ -19,8 +19,8 @@ import {
     TEST_OPENAI_API_KEY,
 } from "../../../../../../__tests__/common/NeuroSanBrowserSessionMock"
 import {withStrictMocks} from "../../../../../../__tests__/common/strictMocks"
-import {queryNeuroSanInBrowser} from "../../../../controller/agent/NeuroSanBrowserQuery"
-import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowserSession"
+import {queryNeuroSanInBrowser} from "../../../../controller/agent/NeuroSanBrowser/Query"
+import {createNeuroSanBrowserSession} from "../../../../controller/agent/NeuroSanBrowser/Session"
 
 vi.mock("../../../../controller/agent/NeuroSanBrowserSession")
 
