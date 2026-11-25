@@ -16,9 +16,9 @@ limitations under the License.
 
 import {
     AgentNetwork,
+    AsyncDirectAgentSession,
     AsyncioExecutorPool,
     DirectAgentReservationist,
-    DirectAgentSession,
     ExpiringAgentNetworkStorage,
     ExternalAgentSessionFactory,
     KeywordNetworkValidator,
@@ -76,7 +76,7 @@ const prepareNetworkConfig = (config: Record<string, unknown>, networkName: stri
 export const createNeuroSanBrowserSession = (
     config: Record<string, unknown>,
     networkName: string
-): DirectAgentSession => {
+): AsyncDirectAgentSession => {
     const networkConfig = prepareNetworkConfig(config, networkName)
     const network = new AgentNetwork(networkConfig, networkName)
 
@@ -98,5 +98,5 @@ export const createNeuroSanBrowserSession = (
     )
     invocationContext.start()
 
-    return new DirectAgentSession(network, invocationContext)
+    return new AsyncDirectAgentSession(network, invocationContext)
 }
