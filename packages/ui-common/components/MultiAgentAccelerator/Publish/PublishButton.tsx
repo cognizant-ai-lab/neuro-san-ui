@@ -27,6 +27,7 @@ import {FC, ReactNode, useState} from "react"
 
 import {
     downloadBundle,
+    getPublishedDeployment,
     openInNewTab,
     publish,
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
@@ -71,6 +72,7 @@ interface MainAction {
 export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, networkId, networkName}) => {
     const publishState = usePublishStore((state) => state.networks[networkId])
     const target = usePublishTarget(networkId, networkName)
+    const deployment = target ? getPublishedDeployment(networkId, target) : null
 
     const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null)
     const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false)
@@ -80,10 +82,10 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
 
     const network: PublishNetwork = {id: networkId, name: networkName}
 
-    const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean) => {
+    const handlePublish = async (publishTarget: PublishTarget, refreshTheme: boolean, publishName: string) => {
         setIsPanelOpen(true)
         try {
-            showPublishResult(networkName, await publish(network, hocon, publishTarget, refreshTheme))
+            showPublishResult(networkName, await publish(network, hocon, publishTarget, refreshTheme, publishName))
         } finally {
             setIsPanelOpen(false)
         }
@@ -212,10 +214,12 @@ export const PublishButton: FC<PublishButtonProps> = ({displayName, hocon, id, n
                     id={`${id}-confirm`}
                     hasTheme={Boolean(publishState)}
                     isRepublish={publishState?.status === PublishStatus.Published}
+                    networkName={deployment?.name ?? networkName}
+                    canRename={!deployment}
                     onCancel={() => setIsConfirmOpen(false)}
-                    onConfirm={(refreshTheme) => {
+                    onConfirm={(refreshTheme, publishName) => {
                         setIsConfirmOpen(false)
-                        void handlePublish(target, refreshTheme)
+                        void handlePublish(target, refreshTheme, publishName)
                     }}
                     target={target}
                 />

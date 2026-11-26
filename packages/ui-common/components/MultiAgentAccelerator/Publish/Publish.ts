@@ -65,7 +65,10 @@ export const openInNewTab = (url: string): boolean => {
  * The deployment this browser published the network to, unless Settings has since changed the publishing server or
  * org, since its id only means something there
  */
-const getPublishedDeployment = (networkId: string, {serverUrl, orgName}: PublishTarget): PublishedDeployment | null =>
+export const getPublishedDeployment = (
+    networkId: string,
+    {serverUrl, orgName}: PublishTarget
+): PublishedDeployment | null =>
     useTempNetworksStore
         .getState()
         .tempNetworks.find(
@@ -151,7 +154,8 @@ export const publish = async (
     network: PublishNetwork,
     hocon: string,
     target: PublishTarget,
-    refreshTheme: boolean
+    refreshTheme: boolean,
+    requestedName: string = network.name
 ): Promise<PublishResult> => {
     const {clearPublishState, networks, setPublishState, setPublishedList} = usePublishStore.getState()
     const previousState = networks[network.id]
@@ -161,7 +165,7 @@ export const publish = async (
         const {serverUrl, orgName} = target
         // Publishing again goes to the same deployment, under the name it was first published under
         const publishName =
-            getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(network.name, target))
+            getPublishedDeployment(network.id, target)?.name ?? (await makePublishName(requestedName, target))
         const liveNetwork = await publishNetwork({
             serverUrl,
             orgName,

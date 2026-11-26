@@ -10,10 +10,14 @@ import {
     PUBLISH_SETTINGS_REQUIRED_MESSAGE,
     PUBLISHED_MESSAGE,
     PUBLISHED_TAB_BLOCKED_MESSAGE,
+    publish as publishTemporaryNetwork,
 } from "../../../../components/MultiAgentAccelerator/Publish/Publish"
 import {PublishButton, SHOW_DETAILS_LABEL} from "../../../../components/MultiAgentAccelerator/Publish/PublishButton"
 import {
     PUBLIC_ACCESS_WARNING,
+    PUBLISH_NAME_LABEL,
+    PUBLISH_NAME_READ_ONLY_MESSAGE,
+    PUBLISH_NAME_REQUIRED_MESSAGE,
     REFRESH_THEME_LABEL,
 } from "../../../../components/MultiAgentAccelerator/Publish/PublishConfirmation"
 import {
@@ -372,6 +376,90 @@ describe("PublishButton", () => {
 
         expect(isPublishNameTaken).toHaveBeenCalledWith(SERVER_URL, ORG_NAME, NETWORK_NAME)
         expect(mockPublishNetwork).toHaveBeenCalledWith(expect.objectContaining({networkName: NETWORK_NAME}))
+    })
+
+    it("should use the network's own name when publishing without an alternate name", async () => {
+        const result = await publishTemporaryNetwork(
+            {id: NETWORK_ID, name: NETWORK_NAME},
+            HOCON,
+            {serverUrl: SERVER_URL, orgName: ORG_NAME},
+            false
+        )
+
+        expect(result).toEqual({url: PUBLISHED_URL})
+        expect(mockPublishNetwork).toHaveBeenCalledWith(
+            expect.objectContaining({networkName: NETWORK_NAME, hocon: HOCON})
+        )
+        expect(useTempNetworksStore.getState().tempNetworks[0].deployment?.name).toBe(NETWORK_NAME)
+    })
+
+    it("should publish under the name entered and keep it when republishing after a reload", async () => {
+        const {unmount} = renderPublishButton()
+        await clickPublish()
+        const confirmation = await screen.findByRole("dialog")
+        const nameInput = within(confirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
+        expect(nameInput).toHaveValue(NETWORK_NAME)
+        await user.hover(nameInput)
+        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument()
+        await user.clear(nameInput)
+        await user.type(nameInput, `  ${PUBLISH_NAME}  `)
+        await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
+        await screen.findByRole("button", {name: "View live"})
+
+        expect(mockPublishNetwork).toHaveBeenCalledWith(
+            expect.objectContaining({networkName: PUBLISH_NAME, hocon: HOCON})
+        )
+        expect(useTempNetworksStore.getState().tempNetworks[0].agentNetworkName).toBe(NETWORK_NAME)
+        unmount()
+        act(() => usePublishStore.setState(usePublishStore.getInitialState()))
+        vi.mocked(listPublishedNetworks).mockResolvedValue([makePublishedNetwork()])
+        renderPublishButton()
+        await screen.findByRole("button", {name: "View live"})
+        const republishConfirmation = await clickRepublish()
+        const savedName = within(republishConfirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
+        expect(savedName).toHaveValue(PUBLISH_NAME)
+        expect(savedName).toHaveAttribute("readonly")
+        await user.hover(savedName)
+        await screen.findByRole("tooltip", {name: PUBLISH_NAME_READ_ONLY_MESSAGE})
+        await user.unhover(savedName)
+        await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument())
+        await confirmRepublish(republishConfirmation)
+        expect(mockPublishNetwork).toHaveBeenLastCalledWith(expect.objectContaining({networkName: PUBLISH_NAME}))
+    })
+
+    it.each(["", " ".repeat(3)])("should require a name before publishing when the name is %j", async (enteredName) => {
+        renderPublishButton()
+        await clickPublish()
+        const confirmation = await screen.findByRole("dialog")
+        const nameInput = within(confirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
+        await user.clear(nameInput)
+        if (enteredName) await user.type(nameInput, enteredName)
+
+        expect(nameInput).toHaveAccessibleDescription(PUBLISH_NAME_REQUIRED_MESSAGE)
+        expect(within(confirmation).getByRole("button", {name: "Publish"})).toBeDisabled()
+        expect(mockPublishNetwork).not.toHaveBeenCalled()
+        await user.type(nameInput, NETWORK_NAME)
+        expect(within(confirmation).getByRole("button", {name: "Publish"})).toBeEnabled()
+        expect(screen.queryByText(PUBLISH_NAME_REQUIRED_MESSAGE)).not.toBeInTheDocument()
+    })
+
+    it("should protect an existing deployment when the entered name is taken", async () => {
+        vi.mocked(isPublishNameTaken).mockResolvedValue(true)
+        renderPublishButton()
+        await clickPublish()
+        const confirmation = await screen.findByRole("dialog")
+        const nameInput = within(confirmation).getByRole("textbox", {name: PUBLISH_NAME_LABEL})
+        await user.clear(nameInput)
+        await user.type(nameInput, PUBLISH_NAME)
+        await user.click(within(confirmation).getByRole("button", {name: "Publish"}))
+        await screen.findByRole("button", {name: "View live"})
+
+        expect(isPublishNameTaken).toHaveBeenCalledWith(SERVER_URL, ORG_NAME, PUBLISH_NAME)
+        expect(mockPublishNetwork).toHaveBeenCalledWith(
+            expect.objectContaining({
+                networkName: expect.stringMatching(new RegExp(`^${PUBLISH_NAME}_[0-9a-f]{8}$`, "u")),
+            })
+        )
     })
 
     it("should add an id of its own to the name when the org already has a network by that name", async () => {

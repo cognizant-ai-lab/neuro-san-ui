@@ -16,6 +16,8 @@ limitations under the License.
 
 import Checkbox from "@mui/material/Checkbox"
 import FormControlLabel from "@mui/material/FormControlLabel"
+import TextField from "@mui/material/TextField"
+import Tooltip from "@mui/material/Tooltip"
 import Typography from "@mui/material/Typography"
 import {FC, useState} from "react"
 
@@ -24,6 +26,9 @@ import {ConfirmationModal} from "../../Common/ConfirmationModal"
 
 export const PUBLIC_ACCESS_WARNING = "Anyone with the link can see and use it. There's no sign-in or access control."
 export const REFRESH_THEME_LABEL = "Recreate theme"
+export const PUBLISH_NAME_LABEL = "Publish as"
+export const PUBLISH_NAME_REQUIRED_MESSAGE = "Enter a network name."
+export const PUBLISH_NAME_READ_ONLY_MESSAGE = "Once a network is published, the name cannot be changed."
 
 interface PublishConfirmationProps {
     readonly displayName: string
@@ -32,8 +37,10 @@ interface PublishConfirmationProps {
     readonly hasTheme: boolean
     /** Live now, so publishing replaces the live version */
     readonly isRepublish?: boolean
+    readonly networkName: string
+    readonly canRename: boolean
     readonly onCancel: () => void
-    readonly onConfirm: (refreshTheme: boolean) => void
+    readonly onConfirm: (refreshTheme: boolean, networkName: string) => void
     readonly target: PublishTarget
 }
 
@@ -46,11 +53,15 @@ export const PublishConfirmation: FC<PublishConfirmationProps> = ({
     hasTheme,
     id,
     isRepublish = false,
+    networkName,
+    canRename,
     onCancel,
     onConfirm,
     target,
 }) => {
     const [refreshTheme, setRefreshTheme] = useState(false)
+    const [publishName, setPublishName] = useState<string>(networkName)
+    const isNameEmpty = !publishName.trim()
 
     const message = isRepublish
         ? `The published version of "${displayName}" on ${target.serverUrl} under the org "${target.orgName}" ` +
@@ -62,6 +73,23 @@ export const PublishConfirmation: FC<PublishConfirmationProps> = ({
             content={
                 <>
                     <Typography variant="body2">{`${message} ${PUBLIC_ACCESS_WARNING}`}</Typography>
+                    <Tooltip
+                        describeChild
+                        title={canRename ? "" : PUBLISH_NAME_READ_ONLY_MESSAGE}
+                    >
+                        <TextField
+                            error={isNameEmpty}
+                            fullWidth
+                            helperText={isNameEmpty ? PUBLISH_NAME_REQUIRED_MESSAGE : undefined}
+                            id={`${id}-network-name`}
+                            label={PUBLISH_NAME_LABEL}
+                            onChange={(event) => setPublishName(event.target.value)}
+                            size="small"
+                            slotProps={{input: {readOnly: !canRename}}}
+                            sx={{mt: 2}}
+                            value={publishName}
+                        />
+                    </Tooltip>
                     {hasTheme && (
                         <FormControlLabel
                             control={
@@ -80,9 +108,10 @@ export const PublishConfirmation: FC<PublishConfirmationProps> = ({
                 </>
             }
             handleCancel={onCancel}
-            handleOk={() => onConfirm(refreshTheme)}
+            handleOk={() => onConfirm(refreshTheme, publishName.trim())}
             id={id}
             okBtnLabel={isRepublish ? "Republish" : "Publish"}
+            okBtnDisabled={isNameEmpty}
             title={isRepublish ? "Republish this network?" : "Publish this network?"}
         />
     )
